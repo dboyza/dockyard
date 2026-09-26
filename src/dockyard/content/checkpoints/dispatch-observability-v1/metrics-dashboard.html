@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dispatch service health</title>
+<style>
+:root{color-scheme:dark;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#10151c;color:#e6edf6}*{box-sizing:border-box}body{max-width:1100px;margin:0 auto;padding:40px 24px}header{display:flex;justify-content:space-between;gap:20px;align-items:center}small{color:#9ac8ff;letter-spacing:.13em}h1{font-size:32px;letter-spacing:-.03em;margin:8px 0}p{color:#9aaac0}button{background:#1d2836;border:1px solid #2c3b4f;color:inherit;border-radius:7px;padding:10px 15px;cursor:pointer}button:focus-visible{outline:3px solid #9ac8ff;outline-offset:3px}#panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));gap:18px;margin-top:30px}article{min-width:0;background:#161e29;border:1px solid #2c3b4f;border-radius:12px;padding:22px}h2{font-size:16px;margin:0}.value{display:block;font-size:36px;letter-spacing:-.04em;margin:16px 0 0}.unit{font-size:12px;color:#9aaac0}svg{width:100%;height:130px;margin:20px 0 8px}polyline{fill:none;stroke:#9ac8ff;stroke-width:2}code{overflow-wrap:anywhere;color:#9aaac0;font:11px/1.7 ui-monospace,monospace}details{margin-top:15px}summary{cursor:pointer;color:#9ac8ff;font-size:12px}footer{margin-top:30px;border-top:1px solid #2c3b4f;padding-top:20px;color:#9aaac0;font-size:13px}#status{min-height:2em}@media(max-width:500px){header{align-items:flex-start;flex-direction:column}body{padding:24px 16px}}
+</style>
+<header><div><small>DISPATCH / OBSERVABILITY</small><h1 id="title">Service health</h1><p>Real requests. Measured behavior. A three-minute window.</p></div><button id="refresh">Refresh measurements</button></header>
+<p id="status" role="status">Connecting to the local Prometheus service…</p><main id="panels"></main>
+<footer>The chart displays the first result series for each configured expression. Use aggregate queries for a service-level view.<br>Missing data is not zero. A short local sample is not a production SLO report.</footer>
+<script>
+const element = (tag, text) => {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+const cards = new Map();
+let busy = false;
+function render(panel, observedAt) {
+  let card = cards.get(panel.id);
+  if (!card) {
+    card = element('article');
+    const value = element('strong'); value.className = 'value';
+    const unit = element('span'); unit.className = 'unit';
+    const chart = element('div'); chart.className = 'chart';
+    const details = element('details');
+    details.append(element('summary', 'Inspect the PromQL expression'), element('code'));
+    card.append(element('h2'), value, unit, chart, details);
+    cards.set(panel.id, card);
+    document.querySelector('#panels').append(card);
+  }
+  card.querySelector('h2').textContent = panel.title;
+  card.querySelector('code').textContent = panel.query;
+  const points = (panel.data[0]?.values || [])
+    .map(([time, value]) => [time, Number(value)])
+    .filter(([, value]) => Number.isFinite(value));
+  const format = value => panel.unit === 'ratio' ? (value * 100).toFixed(1) + '%' : value.toFixed(3);
+  const last = points.at(-1)?.[1];
+  card.querySelector('.value').textContent = last === undefined ? 'No data' : format(last);
+  card.querySelector('.unit').textContent = panel.unit === 'ratio' ? 'fraction of read requests' : panel.unit;
+  const chart = card.querySelector('.chart');
+  chart.replaceChildren();
+  if (points.length > 1) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 300 140');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', panel.title + ' over the last three minutes');
+    const max = Math.max(...points.map(point => point[1]), .001);
+    const line = document.createElementNS(ns, 'polyline');
+    line.setAttribute('points', points.map(([time, value]) =>
+      `${Math.max(2, Math.min(298, (time - observedAt + 180) / 180 * 296 + 2))},${112 - value / max * 80}`).join(' '));
+    const label = (text, x, y, anchor = 'start') => {
+      const node = document.createElementNS(ns, 'text');
+      node.textContent = text; node.setAttribute('x', x); node.setAttribute('y', y);
+      node.setAttribute('fill', '#9aaac0'); node.setAttribute('font-size', '10');
+      node.setAttribute('text-anchor', anchor); return node;
+    };
+    svg.append(line, label('Scale 0 to ' + format(max), 2, 14),
+      label('3 min ago', 2, 137), label('Now', 298, 137, 'end'));
+    chart.append(svg);
+  }
+}
+async function refresh() {
+  if (busy) return;
+  busy = true; document.querySelector('#refresh').disabled = true;
+  try {
+    const response = await fetch('/data');
+    if (!response.ok) throw Error('Prometheus or the dashboard configuration is unavailable');
+    const data = await response.json();
+    document.querySelector('#title').textContent = data.title;
+    const ids = new Set(data.panels.map(panel => panel.id));
+    for (const [id, card] of cards) if (!ids.has(id)) { card.remove(); cards.delete(id); }
+    for (const panel of data.panels) render(panel, data.observed_at);
+    document.querySelector('#status').textContent = 'Observed ' +
+      new Date(data.observed_at * 1000).toLocaleTimeString() + '. Refreshes every five seconds.';
+  } catch (error) {
+    document.querySelector('#status').textContent = 'Observation unavailable. Previous charts may be stale. ' + error.message;
+  } finally {
+    busy = false; document.querySelector('#refresh').disabled = false;
+  }
+}
+document.querySelector('#refresh').addEventListener('click', refresh);
+refresh(); setInterval(refresh, 5000);
+</script></html>

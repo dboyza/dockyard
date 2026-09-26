@@ -48,5 +48,25 @@
     "archive_member": "darwin-arm64/helm",
     "installed_sha256": "ed7defb5950888de567b2ba32f6795efbba172227aba7dfd2ee110549194f5c4",
     "path": "bin/helm"
+  },
+  "flux": {
+    "version": "2.9.5",
+    "url": "https://github.com/fluxcd/flux2/releases/download/v2.9.5/flux_2.9.5_darwin_arm64.tar.gz",
+    "path": "bin/flux",
+    "sha256": "2869ef7151a6f1b27e6b5d2a6804f3ef23c7bdaa06a74e00d3fe5bfc646547fd",
+    "archive_member": "flux",
+    "installed_sha256": "27b56b8f588170ac59d540abfa65a6a9f75e37b35641430effe0f99d2b6c7e0b"
+  },
+  "git-daemon": {
+    "version": "2.54.0-r0",
+    "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/git-daemon-2.54.0-r0.apk",
+    "sha256": "e34fc8841226216b798b8e1ff20c2ad856d97c2bc2c512f6b7e183d934f3d9b0",
+    "path": "packages/git-daemon.apk"
+  },
+  "busybox-extras": {
+    "version": "1.37.0-r31",
+    "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/busybox-extras-1.37.0-r31.apk",
+    "sha256": "64a2c66f44f2218473f56dd63355d988c3da0bdae6384d6d94d32587328ccea3",
+    "path": "packages/busybox-extras.apk"
   }
 }

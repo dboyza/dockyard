@@ -159,12 +159,12 @@ def available(deployment: dict[str, Any], count: int) -> bool:
     )
 
 
-def sql(query: str, namespace: str = "dispatch") -> str:
+def sql(query: str, namespace: str = "dispatch", workload: str = "deployment/db") -> str:
     return kubectl(
         "exec",
         "-n",
         namespace,
-        "deployment/db",
+        workload,
         "--",
         "psql",
         "-U",
@@ -208,7 +208,7 @@ def api_request(
     )
 
 
-def job_roundtrip(namespace: str = "dispatch") -> bool:
+def job_roundtrip(namespace: str = "dispatch", database_workload: str = "deployment/db") -> bool:
     _, pods = owned_pods("worker", namespace)
     succeeded = False
     job_id = None
@@ -223,7 +223,11 @@ def job_roundtrip(namespace: str = "dispatch") -> bool:
             current = next((item for item in jobs if item["id"] == job_id), None)
             if current and current["status"] == "done":
                 stored = json.loads(
-                    sql(f"SELECT row_to_json(j) FROM jobs j WHERE id='{job_id}'", namespace)
+                    sql(
+                        f"SELECT row_to_json(j) FROM jobs j WHERE id='{job_id}'",
+                        namespace,
+                        database_workload,
+                    )
                 )
                 succeeded = (
                     stored["title"] == title
@@ -243,7 +247,7 @@ def job_roundtrip(namespace: str = "dispatch") -> bool:
     finally:
         if job_id and len(job_id) == 32 and all(c in "0123456789abcdef" for c in job_id):
             with suppress(RuntimeError):
-                sql(f"DELETE FROM jobs WHERE id='{job_id}'", namespace)
+                sql(f"DELETE FROM jobs WHERE id='{job_id}'", namespace, database_workload)
     return bool(succeeded)
 
 
@@ -354,10 +358,12 @@ def main() -> None:
         raise SystemExit("Run this check inside a Dockyard practice environment.")
     from dockyard.probes.capacity import capacity
     from dockyard.probes.configuration import configuration
+    from dockyard.probes.delivery import delivery
     from dockyard.probes.packaging import packaging
     from dockyard.probes.releases import releases
     from dockyard.probes.routing import routing
     from dockyard.probes.storage import storage
+    from dockyard.probes.visibility import visibility
 
     probes = {
         "foundation": foundation,
@@ -368,6 +374,8 @@ def main() -> None:
         "releases": releases,
         "capacity": capacity,
         "packaging": packaging,
+        "visibility": visibility,
+        "delivery": delivery,
     }
     try:
         result = probes[sys.argv[1]]()

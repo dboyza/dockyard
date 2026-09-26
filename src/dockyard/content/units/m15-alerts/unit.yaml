@@ -1,0 +1,151 @@
+id: m15-alerts
+revision: 1
+module: 15
+order: 2
+title: Build useful dashboards and prove an alert
+summary: Repair a query and exercise pending, firing, and recovered behavior.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Read rates and histogram-derived latency indicators.
+- Distinguish missing data from a healthy zero.
+- Validate alert firing and recovery under controlled service impact.
+prerequisites:
+- m15-observation
+objectives:
+- kubernetes.observability
+- platform.reliability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: An alert has never fired. What is still needed before trusting it?
+  options:
+  - A controlled failure and recovery that exercise the actual rule.
+  - A dashboard screenshot with no data.
+  - A constant expression that is always zero.
+  correct: 0
+  explanation: Both detection and recovery behavior need observation.
+hints:
+- Separate service behavior from the health of its monitoring path.
+- Compare the supplied field or query with the real Pod port, histogram buckets, and recorded request
+  timings.
+- Apply the repaired configuration, wait for fresh observations, and run the bounded rehearsal named in
+  the task.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-application/
+- https://prometheus.io/docs/concepts/metric_types/
+- https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+- https://prometheus.io/docs/practices/histograms/
+- https://sre.google/sre-book/service-level-objectives/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: visibility-signals
+  title: A real business request has a matching structured log event
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - signals
+  expected: 'true'
+  diagnostic: Inspect the real /jobs response and matching http_request log from the serving API Pod.
+- id: visibility-scraping
+  title: Prometheus scrapes both actual API Pods and records business traffic
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - scraping
+  expected: 'true'
+  diagnostic: Compare Pod port names, discovery relabel rules, active targets, and live counter series.
+- id: visibility-dashboard
+  title: The live dashboard returns finite service-level measurements
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - dashboard
+  expected: 'true'
+  diagnostic: Inspect the latency panel query and its actual /data result; missing series are not zero.
+- id: visibility-alert
+  title: The latency alert fired under impact and cleared after recovery
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - alert
+  expected: 'true'
+  diagnostic: Apply the intended rule and run alert-proof.py through firing and recovery without changing
+    the threshold.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-observability-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- prometheus
+alternatives:
+- Equivalent PromQL formulations are accepted when the live dashboard and alert observe the required slow
+  and recovered service behavior.
+- The SLO evidence must retain all eligible reads, its original threshold, and its explicit sample scope.
+failure_modes:
+- A healthy readiness endpoint can coexist with slow business requests.
+- Missing measurements are not successful requests or zero latency.
+- A constant alert expression can suppress all useful detection.
+starter_failure_checks:
+- visibility-dashboard
+- visibility-alert

@@ -201,3 +201,25 @@ A live observation during the broken packaging mission exposed a legitimate Endp
 The corrected observer returned 47 actual resources and 35 relationships from that lab.
 The latest backend run passed 39 tests with 64 opt-in cases skipped in 5.52 seconds, and the installed browser journey passed in 15.0 seconds after rebuilding the wheel.
 Module 15 remains in its live audit; it is not included in the verified 56-unit checkpoint.
+
+## Visibility and local delivery, 2026-09-26
+
+All four Module 15 starter/reference audits passed in 621.91 seconds.
+The observations connect actual request IDs to structured process logs, scrape both real API Pods, query live dashboard series, induce and clear a Prometheus latency alert, and compare bounded before/after SLO samples.
+The dashboard uses a fixed three-minute time axis with explicit value scales and preserves expanded query explanations across refreshes.
+Its updated implementation was rebuilt and observed against a fresh real cluster; the observation lesson passed again after fresh scrapes arrived.
+Wide and 480-pixel screenshots were directly inspected at `.artifacts/observability-dashboard-final.png` and `.artifacts/observability-dashboard-narrow.png` without horizontal overflow.
+These are bounded local signal and recovery checks, not a production SLO certification.
+
+The Module 16 feasibility environment runs an app-owned smart HTTP Git server, private registry, and pinned Flux controllers.
+A real Git push and independent clone succeeded without an external account.
+An initial Docker Desktop publication failed when the registry used an automatically assigned host port; explicitly binding an allocated loopback port fixed engine-side access without changing Docker settings.
+The Flux health check required read-only Pod and ReplicaSet access in addition to Deployment management; the scoped release identity retains no Secret or kube-system workload access.
+The full rehearsal published a tested image, applied Git declarations, promoted one digest, observed an actual failed candidate image pull, and recovered through a new Git revert commit.
+The first rehearsal also showed kubectl scale output retaining the pre-scale object; the evidence recorder now uses the actual API patch response to capture the zero-replica generation before reconciliation.
+Fresh Module 16 starter/reference audits are in progress, so feasibility does not yet establish those four unit contracts.
+The working catalog contains 64 course units; the verified curriculum checkpoint is 60 units pending that audit.
+
+All four Module 16 starter/reference audits passed in 489.92 seconds after correcting the shared job verifier to address this checkpoint's StatefulSet database.
+The checks independently exercise the published image's HTTP contract, compare source hashes and registry content, follow local/remote Git revisions into healthy Flux conditions, verify the scoped deployer, validate real drift/promotion/revert evidence, and complete a persistent job.
+The working security chapter remains unverified at this point; the verified curriculum now contains 64 units.

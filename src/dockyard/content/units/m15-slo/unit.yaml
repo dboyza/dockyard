@@ -1,0 +1,136 @@
+id: m15-slo
+revision: 1
+module: 15
+order: 3
+title: Measure a service-level objective honestly
+summary: Define good events, preserve the denominator, and compare real windows.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Separate an SLI, SLO, and error budget.
+- Measure successful low-latency business reads.
+- State the limits of a bounded local sample.
+prerequisites:
+- m15-alerts
+objectives:
+- kubernetes.observability
+- platform.reliability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Out of 200 eligible reads, 190 meet the success and latency condition. What is the good-event
+    ratio?
+  options:
+  - 95 percent, with ten bad events in this sample.
+  - 100 percent because every response returned.
+  - 5 percent because the budget is five percent.
+  correct: 0
+  explanation: The numerator is good events and the denominator includes all eligible reads.
+hints:
+- Separate service behavior from the health of its monitoring path.
+- Compare the supplied field or query with the real Pod port, histogram buckets, and recorded request
+  timings.
+- Apply the repaired configuration, wait for fresh observations, and run the bounded rehearsal named in
+  the task.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-application/
+- https://prometheus.io/docs/concepts/metric_types/
+- https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+- https://prometheus.io/docs/practices/histograms/
+- https://sre.google/sre-book/service-level-objectives/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: visibility-signals
+  title: A real business request has a matching structured log event
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - signals
+  expected: 'true'
+  diagnostic: Inspect the real /jobs response and matching http_request log from the serving API Pod.
+- id: visibility-scraping
+  title: Prometheus scrapes both actual API Pods and records business traffic
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - scraping
+  expected: 'true'
+  diagnostic: Compare Pod port names, discovery relabel rules, active targets, and live counter series.
+- id: visibility-slo
+  title: Before and after windows prove the repaired latency objective
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - slo
+  expected: 'true'
+  diagnostic: Capture the slow before window, restore 20ms delay, and collect a passing after window with
+    the original policy.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-observability-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- prometheus
+alternatives:
+- Equivalent PromQL formulations are accepted when the live dashboard and alert observe the required slow
+  and recovered service behavior.
+- The SLO evidence must retain all eligible reads, its original threshold, and its explicit sample scope.
+failure_modes:
+- A healthy readiness endpoint can coexist with slow business requests.
+- Missing measurements are not successful requests or zero latency.
+- A constant alert expression can suppress all useful detection.
+starter_failure_checks:
+- visibility-slo

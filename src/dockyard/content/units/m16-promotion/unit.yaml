@@ -1,0 +1,200 @@
+id: m16-promotion
+revision: 1
+module: 16
+order: 3
+title: Promote and recover a declared release
+summary: Observe drift repair, digest promotion, and Git-based rollback.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Promote one tested digest across release targets.
+- Recover a failed candidate without rewriting history.
+prerequisites:
+- m16-gitops
+objectives:
+- platform.delivery
+- kubernetes.packaging
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Why can kubectl rollout undo be temporary while GitOps remains active?
+  options:
+  - The controller can reapply the unchanged faulty Git declaration.
+  - Git automatically rewrites the previous commit.
+  - A digest changes whenever a Pod restarts.
+  correct: 0
+  explanation: Repair the desired state in Git so future reconciliation preserves the recovery.
+hints:
+- Inspect the earliest failing boundary before changing a later system.
+- Compare the test gate, Git source revision, suspend state, and current controller conditions.
+- Use the supplied wait and rehearsal helpers after repairing the source; inspect their actual evidence.
+sources:
+- https://docs.docker.com/reference/cli/docker/image/push/
+- https://git-scm.com/docs/git-revert
+- https://fluxcd.io/flux/components/source/gitrepositories/
+- https://fluxcd.io/flux/components/kustomize/kustomizations/
+- https://kind.sigs.k8s.io/docs/user/local-registry/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 420
+checks:
+- id: delivery-pipeline
+  title: The published image passes its gate and independent HTTP contract
+  explanation: Compare real artifact, commit, controller, and application observations.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - delivery
+    timeout: 180
+  expectation: json
+  json_path:
+  - pipeline
+  expected: 'true'
+  diagnostic: Enable the unchanged candidate tests, run the pipeline, and compare current build inputs
+    with release.json.
+- id: delivery-reconciliation
+  title: Local and remote Git revisions match healthy Flux-applied releases
+  explanation: Compare real artifact, commit, controller, and application observations.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - delivery
+    timeout: 180
+  expectation: json
+  json_path:
+  - reconciliation
+  expected: 'true'
+  diagnostic: Inspect suspend, source path, remote branch, Ready conditions, and lastAppliedRevision for
+    both targets.
+- id: delivery-identity
+  title: The deployer can manage Dispatch Deployments without Secret or system access
+  explanation: Compare real artifact, commit, controller, and application observations.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - delivery
+    timeout: 180
+  expectation: json
+  json_path:
+  - identity
+  expected: 'true'
+  diagnostic: Retain the scoped deployer Role and serviceAccountName in both Flux Kustomizations.
+- id: delivery-workflow
+  title: The delivered API completes a real database-backed job
+  explanation: Compare real artifact, commit, controller, and application observations.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - delivery
+    timeout: 180
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the delivered API, worker, PostgreSQL, and Redis before retrying a real job.
+- id: delivery-drift
+  title: Flux repaired an observed live replica change
+  explanation: Compare real artifact, commit, controller, and application observations.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - delivery
+    timeout: 180
+  expectation: json
+  json_path:
+  - drift
+  expected: 'true'
+  diagnostic: Run the inspected rehearsal with active Flux reconciliation and preserve its generation
+    evidence.
+- id: delivery-promotion
+  title: Staging selected the exact digest already validated in development
+  explanation: Compare real artifact, commit, controller, and application observations.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - delivery
+    timeout: 180
+  expectation: json
+  json_path:
+  - promotion
+  expected: 'true'
+  diagnostic: Promote the already tested dispatch-3 digest from development in a separate staging commit.
+- id: delivery-rollback
+  title: A new Git revert recovered an actual failed image pull
+  explanation: Compare real artifact, commit, controller, and application observations.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - delivery
+    timeout: 180
+  expectation: json
+  json_path:
+  - rollback
+  expected: 'true'
+  diagnostic: Observe the failed candidate pull, revert its Git commit, and wait for the recovery revision.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- delivery
+checkpoint: dispatch-delivery-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- git
+- registry
+- flux_source
+- flux_kustomize
+alternatives:
+- Equivalent Git commit messages and YAML formatting are accepted; actual digest selection, ancestry,
+  and running behavior determine completion.
+- Use the supplied rehearsal or equivalent ordinary commands while preserving the measured evidence contract.
+failure_modes:
+- A skipped test gate can publish an unverified candidate.
+- A healthy Git source cannot update a suspended release.
+- A live rollback is overwritten if the bad Git source remains.
+starter_failure_checks:
+- delivery-drift
+- delivery-promotion
+- delivery-rollback

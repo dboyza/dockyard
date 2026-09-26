@@ -1,0 +1,14 @@
+groups:
+- name: dispatch
+  rules:
+  - alert: DispatchLatencyBudgetBurn
+    expr: 1 - sum(rate(dispatch_http_request_duration_seconds_bucket{le="0.25"}[1m]))
+      / sum(rate(dispatch_http_request_duration_seconds_count[1m])) > 0.10
+    for: 15s
+    labels:
+      severity: warning
+      service: dispatch
+    annotations:
+      summary: More than 10% of Dispatch reads exceed 250ms
+      runbook: Inspect current delay configuration, request logs, and dependency latency
+        before changing the SLO.

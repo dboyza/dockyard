@@ -1,0 +1,119 @@
+id: m15-observation
+revision: 1
+module: 15
+order: 1
+title: Correlate events, logs, and metrics
+summary: Restore discovery and follow a real request across operational signals.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Distinguish events, process logs, and time-series metrics.
+- Keep per-Pod counter identity during scraping.
+- Correlate measured requests with structured application logs.
+prerequisites:
+- m14-mission
+objectives:
+- kubernetes.observability
+- platform.reliability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: What does up=1 establish for a Prometheus scrape target?
+  options:
+  - The scrape succeeded; business behavior still needs its own indicators.
+  - Every user request met its latency objective.
+  - The target can never restart.
+  correct: 0
+  explanation: Scrape health and application service quality are different observations.
+hints:
+- Separate service behavior from the health of its monitoring path.
+- Compare the supplied field or query with the real Pod port, histogram buckets, and recorded request
+  timings.
+- Apply the repaired configuration, wait for fresh observations, and run the bounded rehearsal named in
+  the task.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-application/
+- https://prometheus.io/docs/concepts/metric_types/
+- https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+- https://prometheus.io/docs/practices/histograms/
+- https://sre.google/sre-book/service-level-objectives/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: visibility-signals
+  title: A real business request has a matching structured log event
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - signals
+  expected: 'true'
+  diagnostic: Inspect the real /jobs response and matching http_request log from the serving API Pod.
+- id: visibility-scraping
+  title: Prometheus scrapes both actual API Pods and records business traffic
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - scraping
+  expected: 'true'
+  diagnostic: Compare Pod port names, discovery relabel rules, active targets, and live counter series.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-observability-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- prometheus
+alternatives:
+- Equivalent PromQL formulations are accepted when the live dashboard and alert observe the required slow
+  and recovered service behavior.
+- The SLO evidence must retain all eligible reads, its original threshold, and its explicit sample scope.
+failure_modes:
+- A healthy readiness endpoint can coexist with slow business requests.
+- Missing measurements are not successful requests or zero latency.
+- A constant alert expression can suppress all useful detection.
+starter_failure_checks:
+- visibility-scraping

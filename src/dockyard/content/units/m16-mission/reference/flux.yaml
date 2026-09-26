@@ -1,0 +1,46 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: dispatch
+  namespace: flux-system
+spec:
+  interval: 5s
+  url: ${DOCKYARD_GIT_CLUSTER_URL}
+  ref:
+    branch: main
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: development
+  namespace: flux-system
+spec:
+  interval: 5s
+  retryInterval: 5s
+  path: ./environments/development
+  prune: true
+  wait: true
+  timeout: 30s
+  serviceAccountName: dispatch-deployer
+  sourceRef:
+    kind: GitRepository
+    name: dispatch
+  suspend: false
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: staging
+  namespace: flux-system
+spec:
+  interval: 5s
+  retryInterval: 5s
+  path: ./environments/staging
+  prune: true
+  wait: true
+  timeout: 30s
+  serviceAccountName: dispatch-deployer
+  sourceRef:
+    kind: GitRepository
+    name: dispatch
+  suspend: false

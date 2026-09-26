@@ -1,0 +1,13 @@
+groups:
+- name: dispatch
+  rules:
+  - alert: DispatchLatencyBudgetBurn
+    expr: vector(0) > 1
+    for: 15s
+    labels:
+      severity: warning
+      service: dispatch
+    annotations:
+      summary: More than 10% of Dispatch reads exceed 250ms
+      runbook: Inspect current delay configuration, request logs, and dependency latency
+        before changing the SLO.

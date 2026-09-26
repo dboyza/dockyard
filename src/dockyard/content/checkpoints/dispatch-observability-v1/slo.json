@@ -1,0 +1,5 @@
+{
+  "objective": 0.95,
+  "latency_seconds": 0.25,
+  "description": "At least 95 percent of eligible GET /jobs requests succeed within 250ms in the measured local rehearsal."
+}

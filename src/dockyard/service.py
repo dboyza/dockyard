@@ -79,8 +79,9 @@ class Service:
     def environment(self, lab: Lab | None = None) -> dict[str, str]:
         env = dict(os.environ)
         for key in list(env):
-            if key.startswith("HELM_"):
+            if key.startswith(("HELM_", "GIT_")):
                 env.pop(key)
+        env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL="/dev/null", GIT_TERMINAL_PROMPT="0")
         env.pop("DOCKER_CONTEXT", None)
         env.pop("WEZTERM_UNIX_SOCKET", None)
         env.pop("KIND_EXPERIMENTAL_DOCKER_NETWORK", None)
@@ -123,6 +124,9 @@ class Service:
                 HELM_DRIVER="secret",
                 HELM_NAMESPACE="dispatch",
             )
+            for key in ("git_url", "git_cluster_url", "registry"):
+                if lab.resources.get(key):
+                    env["DOCKYARD_" + key.upper()] = lab.resources[key]
             if lab.resources.get("kind_network"):
                 env["KIND_EXPERIMENTAL_DOCKER_NETWORK"] = lab.resources["kind_network"]
         return env
@@ -319,6 +323,7 @@ class Service:
                             other.state = "stopped"
                             self._save(other)
                 runtime.prepare(unit.nodes, unit.images, cancel, unit.capabilities)
+        env = self.environment(lab)
         commands = (
             [] if lab.resources.get("prepared_revision") == str(unit.revision) else unit.prepare
         )

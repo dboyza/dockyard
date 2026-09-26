@@ -378,6 +378,10 @@ class KubernetesRuntime:
             from dockyard.runtimes.metrics import install as install_metrics
 
             install_metrics(self, cancel)
+        if capabilities and "delivery" in capabilities:
+            from dockyard.runtimes.delivery import install as install_delivery
+
+            install_delivery(self, cancel)
         self.lab.resources["cluster_capabilities"] = json.dumps(capabilities or [])
         self.lab.resources["cluster_ready"] = "true"
         report("Cluster ready; preparing the exercise")
@@ -439,6 +443,8 @@ class KubernetesRuntime:
         return self.kubectl(["get", "--raw=/readyz"], timeout=20, cancel=cancel)
 
     def change(self, action: str, cancel: threading.Event) -> None:
+        if action == "resume":
+            self.docker.change("resume", cancel)
         for entry in self.discover():
             if cancel.is_set():
                 raise RuntimeErrorBase("Cluster operation canceled; remaining nodes preserved.")
@@ -465,6 +471,8 @@ class KubernetesRuntime:
             Path(self.env["KUBECONFIG"]).unlink(missing_ok=True)
         elif action == "resume":
             self.wait_ready(cancel)
+        elif action == "stop":
+            self.docker.change("stop", cancel)
 
     def fingerprint(self) -> str:
         records: list[Any] = []
@@ -478,6 +486,16 @@ class KubernetesRuntime:
             "node,namespace,hpa,pdb,resourcequota,limitrange,apiservice"
         )
         capabilities = json.loads(self.lab.resources.get("cluster_capabilities", "[]"))
+        if "delivery" in capabilities:
+            records.append(self.docker.fingerprint())
+            kinds += (
+                ",gitrepositories.source.toolkit.fluxcd.io"
+                ",kustomizations.kustomize.toolkit.fluxcd.io"
+            )
+            head = run(
+                ["git", "-C", self.lab.workspace + "/delivery", "rev-parse", "HEAD"], env=self.env
+            )
+            records.append(["git-head", head.returncode, head.stdout.strip()])
         if "workerpool" in capabilities:
             kinds += ",customresourcedefinitions,workerpools.learning.dockyard.local"
         if "routing" in capabilities:

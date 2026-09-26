@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dispatch-settings
+  namespace: dispatch
+data:
+  environment: learning
+  banner.txt: 'Configured through the Kubernetes API.
+
+    '
+  delay_ms: '600'
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dispatch-database
+  namespace: dispatch
+type: Opaque
+stringData:
+  password: ${DOCKYARD_DB_PASSWORD}

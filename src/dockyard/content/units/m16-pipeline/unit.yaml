@@ -1,0 +1,106 @@
+id: m16-pipeline
+revision: 1
+module: 16
+order: 1
+title: Gate a local image publication
+summary: Build, test, and publish an immutable Dispatch artifact.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Make a failing candidate test stop publication.
+- Inspect the actual registry digest and build inputs.
+prerequisites:
+- m15-mission
+objectives:
+- platform.delivery
+- kubernetes.packaging
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The candidate HTTP test exits nonzero. What should the pipeline do next?
+  options:
+  - Stop before publishing the candidate.
+  - Push first and inspect the test later.
+  - Treat a successful image build as a passing test.
+  correct: 0
+  explanation: A failed gate must prevent publication; a build alone does not establish the HTTP contract.
+hints:
+- Inspect the earliest failing boundary before changing a later system.
+- Compare the test gate, Git source revision, suspend state, and current controller conditions.
+- Use the supplied wait and rehearsal helpers after repairing the source; inspect their actual evidence.
+sources:
+- https://docs.docker.com/reference/cli/docker/image/push/
+- https://git-scm.com/docs/git-revert
+- https://fluxcd.io/flux/components/source/gitrepositories/
+- https://fluxcd.io/flux/components/kustomize/kustomizations/
+- https://kind.sigs.k8s.io/docs/user/local-registry/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 420
+checks:
+- id: delivery-pipeline
+  title: The published image passes its gate and independent HTTP contract
+  explanation: Compare real artifact, commit, controller, and application observations.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - delivery
+    timeout: 180
+  expectation: json
+  json_path:
+  - pipeline
+  expected: 'true'
+  diagnostic: Enable the unchanged candidate tests, run the pipeline, and compare current build inputs
+    with release.json.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- delivery
+checkpoint: dispatch-delivery-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- git
+- registry
+- flux_source
+- flux_kustomize
+alternatives:
+- Equivalent Git commit messages and YAML formatting are accepted; actual digest selection, ancestry,
+  and running behavior determine completion.
+- Use the supplied rehearsal or equivalent ordinary commands while preserving the measured evidence contract.
+failure_modes:
+- A skipped test gate can publish an unverified candidate.
+- A healthy Git source cannot update a suspended release.
+- A live rollback is overwritten if the bad Git source remains.
+starter_failure_checks:
+- delivery-pipeline

@@ -1,0 +1,169 @@
+id: m15-mission
+revision: 1
+module: 15
+order: 4
+title: Diagnose and explain a latency regression
+summary: Recover service behavior and the evidence needed to trust it.
+kind: mission
+runtime: kubernetes
+minutes: 65
+outcomes:
+- Triangulate logs, metrics, configuration, and request timings.
+- Repair monitoring without hiding service failure.
+- Produce an explicit before/after incident evidence set.
+prerequisites:
+- m15-slo
+objectives:
+- kubernetes.observability
+- platform.reliability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Readiness is healthy while business reads take 600ms against a 250ms objective. What follows?
+  options:
+  - The latency objective can fail despite healthy readiness.
+  - The objective must automatically be considered healthy.
+  - The observations are logically impossible.
+  correct: 0
+  explanation: Readiness and the user-facing latency indicator answer different questions.
+hints:
+- Separate service behavior from the health of its monitoring path.
+- Compare the supplied field or query with the real Pod port, histogram buckets, and recorded request
+  timings.
+- Apply the repaired configuration, wait for fresh observations, and run the bounded rehearsal named in
+  the task.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-application/
+- https://prometheus.io/docs/concepts/metric_types/
+- https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+- https://prometheus.io/docs/practices/histograms/
+- https://sre.google/sre-book/service-level-objectives/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: visibility-signals
+  title: A real business request has a matching structured log event
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - signals
+  expected: 'true'
+  diagnostic: Inspect the real /jobs response and matching http_request log from the serving API Pod.
+- id: visibility-scraping
+  title: Prometheus scrapes both actual API Pods and records business traffic
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - scraping
+  expected: 'true'
+  diagnostic: Compare Pod port names, discovery relabel rules, active targets, and live counter series.
+- id: visibility-dashboard
+  title: The live dashboard returns finite service-level measurements
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - dashboard
+  expected: 'true'
+  diagnostic: Inspect the latency panel query and its actual /data result; missing series are not zero.
+- id: visibility-alert
+  title: The latency alert fired under impact and cleared after recovery
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - alert
+  expected: 'true'
+  diagnostic: Apply the intended rule and run alert-proof.py through firing and recovery without changing
+    the threshold.
+- id: visibility-slo
+  title: Before and after windows prove the repaired latency objective
+  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - visibility
+    timeout: 150
+  expectation: json
+  json_path:
+  - slo
+  expected: 'true'
+  diagnostic: Capture the slow before window, restore 20ms delay, and collect a passing after window with
+    the original policy.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-observability-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- prometheus
+alternatives:
+- Equivalent PromQL formulations are accepted when the live dashboard and alert observe the required slow
+  and recovered service behavior.
+- The SLO evidence must retain all eligible reads, its original threshold, and its explicit sample scope.
+failure_modes:
+- A healthy readiness endpoint can coexist with slow business requests.
+- Missing measurements are not successful requests or zero latency.
+- A constant alert expression can suppress all useful detection.
+starter_failure_checks:
+- visibility-scraping
+- visibility-dashboard
+- visibility-alert
+- visibility-slo

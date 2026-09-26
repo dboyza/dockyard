@@ -1,0 +1,9 @@
+*
+!Dockerfile
+!app.py
+!database.py
+!worker.py
+!maintenance.py
+!dashboard.html
+!VERSION
+!requirements.txt

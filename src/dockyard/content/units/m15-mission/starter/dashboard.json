@@ -1,0 +1,23 @@
+{
+  "title": "Dispatch service health",
+  "panels": [
+    {
+      "id": "rate",
+      "title": "Read requests per second",
+      "query": "sum(rate(dispatch_http_requests_total{route=\"/jobs\"}[1m]))",
+      "unit": "req/s"
+    },
+    {
+      "id": "latency",
+      "title": "Reads slower than 250 ms",
+      "query": "dispatch_missing_latency_ratio",
+      "unit": "ratio"
+    },
+    {
+      "id": "p95",
+      "title": "Estimated p95 read latency",
+      "query": "histogram_quantile(0.95, sum by (le) (rate(dispatch_http_request_duration_seconds_bucket[1m])))",
+      "unit": "seconds"
+    }
+  ]
+}
