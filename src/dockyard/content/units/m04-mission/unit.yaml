@@ -244,3 +244,9 @@ alternatives:
 - Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
 failure_modes:
 - A running container with the wrong application or endpoint does not satisfy the contract.
+starter_failure_checks:
+- storage-mount
+- storage-roundtrip
+- storage-durable
+- storage-restored
+- storage-backup

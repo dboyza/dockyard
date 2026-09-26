@@ -262,3 +262,5 @@ images:
 - python
 - postgres
 - redis
+starter_failure_checks:
+- compose-scaled

@@ -297,3 +297,10 @@ alternatives:
 - Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
 failure_modes:
 - A running container with the wrong application or endpoint does not satisfy the contract.
+starter_failure_checks:
+- hardening-readonly
+- hardening-caps
+- hardening-no-escalation
+- hardening-memory
+- hardening-cpu
+- hardening-pids

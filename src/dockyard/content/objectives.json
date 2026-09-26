@@ -242,12 +242,12 @@
       "explained_by": [
         "m13-resources",
         "m13-placement",
-        "m17-admission"
+        "m17-contexts"
       ],
       "practiced_by": [
         "m13-resources",
         "m13-placement",
-        "m17-admission"
+        "m17-contexts"
       ],
       "assessed_by": [
         "m13-mission",
@@ -280,10 +280,10 @@
       "weight": 20,
       "objective": "Define and enforce Network Policies",
       "explained_by": [
-        "m17-network-policy"
+        "m17-network"
       ],
       "practiced_by": [
-        "m17-network-policy"
+        "m17-network"
       ],
       "assessed_by": [
         "m17-mission"
@@ -746,12 +746,12 @@
       "explained_by": [
         "m09-identities",
         "m17-rbac",
-        "m17-admission"
+        "m17-contexts"
       ],
       "practiced_by": [
         "m09-identities",
         "m17-rbac",
-        "m17-admission"
+        "m17-contexts"
       ],
       "assessed_by": [
         "m09-mission",
@@ -847,10 +847,10 @@
       "weight": 25,
       "objective": "Understand Application Security (SecurityContexts, Capabilities, etc.)",
       "explained_by": [
-        "m17-admission"
+        "m17-contexts"
       ],
       "practiced_by": [
-        "m17-admission"
+        "m17-contexts"
       ],
       "assessed_by": [
         "m17-mission"
@@ -863,10 +863,10 @@
       "weight": 20,
       "objective": "Demonstrate basic understanding of NetworkPolicies",
       "explained_by": [
-        "m17-network-policy"
+        "m17-network"
       ],
       "practiced_by": [
-        "m17-network-policy"
+        "m17-network"
       ],
       "assessed_by": [
         "m17-mission"

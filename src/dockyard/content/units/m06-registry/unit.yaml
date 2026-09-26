@@ -260,3 +260,15 @@ failure_modes:
 images:
 - python
 - registry
+starter_failure_checks:
+- process-running
+- lab-identity
+- application-response
+- published-port
+- loopback-binding
+- self-contained
+- release
+- registry-pinned
+- registry-served
+- registry-private
+- registry-owned

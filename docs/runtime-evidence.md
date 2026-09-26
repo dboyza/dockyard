@@ -376,3 +376,11 @@ The corrected exporter preserves environment-variable and inspected Helm value r
 Other documents in the same YAML file remain available.
 The same real-mission reproduction then preserved the portable combined manifest byte for byte.
 Focused regression checks also rejected literal-valued Helm expressions, nested Secret objects, and uninspectable credential templates.
+
+## Structural release coverage
+
+The `dockyard audit` command checks module composition, prerequisite cycles, reference entry points, intended starter failures, official objective links, incident inventory, and exam inventory.
+It reports incomplete coverage until the remaining activities exist; it does not infer runtime success or teaching quality from file counts.
+Its initial run found two superseded Module 17 IDs in the published-objective map, which now point to the authored admission and network-policy lessons.
+All 24 Docker starters were prepared and assessed again in disposable real environments, and their observed failing criteria were recorded explicitly in their authoring contracts.
+Boolean packaged probes retain the stricter false-value requirement, while direct Docker and HTTP checks require the named criterion to fail without imposing a boolean output format.

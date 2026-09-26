@@ -139,3 +139,9 @@ failure_modes:
 - A one-shot command exits immediately.
 - Publishing the wrong container port makes the process unreachable.
 - Omitting the loopback address exposes the service more widely than intended.
+starter_failure_checks:
+- process-running
+- lab-identity
+- application-response
+- published-port
+- loopback-binding

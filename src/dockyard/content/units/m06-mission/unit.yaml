@@ -555,3 +555,18 @@ images:
 - postgres
 - redis
 - registry
+starter_failure_checks:
+- compose-processed
+- compose-durable
+- compose-scaled
+- hardening-readonly
+- hardening-caps
+- hardening-no-escalation
+- hardening-memory
+- hardening-cpu
+- hardening-pids
+- registry-pinned
+- registry-served
+- handoff-restored
+- handoff-workers-hardened
+- handoff-runbook-present

@@ -33,6 +33,8 @@ def parser() -> argparse.ArgumentParser:
     launch.add_argument("--no-open", action="store_true")
     commands.add_parser("doctor", help="Inspect local tool and runtime readiness")
     commands.add_parser("catalog", help="List the authored curriculum")
+    audit = commands.add_parser("audit", help="Check curriculum structure and release coverage")
+    audit.add_argument("--json", action="store_true")
     lab = commands.add_parser("lab", help="Manage and check a dedicated practice lab")
     operations = lab.add_subparsers(dest="action", required=True)
     for action in (
@@ -108,6 +110,23 @@ def main() -> None:
             )
         elif arguments.command == "doctor":
             print(json.dumps(service.doctor(), indent=2))
+        elif arguments.command == "audit":
+            from dockyard.audit import curriculum
+
+            report = curriculum(service.catalog)
+            if arguments.json:
+                print(json.dumps(report, indent=2))
+            else:
+                print(f"Curriculum: {report['status']}")
+                print(
+                    f"{report['course_units']} course units, "
+                    f"{report['incidents']} incidents, {report['exams']} exams"
+                )
+                for issue in report["issues"]:
+                    print("- " + issue)
+                print(report["evidence_boundary"])
+            if report["issues"]:
+                raise SystemExit(1)
         elif arguments.command == "catalog":
             for unit in service.catalog.units.values():
                 print(f"{unit.id:28} {unit.title}")

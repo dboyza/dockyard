@@ -236,3 +236,15 @@ images:
 - python
 - postgres
 - redis
+starter_failure_checks:
+- process-running
+- lab-identity
+- application-response
+- published-port
+- loopback-binding
+- compose-owned
+- compose-ready
+- compose-private
+- compose-persistent
+- compose-processed
+- compose-durable

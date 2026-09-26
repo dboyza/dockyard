@@ -207,3 +207,14 @@ alternatives:
 - Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
 failure_modes:
 - A running container with the wrong application or endpoint does not satisfy the contract.
+starter_failure_checks:
+- process-running
+- lab-identity
+- application-response
+- published-port
+- loopback-binding
+- network-owned
+- network-shared-bridge
+- network-dns
+- network-dependency-private
+- network-reached-peer

@@ -274,3 +274,12 @@ images:
 - python
 - postgres
 - redis
+starter_failure_checks:
+- compose-owned
+- compose-ready
+- compose-private
+- compose-persistent
+- compose-processed
+- compose-durable
+- compose-healthy
+- compose-guarded

@@ -49,7 +49,9 @@ def assert_reference(tmp_path, unit_id):
                 item for item in starter["evidence"] if item["criterion"] == criterion_id
             )
             assert observation["status"] == "fail", observation
-            assert observation["observed"].strip() == "false", observation
+            criterion = next(item for item in unit.checks if item.id == criterion_id)
+            if any(arg.startswith("dockyard.probes.") for arg in criterion.command.args):
+                assert observation["observed"].strip() == "false", observation
         lab = service.store.lab(unit_id)
         assert lab is not None
         workspace = Path(lab.workspace)
@@ -69,8 +71,44 @@ def assert_reference(tmp_path, unit_id):
         assert service.store.progress()[unit_id]["practiced"] == 1
         if unit_id == "m20-ha":
             assert_ha_alternative_and_shortcut(service, unit_id)
+        if unit_id == "m21-drain":
+            assert_drain_alternative_and_shortcut(service, unit_id)
     finally:
         service.perform(unit_id, "clean")
+
+
+def assert_drain_alternative_and_shortcut(service, unit_id):
+    """Equivalent eviction budgets pass; returning the target to scheduling does not."""
+    import json
+
+    lab = service.store.lab(unit_id)
+    runtime = service.runtime(lab)
+    runtime.require(
+        runtime.kubectl(
+            [
+                "patch",
+                "pdb",
+                "dispatch-maintenance",
+                "--type=merge",
+                "-p",
+                json.dumps({"spec": {"minAvailable": None, "maxUnavailable": 1}}),
+            ]
+        )
+    )
+    deadline = time.monotonic() + 30
+    while True:
+        observed = service.perform(unit_id, "check")
+        if observed["status"] == "pass" or time.monotonic() >= deadline:
+            break
+        time.sleep(0.5)
+    assert observed["status"] == "pass", observed
+    runtime.require(runtime.kubectl(["uncordon", "lima-d" + lab.id[:10] + "-worker2"]))
+    observed = service.perform(unit_id, "check")
+    assert observed["status"] != "pass", observed
+    drained = next(
+        item for item in observed["evidence"] if item["criterion"] == "maintenance-drained"
+    )
+    assert drained["status"] == "fail" and drained["observed"] == "false", drained
 
 
 def assert_ha_alternative_and_shortcut(service, unit_id):
