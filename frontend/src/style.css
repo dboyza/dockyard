@@ -1590,3 +1590,24 @@ pre {
     transition: none !important;
   }
 }
+.checkpoint-row {
+  padding: 24px 0;
+  border-top: 1px solid var(--border);
+}
+.checkpoint-row h3 {
+  margin: 8px 0;
+}
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 12px;
+  text-decoration: none;
+}
+.button-link:hover {
+  border-color: var(--accent);
+}

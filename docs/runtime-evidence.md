@@ -77,3 +77,14 @@ The supplied Compose application builds with hash-locked dependencies and uses P
 All four Compose starters failed and their references passed, including a newly submitted job with the expected computed result and an independent direct PostgreSQL read.
 The Compose audit completed in 42.22 seconds on this development run.
 No claim is made yet for Module 6, Kubernetes course units, incidents, or exams.
+
+## Shipping and the first capstone
+
+The three Module 6 teaching references passed live local-registry digest checks, full final-image layer inspection for a deliberately fake secret, and enforced cgroup/security observations.
+The cumulative Docker capstone passed a real worker repair, registry-pinned application rollout, constrained API/workers, and a logical PostgreSQL restore of the original job into a separate database.
+Its complete starter/reference audit took 31.37 seconds in the isolated development profile.
+Passing missions now create immutable source-and-evidence archives with file hashes and an explicit exclusion manifest.
+A portfolio test verifies source preservation, exclusion of environment/credential/backup files, note redaction, and immutability after later source edits.
+The installed browser journey passed again with the complete Docker course packaged.
+The full Docker regression is still recorded separately from these individual checks; Kubernetes runtime adapters and course content remain to be implemented.
+The complete Docker regression subsequently passed all 26 tests in 118.96 seconds: 24 authored starter/reference journeys and two owned-resource lifecycle/preservation journeys.

@@ -18,6 +18,7 @@ from typing import Any
 from dockyard.catalog import CONTENT, Catalog
 from dockyard.locking import operation_lock
 from dockyard.models import Assessment, CheckStatus, Criterion, Evidence, Lab, Runtime
+from dockyard.portfolio import checkpoint
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.store import Store, timestamp
@@ -86,6 +87,7 @@ class Service:
                 DOCKYARD_IMAGE=f"dockyard-{lab.id[:12]}:practice",
                 DOCKYARD_STORAGE=str(Path(lab.workspace).parent / "data"),
                 DOCKYARD_DB_PASSWORD=lab.resources.get("db_password", "practice-only"),
+                DOCKYARD_REGISTRY_PORT=lab.resources.get("registry_port", ""),
             )
         return env
 
@@ -128,6 +130,9 @@ class Service:
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
+            with socket.socket() as registry_listener:
+                registry_listener.bind(("127.0.0.1", 0))
+                registry_port = registry_listener.getsockname()[1]
         lab = Lab(
             id=lab_id,
             unit_id=unit_id,
@@ -141,6 +146,7 @@ class Service:
                 "port": str(port),
                 "docker_endpoint": self._docker_endpoint(),
                 "db_password": secrets.token_urlsafe(24),
+                "registry_port": str(registry_port),
             },
         )
         self.store.save_lab(lab)
@@ -210,7 +216,7 @@ class Service:
             self.store.update_operation(
                 operation_id, "canceled" if cancel.is_set() else "failed", lab.error
             )
-            raise
+            raise LabError(lab.error) from error
         finally:
             with self._lock:
                 self._cancels.pop(operation_id, None)
@@ -291,6 +297,7 @@ class Service:
             "volume": f"dockyard-{lab.id[:12]}-data",
             "project": f"dockyard-{lab.id[:12]}",
             "storage": str(Path(lab.workspace).parent / "data"),
+            "registry_port": lab.resources.get("registry_port", ""),
         }
         values.update({f"{name}_image": image for name, image in COMPATIBILITY["images"].items()})
         for key, replacement in values.items():
@@ -385,7 +392,15 @@ class Service:
             hints_used=int(progress.get("hints", 0)),
             reference_revealed=bool(progress.get("reference", False)),
         )
-        self.store.save_assessment(assessment)
+        saved_checkpoint = None
+        if assessment.status == CheckStatus.PASS and unit.kind == "mission":
+            try:
+                saved_checkpoint = checkpoint(
+                    self.directory, lab, unit, assessment, self.store.note(unit.id)
+                )
+            except ValueError:
+                assessment.status = CheckStatus.STALE
+        self.store.save_assessment(assessment, saved_checkpoint)
         lab.state = "stopped" if stopped else "ready"
         self._save(lab)
         return assessment

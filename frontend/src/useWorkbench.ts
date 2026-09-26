@@ -8,9 +8,11 @@ import {
   type Lesson,
   type State,
 } from "./api";
-export type Page = "home" | "course" | "lesson" | "labs" | "progress";
+export type Page =
+  "home" | "course" | "lesson" | "labs" | "progress" | "checkpoints";
 type Dialog = { title: string; body: string; action: () => void } | null;
 const emptyState: State = {
+  checkpoints: [],
   progress: {},
   labs: [],
   operations: [],

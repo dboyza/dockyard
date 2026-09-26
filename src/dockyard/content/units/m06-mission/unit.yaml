@@ -1,0 +1,557 @@
+id: m06-mission
+revision: 1
+module: 6
+order: 4
+title: 'Capstone: deliver and recover Dispatch'
+summary: Repair a broken worker path, publish a pinned release, constrain the application, and verify a real PostgreSQL
+  restore.
+kind: mission
+runtime: docker
+minutes: 50
+outcomes:
+- Integrate images, networking, persistence, Compose, distribution, and runtime controls.
+- Recover the original workload state into a separate database.
+- Produce a reviewable operational handoff and immutable source checkpoint.
+prerequisites:
+- m06-limits
+objectives:
+- docker.mission
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The live stack works again and a pg_dump file exists. What still establishes recoverability?
+  options:
+  - Restore into a separate target and verify the original record there.
+  - Only inspect the dump filename.
+  - Delete the live database and hope the dump is usable.
+  correct: 0
+  explanation: A separate restore demonstrates that the backup can recreate useful state while preserving the functioning
+    original.
+hints:
+- Follow the queued job from the API into worker logs, and compare the worker database hostname with the Compose
+  service name.
+- Publish the application, select its registry digest for API and worker, and apply restrictions to those application
+  roles.
+- Use pg_dump -Fc for a logical archive, createdb for the separate restored target, and pg_restore --exit-on-error;
+  then verify the original job and document the complete handoff.
+sources:
+- https://www.postgresql.org/docs/17/app-pgdump.html
+- https://www.postgresql.org/docs/17/app-pgrestore.html
+- https://docs.docker.com/compose/how-tos/startup-order/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - volume
+  - create
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - '{{volume}}-registry'
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}-registry'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{registry_port}}:5000
+  - -v
+  - '{{volume}}-registry:/var/lib/registry'
+  - '{{registry_image}}'
+- args:
+  - docker
+  - compose
+  - up
+  - -d
+  - --build
+  - --wait
+  - --wait-timeout
+  - '90'
+  timeout: 600
+- args:
+  - docker
+  - exec
+  - '{{project}}-db'
+  - psql
+  - -U
+  - dispatch
+  - -d
+  - dispatch
+  - -c
+  - INSERT INTO jobs(id,title) VALUES('capstone-{{lab_id}}','Original release recovery job');
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: compose-owned
+  title: Every observed service belongs to this lab
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - owned
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-ready
+  title: The API can reach PostgreSQL and Redis
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - ready
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-private
+  title: Only the API publishes a host endpoint
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - private
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-persistent
+  title: PostgreSQL uses the assigned owned volume
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - persistent
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-processed
+  title: A real worker completes a newly submitted job
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - processed
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-durable
+  title: PostgreSQL independently contains the completed result
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - durable
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-healthy
+  title: All declared health checks are healthy
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - healthy
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-guarded
+  title: Both application roles wait for healthy dependencies
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - guarded
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-scaled
+  title: At least two workers are available
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - scaled
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: hardening-nonroot
+  title: The API process is non-root
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - nonroot
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-readonly
+  title: The root filesystem actually rejects a root write
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - readonly
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-caps
+  title: All ambient container capabilities are dropped
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - caps
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-no-escalation
+  title: The no-new-privileges control is configured
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - no_escalation
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-memory
+  title: A 32-256 MiB memory limit is enforced in cgroups
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - memory
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-cpu
+  title: A positive CPU quota no greater than one CPU is enforced
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - cpu
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-pids
+  title: A 16-256 process limit is enforced
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - pids
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: registry-pinned
+  title: The application container selects a registry digest
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - registry
+    timeout: 90
+  expectation: json
+  json_path:
+  - pinned
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: registry-served
+  title: The owned registry serves that exact content digest
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - registry
+    timeout: 90
+  expectation: json
+  json_path:
+  - served
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: registry-private
+  title: The registry binds only to the assigned loopback port
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - registry
+    timeout: 90
+  expectation: json
+  json_path:
+  - private
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: registry-owned
+  title: The registry belongs to this lab
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - registry
+    timeout: 90
+  expectation: json
+  json_path:
+  - owned
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: handoff-restored
+  title: The original job is recovered in a separate PostgreSQL database
+  explanation: Inspect a real restored database and active worker constraints; runbook quality remains explicit
+    self-review.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - recovery
+    timeout: 60
+  expectation: json
+  json_path:
+  - restored
+  expected: 'true'
+  diagnostic: Restore the original job into the separate restored database, keep all workers constrained, and write
+    RUNBOOK.md with startup, verification, backup, restore, and recovery steps.
+- id: handoff-workers-hardened
+  title: Every running worker has the same deliberate runtime restrictions
+  explanation: Inspect a real restored database and active worker constraints; runbook quality remains explicit
+    self-review.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - recovery
+    timeout: 60
+  expectation: json
+  json_path:
+  - workers_hardened
+  expected: 'true'
+  diagnostic: Restore the original job into the separate restored database, keep all workers constrained, and write
+    RUNBOOK.md with startup, verification, backup, restore, and recovery steps.
+- id: handoff-runbook-present
+  title: A handoff runbook is included for self-review
+  explanation: Inspect a real restored database and active worker constraints; runbook quality remains explicit
+    self-review.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - recovery
+    timeout: 60
+  expectation: json
+  json_path:
+  - runbook_present
+  expected: 'true'
+  diagnostic: Restore the original job into the separate restored database, keep all workers constrained, and write
+    RUNBOOK.md with startup, verification, backup, restore, and recovery steps.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-compose-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.
+images:
+- python
+- postgres
+- redis
+- registry

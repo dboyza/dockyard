@@ -123,7 +123,29 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
             "operations": service.store.operations(),
             "theme": service.store.setting("theme", "dark"),
             "last_unit": service.store.setting("last_unit"),
+            "checkpoints": service.store.checkpoints(),
         }
+
+    @app.get("/api/checkpoints/{checkpoint_id}/download")
+    def download_checkpoint(checkpoint_id: str) -> FileResponse:
+        item = next(
+            (entry for entry in service.store.checkpoints() if entry["id"] == checkpoint_id), None
+        )
+        if not item:
+            raise HTTPException(404, "That checkpoint does not exist.")
+        directory = service.directory / "checkpoints"
+        target = directory / str(item["archive"])
+        if (
+            target.is_symlink()
+            or not target.resolve().is_relative_to(directory.resolve())
+            or not target.is_file()
+        ):
+            raise HTTPException(404, "The checkpoint archive is unavailable.")
+        return FileResponse(
+            target,
+            filename=f"dockyard-{item['unit_id']}-{checkpoint_id[:8]}.zip",
+            media_type="application/zip",
+        )
 
     @app.get("/api/doctor")
     def doctor() -> dict[str, Any]:

@@ -1,0 +1,112 @@
+services:
+  api:
+    image: ${DISPATCH_RELEASE}
+    labels: &id001
+      io.dockyard.lab: ${DOCKYARD_LAB}
+    environment: &id002
+      DB_HOST: db
+      DB_NAME: dispatch
+      DB_USER: dispatch
+      DB_PASSWORD: ${DOCKYARD_DB_PASSWORD}
+      REDIS_URL: redis://queue:6379/0
+    networks: &id003
+    - internal
+    depends_on: &id004
+      db:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
+    container_name: ${DOCKYARD_CONTAINER}
+    ports:
+    - 127.0.0.1:${DOCKYARD_PORT}:8080
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -c
+      - from urllib.request import urlopen; urlopen('http://127.0.0.1:8080/readyz', timeout=2)
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+  worker:
+    image: ${DISPATCH_RELEASE}
+    labels: *id001
+    environment: *id002
+    networks: *id003
+    depends_on: *id004
+    command:
+    - python
+    - worker.py
+    read_only: true
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+  db:
+    image: ${DOCKYARD_POSTGRES_IMAGE}
+    container_name: ${DOCKYARD_PROJECT}-db
+    labels:
+      io.dockyard.lab: ${DOCKYARD_LAB}
+    environment:
+      POSTGRES_DB: dispatch
+      POSTGRES_USER: dispatch
+      POSTGRES_PASSWORD: ${DOCKYARD_DB_PASSWORD}
+    volumes:
+    - postgres:/var/lib/postgresql/data
+    networks:
+    - internal
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U dispatch -d dispatch
+      interval: 2s
+      timeout: 3s
+      retries: 20
+  queue:
+    image: ${DOCKYARD_REDIS_IMAGE}
+    container_name: ${DOCKYARD_PROJECT}-queue
+    labels:
+      io.dockyard.lab: ${DOCKYARD_LAB}
+    networks:
+    - internal
+    healthcheck:
+      test:
+      - CMD
+      - redis-cli
+      - ping
+      interval: 2s
+      timeout: 3s
+      retries: 15
+  inspect:
+    image: ${DOCKYARD_PYTHON_IMAGE}
+    profiles:
+    - tools
+    labels:
+      io.dockyard.lab: ${DOCKYARD_LAB}
+    networks:
+    - internal
+    command:
+    - python
+    - -c
+    - import socket; print(socket.gethostbyname('db'))
+networks:
+  internal:
+    name: ${DOCKYARD_NETWORK}
+    labels:
+      io.dockyard.lab: ${DOCKYARD_LAB}
+volumes:
+  postgres:
+    name: ${DOCKYARD_VOLUME}
+    labels:
+      io.dockyard.lab: ${DOCKYARD_LAB}

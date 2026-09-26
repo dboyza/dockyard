@@ -57,6 +57,10 @@ class Store:
                 CREATE TABLE IF NOT EXISTS notes (
                     unit_id TEXT PRIMARY KEY, body TEXT NOT NULL, updated_at TEXT NOT NULL
                 );
+                CREATE TABLE IF NOT EXISTS checkpoints (
+                    id TEXT PRIMARY KEY, unit_id TEXT NOT NULL, created_at TEXT NOT NULL,
+                    body TEXT NOT NULL
+                );
                 CREATE TABLE IF NOT EXISTS exams (
                     id TEXT PRIMARY KEY, body TEXT NOT NULL
                 );
@@ -115,7 +119,9 @@ class Store:
             rows = connection.execute("SELECT * FROM progress").fetchall()
         return {row["unit_id"]: dict(row) for row in rows}
 
-    def save_assessment(self, assessment: Assessment) -> None:
+    def save_assessment(
+        self, assessment: Assessment, checkpoint: dict[str, Any] | None = None
+    ) -> None:
         with self.connection() as connection:
             connection.execute(
                 "INSERT INTO attempts(id,unit_id,created_at,body) VALUES(?,?,?,?)",
@@ -130,6 +136,16 @@ class Store:
                 "INSERT OR IGNORE INTO progress(unit_id,revision,updated_at) VALUES(?,?,?)",
                 (assessment.unit_id, assessment.revision, timestamp()),
             )
+            if checkpoint:
+                connection.execute(
+                    "INSERT INTO checkpoints(id,unit_id,created_at,body) VALUES(?,?,?,?)",
+                    (
+                        checkpoint["id"],
+                        assessment.unit_id,
+                        assessment.finished_at,
+                        json.dumps(checkpoint),
+                    ),
+                )
             if assessment.status == CheckStatus.PASS:
                 due = (
                     datetime.now(UTC) + timedelta(days=7 if assessment.independent else 1)
@@ -148,6 +164,13 @@ class Store:
                         assessment.unit_id,
                     ),
                 )
+
+    def checkpoints(self) -> list[dict[str, Any]]:
+        with self.connection() as connection:
+            rows = connection.execute(
+                "SELECT body FROM checkpoints ORDER BY created_at DESC"
+            ).fetchall()
+        return [json.loads(row[0]) for row in rows]
 
     def attempts(self, unit_id: str) -> list[Assessment]:
         with self.connection() as connection:

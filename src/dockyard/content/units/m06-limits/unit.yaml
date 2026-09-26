@@ -1,0 +1,299 @@
+id: m06-limits
+revision: 1
+module: 6
+order: 3
+title: Constrain a running service deliberately
+summary: Apply and verify a non-root, read-only runtime with bounded memory, CPU, and process creation.
+kind: lesson
+runtime: docker
+minutes: 35
+outcomes:
+- Explain the different roles of process identity, filesystem permissions, capabilities, and cgroups.
+- Set resource limits appropriate to the supplied application.
+- Observe enforced runtime state while preserving useful service behavior.
+prerequisites:
+- m06-artifacts
+objectives:
+- docker.limits
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A non-root write fails with permission denied. Does that alone prove the root filesystem is read-only?
+  options:
+  - No; ordinary file permissions can reject a write on a writable filesystem.
+  - Yes; every permission failure means a read-only mount.
+  - Only if a memory limit exists.
+  correct: 0
+  explanation: Read-only filesystem enforcement and user permission checks are separate boundaries, so they need
+    distinct evidence.
+hints:
+- Inspect the current HostConfig and effective process UID before replacing the container.
+- Use --read-only, --cap-drop ALL, and --security-opt no-new-privileges along with bounded resource flags.
+- The supplied API needs no writable source path. Recreate it with --memory 128m --cpus 0.5 --pids-limit 64 and
+  verify a real health request.
+sources:
+- https://docs.docker.com/engine/containers/resource_constraints/
+- https://docs.docker.com/engine/containers/run/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8080
+  - '{{image}}'
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: self-contained
+  title: The application runs without workspace mounts
+  explanation: The application runs without workspace mounts
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: '[]'
+  json_path:
+  - '0'
+  - Mounts
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: release
+  title: The image serves the expected application release
+  explanation: The image serves the expected application release
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  expected: dispatch-1
+  json_path:
+  - release
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: hardening-nonroot
+  title: The API process is non-root
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - nonroot
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-readonly
+  title: The root filesystem actually rejects a root write
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - readonly
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-caps
+  title: All ambient container capabilities are dropped
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - caps
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-no-escalation
+  title: The no-new-privileges control is configured
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - no_escalation
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-memory
+  title: A 32-256 MiB memory limit is enforced in cgroups
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - memory
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-cpu
+  title: A positive CPU quota no greater than one CPU is enforced
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - cpu
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+- id: hardening-pids
+  title: A 16-256 process limit is enforced
+  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - hardening
+    timeout: 90
+  expectation: json
+  json_path:
+  - pids
+  expected: 'true'
+  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
+    rebuild or recreate only the assigned resources.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-image-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.

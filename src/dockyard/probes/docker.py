@@ -9,6 +9,7 @@ import re
 import sqlite3
 import sys
 import tarfile
+import tempfile
 import time
 import uuid
 from collections.abc import Callable
@@ -275,10 +276,180 @@ def compose() -> dict[str, Any]:
         request("/jobs/" + identity, method="DELETE")
 
 
+def registry() -> dict[str, Any]:
+    api = inspect("container", os.environ["DOCKYARD_CONTAINER"])
+    registry_container = inspect("container", os.environ["DOCKYARD_CONTAINER"] + "-registry")
+    address = "127.0.0.1:" + os.environ["DOCKYARD_REGISTRY_PORT"]
+    selected = api["Config"]["Image"]
+    pinned = bool(re.fullmatch(re.escape(address) + r"/dispatch@sha256:[0-9a-f]{64}", selected))
+    served = False
+    if pinned:
+        digest = selected.split("@", 1)[1]
+        target = f"http://{address}/v2/dispatch/manifests/{digest}"
+        headers = {
+            "Accept": (
+                "application/vnd.oci.image.manifest.v1+json, "
+                "application/vnd.docker.distribution.manifest.v2+json"
+            )
+        }
+        with urlopen(Request(target, method="HEAD", headers=headers), timeout=4) as response:
+            served = response.headers.get("Docker-Content-Digest") == digest
+    bindings = registry_container["HostConfig"]["PortBindings"].get("5000/tcp", [])
+    private = (
+        len(bindings) == 1
+        and bindings[0]["HostIp"] == "127.0.0.1"
+        and bindings[0]["HostPort"] == os.environ["DOCKYARD_REGISTRY_PORT"]
+    )
+    owned = (
+        registry_container["Config"]["Labels"].get("io.dockyard.lab") == os.environ["DOCKYARD_LAB"]
+    )
+    return {
+        "pinned": pinned,
+        "served": served,
+        "private": private,
+        "owned": owned,
+        "selected": selected,
+    }
+
+
+def artifact() -> dict[str, Any]:
+    api = inspect("container", os.environ["DOCKYARD_CONTAINER"])
+    image = inspect("image", api["Image"])
+    native = image["Architecture"] == "arm64" and image["Os"] == "linux"
+    clean = True
+    with tempfile.TemporaryDirectory(prefix="dockyard-image-observation-") as temporary:
+        archive = Path(temporary) / "image.tar"
+        saved = run(["docker", "image", "save", "--output", str(archive), api["Image"]], timeout=45)
+        if not saved.ok or archive.stat().st_size > 512 * 1024 * 1024:
+            raise ValueError("Image observation requires a valid archive under 512 MiB.")
+        with tarfile.open(archive) as outer:
+            manifest_stream = outer.extractfile("manifest.json")
+            if manifest_stream is None:
+                raise ValueError("The image archive did not contain a manifest.")
+            manifest = json.load(manifest_stream)
+            for layer_name in manifest[0]["Layers"]:
+                layer_stream = outer.extractfile(layer_name)
+                if layer_stream is None:
+                    raise ValueError("The image archive has a missing layer.")
+                with tarfile.open(fileobj=layer_stream, mode="r|*") as layer:
+                    for member in layer:
+                        if Path(member.name).name in {".env", "training-secret.env"}:
+                            clean = False
+    return {"native": native, "excluded_secret": clean, "architecture": image["Architecture"]}
+
+
+def hardened_container(identity: str) -> dict[str, Any]:
+    api = inspect("container", identity)
+    config = api["HostConfig"]
+    program = (
+        "import os, json; from pathlib import Path; "
+        "print(json.dumps({'uid':os.getuid(), "
+        "'memory':Path('/sys/fs/cgroup/memory.max').read_text().strip(), "
+        "'cpu':Path('/sys/fs/cgroup/cpu.max').read_text().strip(), "
+        "'pids':Path('/sys/fs/cgroup/pids.max').read_text().strip()}))"
+    )
+    observed = run(["docker", "exec", api["Id"], "python", "-c", program], timeout=10)
+    live = json.loads(observed.stdout) if observed.ok else {}
+    memory = config.get("Memory", 0)
+    nano_cpus = config.get("NanoCpus", 0)
+    pids = config.get("PidsLimit", 0) or 0
+    cpu_parts = str(live.get("cpu", "")).split()
+    cpu_live = (
+        len(cpu_parts) == 2
+        and cpu_parts[0] != "max"
+        and 0 < int(cpu_parts[0]) / int(cpu_parts[1]) <= 1
+    )
+    probe = """import errno, os
+try:
+    open('/dockyard-readonly-observation', 'w').close()
+    os.unlink('/dockyard-readonly-observation')
+    print(False)
+except OSError as error:
+    print(error.errno == errno.EROFS)
+"""
+    filesystem = run(
+        ["docker", "exec", "--user", "0", api["Id"], "python", "-c", probe], timeout=10
+    )
+    return {
+        "nonroot": isinstance(live.get("uid"), int) and live["uid"] != 0,
+        "readonly": bool(config.get("ReadonlyRootfs")) and filesystem.stdout.strip() == "True",
+        "caps": "ALL" in (config.get("CapDrop") or []) and not config.get("Privileged"),
+        "no_escalation": any(
+            value in ("no-new-privileges", "no-new-privileges:true")
+            for value in (config.get("SecurityOpt") or [])
+        ),
+        "memory": 32 * 1024**2 <= memory <= 256 * 1024**2 and live.get("memory") == str(memory),
+        "cpu": 0 < nano_cpus <= 1_000_000_000 and cpu_live,
+        "pids": 16 <= pids <= 256 and live.get("pids") == str(pids),
+        "observed": live,
+    }
+
+
+def hardening() -> dict[str, Any]:
+    return hardened_container(os.environ["DOCKYARD_CONTAINER"])
+
+
+def recovery() -> dict[str, Any]:
+    lab_id = os.environ["DOCKYARD_LAB"]
+    db = inspect("container", os.environ["DOCKYARD_PROJECT"] + "-db")
+    if db["Config"]["Labels"].get("io.dockyard.lab") != lab_id:
+        raise ValueError("The database does not belong to this lab.")
+    seed = "capstone-" + lab_id
+    query = "SELECT id FROM jobs WHERE id='" + seed + "';"
+    result = run(
+        [
+            "docker",
+            "exec",
+            db["Id"],
+            "psql",
+            "-U",
+            "dispatch",
+            "-d",
+            "restored",
+            "-t",
+            "-A",
+            "-c",
+            query,
+        ],
+        timeout=10,
+    )
+    restored = result.ok and result.stdout.strip() == seed
+    workers = run(
+        [
+            "docker",
+            "container",
+            "ls",
+            "--quiet",
+            "--filter",
+            "label=io.dockyard.lab=" + lab_id,
+            "--filter",
+            "label=com.docker.compose.service=worker",
+        ],
+        timeout=10,
+    )
+    secured = bool(workers.stdout.strip())
+    for identity in workers.stdout.split():
+        observations = hardened_container(identity)
+        secured = secured and all(
+            observations[key]
+            for key in ("nonroot", "readonly", "caps", "no_escalation", "memory", "cpu", "pids")
+        )
+    runbook = Path(os.environ["DOCKYARD_WORKSPACE"]) / "RUNBOOK.md"
+    return {
+        "restored": restored,
+        "workers_hardened": secured,
+        "runbook_present": runbook.is_file() and runbook.stat().st_size >= 100,
+    }
+
+
 def main() -> None:
     probes: dict[str, Callable[[], dict[str, Any]]] = {
         "network": network,
         "compose": compose,
+        "registry": registry,
+        "artifact": artifact,
+        "hardening": hardening,
+        "recovery": recovery,
         "storage-bind": lambda: storage("bind"),
         "storage-volume": lambda: storage("volume"),
         "storage-recovery": lambda: storage("recovery"),

@@ -40,7 +40,21 @@ export type Operation = {
   state: string;
   detail: string;
 };
+export type Checkpoint = {
+  id: string;
+  unit_id: string;
+  revision: number;
+  title: string;
+  created_at: string;
+  independent: boolean;
+  hints_used: number;
+  reference_revealed: boolean;
+  file_count: number;
+  excluded_count: number;
+  archive: string;
+};
 export type State = {
+  checkpoints: Checkpoint[];
   progress: Record<string, Progress>;
   labs: Lab[];
   operations: Operation[];

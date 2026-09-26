@@ -13,11 +13,13 @@ import {
   ShieldCheck,
   X,
   Menu,
+  FolderArchive,
 } from "lucide-react";
 import { OverviewPage } from "./OverviewPage";
 import { CoursePage } from "./CoursePage";
 import { LessonPage } from "./LessonPage";
 import { LabsPage } from "./LabsPage";
+import { CheckpointsPage } from "./CheckpointsPage";
 import { ProgressPage } from "./ProgressPage";
 import "./style.css";
 function App() {
@@ -96,6 +98,11 @@ function App() {
               { id: "home", label: "Overview", icon: LayoutDashboard },
               { id: "course", label: "Your course", icon: BookOpen },
               { id: "progress", label: "Skill evidence", icon: ShieldCheck },
+              {
+                id: "checkpoints",
+                label: "Project checkpoints",
+                icon: FolderArchive,
+              },
               { id: "labs", label: "Lab manager", icon: FlaskConical },
             ] as const
           ).map((item) => (
@@ -167,7 +174,9 @@ function App() {
                     ? "Your course"
                     : page === "labs"
                       ? "Lab manager"
-                      : "Skill evidence"}
+                      : page === "checkpoints"
+                        ? "Project checkpoints"
+                        : "Skill evidence"}
             </strong>
           </div>
           <div className="topbar-actions">
@@ -227,6 +236,7 @@ function App() {
           {page === "lesson" && <LessonPage model={model} />}
           {page === "labs" && <LabsPage model={model} />}
           {page === "progress" && <ProgressPage model={model} />}
+          {page === "checkpoints" && <CheckpointsPage model={model} />}
         </main>
         <footer className="app-footer">
           <span>Local by design. Real by practice.</span>
