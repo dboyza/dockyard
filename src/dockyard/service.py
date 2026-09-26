@@ -41,6 +41,13 @@ class Service:
         self.tools = development_tools if development_tools.exists() else self.directory / "tools"
         self._cancels: dict[str, threading.Event] = {}
         self._lock = threading.Lock()
+        self.closing = threading.Event()
+
+    def shutdown(self) -> None:
+        self.closing.set()
+        with self._lock:
+            for cancel in self._cancels.values():
+                cancel.set()
 
     @staticmethod
     def public_lab(lab: Lab) -> dict[str, Any]:

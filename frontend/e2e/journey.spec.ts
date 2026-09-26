@@ -83,4 +83,9 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await expect(page.getByText('Reset completed.', { exact: true })).toBeVisible();
   }
   expect(failures).toEqual([]);
+  // Keep the browser and its SSE connection open while verifying foreground shutdown.
+  const stopped = once(server, 'exit');
+  server.kill('SIGINT');
+  const result = await Promise.race([stopped, new Promise((_, reject) => setTimeout(() => reject(new Error('Launcher did not stop with an open event stream')), 8_000))]);
+  expect(result).toEqual([0, null]);
 });

@@ -1,0 +1,908 @@
+{
+  "curriculum_version": 1,
+  "checked_at": "2026-09-26",
+  "attribution": "Cloud Native Computing Foundation (CNCF)",
+  "license": "CC-BY-4.0+",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "editorial_note": "Whitespace and line wrapping normalized. CKAD printed API depreciations is interpreted as API deprecations.",
+  "sources": [
+    {
+      "track": "CKA",
+      "version": "1.35",
+      "revision": "f6c7667265fef850daaf93b4e19e919552c67d8c",
+      "url": "https://github.com/cncf/curriculum/blob/f6c7667265fef850daaf93b4e19e919552c67d8c/CKA_Curriculum_v1.35.pdf",
+      "sha256": "634b793704485c2ac424a90902e0f8b28f7348a49814393434f808e3e78ec18c"
+    },
+    {
+      "track": "CKAD",
+      "version": "1.35",
+      "revision": "f6c7667265fef850daaf93b4e19e919552c67d8c",
+      "url": "https://github.com/cncf/curriculum/blob/f6c7667265fef850daaf93b4e19e919552c67d8c/CKAD_Curriculum_v1.35.pdf",
+      "sha256": "7736d2f0291239d62e9fc618304413ee9b6e53fc4580aac70bf4328203c1c210"
+    }
+  ],
+  "objectives": [
+    {
+      "id": "cka.rbac",
+      "track": "CKA",
+      "domain": "architecture",
+      "weight": 25,
+      "objective": "Manage role based access control (RBAC)",
+      "explained_by": [
+        "m17-rbac"
+      ],
+      "practiced_by": [
+        "m17-rbac"
+      ],
+      "assessed_by": [
+        "m17-mission"
+      ]
+    },
+    {
+      "id": "cka.infrastructure",
+      "track": "CKA",
+      "domain": "architecture",
+      "weight": 25,
+      "objective": "Prepare underlying infrastructure for installing a Kubernetes cluster",
+      "explained_by": [
+        "m19-runtime",
+        "m20-init"
+      ],
+      "practiced_by": [
+        "m19-runtime",
+        "m20-init"
+      ],
+      "assessed_by": [
+        "m20-mission"
+      ]
+    },
+    {
+      "id": "cka.kubeadm",
+      "track": "CKA",
+      "domain": "architecture",
+      "weight": 25,
+      "objective": "Create and manage Kubernetes clusters using kubeadm",
+      "explained_by": [
+        "m20-init",
+        "m20-join"
+      ],
+      "practiced_by": [
+        "m20-init",
+        "m20-join"
+      ],
+      "assessed_by": [
+        "m20-mission"
+      ]
+    },
+    {
+      "id": "cka.lifecycle",
+      "track": "CKA",
+      "domain": "architecture",
+      "weight": 25,
+      "objective": "Manage the lifecycle of Kubernetes clusters",
+      "explained_by": [
+        "m21-drain",
+        "m21-upgrade",
+        "m21-certificates"
+      ],
+      "practiced_by": [
+        "m21-drain",
+        "m21-upgrade",
+        "m21-certificates"
+      ],
+      "assessed_by": [
+        "m21-mission"
+      ]
+    },
+    {
+      "id": "cka.ha",
+      "track": "CKA",
+      "domain": "architecture",
+      "weight": 25,
+      "objective": "Implement and configure a highly-available control plane",
+      "explained_by": [
+        "m20-ha"
+      ],
+      "practiced_by": [
+        "m20-ha"
+      ],
+      "assessed_by": [
+        "m20-mission"
+      ]
+    },
+    {
+      "id": "cka.packaging",
+      "track": "CKA",
+      "domain": "architecture",
+      "weight": 25,
+      "objective": "Use Helm and Kustomize to install cluster components",
+      "explained_by": [
+        "m14-kustomize",
+        "m14-helm"
+      ],
+      "practiced_by": [
+        "m14-kustomize",
+        "m14-helm"
+      ],
+      "assessed_by": [
+        "m14-mission"
+      ]
+    },
+    {
+      "id": "cka.interfaces",
+      "track": "CKA",
+      "domain": "architecture",
+      "weight": 25,
+      "objective": "Understand extension interfaces (CNI, CSI, CRI, etc.)",
+      "explained_by": [
+        "m19-runtime",
+        "m20-join",
+        "m22-storage"
+      ],
+      "practiced_by": [
+        "m19-runtime",
+        "m20-join",
+        "m22-storage"
+      ],
+      "assessed_by": [
+        "m19-mission",
+        "m22-mission"
+      ]
+    },
+    {
+      "id": "cka.operators",
+      "track": "CKA",
+      "domain": "architecture",
+      "weight": 25,
+      "objective": "Understand CRDs, install and configure operators",
+      "explained_by": [
+        "m14-operators"
+      ],
+      "practiced_by": [
+        "m14-operators"
+      ],
+      "assessed_by": [
+        "m14-mission"
+      ]
+    },
+    {
+      "id": "cka.rollouts",
+      "track": "CKA",
+      "domain": "workloads",
+      "weight": 15,
+      "objective": "Understand application deployments and how to perform rolling update and rollbacks",
+      "explained_by": [
+        "m12-rollouts"
+      ],
+      "practiced_by": [
+        "m12-rollouts"
+      ],
+      "assessed_by": [
+        "m12-mission"
+      ]
+    },
+    {
+      "id": "cka.configuration",
+      "track": "CKA",
+      "domain": "workloads",
+      "weight": 15,
+      "objective": "Use ConfigMaps and Secrets to configure applications",
+      "explained_by": [
+        "m09-configmaps",
+        "m09-secrets"
+      ],
+      "practiced_by": [
+        "m09-configmaps",
+        "m09-secrets"
+      ],
+      "assessed_by": [
+        "m09-mission"
+      ]
+    },
+    {
+      "id": "cka.autoscaling",
+      "track": "CKA",
+      "domain": "workloads",
+      "weight": 15,
+      "objective": "Configure workload autoscaling",
+      "explained_by": [
+        "m13-autoscaling"
+      ],
+      "practiced_by": [
+        "m13-autoscaling"
+      ],
+      "assessed_by": [
+        "m13-mission"
+      ]
+    },
+    {
+      "id": "cka.self-healing",
+      "track": "CKA",
+      "domain": "workloads",
+      "weight": 15,
+      "objective": "Understand the primitives used to create robust, self-healing application deployments",
+      "explained_by": [
+        "m08-workloads",
+        "m12-probes"
+      ],
+      "practiced_by": [
+        "m08-workloads",
+        "m12-probes"
+      ],
+      "assessed_by": [
+        "m12-mission"
+      ]
+    },
+    {
+      "id": "cka.scheduling",
+      "track": "CKA",
+      "domain": "workloads",
+      "weight": 15,
+      "objective": "Configure Pod admission and scheduling (limits, node affinity, etc.)",
+      "explained_by": [
+        "m13-resources",
+        "m13-placement",
+        "m17-admission"
+      ],
+      "practiced_by": [
+        "m13-resources",
+        "m13-placement",
+        "m17-admission"
+      ],
+      "assessed_by": [
+        "m13-mission",
+        "m17-mission"
+      ]
+    },
+    {
+      "id": "cka.pod-connectivity",
+      "track": "CKA",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Understand connectivity between Pods",
+      "explained_by": [
+        "m10-services",
+        "m22-packets"
+      ],
+      "practiced_by": [
+        "m10-services",
+        "m22-packets"
+      ],
+      "assessed_by": [
+        "m10-mission",
+        "m22-mission"
+      ]
+    },
+    {
+      "id": "cka.network-policy",
+      "track": "CKA",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Define and enforce Network Policies",
+      "explained_by": [
+        "m17-network-policy"
+      ],
+      "practiced_by": [
+        "m17-network-policy"
+      ],
+      "assessed_by": [
+        "m17-mission"
+      ]
+    },
+    {
+      "id": "cka.service-types",
+      "track": "CKA",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Use ClusterIP, NodePort, LoadBalancer service types and endpoints",
+      "explained_by": [
+        "m10-services"
+      ],
+      "practiced_by": [
+        "m10-services"
+      ],
+      "assessed_by": [
+        "m10-mission"
+      ]
+    },
+    {
+      "id": "cka.gateway",
+      "track": "CKA",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Use the Gateway API to manage Ingress traffic",
+      "explained_by": [
+        "m10-gateway"
+      ],
+      "practiced_by": [
+        "m10-gateway"
+      ],
+      "assessed_by": [
+        "m10-mission"
+      ]
+    },
+    {
+      "id": "cka.ingress",
+      "track": "CKA",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Know how to use Ingress controllers and Ingress resources",
+      "explained_by": [
+        "m10-ingress"
+      ],
+      "practiced_by": [
+        "m10-ingress"
+      ],
+      "assessed_by": [
+        "m10-mission"
+      ]
+    },
+    {
+      "id": "cka.coredns",
+      "track": "CKA",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Understand and use CoreDNS",
+      "explained_by": [
+        "m22-dns"
+      ],
+      "practiced_by": [
+        "m22-dns"
+      ],
+      "assessed_by": [
+        "m22-mission"
+      ]
+    },
+    {
+      "id": "cka.provisioning",
+      "track": "CKA",
+      "domain": "storage",
+      "weight": 10,
+      "objective": "Implement storage classes and dynamic volume provisioning",
+      "explained_by": [
+        "m11-claims"
+      ],
+      "practiced_by": [
+        "m11-claims"
+      ],
+      "assessed_by": [
+        "m11-mission"
+      ]
+    },
+    {
+      "id": "cka.volume-policies",
+      "track": "CKA",
+      "domain": "storage",
+      "weight": 10,
+      "objective": "Configure volume types, access modes and reclaim policies",
+      "explained_by": [
+        "m11-claims",
+        "m11-statefulsets"
+      ],
+      "practiced_by": [
+        "m11-claims",
+        "m11-statefulsets"
+      ],
+      "assessed_by": [
+        "m11-mission"
+      ]
+    },
+    {
+      "id": "cka.pv-pvc",
+      "track": "CKA",
+      "domain": "storage",
+      "weight": 10,
+      "objective": "Manage persistent volumes and persistent volume claims",
+      "explained_by": [
+        "m11-claims",
+        "m22-storage"
+      ],
+      "practiced_by": [
+        "m11-claims",
+        "m22-storage"
+      ],
+      "assessed_by": [
+        "m11-mission",
+        "m22-mission"
+      ]
+    },
+    {
+      "id": "cka.nodes",
+      "track": "CKA",
+      "domain": "troubleshooting",
+      "weight": 30,
+      "objective": "Troubleshoot clusters and nodes",
+      "explained_by": [
+        "m19-kubelet",
+        "m21-drain",
+        "m23-static-pods"
+      ],
+      "practiced_by": [
+        "m19-kubelet",
+        "m21-drain",
+        "m23-static-pods"
+      ],
+      "assessed_by": [
+        "m19-mission",
+        "m23-mission"
+      ]
+    },
+    {
+      "id": "cka.components",
+      "track": "CKA",
+      "domain": "troubleshooting",
+      "weight": 30,
+      "objective": "Troubleshoot cluster components",
+      "explained_by": [
+        "m19-control-plane",
+        "m23-api"
+      ],
+      "practiced_by": [
+        "m19-control-plane",
+        "m23-api"
+      ],
+      "assessed_by": [
+        "m23-mission"
+      ]
+    },
+    {
+      "id": "cka.resource-usage",
+      "track": "CKA",
+      "domain": "troubleshooting",
+      "weight": 30,
+      "objective": "Monitor cluster and application resource usage",
+      "explained_by": [
+        "m13-resources",
+        "m15-observation"
+      ],
+      "practiced_by": [
+        "m13-resources",
+        "m15-observation"
+      ],
+      "assessed_by": [
+        "m15-mission"
+      ]
+    },
+    {
+      "id": "cka.logs",
+      "track": "CKA",
+      "domain": "troubleshooting",
+      "weight": 30,
+      "objective": "Manage and evaluate container output streams",
+      "explained_by": [
+        "m15-observation"
+      ],
+      "practiced_by": [
+        "m15-observation"
+      ],
+      "assessed_by": [
+        "m15-mission"
+      ]
+    },
+    {
+      "id": "cka.service-diagnosis",
+      "track": "CKA",
+      "domain": "troubleshooting",
+      "weight": 30,
+      "objective": "Troubleshoot services and networking",
+      "explained_by": [
+        "m10-services",
+        "m22-dns"
+      ],
+      "practiced_by": [
+        "m10-services",
+        "m22-dns"
+      ],
+      "assessed_by": [
+        "m10-mission",
+        "m22-mission"
+      ]
+    },
+    {
+      "id": "ckad.images",
+      "track": "CKAD",
+      "domain": "design-build",
+      "weight": 20,
+      "objective": "Define, build and modify container images",
+      "explained_by": [
+        "m02-dockerfile",
+        "m02-cache",
+        "m02-multistage"
+      ],
+      "practiced_by": [
+        "m02-dockerfile",
+        "m02-cache",
+        "m02-multistage"
+      ],
+      "assessed_by": [
+        "m02-mission",
+        "m06-mission"
+      ]
+    },
+    {
+      "id": "ckad.workloads",
+      "track": "CKAD",
+      "domain": "design-build",
+      "weight": 20,
+      "objective": "Choose and use the right workload resource (Deployment, DaemonSet, CronJob, etc.)",
+      "explained_by": [
+        "m08-workloads",
+        "m08-jobs"
+      ],
+      "practiced_by": [
+        "m08-workloads",
+        "m08-jobs"
+      ],
+      "assessed_by": [
+        "m08-mission"
+      ]
+    },
+    {
+      "id": "ckad.pod-patterns",
+      "track": "CKAD",
+      "domain": "design-build",
+      "weight": 20,
+      "objective": "Understand multi-container Pod design patterns (e.g. sidecar, init and others)",
+      "explained_by": [
+        "m08-patterns"
+      ],
+      "practiced_by": [
+        "m08-patterns"
+      ],
+      "assessed_by": [
+        "m08-mission"
+      ]
+    },
+    {
+      "id": "ckad.volumes",
+      "track": "CKAD",
+      "domain": "design-build",
+      "weight": 20,
+      "objective": "Utilize persistent and ephemeral volumes",
+      "explained_by": [
+        "m08-patterns",
+        "m11-claims"
+      ],
+      "practiced_by": [
+        "m08-patterns",
+        "m11-claims"
+      ],
+      "assessed_by": [
+        "m08-mission",
+        "m11-mission"
+      ]
+    },
+    {
+      "id": "ckad.strategies",
+      "track": "CKAD",
+      "domain": "deployment",
+      "weight": 20,
+      "objective": "Use Kubernetes primitives to implement common deployment strategies (e.g. blue/green or canary)",
+      "explained_by": [
+        "m12-strategies"
+      ],
+      "practiced_by": [
+        "m12-strategies"
+      ],
+      "assessed_by": [
+        "m12-mission"
+      ]
+    },
+    {
+      "id": "ckad.rolling-updates",
+      "track": "CKAD",
+      "domain": "deployment",
+      "weight": 20,
+      "objective": "Understand Deployments and how to perform rolling updates",
+      "explained_by": [
+        "m12-rollouts"
+      ],
+      "practiced_by": [
+        "m12-rollouts"
+      ],
+      "assessed_by": [
+        "m12-mission"
+      ]
+    },
+    {
+      "id": "ckad.helm",
+      "track": "CKAD",
+      "domain": "deployment",
+      "weight": 20,
+      "objective": "Use the Helm package manager to deploy existing packages",
+      "explained_by": [
+        "m14-helm"
+      ],
+      "practiced_by": [
+        "m14-helm"
+      ],
+      "assessed_by": [
+        "m14-mission"
+      ]
+    },
+    {
+      "id": "ckad.kustomize",
+      "track": "CKAD",
+      "domain": "deployment",
+      "weight": 20,
+      "objective": "Kustomize",
+      "explained_by": [
+        "m14-kustomize"
+      ],
+      "practiced_by": [
+        "m14-kustomize"
+      ],
+      "assessed_by": [
+        "m14-mission"
+      ]
+    },
+    {
+      "id": "ckad.api-deprecations",
+      "track": "CKAD",
+      "domain": "observability",
+      "weight": 15,
+      "objective": "Understand API deprecations",
+      "explained_by": [
+        "m07-declarative",
+        "m21-upgrade"
+      ],
+      "practiced_by": [
+        "m07-declarative",
+        "m21-upgrade"
+      ],
+      "assessed_by": [
+        "m07-mission",
+        "m21-mission"
+      ]
+    },
+    {
+      "id": "ckad.probes",
+      "track": "CKAD",
+      "domain": "observability",
+      "weight": 15,
+      "objective": "Implement probes and health checks",
+      "explained_by": [
+        "m12-probes"
+      ],
+      "practiced_by": [
+        "m12-probes"
+      ],
+      "assessed_by": [
+        "m12-mission"
+      ]
+    },
+    {
+      "id": "ckad.cli-monitoring",
+      "track": "CKAD",
+      "domain": "observability",
+      "weight": 15,
+      "objective": "Use built-in CLI tools to monitor Kubernetes applications",
+      "explained_by": [
+        "m15-observation"
+      ],
+      "practiced_by": [
+        "m15-observation"
+      ],
+      "assessed_by": [
+        "m15-mission"
+      ]
+    },
+    {
+      "id": "ckad.logs",
+      "track": "CKAD",
+      "domain": "observability",
+      "weight": 15,
+      "objective": "Utilize container logs",
+      "explained_by": [
+        "m15-observation"
+      ],
+      "practiced_by": [
+        "m15-observation"
+      ],
+      "assessed_by": [
+        "m15-mission"
+      ]
+    },
+    {
+      "id": "ckad.debugging",
+      "track": "CKAD",
+      "domain": "observability",
+      "weight": 15,
+      "objective": "Debugging in Kubernetes",
+      "explained_by": [
+        "m07-inspection",
+        "m15-observation"
+      ],
+      "practiced_by": [
+        "m07-inspection",
+        "m15-observation"
+      ],
+      "assessed_by": [
+        "m15-mission"
+      ]
+    },
+    {
+      "id": "ckad.extensions",
+      "track": "CKAD",
+      "domain": "configuration-security",
+      "weight": 25,
+      "objective": "Discover and use resources that extend Kubernetes (CRD, Operators)",
+      "explained_by": [
+        "m14-operators"
+      ],
+      "practiced_by": [
+        "m14-operators"
+      ],
+      "assessed_by": [
+        "m14-mission"
+      ]
+    },
+    {
+      "id": "ckad.access-admission",
+      "track": "CKAD",
+      "domain": "configuration-security",
+      "weight": 25,
+      "objective": "Understand authentication, authorization and admission control",
+      "explained_by": [
+        "m09-identities",
+        "m17-rbac",
+        "m17-admission"
+      ],
+      "practiced_by": [
+        "m09-identities",
+        "m17-rbac",
+        "m17-admission"
+      ],
+      "assessed_by": [
+        "m09-mission",
+        "m17-mission"
+      ]
+    },
+    {
+      "id": "ckad.limits-quotas",
+      "track": "CKAD",
+      "domain": "configuration-security",
+      "weight": 25,
+      "objective": "Understand requests, limits, quotas",
+      "explained_by": [
+        "m13-resources",
+        "m13-autoscaling"
+      ],
+      "practiced_by": [
+        "m13-resources",
+        "m13-autoscaling"
+      ],
+      "assessed_by": [
+        "m13-mission"
+      ]
+    },
+    {
+      "id": "ckad.requirements",
+      "track": "CKAD",
+      "domain": "configuration-security",
+      "weight": 25,
+      "objective": "Define resource requirements",
+      "explained_by": [
+        "m13-resources"
+      ],
+      "practiced_by": [
+        "m13-resources"
+      ],
+      "assessed_by": [
+        "m13-mission"
+      ]
+    },
+    {
+      "id": "ckad.configmaps",
+      "track": "CKAD",
+      "domain": "configuration-security",
+      "weight": 25,
+      "objective": "Understand ConfigMaps",
+      "explained_by": [
+        "m09-configmaps"
+      ],
+      "practiced_by": [
+        "m09-configmaps"
+      ],
+      "assessed_by": [
+        "m09-mission"
+      ]
+    },
+    {
+      "id": "ckad.secrets",
+      "track": "CKAD",
+      "domain": "configuration-security",
+      "weight": 25,
+      "objective": "Create and consume Secrets",
+      "explained_by": [
+        "m09-secrets"
+      ],
+      "practiced_by": [
+        "m09-secrets"
+      ],
+      "assessed_by": [
+        "m09-mission"
+      ]
+    },
+    {
+      "id": "ckad.serviceaccounts",
+      "track": "CKAD",
+      "domain": "configuration-security",
+      "weight": 25,
+      "objective": "Understand ServiceAccounts",
+      "explained_by": [
+        "m09-identities"
+      ],
+      "practiced_by": [
+        "m09-identities"
+      ],
+      "assessed_by": [
+        "m09-mission"
+      ]
+    },
+    {
+      "id": "ckad.application-security",
+      "track": "CKAD",
+      "domain": "configuration-security",
+      "weight": 25,
+      "objective": "Understand Application Security (SecurityContexts, Capabilities, etc.)",
+      "explained_by": [
+        "m17-admission"
+      ],
+      "practiced_by": [
+        "m17-admission"
+      ],
+      "assessed_by": [
+        "m17-mission"
+      ]
+    },
+    {
+      "id": "ckad.network-policy",
+      "track": "CKAD",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Demonstrate basic understanding of NetworkPolicies",
+      "explained_by": [
+        "m17-network-policy"
+      ],
+      "practiced_by": [
+        "m17-network-policy"
+      ],
+      "assessed_by": [
+        "m17-mission"
+      ]
+    },
+    {
+      "id": "ckad.services",
+      "track": "CKAD",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Provide and troubleshoot access to applications via services",
+      "explained_by": [
+        "m10-services"
+      ],
+      "practiced_by": [
+        "m10-services"
+      ],
+      "assessed_by": [
+        "m10-mission"
+      ]
+    },
+    {
+      "id": "ckad.ingress",
+      "track": "CKAD",
+      "domain": "networking",
+      "weight": 20,
+      "objective": "Use Ingress rules to expose applications",
+      "explained_by": [
+        "m10-ingress"
+      ],
+      "practiced_by": [
+        "m10-ingress"
+      ],
+      "assessed_by": [
+        "m10-mission"
+      ]
+    }
+  ]
+}

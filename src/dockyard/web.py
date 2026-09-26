@@ -211,7 +211,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
     async def events(request: Request) -> StreamingResponse:
         async def stream() -> Any:
             last = ""
-            while not await request.is_disconnected():
+            while not service.closing.is_set() and not await request.is_disconnected():
                 current = json.dumps(state(), sort_keys=True)
                 if current != last:
                     yield f"event: state\ndata: {current}\n\n"

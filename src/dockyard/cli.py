@@ -10,6 +10,7 @@ import sys
 import threading
 import webbrowser
 from pathlib import Path
+from types import FrameType
 
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.service import LabError, Service
@@ -64,11 +65,22 @@ def launch(service: Service, port: int, open_browser: bool) -> None:
         timer.start()
     else:
         print(f"One-time browser sign-in (valid for five minutes): {url}", flush=True)
+
+    class WorkbenchServer(uvicorn.Server):
+        def handle_exit(self, sig: int, frame: FrameType | None) -> None:
+            service.shutdown()
+            super().handle_exit(sig, frame)
+
     config = uvicorn.Config(
-        app, host="127.0.0.1", port=actual_port, log_level="warning", access_log=False
+        app,
+        host="127.0.0.1",
+        port=actual_port,
+        log_level="warning",
+        access_log=False,
+        timeout_graceful_shutdown=5,
     )
     try:
-        uvicorn.Server(config).run(sockets=[listener])
+        WorkbenchServer(config).run(sockets=[listener])
     finally:
         listener.close()
 
@@ -113,6 +125,8 @@ def main() -> None:
                 print(json.dumps(result, indent=2))
                 if arguments.action == "check" and result.get("status") != "pass":
                     raise SystemExit(1)
+    except KeyboardInterrupt:
+        print("Dockyard stopped. Your work and lab resources are preserved.")
     except (RuntimeErrorBase, ValueError, FileNotFoundError) as error:
         print(f"Dockyard: {error}", file=sys.stderr)
         raise SystemExit(2) from error

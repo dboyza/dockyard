@@ -54,6 +54,15 @@ export function useWorkbench() {
     localStorage.setItem("dockyard-theme", theme);
   }, [theme]);
   useEffect(() => {
+    const reconnectFromLauncher = () => {
+      if (new URLSearchParams(location.hash.slice(1)).has("session"))
+        location.reload();
+    };
+    window.addEventListener("hashchange", reconnectFromLauncher);
+    return () =>
+      window.removeEventListener("hashchange", reconnectFromLauncher);
+  }, []);
+  useEffect(() => {
     let alive = true;
     let events: EventSource | undefined;
     connect()
