@@ -1,0 +1,123 @@
+id: m21-upgrade
+revision: 1
+module: 21
+order: 2
+title: Upgrade the actual control plane and kubelets in place
+summary: Perform an adjacent minor upgrade while preserving cluster and application identity.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: 1.34.12
+minutes: 65
+outcomes:
+- Plan an adjacent minor upgrade and explain control-plane versus kubelet versions.
+- Upgrade kubeadm, the control plane, and each kubelet in the supported order.
+- Verify original cluster objects and stored application data survive maintenance.
+prerequisites:
+- m21-drain
+objectives:
+- cka.lifecycle
+- ckad.api-deprecations
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The host kubectl reports 1.35, but the server remains 1.34. What was upgraded?
+  options:
+  - The client alone may have changed; inspect the server and every kubelet separately.
+  - Every cluster component automatically changed.
+  - The database must have been deleted.
+  correct: 0
+  explanation: The client alone may have changed; inspect the server and every kubelet separately.
+hints:
+- Separate kubeadm, static control-plane components, and each node kubelet.
+- Stage target archives, update primary kubeadm, inspect the plan, then apply the adjacent upgrade.
+- Drain each node before changing its kubelet; use upgrade node on the worker, restore holds, restart
+  kubelet, uncordon, and verify preserved state.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/
+- https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - setup-maintenance.py
+  timeout: 90
+checks:
+- id: maintenance-preserved
+  title: Original cluster identities and pre-maintenance data survive
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - upgrade
+    timeout: 180
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Compare the live preserved evidence with the required maintenance boundary.
+- id: maintenance-upgrade
+  title: The existing API, control-plane images, and all kubelets reach 1.35.8
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - upgrade
+    timeout: 180
+  expectation: json
+  json_path:
+  - upgrade
+  expected: 'true'
+  diagnostic: Compare the live upgrade evidence with the required maintenance boundary.
+- id: maintenance-workflow
+  title: A fresh browser and cross-node Dispatch transaction completes
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - upgrade
+    timeout: 180
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Compare the live workflow evidence with the required maintenance boundary.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors, package command formatting, and diagnostic sequences are accepted.
+- Runtime outcome and original identities are assessed; shell history is not graded.
+failure_modes:
+- A newer host client does not prove the server or kubelets changed.
+- Replacing cluster objects can hide data loss and does not establish maintenance continuity.
+- A changed file does not prove a running process adopted it.
+starter_failure_checks:
+- maintenance-upgrade

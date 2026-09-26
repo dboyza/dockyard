@@ -392,3 +392,25 @@ The installed Chrome journey verified a route failure despite a surviving majori
 The complete installed-app and real-Docker journey passed in 15.0 seconds.
 Direct 1440-pixel dark/light and 480-pixel light screenshots were inspected without horizontal overflow.
 The model is explicitly distinguished from observations of the real practice cluster.
+
+## Module 21: real cluster maintenance
+
+The certificate lesson and both upgrade activities passed fresh-profile starter/reference audits in the first maintenance run.
+That run completed three passing activities and one fixture failure in 1244.44 seconds.
+The drain fixture passed after correcting a keyword argument, and its separate audit completed in 179.82 seconds.
+The course now has 84 authored units with successful real-runtime reference audits.
+
+Both upgrade activities began with actual 1.34.12 API servers and kubelets and finished with 1.35.8 API, static Kubernetes component images, and every kubelet.
+The original namespace UID, Node UIDs, marker object UID, and SQL sentinel row remained intact, and fresh Dispatch transactions passed afterward.
+An earlier reproduction advanced to worker maintenance before the restarted primary's reconciliation had settled and encountered an API interruption.
+The reference now observes target-version node readiness, API readiness, and stable primary static-container identities for 30 seconds before advancing.
+This two-node topology has planned API and worker-local database downtime; it does not demonstrate a continuous-availability upgrade.
+
+The three-node drain activity evacuated the extra worker while retaining two available API replicas and the original database state on the other worker.
+A disruption budget expressed as maxUnavailable 1 passed as an alternative to minAvailable 1.
+Uncordoning the target was then rejected because the required maintenance boundary no longer held.
+The certificate activity compared the renewed public leaf on disk with the certificate received over a fresh CA-verified TLS connection, while preserving the original CA and stored application data.
+Its fixture starts with a valid certificate and teaches proactive renewal, rather than fabricating an expired-certificate outage.
+
+The latest backend regression passed 52 tests in 7.45 seconds, and the installed 84-unit browser/real-Docker journey passed in 15.0 seconds with generated frontend contracts.
+CSI infrastructure verification and Modules 22 through 24 remain under implementation.

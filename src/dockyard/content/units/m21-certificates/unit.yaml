@@ -1,0 +1,123 @@
+id: m21-certificates
+revision: 1
+module: 21
+order: 3
+title: Renew and verify the certificate clients actually receive
+summary: Distinguish certificate files, the running API process, and the original trust anchor.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: 1.35.8
+minutes: 40
+outcomes:
+- Inspect kubeadm certificate ownership and expiry without exposing private keys.
+- Renew the API serving certificate and reconcile its running static Pod.
+- Verify that a trusted TLS connection receives the new certificate under the original CA.
+prerequisites:
+- m21-upgrade
+objectives:
+- cka.lifecycle
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A certificate file has a new serial number. What further observation establishes effective
+    renewal?
+  options:
+  - A fresh trusted connection receives that new leaf under the original CA.
+  - A client succeeds only with verification disabled.
+  - The private key appears in a note.
+  correct: 0
+  explanation: A fresh trusted connection receives that new leaf under the original CA.
+hints:
+- Inspect public certificate identity and the original CA before changing anything.
+- Renew only the apiserver leaf and reconcile the actual static API process.
+- Use kubeadm certs renew apiserver, identify its CRI container, stop that container, then verify API
+  readiness and the certificate served over trusted TLS.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/
+- https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - setup-maintenance.py
+  timeout: 90
+checks:
+- id: maintenance-preserved
+  title: Original cluster identities and pre-maintenance data survive
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - certificates
+    timeout: 180
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Compare the live preserved evidence with the required maintenance boundary.
+- id: maintenance-renewed
+  title: A verified TLS connection receives the renewed leaf under the original CA
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - certificates
+    timeout: 180
+  expectation: json
+  json_path:
+  - renewed
+  expected: 'true'
+  diagnostic: Compare the live renewed evidence with the required maintenance boundary.
+- id: maintenance-workflow
+  title: A fresh browser and cross-node Dispatch transaction completes
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - certificates
+    timeout: 180
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Compare the live workflow evidence with the required maintenance boundary.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors, package command formatting, and diagnostic sequences are accepted.
+- Runtime outcome and original identities are assessed; shell history is not graded.
+failure_modes:
+- A newer host client does not prove the server or kubelets changed.
+- Replacing cluster objects can hide data loss and does not establish maintenance continuity.
+- A changed file does not prove a running process adopted it.
+starter_failure_checks:
+- maintenance-renewed

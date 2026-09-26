@@ -1,0 +1,128 @@
+id: m21-drain
+revision: 1
+module: 21
+order: 1
+title: Drain a worker without bypassing availability protection
+summary: Separate cordoning, eviction budgets, replacement scheduling, and node-local data.
+kind: lesson
+runtime: linux
+nodes: 3
+native_version: 1.35.8
+minutes: 40
+outcomes:
+- Explain why cordoning does not move existing Pods.
+- Adjust a disruption budget while retaining at least one available API replica.
+- Evacuate a real worker and verify replacement workloads and application traffic.
+prerequisites:
+- m20-mission
+objectives:
+- cka.lifecycle
+- cka.nodes
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A cordoned worker still has API Pods. What explains this?
+  options:
+  - Cordoning blocks new scheduling but does not evict existing Pods.
+  - Cordoning deletes every Pod immediately.
+  - The API cannot report cordoned nodes.
+  correct: 0
+  explanation: Cordoning blocks new scheduling but does not evict existing Pods.
+hints:
+- Inspect the target worker, workload owners, placement, and the disruption budget.
+- The initial budget protects both replicas; retain one while allowing a voluntary eviction.
+- Set minAvailable to one, drain only worker2 with the documented flags, and wait for two API replicas
+  elsewhere.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/
+- https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - setup-drain.py
+  timeout: 210
+- args:
+  - python
+  - setup-maintenance.py
+  timeout: 90
+checks:
+- id: maintenance-preserved
+  title: Original cluster identities and pre-maintenance data survive
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - drain
+    timeout: 180
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Compare the live preserved evidence with the required maintenance boundary.
+- id: maintenance-drained
+  title: The extra worker is evacuated while a valid disruption budget and replicas remain
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - drain
+    timeout: 180
+  expectation: json
+  json_path:
+  - drained
+  expected: 'true'
+  diagnostic: Compare the live drained evidence with the required maintenance boundary.
+- id: maintenance-workflow
+  title: A fresh browser and cross-node Dispatch transaction completes
+  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.maintenance
+    - drain
+    timeout: 180
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Compare the live workflow evidence with the required maintenance boundary.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors, package command formatting, and diagnostic sequences are accepted.
+- Runtime outcome and original identities are assessed; shell history is not graded.
+- A matching budget using minAvailable 1, minAvailable 50%, or maxUnavailable 1 is accepted.
+failure_modes:
+- A newer host client does not prove the server or kubelets changed.
+- Replacing cluster objects can hide data loss and does not establish maintenance continuity.
+- A changed file does not prove a running process adopted it.
+starter_failure_checks:
+- maintenance-drained

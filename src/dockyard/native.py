@@ -35,6 +35,10 @@ def main() -> None:
     actions.add_parser(
         "stage-upgrade", help="Stage verified 1.35.8 packages without installing them"
     )
+    waited = actions.add_parser(
+        "wait-upgraded-node", help="Observe upgraded node and API readiness before the next node"
+    )
+    waited.add_argument("guest")
     actions.add_parser(
         "expose-app", help="Connect the private browser endpoint to the native NodePort"
     )
@@ -79,6 +83,11 @@ def main() -> None:
             print(native_cluster.load_balancer_configuration(names[:-1]))
         else:
             print(native_cluster.network_manifest(runtime, cancel))
+    elif args.action == "wait-upgraded-node":
+        from dockyard.runtimes.native_maintenance import wait_node
+
+        wait_node(runtime, args.guest, cancel)
+        print("The upgraded node and private API remained ready with settled components.")
     elif args.action == "stage-upgrade":
         from dockyard.runtimes.native_maintenance import stage_upgrade
 
