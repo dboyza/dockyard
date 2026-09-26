@@ -347,12 +347,16 @@ class Service:
                             self._save(other)
                 if isinstance(runtime, LinuxRuntime):
                     runtime.prepare(unit.nodes, cancel)
-                    runtime.install_node_packages(cancel)
+                    runtime.install_node_packages(cancel, unit.native_version)
                     if lab.resources.get("prepared_revision") != str(unit.revision):
                         if "native-cluster" in unit.capabilities:
                             from dockyard.runtimes.native_cluster import prepare
 
-                            prepare(runtime, cancel)
+                            prepare(runtime, cancel, unit.native_version)
+                        elif "native-control-plane" in unit.capabilities:
+                            from dockyard.runtimes.native_cluster import initialize
+
+                            initialize(runtime, cancel, unit.native_version)
                         from dockyard.runtimes.native_images import load
 
                         for image_name in unit.images:

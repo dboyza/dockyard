@@ -334,3 +334,37 @@ Two fresh-boot observations identified an unresponsive guest login manager consu
 A short trace showed a repeated nonblocking epoll loop; the underlying upstream defect was not established.
 Guest initialization now checks the login manager and performs bounded recovery only if that service is unresponsive.
 SSH authentication and the learner's Kubernetes services remain configured normally.
+
+## Native HA construction proof
+
+A separate owned four-guest profile initialized Kubernetes 1.35.8 with three stacked control-plane/etcd members and one worker.
+All four nodes reached Ready, all Calico agents became ready, and CoreDNS became available.
+A TCP HAProxy listener on the worker provided the stable private API endpoint, with the matching endpoint identity in the API serving certificates.
+The primary API-server and etcd static manifests were then moved outside kubelet's manifest directory, and CRI inspection confirmed both containers had stopped.
+A new ConfigMap was created, read, and deleted through the host's private load-balanced endpoint while the primary remained unavailable.
+Direct etcdctl observations through each surviving runtime container confirmed a healthy endpoint and all three original voting members.
+This establishes a surviving two-of-three quorum and useful API failover, not redundancy of the single load balancer, local database, or physical host.
+The proof guests were paused before the separate fresh-profile course audits.
+
+## Module 20 and native browser access
+
+All eight Module 19 revision 2 and Module 20 starter/reference audits passed in 1108.40 seconds.
+The course now has 80 authored units with successful real-runtime reference audits.
+The HA audit additionally accepted a load balancer selecting only one surviving API server and rejected restoration of the failed primary as a substitute for failover.
+A diagnostic reproduction found that clients and both original DNS replicas depended on the unavailable primary's local API connection.
+The HA fixture now places diagnostic clients on a surviving control plane and spreads three CoreDNS replicas across the three control planes.
+The primary API and etcd processes remain absent while quorum, fresh API writes, and Dispatch transactions pass.
+
+A separate transport check found that forwarding an iptables-only NodePort did not establish the expected browser connection.
+A restricted guest systemd service now forwards the declared application listener to the worker's NodePort, and every native workflow check first reaches the actual host-loopback browser endpoint.
+Fresh native profiles passed these browser-path checks as part of the eight-unit audit.
+Existing development VM profiles with older forwarding configurations require a reset to adopt this provider change.
+
+## Reference desk
+
+Five original primers cover terminal use, YAML, HTTP, DNS, and Linux, accompanied by 66 linked glossary entries.
+Lesson links open the relevant term and preserve the learner's place on return.
+The installed wheel's real-Chrome and real-Docker journey passed in 13.3 seconds, including glossary search, lesson navigation, and the compact mobile primer selector.
+Direct desktop and 480-pixel screenshots were inspected in dark and light themes without horizontal overflow.
+The backend regression passed 50 tests, and frontend lint, type checking, three component tests, and production build passed.
+Maintenance-version selection and staging are implementation foundations; the actual Module 21 upgrade and maintenance audits are still pending.

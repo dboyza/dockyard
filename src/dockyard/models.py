@@ -95,6 +95,7 @@ class Unit(Contract):
     checkpoint: Identifier | None = None
     images: list[str] = Field(default_factory=lambda: ["python"])
     nodes: int = Field(default=1, ge=1, le=4)
+    native_version: Literal["1.34.12", "1.35.8"] = "1.35.8"
     alternatives: list[str] = Field(default_factory=list)
     failure_modes: list[str] = Field(default_factory=list)
     starter_failure_checks: list[Identifier] = Field(default_factory=list)

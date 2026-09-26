@@ -148,9 +148,11 @@ class LinuxRuntime:
     def prepare(self, nodes: int, cancel: threading.Event) -> None:
         import time
 
-        if nodes not in (2, 4):
-            raise RuntimeErrorBase("Linux profiles require two guests or four HA guests.")
+        if nodes not in (2, 3, 4):
+            raise RuntimeErrorBase("Linux profiles require two or three guests, or four HA guests.")
         names = [f"d{self.lab.id[:10]}-cp{n + 1}" for n in range(3 if nodes == 4 else 1)]
+        if nodes == 3:
+            names.append(f"d{self.lab.id[:10]}-worker2")
         names.append(f"d{self.lab.id[:10]}-worker")
         # Include the temporary SSH control socket, which is longer than the network socket.
         sockets = [self.home / "_networks/user-v2/usernet.user-v2.sock"] + [
@@ -204,7 +206,7 @@ class LinuxRuntime:
                 "vmType": "vz",
                 "arch": "aarch64",
                 "cpus": 2,
-                "memory": "2GiB" if nodes == 4 else "3GiB",
+                "memory": "2GiB" if nodes >= 3 else "3GiB",
                 "disk": "15GiB",
                 "mounts": [],
                 "images": [
@@ -253,7 +255,7 @@ class LinuxRuntime:
                 forwards.insert(
                     0,
                     {
-                        "guestPort": 30080,
+                        "guestPort": 18080,
                         "hostPort": int(self.lab.resources["port"]),
                         "hostIP": "127.0.0.1",
                         "guestIP": "0.0.0.0",
@@ -397,7 +399,8 @@ class LinuxRuntime:
         script = """import hashlib,json,os,pathlib,pwd,subprocess
 paths=[pathlib.Path(p) for p in (
     '/etc/crictl.yaml','/etc/containerd/config.toml','/var/lib/kubelet/config.yaml',
-    '/etc/kubernetes/kubelet.conf','/etc/kubernetes/admin.conf',
+    '/etc/kubernetes/kubelet.conf','/etc/kubernetes/admin.conf','/etc/haproxy/haproxy.cfg',
+    '/etc/systemd/system/dockyard-browser.service',
 )]
 paths += list(pathlib.Path('/etc/kubernetes/manifests').glob('*.yaml'))
 paths += list(pathlib.Path('/etc/kubernetes/pki').rglob('*.crt'))
@@ -408,7 +411,7 @@ files={str(p):[hashlib.sha256(p.read_bytes()).hexdigest(),p.stat().st_mode & 0o7
 services={name:subprocess.run(
     ['systemctl','show',name,'--property=ActiveState,SubState,MainPID'],
     capture_output=True,text=True,timeout=5,
-).stdout for name in ('kubelet','containerd')}
+).stdout for name in ('kubelet','containerd','haproxy','dockyard-browser')}
 print(json.dumps({'files':files,'services':services},sort_keys=True))
 """
         for entry in self.discover():

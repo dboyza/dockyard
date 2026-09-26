@@ -1,5 +1,5 @@
 id: m19-control-plane
-revision: 1
+revision: 2
 module: 19
 order: 3
 title: Separate client access from control-plane health

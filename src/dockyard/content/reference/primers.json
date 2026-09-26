@@ -1,0 +1,32 @@
+[
+  {
+    "id": "terminal",
+    "title": "Terminal foundations",
+    "minutes": 8,
+    "summary": "Read commands, paths, streams, and the machine boundary before changing a lab."
+  },
+  {
+    "id": "yaml",
+    "title": "YAML and manifests",
+    "minutes": 8,
+    "summary": "Distinguish valid data, valid API objects, and a system that actually works."
+  },
+  {
+    "id": "http",
+    "title": "HTTP and request diagnosis",
+    "minutes": 8,
+    "summary": "Use the request path and failure category to choose your next observation."
+  },
+  {
+    "id": "dns",
+    "title": "DNS and service discovery",
+    "minutes": 8,
+    "summary": "Follow a name through resolution, virtual addressing, and ready endpoints."
+  },
+  {
+    "id": "linux",
+    "title": "Linux administration essentials",
+    "minutes": 10,
+    "summary": "Connect permissions, processes, sockets, systemd, namespaces, and cgroups."
+  }
+]

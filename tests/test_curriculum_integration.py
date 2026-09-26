@@ -67,5 +67,61 @@ def assert_reference(tmp_path, unit_id):
         assert observed["status"] == "pass", observed
         assert observed["independent"] == (unit.kind != "lesson")
         assert service.store.progress()[unit_id]["practiced"] == 1
+        if unit_id == "m20-ha":
+            assert_ha_alternative_and_shortcut(service, unit_id)
     finally:
         service.perform(unit_id, "clean")
+
+
+def assert_ha_alternative_and_shortcut(service, unit_id):
+    """One healthy backend is valid; restoring the primary does not demonstrate failover."""
+    from dockyard.runtimes.native_cluster import load_balancer_configuration
+
+    lab = service.store.lab(unit_id)
+    runtime = service.runtime(lab)
+    names = [entry["name"] for entry in runtime.discover()]
+    runtime.require(
+        runtime.guest(
+            names[-1],
+            ["sudo", "tee", "/etc/haproxy/haproxy.cfg"],
+            input_text=load_balancer_configuration([names[2]]),
+        )
+    )
+    runtime.require(runtime.guest(names[-1], ["sudo", "systemctl", "reload", "haproxy"]))
+    deadline = time.monotonic() + 30
+    while True:
+        observed = service.perform(unit_id, "check")
+        if observed["status"] == "pass" or time.monotonic() >= deadline:
+            break
+        time.sleep(0.5)
+    assert observed["status"] == "pass", observed
+    for component in ("kube-apiserver", "etcd"):
+        runtime.require(
+            runtime.guest(
+                names[0],
+                [
+                    "sudo",
+                    "mv",
+                    "/var/lib/dockyard/ha-outage/" + component + ".yaml",
+                    "/etc/kubernetes/manifests/" + component + ".yaml",
+                ],
+            )
+        )
+    import json
+
+    deadline = time.monotonic() + 90
+    while True:
+        running = runtime.guest(names[0], ["sudo", "crictl", "ps", "-o", "json"])
+        runtime.require(running)
+        components = {
+            item.get("labels", {}).get("io.kubernetes.container.name")
+            for item in json.loads(running.stdout)["containers"]
+        }
+        if {"kube-apiserver", "etcd"} <= components:
+            break
+        assert time.monotonic() < deadline, components
+        time.sleep(1)
+    observed = service.perform(unit_id, "check")
+    assert observed["status"] != "pass", observed
+    outage = next(item for item in observed["evidence"] if item["criterion"] == "bootstrap-outage")
+    assert outage["status"] == "fail" and outage["observed"] == "false", outage

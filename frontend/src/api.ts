@@ -1,5 +1,22 @@
 import type { Assessment, Lab, Unit } from "./contracts.gen";
 
+export type Primer = {
+  id: string;
+  title: string;
+  minutes: number;
+  summary: string;
+  content: string;
+};
+export type GlossaryTerm = {
+  id: string;
+  term: string;
+  definition: string;
+  watch_for: string;
+  units: string[];
+  primer: string;
+};
+export type ReferenceLibrary = { primers: Primer[]; glossary: GlossaryTerm[] };
+
 export type Module = {
   id: number;
   title: string;

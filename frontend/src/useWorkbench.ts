@@ -8,9 +8,16 @@ import {
   type Doctor,
   type Lesson,
   type State,
+  type ReferenceLibrary,
 } from "./api";
 export type Page =
-  "home" | "course" | "lesson" | "labs" | "progress" | "checkpoints";
+  | "home"
+  | "course"
+  | "lesson"
+  | "labs"
+  | "progress"
+  | "checkpoints"
+  | "reference";
 type Dialog = { title: string; body: string; action: () => void } | null;
 const emptyState: State = {
   checkpoints: [],
@@ -23,6 +30,8 @@ const emptyState: State = {
 
 export function useWorkbench() {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
+  const [library, setLibrary] = useState<ReferenceLibrary | null>(null);
+  const [referenceFocus, setReferenceFocus] = useState("primer/terminal");
   const [state, setState] = useState<State>(emptyState);
   const [page, setPage] = useState<Page>("home");
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -68,12 +77,14 @@ export function useWorkbench() {
     let events: EventSource | undefined;
     connect()
       .then(async () => {
-        const [course, current] = await Promise.all([
+        const [course, current, referenceLibrary] = await Promise.all([
           api<Catalog>("/catalog"),
           api<State>("/state"),
+          api<ReferenceLibrary>("/reference"),
         ]);
         if (!alive) return;
         setCatalog(course);
+        setLibrary(referenceLibrary);
         setState(current);
         setConnected(true);
         events = new EventSource("/api/events");
@@ -111,6 +122,10 @@ export function useWorkbench() {
       api<Doctor>("/doctor")
         .then(setDoctor)
         .catch((e) => setError(e.message));
+  };
+  const openReference = (focus = "primer/terminal") => {
+    setReferenceFocus(focus);
+    navigate("reference");
   };
   const openLesson = async (id: string) => {
     const sequence = ++opened.current;
@@ -262,6 +277,10 @@ export function useWorkbench() {
   );
 
   return {
+    library,
+    referenceFocus,
+    setReferenceFocus,
+    openReference,
     catalog,
     setCatalog,
     state,

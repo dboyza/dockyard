@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import time
+import urllib.request
 import uuid
 from contextlib import suppress
 from datetime import UTC, datetime
@@ -18,6 +20,11 @@ from dockyard.probes.security import request
 def workflow() -> bool:
     job_id = None
     try:
+        port = int(os.environ["DOCKYARD_PORT"])
+        browser = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with browser.open(f"http://127.0.0.1:{port}/readyz", timeout=3) as response:
+            if response.status != 200 or json.load(response).get("ready") is not True:
+                return False
         title = "native-" + uuid.uuid4().hex
         job_id = request("/jobs", {"title": title}, "POST")["id"]
         if (

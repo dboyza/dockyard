@@ -14,3 +14,4 @@ done
 for deployment in outside-client egress-target; do
   kubectl rollout status deployment/$deployment -n dockyard-observer --timeout=120s
 done
+python -m dockyard.native expose-app

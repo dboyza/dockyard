@@ -150,6 +150,31 @@ export function LessonPage({ model }: { model: Workbench }) {
                   </ul>
                 </div>
                 <Markdown>{lesson.concept}</Markdown>
+                <aside className="reference-links" aria-label="Background help">
+                  <strong>Keep the foundations close.</strong>
+                  <p className="muted small">
+                    Definitions and short primers stay available as you work.
+                  </p>
+                  <div className="button-row">
+                    {model.library?.glossary
+                      .filter((term) => term.units.includes(lesson.id))
+                      .slice(0, 6)
+                      .map((term) => (
+                        <button
+                          key={term.id}
+                          onClick={() => model.openReference(`term/${term.id}`)}
+                        >
+                          {term.term}
+                        </button>
+                      ))}
+                    <button
+                      className="text-button"
+                      onClick={() => model.openReference()}
+                    >
+                      Open reference desk <ArrowRight size={15} />
+                    </button>
+                  </div>
+                </aside>
                 {lesson.module === 7 && <ReconciliationModel key={lesson.id} />}
                 {lesson.module === 11 && <StorageModel key={lesson.id} />}
                 <section className="prediction">

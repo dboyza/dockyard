@@ -1,0 +1,112 @@
+id: m20-join
+revision: 1
+module: 20
+order: 2
+title: Join a worker and establish cross-node networking
+summary: Complete CA-pinned bootstrap and prove real Dispatch traffic.
+kind: lesson
+runtime: linux
+nodes: 2
+minutes: 40
+outcomes:
+- Join the owned worker using authenticated discovery and a pinned CA.
+- Install the supplied VXLAN CNI with non-overlapping node and Pod networks.
+- Verify DNS, CNI readiness, and a real cross-node application transaction.
+prerequisites:
+- m20-init
+objectives:
+- cka.kubeadm
+- cka.interfaces
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Both nodes show Ready. Which additional check best establishes useful cross-node networking?
+  options:
+  - A fresh frontend job through Service DNS that completes on the other node.
+  - Counting YAML files.
+  - Reading the kubeadm version.
+  correct: 0
+  explanation: A fresh frontend job through Service DNS that completes on the other node.
+hints:
+- Compare the API node list with the two recorded guests; inspect CoreDNS and CNI state separately.
+- The worker needs a bootstrap token plus a CA hash, and both nodes need the supplied VXLAN network before
+  application traffic works.
+- Generate join-config for the worker, run kubeadm join there, apply network-manifest, wait for CNI and
+  DNS, then run bootstrap.sh.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster/
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+- https://etcd.io/docs/v3.6/faq/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+checks:
+- id: bootstrap-initialized
+  title: The native API and all four primary static components are initialized
+  explanation: Observe actual guest components, cluster state, and application behavior.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.bootstrap
+    timeout: 240
+  expectation: json
+  json_path:
+  - initialized
+  expected: 'true'
+  diagnostic: Compare the live evidence with the required initialized boundary.
+- id: bootstrap-network
+  title: Both recorded nodes, CNI agents, and DNS are ready
+  explanation: Observe actual guest components, cluster state, and application behavior.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.bootstrap
+    timeout: 240
+  expectation: json
+  json_path:
+  - network
+  expected: 'true'
+  diagnostic: Compare the live evidence with the required network boundary.
+- id: bootstrap-workflow
+  title: A fresh cross-node frontend job completes and persists
+  explanation: Observe actual guest components, cluster state, and application behavior.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.bootstrap
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Compare the live evidence with the required workflow boundary.
+capabilities:
+- limactl
+- kubectl
+- calico
+- docker
+- native-control-plane
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent configuration formatting, editors, and diagnostic commands are accepted.
+- Live state is graded rather than the shell command sequence.
+failure_modes:
+- A responding API can coexist with missing Pod networking.
+- Node readiness alone does not prove cross-node application traffic.
+- A healthy etcd majority does not repair an endpoint pointed only at a failed API server.
+starter_failure_checks:
+- bootstrap-network
+- bootstrap-workflow
+checkpoint: dispatch-operations-v1

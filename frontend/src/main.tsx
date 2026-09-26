@@ -14,12 +14,14 @@ import {
   X,
   Menu,
   FolderArchive,
+  Library,
 } from "lucide-react";
 import { OverviewPage } from "./OverviewPage";
 import { CoursePage } from "./CoursePage";
 import { LessonPage } from "./LessonPage";
 import { LabsPage } from "./LabsPage";
 import { CheckpointsPage } from "./CheckpointsPage";
+import { ReferencePage } from "./ReferencePage";
 import { ProgressPage } from "./ProgressPage";
 import "./style.css";
 function App() {
@@ -104,6 +106,7 @@ function App() {
                 icon: FolderArchive,
               },
               { id: "labs", label: "Lab manager", icon: FlaskConical },
+              { id: "reference", label: "Reference desk", icon: Library },
             ] as const
           ).map((item) => (
             <button
@@ -176,7 +179,9 @@ function App() {
                       ? "Lab manager"
                       : page === "checkpoints"
                         ? "Project checkpoints"
-                        : "Skill evidence"}
+                        : page === "reference"
+                          ? "Reference desk"
+                          : "Skill evidence"}
             </strong>
           </div>
           <div className="topbar-actions">
@@ -237,6 +242,7 @@ function App() {
           {page === "labs" && <LabsPage model={model} />}
           {page === "progress" && <ProgressPage model={model} />}
           {page === "checkpoints" && <CheckpointsPage model={model} />}
+          {page === "reference" && <ReferencePage model={model} />}
         </main>
         <footer className="app-footer">
           <span>Local by design. Real by practice.</span>

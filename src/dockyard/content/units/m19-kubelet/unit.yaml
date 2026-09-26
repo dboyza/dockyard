@@ -1,5 +1,5 @@
 id: m19-kubelet
-revision: 1
+revision: 2
 module: 19
 order: 2
 title: Reconnect node supervision through systemd

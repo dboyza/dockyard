@@ -139,6 +139,24 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await expect(page.locator('details[open]')).toContainText('dispatch-fixture-a');
   await page.setViewportSize({ width: 480, height: 1000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: 'Reference desk', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'A reference you can work with.' })).toBeVisible();
+  await page.getByRole('button', { name: 'Glossary 66 terms' }).click();
+  await page.getByRole('textbox', { name: 'Search glossary' }).fill('quorum');
+  await expect(page.locator('.glossary-term')).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: 'Quorum', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Keep the API writable through a control-plane outage', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep the API writable through a control-plane outage');
+  await page.getByRole('button', { name: 'Quorum', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Search glossary' })).toHaveValue('Quorum');
+  await page.getByRole('button', { name: 'Return to your lesson' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep the API writable through a control-plane outage');
+  await page.getByRole('button', { name: 'Open reference desk' }).click();
+  await page.setViewportSize({ width: 480, height: 1000 });
+  await page.getByRole('combobox', { name: 'Foundation primer' }).selectOption('yaml');
+  await expect(page.getByRole('heading', { name: 'Read YAML as a data structure' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(failures).toEqual([]);
   // Keep the browser and its SSE connection open while verifying foreground shutdown.
   const stopped = once(server, 'exit');

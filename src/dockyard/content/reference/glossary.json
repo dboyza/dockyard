@@ -1,0 +1,708 @@
+[
+  {
+    "id": "image",
+    "term": "Container image",
+    "definition": "An immutable packaged filesystem and configuration used to create containers.",
+    "watch_for": "An image tag is a movable name; a digest identifies particular content.",
+    "units": [
+      "m02-dockerfile",
+      "m02-multistage",
+      "m06-artifacts"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "container",
+    "term": "Container",
+    "definition": "A running or stopped instance created from an image, with its own writable layer and configured isolation.",
+    "watch_for": "Removing the container removes its writable layer; a separately managed volume has a different lifecycle.",
+    "units": [
+      "m01-lifecycle",
+      "m04-mounts"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "pid-one",
+    "term": "PID 1",
+    "definition": "The first process in a PID namespace, with special responsibilities for signal handling and reaping child processes.",
+    "watch_for": "A shell wrapper that does not forward signals can prevent graceful application shutdown.",
+    "units": [
+      "m01-processes",
+      "m01-signals"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "layer",
+    "term": "Image layer",
+    "definition": "A filesystem change stored as part of an image and combined with other layers when a container starts.",
+    "watch_for": "Deleting a secret in a later layer does not remove the bytes from an earlier layer.",
+    "units": [
+      "m02-dockerfile",
+      "m02-cache",
+      "m18-images"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "build-context",
+    "term": "Build context",
+    "definition": "The files made available to an image build for operations such as COPY.",
+    "watch_for": "A correct Dockerfile cannot copy a file excluded from its context, and an oversized context can include unintended material.",
+    "units": [
+      "m02-dockerfile",
+      "m02-cache"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "build-cache",
+    "term": "Build cache",
+    "definition": "Previously produced build results that can be reused when the builder considers their inputs unchanged.",
+    "watch_for": "A cached step does not mean a remote dependency was checked again; choose reproducible inputs and inspect the resulting artifact.",
+    "units": [
+      "m02-cache",
+      "m02-multistage"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "multi-stage",
+    "term": "Multi-stage build",
+    "definition": "A Dockerfile with multiple build stages, allowing selected artifacts to be copied into a separate final image.",
+    "watch_for": "The final image must still include the runtime dependencies needed by the copied application.",
+    "units": [
+      "m02-multistage"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "digest",
+    "term": "Digest",
+    "definition": "A cryptographic content identifier, commonly written as sha256 followed by a hash.",
+    "watch_for": "An OCI index digest can identify a set of platform images; the ARM64 manifest has its own digest.",
+    "units": [
+      "m06-artifacts",
+      "m16-promotion",
+      "m18-images"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "registry",
+    "term": "Registry",
+    "definition": "A service that stores and distributes container image manifests and blobs.",
+    "watch_for": "Successfully pushing an image does not establish that a workload has the credentials and network path needed to pull it.",
+    "units": [
+      "m06-registry",
+      "m16-pipeline"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "bind-mount",
+    "term": "Bind mount",
+    "definition": "A selected host path made visible at a path inside a container.",
+    "watch_for": "Host ownership and contents remain relevant; a mount can hide files that were already present at the container target path.",
+    "units": [
+      "m04-mounts",
+      "m04-permissions"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "volume",
+    "term": "Volume",
+    "definition": "Storage managed separately from a container writable layer and mounted into one or more containers.",
+    "watch_for": "Persistence across container replacement is different from having a tested backup or replicated storage.",
+    "units": [
+      "m04-mounts",
+      "m04-recovery"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "bridge-network",
+    "term": "Bridge network",
+    "definition": "A local virtual network connecting container network interfaces through a software bridge.",
+    "watch_for": "A working IP path does not prove that a name resolves or that a process listens on the expected interface.",
+    "units": [
+      "m03-bridges",
+      "m03-diagnosis"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "published-port",
+    "term": "Published port",
+    "definition": "A host-side address and port connected to an application port in another network namespace.",
+    "watch_for": "The host port and application listening port may differ; loopback binding limits which host interfaces accept connections.",
+    "units": [
+      "m03-ports",
+      "m01-processes"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "compose-service",
+    "term": "Compose service",
+    "definition": "A named application component whose container configuration is declared in a Compose project.",
+    "watch_for": "Creation order alone does not establish dependency readiness; the application also needs retry and failure behavior.",
+    "units": [
+      "m05-services",
+      "m05-readiness"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "healthcheck",
+    "term": "Health check",
+    "definition": "A repeated observation used to report whether a specified condition currently holds.",
+    "watch_for": "The command defines what is actually tested; a process check does not necessarily exercise its dependencies.",
+    "units": [
+      "m05-readiness",
+      "m12-probes"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "control-plane",
+    "term": "Control plane",
+    "definition": "The Kubernetes components that expose the API, store cluster state, schedule Pods, and reconcile cluster-level behavior.",
+    "watch_for": "Existing containers can keep running during a control-plane outage even though new changes cannot be reconciled.",
+    "units": [
+      "m07-reconciliation",
+      "m19-control-plane",
+      "m20-ha"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "reconciliation",
+    "term": "Reconciliation",
+    "definition": "A controller repeatedly compares desired state with observed state and acts to reduce the difference.",
+    "watch_for": "Submitting a desired state is not a synchronous guarantee that the system has reached it.",
+    "units": [
+      "m07-reconciliation",
+      "m07-declarative"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "pod",
+    "term": "Pod",
+    "definition": "Kubernetes' smallest deployable workload unit, containing one or more containers that share networking and declared volumes.",
+    "watch_for": "A replacement Pod has a new identity; controllers and Services help applications tolerate that replacement.",
+    "units": [
+      "m08-patterns",
+      "m08-workloads"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "deployment",
+    "term": "Deployment",
+    "definition": "A controller for rolling out and maintaining replicated Pods through ReplicaSets.",
+    "watch_for": "Its own metadata labels are different from the labels assigned to Pods in spec.template.",
+    "units": [
+      "m07-reconciliation",
+      "m08-workloads",
+      "m12-rollouts"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "replicaset",
+    "term": "ReplicaSet",
+    "definition": "A controller that maintains a desired count of matching Pods.",
+    "watch_for": "When a Deployment owns it, changing the ReplicaSet directly can conflict with the Deployment's reconciliation.",
+    "units": [
+      "m07-reconciliation",
+      "m08-workloads"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "statefulset",
+    "term": "StatefulSet",
+    "definition": "A workload controller providing stable ordinal identities and ordered behavior for Pods, with persistent claims when configured.",
+    "watch_for": "Stable identity does not itself replicate the application's data or make its database highly available.",
+    "units": [
+      "m11-statefulsets",
+      "m11-mission"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "daemonset",
+    "term": "DaemonSet",
+    "definition": "A controller that places a Pod on each eligible node, commonly for networking, logs, or node-level agents.",
+    "watch_for": "Eligibility depends on scheduling constraints and tolerations, not simply the total node count.",
+    "units": [
+      "m08-workloads"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "job",
+    "term": "Job",
+    "definition": "A controller that runs Pods toward successful completion of a finite task.",
+    "watch_for": "Retries can run application work more than once; design side effects with that possibility in mind.",
+    "units": [
+      "m08-jobs"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "cronjob",
+    "term": "CronJob",
+    "definition": "A controller that creates Jobs according to a schedule and its concurrency and history policies.",
+    "watch_for": "Scheduling is not a guarantee of exactly-once business execution.",
+    "units": [
+      "m08-jobs"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "namespace",
+    "term": "Kubernetes namespace",
+    "definition": "A scope for names and many policies within one cluster.",
+    "watch_for": "A namespace is not automatically a complete network or security isolation boundary.",
+    "units": [
+      "m07-inspection",
+      "m09-identities",
+      "m17-network"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "label-selector",
+    "term": "Label selector",
+    "definition": "A query over labels used to select objects, such as the Pods behind a Service.",
+    "watch_for": "A syntactically valid selector can match no objects or the wrong objects.",
+    "units": [
+      "m10-services",
+      "m13-placement"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "service",
+    "term": "Service",
+    "definition": "A stable Kubernetes access abstraction that maps a declared port to selected backend endpoints.",
+    "watch_for": "DNS can resolve the Service even while no ready backend is available.",
+    "units": [
+      "m10-services",
+      "m20-join"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "endpointslice",
+    "term": "EndpointSlice",
+    "definition": "An API object describing a group of network endpoints and their readiness-related conditions for a Service.",
+    "watch_for": "Inspect endpoint addresses and conditions when a Service exists but traffic fails.",
+    "units": [
+      "m10-services",
+      "m10-mission"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "nodeport",
+    "term": "NodePort",
+    "definition": "A Service port exposed through eligible node addresses and forwarded to Service backends.",
+    "watch_for": "A NodePort is not automatically a listener on the Mac hosting a VM; the host-to-guest path must also exist.",
+    "units": [
+      "m10-services",
+      "m20-join"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "ingress",
+    "term": "Ingress",
+    "definition": "An HTTP routing API whose rules require a compatible running ingress controller to handle traffic.",
+    "watch_for": "Creating an Ingress object without the corresponding controller does not create a working route.",
+    "units": [
+      "m10-ingress"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "gateway-api",
+    "term": "Gateway API",
+    "definition": "Kubernetes APIs that separate infrastructure ownership from traffic routing using resources such as GatewayClass, Gateway, and HTTPRoute.",
+    "watch_for": "Accepted configuration and a programmed controller are useful evidence, but the actual request still needs verification.",
+    "units": [
+      "m10-gateway"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "configmap",
+    "term": "ConfigMap",
+    "definition": "A Kubernetes object holding non-secret configuration values that workloads can consume as files, environment variables, or API data.",
+    "watch_for": "A running process does not necessarily reread a changed mounted file, and environment variables are fixed when the container starts.",
+    "units": [
+      "m09-configmaps"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "secret",
+    "term": "Secret",
+    "definition": "A Kubernetes object intended to hold sensitive values with separate access controls and consumption mechanisms.",
+    "watch_for": "Base64 encoding is not encryption; API permissions, storage protection, and application exposure still matter.",
+    "units": [
+      "m09-secrets",
+      "m18-rotation"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "service-account",
+    "term": "ServiceAccount",
+    "definition": "A Kubernetes workload identity used when a Pod authenticates to the API.",
+    "watch_for": "Authentication establishes identity; RBAC separately determines what that identity may do.",
+    "units": [
+      "m09-identities",
+      "m17-rbac"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "rbac",
+    "term": "RBAC",
+    "definition": "Role-based access control, which grants API permissions through rules and bindings to identities.",
+    "watch_for": "A namespace RoleBinding does not turn its permissions into cluster-wide access.",
+    "units": [
+      "m17-rbac"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "network-policy",
+    "term": "NetworkPolicy",
+    "definition": "A Kubernetes API for selecting Pods and declaring allowed network traffic, enforced by a compatible networking implementation.",
+    "watch_for": "The presence of the object is not proof of enforcement; test both allowed and denied connections from the relevant source.",
+    "units": [
+      "m17-network",
+      "m17-mission"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "security-context",
+    "term": "Security context",
+    "definition": "Pod or container settings controlling aspects such as identity, Linux capabilities, privilege escalation, and filesystem behavior.",
+    "watch_for": "A read-only root filesystem still needs writable mounts for legitimate scratch data.",
+    "units": [
+      "m17-contexts"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "seccomp",
+    "term": "Seccomp",
+    "definition": "A Linux mechanism that filters a process' system calls according to a policy.",
+    "watch_for": "A runtime-default profile reduces available operations but is not a replacement for least-privilege identity and application design.",
+    "units": [
+      "m17-contexts"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "request",
+    "term": "Resource request",
+    "definition": "The declared resource amount Kubernetes uses in scheduling and related resource-accounting decisions.",
+    "watch_for": "A CPU request is not a hard ceiling on CPU use.",
+    "units": [
+      "m13-resources",
+      "m13-autoscaling"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "limit",
+    "term": "Resource limit",
+    "definition": "A configured resource boundary enforced by the runtime and kernel according to the resource type.",
+    "watch_for": "CPU limits commonly cause throttling, while exceeding a memory limit can lead to termination.",
+    "units": [
+      "m06-limits",
+      "m13-resources"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "readiness",
+    "term": "Readiness probe",
+    "definition": "A check determining whether a container should currently receive ordinary Service traffic.",
+    "watch_for": "A readiness failure does not by itself mean Kubernetes restarts the container.",
+    "units": [
+      "m12-probes"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "liveness",
+    "term": "Liveness probe",
+    "definition": "A check that can cause the kubelet to restart a container when its configured failure threshold is reached.",
+    "watch_for": "Using a transient dependency failure as liveness can turn a recoverable outage into repeated restarts.",
+    "units": [
+      "m12-probes"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "startup-probe",
+    "term": "Startup probe",
+    "definition": "A check that gates liveness and readiness probing until the application has completed its allowed startup period.",
+    "watch_for": "A startup allowance must fit the application's real initialization behavior.",
+    "units": [
+      "m12-probes"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "pvc",
+    "term": "PersistentVolumeClaim",
+    "definition": "A workload's request for storage with declared requirements such as capacity, access mode, and storage class.",
+    "watch_for": "A Pending claim can reflect scheduling or provisioning constraints rather than a missing application file.",
+    "units": [
+      "m11-claims"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "pv",
+    "term": "PersistentVolume",
+    "definition": "A cluster storage resource that can be bound to a claim and has its own lifecycle and reclaim policy.",
+    "watch_for": "Retain preserves the backing asset after claim release; it does not make an independent backup.",
+    "units": [
+      "m11-claims",
+      "m11-backup"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "storage-class",
+    "term": "StorageClass",
+    "definition": "A named set of provisioning parameters and policies used for storage claims.",
+    "watch_for": "WaitForFirstConsumer defers binding or provisioning so scheduling constraints can be considered.",
+    "units": [
+      "m11-claims"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "csi",
+    "term": "CSI",
+    "definition": "The Container Storage Interface through which a storage driver integrates volume provisioning, attachment, mounting, and other supported operations.",
+    "watch_for": "A static local PV does not demonstrate a CSI driver's controller and node behavior.",
+    "units": [
+      "m11-claims"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "cni",
+    "term": "CNI",
+    "definition": "The Container Network Interface used by networking plugins to configure container network connectivity.",
+    "watch_for": "Node Ready alone does not prove cross-node traffic, DNS, or NetworkPolicy enforcement.",
+    "units": [
+      "m20-join",
+      "m17-network"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "cri",
+    "term": "CRI",
+    "definition": "The Container Runtime Interface used by kubelet to manage Pod sandboxes and containers through a runtime such as containerd.",
+    "watch_for": "ctr is a containerd administrative client; crictl specifically observes the CRI boundary.",
+    "units": [
+      "m19-runtime"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "kubelet",
+    "term": "Kubelet",
+    "definition": "The node agent that reconciles assigned Pods with the local runtime and reports node and workload observations.",
+    "watch_for": "Containers can survive while kubelet is stopped, so verify fresh leases and service state as well as application traffic.",
+    "units": [
+      "m19-kubelet",
+      "m19-mission"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "kubeadm",
+    "term": "Kubeadm",
+    "definition": "A tool that bootstraps and maintains Kubernetes control-plane configuration and node membership.",
+    "watch_for": "It does not automatically provide every surrounding system, such as a CNI installation or a redundant load balancer.",
+    "units": [
+      "m20-init",
+      "m20-join"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "static-pod",
+    "term": "Static Pod",
+    "definition": "A Pod supervised directly by a node's kubelet from local configuration, commonly used for kubeadm control-plane components.",
+    "watch_for": "Deleting its mirror object through the API does not remove the local source manifest.",
+    "units": [
+      "m19-control-plane",
+      "m20-ha"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "etcd",
+    "term": "Etcd",
+    "definition": "The distributed key-value datastore used by Kubernetes to persist cluster API state.",
+    "watch_for": "An etcd snapshot does not contain the data stored in application PersistentVolumes.",
+    "units": [
+      "m19-control-plane",
+      "m20-ha"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "quorum",
+    "term": "Quorum",
+    "definition": "The voting majority required for a consensus group to commit changes.",
+    "watch_for": "A three-voter etcd cluster needs two voters; adding a fourth voter does not increase its one-member failure tolerance.",
+    "units": [
+      "m20-ha"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "kubeconfig",
+    "term": "Kubeconfig",
+    "definition": "Client configuration describing Kubernetes clusters, users, contexts, and the selected context.",
+    "watch_for": "Embedded client keys and tokens are credentials; the file must be private and scoped to the intended environment.",
+    "units": [
+      "m07-inspection",
+      "m19-control-plane",
+      "m20-init"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "tls",
+    "term": "TLS",
+    "definition": "A protocol providing encrypted transport and authenticated peer identity when trust and identity validation are configured correctly.",
+    "watch_for": "Disabling certificate verification hides an identity or trust failure instead of repairing it.",
+    "units": [
+      "m19-control-plane"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "lease",
+    "term": "Lease",
+    "definition": "A Kubernetes coordination object used for purposes such as node heartbeats and leader election.",
+    "watch_for": "A recent renewal is stronger evidence of current node communication than an old Ready condition alone.",
+    "units": [
+      "m19-kubelet"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "hpa",
+    "term": "HorizontalPodAutoscaler",
+    "definition": "A controller that adjusts workload replica counts using configured metric targets and available metrics.",
+    "watch_for": "A utilization target needs meaningful resource requests and a functioning metrics path.",
+    "units": [
+      "m13-autoscaling"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "helm",
+    "term": "Helm",
+    "definition": "A package manager that renders charts and manages named releases of Kubernetes resources.",
+    "watch_for": "Rendered YAML, release state, and running workload behavior are separate things to inspect.",
+    "units": [
+      "m14-helm"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "kustomize",
+    "term": "Kustomize",
+    "definition": "A tool for composing and modifying Kubernetes manifests using bases and overlays.",
+    "watch_for": "Inspect the rendered objects; a patch that applies successfully may still target an unintended field.",
+    "units": [
+      "m14-kustomize"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "operator",
+    "term": "Operator",
+    "definition": "A controller that encodes domain-specific reconciliation, commonly using custom resources.",
+    "watch_for": "A custom resource definition adds an API type; a working controller must still implement its behavior.",
+    "units": [
+      "m14-operators"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "gitops",
+    "term": "GitOps",
+    "definition": "An operating model in which a controller reconciles deployed state toward declarative state recorded in a source such as Git.",
+    "watch_for": "An imperative fix may be overwritten until the authoritative desired state is corrected.",
+    "units": [
+      "m16-gitops"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "slo",
+    "term": "SLO",
+    "definition": "A service-level objective describing a target for a defined reliability indicator over a stated window.",
+    "watch_for": "A target without a clear numerator, denominator, and observation window is not an actionable measurement.",
+    "units": [
+      "m15-slo"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "sbom",
+    "term": "SBOM",
+    "definition": "A software bill of materials recording identified components in an artifact.",
+    "watch_for": "An inventory is not a guarantee that every vulnerability or runtime risk has been identified.",
+    "units": [
+      "m18-images"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "credential-rotation",
+    "term": "Credential rotation",
+    "definition": "Replacing a credential and updating its legitimate consumers while verifying that the retired credential no longer grants access.",
+    "watch_for": "A changed Secret object alone does not prove that a running application adopted the new value.",
+    "units": [
+      "m18-rotation"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "restore-test",
+    "term": "Restore test",
+    "definition": "A recovery exercise that reads a backup into an appropriate environment and verifies the recovered data and application behavior.",
+    "watch_for": "A backup command exiting successfully does not establish that the backup is usable.",
+    "units": [
+      "m04-recovery",
+      "m11-backup",
+      "m18-recovery"
+    ],
+    "primer": "linux"
+  }
+]

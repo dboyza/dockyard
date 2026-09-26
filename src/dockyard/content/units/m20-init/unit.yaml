@@ -1,0 +1,73 @@
+id: m20-init
+revision: 1
+module: 20
+order: 1
+title: Initialize a control plane from prepared Linux guests
+summary: Turn runtime-ready guests into an authenticated Kubernetes control plane.
+kind: lesson
+runtime: linux
+nodes: 2
+minutes: 40
+outcomes:
+- Explain kubeadm preflight, static components, credentials, and cluster configuration.
+- Initialize a real control plane with a Pod network disjoint from the node network.
+- Use the private host client without changing the default kubeconfig.
+prerequisites:
+- m19-mission
+objectives:
+- cka.infrastructure
+- cka.kubeadm
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: After kubeadm initializes successfully, the node is NotReady and CoreDNS is pending. What
+    is still missing?
+  options:
+  - The Pod networking implementation can still be absent.
+  - The control plane must be completely absent.
+  - Another init should be run immediately.
+  correct: 0
+  explanation: The Pod networking implementation can still be absent.
+hints:
+- Inspect the prepared runtime and the two kubeadm configuration documents before initialization.
+- The control plane needs its actual node IP, containerd CRI socket, certificate SANs, and a non-overlapping
+  Pod subnet.
+- Render init-config, run kubeadm init inside the primary guest with that file on standard input, then
+  use refresh-client and inspect the API.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster/
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+- https://etcd.io/docs/v3.6/faq/
+starter: {}
+reference: {}
+prepare: []
+checks:
+- id: bootstrap-initialized
+  title: The native API and all four primary static components are initialized
+  explanation: Observe actual guest components, cluster state, and application behavior.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.bootstrap
+    timeout: 240
+  expectation: json
+  json_path:
+  - initialized
+  expected: 'true'
+  diagnostic: Compare the live evidence with the required initialized boundary.
+capabilities:
+- limactl
+- kubectl
+- calico
+images: []
+alternatives:
+- Equivalent configuration formatting, editors, and diagnostic commands are accepted.
+- Live state is graded rather than the shell command sequence.
+failure_modes:
+- A responding API can coexist with missing Pod networking.
+- Node readiness alone does not prove cross-node application traffic.
+- A healthy etcd majority does not repair an endpoint pointed only at a failed API server.
+starter_failure_checks:
+- bootstrap-initialized

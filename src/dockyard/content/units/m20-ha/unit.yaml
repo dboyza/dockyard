@@ -1,0 +1,144 @@
+id: m20-ha
+revision: 1
+module: 20
+order: 3
+title: Keep the API writable through a control-plane outage
+summary: Repair endpoint routing while two etcd voters retain quorum.
+kind: lesson
+runtime: linux
+nodes: 4
+minutes: 60
+outcomes:
+- Explain three-member etcd majority and a stable API endpoint.
+- Repair load balancer routing while a real primary API and etcd member remain down.
+- Prove a fresh API write and real application work through the surviving control plane.
+prerequisites:
+- m20-join
+objectives:
+- cka.ha
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: One member of a three-voter etcd cluster is down, and two voters are healthy. What else is
+    necessary for a client write?
+  options:
+  - A working route to an API server connected to the surviving majority.
+  - Removing the failed member from membership immediately.
+  - Disabling API certificate verification.
+  correct: 0
+  explanation: A working route to an API server connected to the surviving majority.
+hints:
+- Inspect primary CRI containers and the worker load balancer before assuming the surviving datastore
+  is unavailable.
+- The primary is deliberately down, but the other two control planes retain quorum; the endpoint must
+  route to at least one of them.
+- Render lb-config, install it as the worker guest HAProxy configuration, validate syntax, and reload
+  HAProxy while leaving the primary outage in place.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster/
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+- https://etcd.io/docs/v3.6/faq/
+- https://v1-35.docs.kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm-init/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - ha-layout.py
+  timeout: 30
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - ha-outage.py
+  timeout: 150
+checks:
+- id: bootstrap-outage
+  title: The primary API server and etcd member remain stopped
+  explanation: Observe actual guest components, cluster state, and application behavior.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.bootstrap
+    - ha
+    timeout: 240
+  expectation: json
+  json_path:
+  - outage
+  expected: 'true'
+  diagnostic: Compare the live evidence with the required outage boundary.
+- id: bootstrap-quorum
+  title: The two surviving endpoints are healthy with all three voting members retained
+  explanation: Observe actual guest components, cluster state, and application behavior.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.bootstrap
+    - ha
+    timeout: 240
+  expectation: json
+  json_path:
+  - quorum
+  expected: 'true'
+  diagnostic: Compare the live evidence with the required quorum boundary.
+- id: bootstrap-endpoint
+  title: The private API endpoint accepts a fresh write, read, and delete
+  explanation: Observe actual guest components, cluster state, and application behavior.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.bootstrap
+    - ha
+    timeout: 240
+  expectation: json
+  json_path:
+  - endpoint
+  expected: 'true'
+  diagnostic: Compare the live evidence with the required endpoint boundary.
+- id: bootstrap-workflow
+  title: A fresh cross-node frontend job completes and persists
+  explanation: Observe actual guest components, cluster state, and application behavior.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.bootstrap
+    - ha
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Compare the live evidence with the required workflow boundary.
+capabilities:
+- limactl
+- kubectl
+- calico
+- docker
+- native-cluster
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent configuration formatting, editors, and diagnostic commands are accepted.
+- Live state is graded rather than the shell command sequence.
+failure_modes:
+- A responding API can coexist with missing Pod networking.
+- Node readiness alone does not prove cross-node application traffic.
+- A healthy etcd majority does not repair an endpoint pointed only at a failed API server.
+starter_failure_checks:
+- bootstrap-endpoint
+- bootstrap-workflow
+checkpoint: dispatch-operations-v1
