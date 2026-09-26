@@ -57,3 +57,37 @@ def test_checkpoint_preserves_source_and_evidence_without_credentials_or_runtime
     (workspace / "Dockerfile").write_text("Changed afterward\n")
     with ZipFile(tmp_path / "checkpoints" / saved["archive"]) as archive:
         assert archive.read("source/Dockerfile") == b"FROM example\n"
+
+
+def test_portable_manifests_preserve_templates_and_other_documents():
+    from dockyard.portfolio import portable_yaml
+
+    settings = (
+        "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: settings\ndata:\n  mode: learning\n"
+    )
+    secret = "apiVersion: v1\nkind: Secret\nmetadata:\n  name: database\nstringData:\n  password: "
+    for expression in (
+        "${DOCKYARD_DB_PASSWORD}",
+        '{{ required "Supply password" .Values.database.password | quote }}',
+    ):
+        source = settings + "---\n" + secret + expression + "\n"
+        actual, removed = portable_yaml(source)
+        assert actual == source
+        assert removed == []
+    for value in ("literal-password", '{{ "literal-password" | quote }}'):
+        actual, removed = portable_yaml(settings + "---\n" + secret + value + "\n")
+        assert actual == settings
+        assert len(removed) == 1
+        assert "literal-password" not in actual
+
+
+def test_nested_secret_and_uninspectable_template_do_not_escape_exclusion():
+    from dockyard.portfolio import portable_yaml
+
+    for source in (
+        '{"apiVersion":"v1","kind":"List","items":[{"kind":"Secret","data":{"key":"c2VjcmV0"}}]}',
+        "kind: Secret\nstringData:\n  password: {{ include (invalid }\n",
+    ):
+        actual, removed = portable_yaml(source)
+        assert actual == ""
+        assert len(removed) == 1

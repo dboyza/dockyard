@@ -368,3 +368,11 @@ The installed wheel's real-Chrome and real-Docker journey passed in 13.3 seconds
 Direct desktop and 480-pixel screenshots were inspected in dark and light themes without horizontal overflow.
 The backend regression passed 50 tests, and frontend lint, type checking, three component tests, and production build passed.
 Maintenance-version selection and staging are implementation foundations; the actual Module 21 upgrade and maintenance audits are still pending.
+
+## Portable checkpoint sources
+
+A real completed Docker mission reproduced loss of a combined ConfigMap and Secret-template file during checkpoint creation.
+The corrected exporter preserves environment-variable and inspected Helm value references, while removing documents with literal Secret values and recording each omission in the archive manifest.
+Other documents in the same YAML file remain available.
+The same real-mission reproduction then preserved the portable combined manifest byte for byte.
+Focused regression checks also rejected literal-valued Helm expressions, nested Secret objects, and uninspectable credential templates.

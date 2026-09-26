@@ -31,7 +31,7 @@ export function CheckpointsPage({ model }: { model: Workbench }) {
                 </p>
                 <p className="muted small">
                   {item.excluded_count} files excluded. The archive manifest
-                  explains credential, backup, and runtime-data exclusions.
+                  explains removed credential documents and excluded files.
                 </p>
               </div>
               <div className="button-row">
