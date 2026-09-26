@@ -8,10 +8,11 @@ from typing import Any
 from dockyard.models import LabObservation, ObservedLink, ObservedResource
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.runtimes.kubernetes import KubernetesRuntime
+from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.store import timestamp
 
 
-def observe(runtime: DockerRuntime | KubernetesRuntime) -> LabObservation:
+def observe(runtime: DockerRuntime | KubernetesRuntime | LinuxRuntime) -> LabObservation:
     snapshot = LabObservation(
         lab_id=runtime.lab.id,
         runtime=runtime.lab.runtime,
@@ -19,7 +20,24 @@ def observe(runtime: DockerRuntime | KubernetesRuntime) -> LabObservation:
         status="observed",
         message="Read-only runtime observation. Assessment is a separate action.",
     )
-    if isinstance(runtime, KubernetesRuntime):
+    if isinstance(runtime, LinuxRuntime):
+        for entry in json.loads(runtime.lab.resources.get("vm_inventory", "[]")):
+            machine = runtime.verify(entry)
+            snapshot.resources.append(
+                ObservedResource(
+                    id="vm:" + entry["name"],
+                    kind="VirtualMachine",
+                    name=entry["name"],
+                    state=machine["status"] if machine else "Missing",
+                    summary=(
+                        f"{machine['cpus']} CPUs · "
+                        f"{machine['memory'] // 1024**2} MiB · no host mounts"
+                        if machine
+                        else "Recorded guest is unavailable"
+                    ),
+                )
+            )
+    elif isinstance(runtime, KubernetesRuntime):
         # Verify the recorded node identities as well as the private API credential boundary.
         nodes = [
             runtime.verify(entry)

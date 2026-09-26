@@ -11,12 +11,12 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 import yaml
 
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
+from dockyard.runtimes import kubeclient
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.toolchain import Toolchain
 from dockyard.workspace import atomic_write
@@ -40,40 +40,19 @@ class KubernetesRuntime:
         payload: str | None = None,
         output_limit: int = 1_000_000,
     ) -> ProcessResult:
-        self.verify_kubeconfig()
-        return run(
-            [
-                str(self.tools / "bin/kubectl"),
-                "--kubeconfig",
-                self.env["KUBECONFIG"],
-                "--request-timeout=15s",
-                *args,
-            ],
+        return kubeclient.command(
+            args,
+            tools=self.tools,
             env=self.env,
+            expected=self.lab.resources.get("kubeconfig_identity"),
             timeout=timeout,
             cancel=cancel,
-            input_text=payload,
+            payload=payload,
             output_limit=output_limit,
         )
 
     def config_identity(self) -> str:
-        path = Path(self.env["KUBECONFIG"])
-        if path.is_symlink() or not path.is_file():
-            raise RuntimeErrorBase("The private kubeconfig is missing or is a symbolic link.")
-        config = yaml.safe_load(path.read_text())
-        clusters, users = config.get("clusters", []), config.get("users", [])
-        if len(clusters) != 1 or len(users) != 1:
-            raise RuntimeErrorBase("The private kubeconfig must contain exactly one lab identity.")
-        cluster, user = clusters[0]["cluster"], users[0]["user"]
-        endpoint = urlparse(cluster.get("server", ""))
-        if (
-            endpoint.scheme != "https"
-            or endpoint.hostname != "127.0.0.1"
-            or set(cluster) != {"server", "certificate-authority-data"}
-            or set(user) != {"client-certificate-data", "client-key-data"}
-        ):
-            raise RuntimeErrorBase("The lab kubeconfig changed its local authentication boundary.")
-        return hashlib.sha256(json.dumps([clusters, users], sort_keys=True).encode()).hexdigest()
+        return kubeclient.identity(Path(self.env["KUBECONFIG"]))
 
     def verify_kubeconfig(self) -> None:
         expected = self.lab.resources.get("kubeconfig_identity")

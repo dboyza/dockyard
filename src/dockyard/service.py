@@ -30,6 +30,7 @@ from dockyard.portfolio import checkpoint
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.runtimes.kubernetes import KubernetesRuntime
+from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.store import Store, timestamp
 from dockyard.workspace import atomic_write, reset, snapshot, write_files
 
@@ -79,7 +80,7 @@ class Service:
     def environment(self, lab: Lab | None = None) -> dict[str, str]:
         env = dict(os.environ)
         for key in list(env):
-            if key.startswith(("HELM_", "GIT_", "TRIVY_")):
+            if key.startswith(("HELM_", "GIT_", "TRIVY_", "LIMA_")):
                 env.pop(key)
         env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL="/dev/null", GIT_TERMINAL_PROMPT="0")
         env.update(
@@ -134,6 +135,15 @@ class Service:
                 HELM_DRIVER="secret",
                 HELM_NAMESPACE="dispatch",
             )
+            if lab.runtime == Runtime.LINUX:
+                env.update(
+                    LIMA_HOME=str(self.directory / "vms"),
+                    SSH="/usr/bin/ssh",
+                    DOCKYARD_NODE_PREFIX="d" + lab.id[:10],
+                    DOCKYARD_CONTROL_PLANE="d" + lab.id[:10] + "-cp1",
+                    DOCKYARD_WORKER="d" + lab.id[:10] + "-worker",
+                    DOCKYARD_API_PORT=lab.resources.get("api_port", ""),
+                )
             for key in ("git_url", "git_cluster_url", "registry"):
                 if lab.resources.get(key):
                     env["DOCKYARD_" + key.upper()] = lab.resources[key]
@@ -183,6 +193,9 @@ class Service:
             with socket.socket() as registry_listener:
                 registry_listener.bind(("127.0.0.1", 0))
                 registry_port = registry_listener.getsockname()[1]
+        with socket.socket() as api_listener:
+            api_listener.bind(("127.0.0.1", 0))
+            api_port = api_listener.getsockname()[1]
         lab = Lab(
             id=lab_id,
             unit_id=unit_id,
@@ -197,6 +210,7 @@ class Service:
                 "docker_endpoint": self._docker_endpoint(),
                 "db_password": secrets.token_urlsafe(24),
                 "registry_port": str(registry_port),
+                "api_port": str(api_port),
             },
         )
         self.store.save_lab(lab)
@@ -298,12 +312,11 @@ class Service:
         lab.error = None
         self._save(lab)
         unit = self.catalog.get(lab.unit_id)
-        if unit.runtime == Runtime.LINUX:
-            raise LabError("This runtime adapter is not available in this development build.")
         env = self.environment(lab)
-        self._require(
-            run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=15, cancel=cancel)
-        )
+        if unit.runtime != Runtime.LINUX or unit.images:
+            self._require(
+                run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=15, cancel=cancel)
+            )
         images = list(
             dict.fromkeys(unit.images + (["kind"] if unit.runtime == Runtime.KUBERNETES else []))
         )
@@ -320,19 +333,23 @@ class Service:
         if not workspace.exists():
             write_files(workspace, unit.starter)
         runtime = self.runtime(lab)
-        if isinstance(runtime, KubernetesRuntime):
+        if isinstance(runtime, (KubernetesRuntime, LinuxRuntime)):
             with operation_lock(self.directory / "locks", "cluster-capacity"):
                 for other in self.store.labs():
                     if (
                         other.id != lab.id
-                        and other.runtime == Runtime.KUBERNETES
+                        and other.runtime in {Runtime.KUBERNETES, Runtime.LINUX}
                         and other.state == "ready"
                     ):
                         with operation_lock(self.directory / "locks", other.unit_id):
                             self.runtime(other).change("stop", cancel)
                             other.state = "stopped"
                             self._save(other)
-                runtime.prepare(unit.nodes, unit.images, cancel, unit.capabilities)
+                if isinstance(runtime, LinuxRuntime):
+                    runtime.prepare(unit.nodes, cancel)
+                    runtime.install_node_packages(cancel)
+                else:
+                    runtime.prepare(unit.nodes, unit.images, cancel, unit.capabilities)
         env = self.environment(lab)
         commands = (
             [] if lab.resources.get("prepared_revision") == str(unit.revision) else unit.prepare
@@ -379,9 +396,11 @@ class Service:
     def docker(self, lab: Lab) -> DockerRuntime:
         return DockerRuntime(lab, self.environment(lab), self._save)
 
-    def runtime(self, lab: Lab) -> DockerRuntime | KubernetesRuntime:
+    def runtime(self, lab: Lab) -> DockerRuntime | KubernetesRuntime | LinuxRuntime:
         if lab.runtime == Runtime.KUBERNETES:
             return KubernetesRuntime(lab, self.environment(lab), self._save, self.tools)
+        if lab.runtime == Runtime.LINUX:
+            return LinuxRuntime(lab, self.environment(lab), self._save, self.tools)
         return self.docker(lab)
 
     def _cleanup(self, lab: Lab, cancel: threading.Event) -> None:
@@ -406,6 +425,8 @@ class Service:
         health = (
             None
             if stopped
+            else runtime.health(cancel)
+            if isinstance(runtime, LinuxRuntime)
             else run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=10, cancel=cancel)
         )
         if health is not None and health.ok and isinstance(runtime, KubernetesRuntime):
@@ -432,7 +453,9 @@ class Service:
                     expected="A responsive local runtime and, where required, Kubernetes API",
                     observed=health.stderr,
                     diagnostic=(
-                        "Check Docker Desktop and resume the practice environment, then retry. "
+                        "Resume the recorded Linux guests and inspect their startup state. "
+                        if isinstance(runtime, LinuxRuntime)
+                        else "Check Docker Desktop, resume this lab, and retry. "
                         "This does not count as a learner mistake."
                     ),
                 )

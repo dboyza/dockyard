@@ -51,3 +51,37 @@ def test_scanner_uses_private_offline_defaults_without_telemetry(tmp_path, monke
         "TRIVY_SKIP_VEX_REPO_UPDATE",
     ):
         assert env[key] == "true"
+
+
+def test_linux_shell_is_scoped_to_its_own_guest_home(tmp_path, monkeypatch):
+    from dockyard.models import Lab, Runtime
+    from dockyard.store import timestamp
+
+    monkeypatch.setenv("LIMA_HOME", "/unrelated/lima")
+    monkeypatch.setenv("LIMA_INSTANCE", "important-machine")
+    monkeypatch.setenv("LIMA_SHELLENV_ALLOW", "*")
+    monkeypatch.setenv("SSH", "/unrelated/helper")
+    service = Service(tmp_path)
+    lab = Lab(
+        id="e" * 32,
+        unit_id="m19-runtime",
+        revision=1,
+        runtime=Runtime.LINUX,
+        state="ready",
+        workspace=str(tmp_path / "labs/example/workspace"),
+        created_at=timestamp(),
+        updated_at=timestamp(),
+        resources={
+            "port": "32123",
+            "api_port": "32124",
+            "docker_endpoint": "unix:///private/owned.sock",
+        },
+    )
+    env = service.environment(lab)
+    assert env["LIMA_HOME"] == str(service.directory / "vms")
+    assert env["SSH"] == "/usr/bin/ssh"
+    assert "LIMA_INSTANCE" not in env
+    assert "LIMA_SHELLENV_ALLOW" not in env
+    assert env["DOCKYARD_CONTROL_PLANE"] == "deeeeeeeeee-cp1"
+    assert env["DOCKYARD_API_PORT"] == "32124"
+    assert __import__("os").environ["LIMA_HOME"] == "/unrelated/lima"

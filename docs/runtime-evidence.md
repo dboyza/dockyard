@@ -266,3 +266,26 @@ The verified curriculum now contains 72 units through the first three phases; Li
 The installed 72-unit wheel passed the real Chrome/Docker journey in 11.9 seconds.
 The backend regression passed 46 tests with five opt-in runtime tests skipped; Ruff, format, and strict typing checks passed.
 The new Lima lifecycle adapter and its VM integration test are being developed separately and are not yet claimed as verified.
+
+## Native Linux runtime foundation
+
+The production Lima transport passed its two-guest lifecycle test in 49.50 seconds.
+It verified native ARM64 guests, actual guest-to-guest HTTP, stop/resume, preservation of recorded disk/configuration identities, refusal after an external configuration change, and owned-guest cleanup.
+The runtime uses a project-private VM home, verified local Ubuntu image and guest-agent inputs, no host filesystem mounts, and private loopback forwarding.
+A longer development profile exposed Lima's temporary SSH socket limit; preflight now checks that longest path before creating any VM, and the recorded partial guest was cleaned before retrying.
+
+A separate retained native pair initialized kubeadm 1.35.8 and joined its worker using CA-pinned discovery.
+The observed guests run Ubuntu 24.04.4, kernel 6.8.0-134, and containerd 2.2.1.
+The shared inline-credential client connected through the app-owned loopback endpoint without changing the user's kubeconfig.
+The native CNI uses VXLAN, and its address detection follows Kubernetes InternalIP instead of assuming the guest interface is named lima0.
+The first assumption failed visibly because this guest uses eth0; the corrected configuration passed both Calico and CoreDNS rollout checks.
+Node Ready alone preceded those controller conditions and was not accepted as networking evidence.
+A client on the control-plane guest reached a Service whose server ran on the worker, failed under an ingress denial, and recovered after an explicit client allow rule.
+The native fingerprint remained stable without changes, detected a ConfigMap created outside the default namespace, and returned to its original value after that object was deleted.
+Guest files and systemd service state are also included in the native runtime fingerprint.
+Reference: [Calico IP autodetection](https://docs.tigera.io/calico/latest/networking/ipam/ip-autodetection).
+
+The shared Kubernetes-client extraction passed the existing kind lifecycle and changed-credential rejection test in 90.10 seconds.
+The backend suite passed 48 tests with five opt-in runtime tests skipped, and the focused native identity/environment guards passed six tests after the final cleanup adjustment.
+Native curriculum units, HA behavior, supported minor upgrades, and guest package offline caching remain under implementation.
+The official ARM64 package metadata lists 1.34.12-1.1 as an available kubeadm source version for the planned 1.35.8 minor-upgrade exercise.
