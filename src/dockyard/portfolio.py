@@ -31,9 +31,19 @@ SOURCE_SUFFIXES = {
     ".js",
     ".ts",
     ".conf",
+    ".cfg",
+    ".tpl",
     ".sql",
 }
-SOURCE_NAMES = {"Dockerfile", "Containerfile", "Makefile", "VERSION", ".dockerignore", ".gitignore"}
+SOURCE_NAMES = {
+    "Dockerfile",
+    "Containerfile",
+    "Makefile",
+    "VERSION",
+    "Corefile",
+    ".dockerignore",
+    ".gitignore",
+}
 
 
 def portable_yaml(text: str) -> tuple[str, list[str]]:
