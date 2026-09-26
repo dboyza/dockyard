@@ -396,7 +396,7 @@ class LinuxRuntime:
 
     def fingerprint(self) -> str:
         records: list[Any] = []
-        script = """import hashlib,json,os,pathlib,pwd,subprocess
+        script = """import hashlib,json,os,pathlib,pwd,subprocess,sys
 paths=[pathlib.Path(p) for p in (
     '/etc/crictl.yaml','/etc/containerd/config.toml','/var/lib/kubelet/config.yaml',
     '/etc/kubernetes/kubelet.conf','/etc/kubernetes/admin.conf','/etc/haproxy/haproxy.cfg',
@@ -412,20 +412,33 @@ services={name:subprocess.run(
     ['systemctl','show',name,'--property=ActiveState,SubState,MainPID'],
     capture_output=True,text=True,timeout=5,
 ).stdout for name in ('kubelet','containerd','haproxy','dockyard-browser')}
-print(json.dumps({'files':files,'services':services},sort_keys=True))
+forward=subprocess.run(
+    ['sysctl','-n','net.ipv4.ip_forward'],capture_output=True,text=True,timeout=5,
+).stdout.strip()
+rules=subprocess.run(
+    ['iptables','-S','INPUT'],capture_output=True,text=True,timeout=5,
+).stdout.splitlines()
+network={'ip_forward':forward,'owned_input_rules':[line for line in rules if sys.argv[1] in line]}
+raw=subprocess.run(
+    ['iptables','-t','raw','-S','PREROUTING'],capture_output=True,text=True,timeout=5,
+).stdout.splitlines()
+network['owned_raw_rules']=[line for line in raw if sys.argv[1] in line]
+print(json.dumps({'files':files,'services':services,'network':network},sort_keys=True))
 """
         for entry in self.discover():
             current = self.verify(entry)
             records.append([entry, current["status"] if current else "Missing"])
             if current and current["status"] == "Running":
-                observed = self.guest(entry["name"], ["sudo", "python3", "-c", script], timeout=20)
+                observed = self.guest(
+                    entry["name"], ["sudo", "python3", "-c", script, self.lab.id], timeout=20
+                )
                 self.require(observed)
                 records.append(json.loads(observed.stdout))
         if self.lab.resources.get("kubeconfig_identity"):
             observed = self.kubectl(
                 [
                     "get",
-                    "nodes,namespaces,deploy,sts,ds,pods,svc,pvc,pv,storageclasses,configmaps,secrets,roles,rolebindings,networkpolicies",
+                    "nodes,namespaces,deploy,sts,ds,pods,svc,pvc,pv,storageclasses,configmaps,secrets,roles,rolebindings,clusterroles,clusterrolebindings,csidrivers,csinodes,volumeattachments,poddisruptionbudgets,networkpolicies",
                     "-A",
                     "-o",
                     "json",

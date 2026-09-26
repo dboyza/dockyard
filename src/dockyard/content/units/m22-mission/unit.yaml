@@ -1,0 +1,182 @@
+id: m22-mission
+revision: 1
+module: 22
+order: 4
+title: Recover Dispatch across network, resolver, and storage boundaries
+summary: Independently locate three infrastructure faults and preserve the original data.
+kind: mission
+runtime: linux
+nodes: 2
+minutes: 60
+outcomes:
+- Form and test a layered hypothesis using host, DNS, and CSI evidence.
+- Restore real cross-node traffic and the original database mount.
+- Hand off the observed recovery and the remaining local-storage limitations.
+prerequisites:
+- m22-storage
+objectives:
+- cka.interfaces
+- cka.pod-connectivity
+- cka.coredns
+- cka.pv-pvc
+- cka.service-diagnosis
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which observation best establishes recovered service rather than a plausible configuration?
+  options:
+  - The original data remains and a new cross-node application transaction completes.
+  - All YAML files have matching indentation.
+  - The browser opened successfully.
+  correct: 0
+  explanation: The original data remains and a new cross-node application transaction completes.
+hints:
+- Separate host forwarding, the frontend resolver policy, and the database storage chain.
+- Inspect net.ipv4.ip_forward on the worker, dnsPolicy on trusted-client, and database placement relative
+  to the CSI node.
+- Restore forwarding to 1, use ClusterFirst on the trusted frontend, and place the database on its original
+  CSI worker before validating the full path.
+sources:
+- https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements
+- https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+- https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
+- https://github.com/kubernetes-csi/csi-driver-host-path/tree/v1.18.0
+- https://kubernetes.io/docs/concepts/storage/storage-classes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 600
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.infrastructure
+  - mission
+  timeout: 360
+checks:
+- id: infrastructure-preserved
+  title: Original cluster and stored application state remain intact
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+- id: infrastructure-packets
+  title: A frontend on the control plane reaches an API Pod IP on the worker
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - packets
+  expected: 'true'
+  diagnostic: Inspect the packets evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+- id: infrastructure-dns
+  title: A newly created Service name resolves to its actual ClusterIP
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - dns
+  expected: 'true'
+  diagnostic: Inspect the dns evidence; an unavailable dependency can prevent verification without proving
+    data was deleted.
+- id: infrastructure-proxy
+  title: Both proxy agents are ready and the new ClusterIP reaches an API process
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - proxy
+  expected: 'true'
+  diagnostic: Inspect the proxy evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+- id: infrastructure-csi
+  title: The original CSI volume is attached and mounted by the worker database
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - csi
+  expected: 'true'
+  diagnostic: Inspect the csi evidence; an unavailable dependency can prevent verification without proving
+    data was deleted.
+- id: infrastructure-workflow
+  title: A fresh browser and cross-node Dispatch transaction completes
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+- native-csi
+checkpoint: dispatch-infrastructure-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent diagnostic tools and configuration editing methods are accepted.
+- Actual placement, routes, preserved identities, and stored bytes are checked rather than shell history.
+failure_modes:
+- A Ready node can coexist with a broken Pod packet path.
+- Old kernel Service rules can hide an unavailable proxy agent.
+- A bound claim does not prove that a new consumer can mount the original data.
+starter_failure_checks:
+- infrastructure-csi
+- infrastructure-workflow

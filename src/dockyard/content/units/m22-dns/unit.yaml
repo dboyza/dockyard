@@ -1,0 +1,161 @@
+id: m22-dns
+revision: 1
+module: 22
+order: 2
+title: Distinguish name resolution from Service programming
+summary: Repair CoreDNS and the agents that program new Service routes.
+kind: lesson
+runtime: linux
+nodes: 2
+minutes: 45
+outcomes:
+- Trace DNS queries separately from ClusterIP forwarding.
+- Repair a cluster-zone mismatch and a broken kube-proxy rollout.
+- Verify newly created Service names and routes rather than relying on stale kernel rules.
+prerequisites:
+- m22-packets
+objectives:
+- cka.coredns
+- cka.service-diagnosis
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: An old Service still works after kube-proxy stops. What does that prove?
+  options:
+  - Existing kernel routes can remain; test a newly created Service too.
+  - Every future Service will work.
+  - CoreDNS no longer matters.
+  correct: 0
+  explanation: Existing kernel routes can remain; test a newly created Service too.
+hints:
+- Inspect the CoreDNS zone and the desired/running kube-proxy images separately.
+- The fixture retained the original CoreDNS text, and kube-proxy v1.35.8 is already cached.
+- Restore the cluster.local zone, restart CoreDNS, restore the kube-proxy image, and wait for both rollouts
+  before testing a new Service.
+sources:
+- https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements
+- https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+- https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
+- https://github.com/kubernetes-csi/csi-driver-host-path/tree/v1.18.0
+- https://kubernetes.io/docs/concepts/storage/storage-classes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 600
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.infrastructure
+  - dns
+  timeout: 240
+checks:
+- id: infrastructure-preserved
+  title: Original cluster and stored application state remain intact
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+- id: infrastructure-packets
+  title: A frontend on the control plane reaches an API Pod IP on the worker
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - packets
+  expected: 'true'
+  diagnostic: Inspect the packets evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+- id: infrastructure-dns
+  title: A newly created Service name resolves to its actual ClusterIP
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - dns
+  expected: 'true'
+  diagnostic: Inspect the dns evidence; an unavailable dependency can prevent verification without proving
+    data was deleted.
+- id: infrastructure-proxy
+  title: Both proxy agents are ready and the new ClusterIP reaches an API process
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - proxy
+  expected: 'true'
+  diagnostic: Inspect the proxy evidence; an unavailable dependency can prevent verification without proving
+    data was deleted.
+- id: infrastructure-workflow
+  title: A fresh browser and cross-node Dispatch transaction completes
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent diagnostic tools and configuration editing methods are accepted.
+- Actual placement, routes, preserved identities, and stored bytes are checked rather than shell history.
+failure_modes:
+- A Ready node can coexist with a broken Pod packet path.
+- Old kernel Service rules can hide an unavailable proxy agent.
+- A bound claim does not prove that a new consumer can mount the original data.
+starter_failure_checks:
+- infrastructure-dns
+- infrastructure-proxy

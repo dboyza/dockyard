@@ -1,0 +1,131 @@
+id: m22-storage
+revision: 1
+module: 22
+order: 3
+title: Recover a CSI volume with incompatible workload placement
+summary: Follow a claim through provisioning, attachment, and a node-local mount.
+kind: lesson
+runtime: linux
+nodes: 2
+minutes: 45
+outcomes:
+- Distinguish PVC binding, CSI controller attachment, node registration, and filesystem mount.
+- Diagnose a database Pod whose placement conflicts with its existing CSI storage.
+- Recover the original volume and stored data without recreating the claim.
+prerequisites:
+- m22-dns
+objectives:
+- cka.interfaces
+- cka.pv-pvc
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The PVC is Bound, but a replacement database Pod cannot mount it on another node. What is
+    missing from that observation?
+  options:
+  - Driver registration, attachment, placement, and access to the actual backing data.
+  - Only the display name of the claim.
+  - Proof that a new empty claim should replace it.
+  correct: 0
+  explanation: Driver registration, attachment, placement, and access to the actual backing data.
+hints:
+- Follow the claim to its CSI PV and compare the volume's usable node with the database Pod selector.
+- The hostpath driver and original data remain on the worker; changing placement does not move storage.
+- Repair the StatefulSet template, delete only the failed database Pod if the rollout remains stalled,
+  and wait for the original claim to mount.
+sources:
+- https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements
+- https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+- https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
+- https://github.com/kubernetes-csi/csi-driver-host-path/tree/v1.18.0
+- https://kubernetes.io/docs/concepts/storage/storage-classes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 600
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.infrastructure
+  - storage
+  timeout: 360
+checks:
+- id: infrastructure-preserved
+  title: Original cluster and stored application state remain intact
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+- id: infrastructure-csi
+  title: The original CSI volume is attached and mounted by the worker database
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - csi
+  expected: 'true'
+  diagnostic: Inspect the csi evidence; an unavailable dependency can prevent verification without proving
+    data was deleted.
+- id: infrastructure-workflow
+  title: A fresh browser and cross-node Dispatch transaction completes
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+- native-csi
+checkpoint: dispatch-infrastructure-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent diagnostic tools and configuration editing methods are accepted.
+- Actual placement, routes, preserved identities, and stored bytes are checked rather than shell history.
+failure_modes:
+- A Ready node can coexist with a broken Pod packet path.
+- Old kernel Service rules can hide an unavailable proxy agent.
+- A bound claim does not prove that a new consumer can mount the original data.
+starter_failure_checks:
+- infrastructure-csi
+- infrastructure-workflow

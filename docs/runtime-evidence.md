@@ -427,3 +427,20 @@ Pristine upstream manifests, Apache-2.0 licensing, source checksums, and immutab
 The upstream v1.18.0 deployment template still references a v1.17.1 driver image; Dockyard explicitly selects the separately verified v1.18.0 image.
 Snapshot and health-monitor add-ons are omitted from this teaching fixture.
 Module 22 application integration and its fault/repair audits remain pending.
+
+## Module 22: packet paths, Service programming, and CSI data recovery
+
+All four infrastructure activities passed actual broken-starter and reference-repair checks on disposable native clusters.
+The DNS activity restored the cluster zone and both kube-proxy agents, then resolved and contacted a newly created diagnostic Service.
+The packet activity verified a cross-node HTTP failure from an exact raw-table PREROUTING rule dropping VXLAN UDP, then recovered actual traffic after removing that rule.
+An earlier INPUT-hook fixture did not interrupt the traffic and was rejected by the starter audit; the final hook recorded dropped packets and failed the intended application checks.
+
+The storage activity and compound mission used the CSI-backed PostgreSQL checkpoint rather than the earlier static local volume.
+Repair preserved the original claim UID, PV UID, CSI volume handle, and pre-incident database row, then demonstrated a mounted writable database and a newly completed Dispatch job.
+The compound fixture also repaired guest forwarding and frontend DNS policy.
+Preparation waits for the previous attachment to detach and the frontend rollout to settle so the assessment does not begin amid fixture-induced resource transitions.
+The four activities bring successful course reference audits to 88; later chapters remain under audit.
+
+The actual Docker mission export also verified byte-for-byte retention of authored HAProxy, CoreDNS, and Helm helper source files.
+The installed browser and real-Docker journey passed in 14.1 seconds after reproducing and fixing a historical-evidence heading that incorrectly used present-tense availability wording after the lab stopped.
+Assessment evidence now includes its full date and describes the completed check explicitly.

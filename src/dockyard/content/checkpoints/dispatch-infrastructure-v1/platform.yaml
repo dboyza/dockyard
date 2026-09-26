@@ -1,0 +1,312 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatch
+  namespace: dispatch
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dispatch
+      track: stable
+  template:
+    metadata:
+      labels:
+        app: dispatch
+        track: stable
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: api
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        env:
+        - name: DB_HOST
+          value: db
+        - name: REDIS_URL
+          value: redis://queue:6379/0
+        - name: DB_PASSWORD_FILE
+          value: /var/run/dispatch/password
+        - name: DISPATCH_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: dispatch-settings
+              key: environment
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          periodSeconds: 2
+          failureThreshold: 2
+        volumeMounts:
+        - name: database-credential
+          mountPath: /var/run/dispatch
+          readOnly: true
+        - name: settings
+          mountPath: /config
+          readOnly: true
+        - name: scratch
+          mountPath: /tmp
+        startupProbe:
+          httpGet:
+            path: /startupz
+            port: 8080
+          periodSeconds: 2
+          failureThreshold: 15
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          periodSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+      volumes:
+      - name: database-credential
+        secret:
+          secretName: dispatch-database
+          defaultMode: 292
+      - name: settings
+        configMap:
+          name: dispatch-settings
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      nodeSelector:
+        kubernetes.io/hostname: lima-${DOCKYARD_WORKER}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 2
+  progressDeadlineSeconds: 120
+  revisionHistoryLimit: 5
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+  namespace: dispatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: database
+        image: ${DOCKYARD_POSTGRES_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        env:
+        - name: POSTGRES_DB
+          value: dispatch
+        - name: POSTGRES_USER
+          value: dispatch
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dispatch-database
+              key: password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: scratch
+          mountPath: /tmp
+        - name: postgres-socket
+          mountPath: /var/run/postgresql
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -h
+            - 127.0.0.1
+            - -U
+            - dispatch
+          periodSeconds: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+      - name: postgres-socket
+        emptyDir:
+          sizeLimit: 16Mi
+  serviceName: db-headless
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: native-csi
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queue
+  namespace: dispatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: queue
+  template:
+    metadata:
+      labels:
+        app: queue
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: queue
+        image: ${DOCKYARD_REDIS_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - redis-server
+        - --save
+        - ''
+        - --appendonly
+        - 'no'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: scratch
+          mountPath: /tmp
+        - name: redis-data
+          mountPath: /data
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+      - name: redis-data
+        emptyDir:
+          sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dispatch
+  namespace: dispatch
+spec:
+  selector:
+    app: dispatch
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080
+  type: NodePort
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: dispatch
+spec:
+  selector:
+    app: db
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: queue
+  namespace: dispatch
+spec:
+  selector:
+    app: queue
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-headless
+  namespace: dispatch
+spec:
+  clusterIP: None
+  selector:
+    app: db
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432

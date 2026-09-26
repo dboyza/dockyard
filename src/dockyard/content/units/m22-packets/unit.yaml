@@ -1,0 +1,159 @@
+id: m22-packets
+revision: 1
+module: 22
+order: 1
+title: Trace the packet before blaming the Pod
+summary: Separate Ready nodes, a healthy application, and the cross-node VXLAN path.
+kind: lesson
+runtime: linux
+nodes: 2
+minutes: 45
+outcomes:
+- Trace a request from a frontend Pod through the guest network to an API Pod.
+- Diagnose an exact guest packet-filter rule while preserving unrelated rules.
+- Prove direct Pod-IP traffic and a complete Service-based application transaction.
+prerequisites:
+- m21-mission
+objectives:
+- cka.pod-connectivity
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Both nodes remain Ready, but only cross-node Pod requests fail. What should you inspect next?
+  options:
+  - The actual Pod and encapsulated packet path between the node addresses.
+  - Only whether the YAML parses.
+  - Only the image tag.
+  correct: 0
+  explanation: The actual Pod and encapsulated packet path between the node addresses.
+hints:
+- Compare direct Pod-IP and Service-name requests from the trusted frontend.
+- Inspect the control-plane INPUT rules and the counter for UDP 4789.
+- Delete only the DROP rule with this lab's VXLAN comment and retain the other Calico and Kubernetes rules.
+sources:
+- https://docs.tigera.io/calico/latest/getting-started/kubernetes/requirements
+- https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+- https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
+- https://github.com/kubernetes-csi/csi-driver-host-path/tree/v1.18.0
+- https://kubernetes.io/docs/concepts/storage/storage-classes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 600
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.infrastructure
+  - packets
+  timeout: 240
+checks:
+- id: infrastructure-preserved
+  title: Original cluster and stored application state remain intact
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+- id: infrastructure-packets
+  title: A frontend on the control plane reaches an API Pod IP on the worker
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - packets
+  expected: 'true'
+  diagnostic: Inspect the packets evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+- id: infrastructure-dns
+  title: A newly created Service name resolves to its actual ClusterIP
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - dns
+  expected: 'true'
+  diagnostic: Inspect the dns evidence; an unavailable dependency can prevent verification without proving
+    data was deleted.
+- id: infrastructure-proxy
+  title: Both proxy agents are ready and the new ClusterIP reaches an API process
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - proxy
+  expected: 'true'
+  diagnostic: Inspect the proxy evidence; an unavailable dependency can prevent verification without proving
+    data was deleted.
+- id: infrastructure-workflow
+  title: A fresh browser and cross-node Dispatch transaction completes
+  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
+    boundary.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.infrastructure
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow evidence; an unavailable dependency can prevent verification without
+    proving data was deleted.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent diagnostic tools and configuration editing methods are accepted.
+- Actual placement, routes, preserved identities, and stored bytes are checked rather than shell history.
+failure_modes:
+- A Ready node can coexist with a broken Pod packet path.
+- Old kernel Service rules can hide an unavailable proxy agent.
+- A bound claim does not prove that a new consumer can mount the original data.
+starter_failure_checks:
+- infrastructure-packets
+- infrastructure-workflow
