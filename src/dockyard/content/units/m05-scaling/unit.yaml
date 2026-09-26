@@ -1,0 +1,264 @@
+id: m05-scaling
+revision: 1
+module: 5
+order: 3
+title: Scale workers and keep tools optional
+summary: Run multiple interchangeable consumers while keeping one-off tooling out of the ordinary service set.
+kind: lesson
+runtime: docker
+minutes: 35
+outcomes:
+- Scale a service without fixed container-name collisions.
+- Use a profile for optional diagnostic tooling.
+- Verify multiple workers and a correctly processed durable job.
+prerequisites:
+- m05-readiness
+objectives:
+- docker.scaling
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Why should the worker service avoid a fixed container_name?
+  options:
+  - Multiple replicas need distinct container identities.
+  - Worker images cannot contain Python.
+  - Compose cannot label scaled services.
+  correct: 0
+  explanation: A single fixed name cannot identify several simultaneous containers. Compose can assign replica names
+    while preserving shared service labels.
+hints:
+- Inspect docker compose ps worker to establish the current count.
+- Use compose up --scale worker=2; keep the shared image and service configuration.
+- The supplied inspect service belongs to the tools profile. Run it with compose --profile tools run --rm inspect,
+  then leave the application workers running.
+sources:
+- https://docs.docker.com/compose/how-tos/profiles/
+- https://docs.docker.com/reference/cli/docker/compose/up/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - compose
+  - up
+  - -d
+  - --build
+  - --wait
+  - --wait-timeout
+  - '90'
+  timeout: 600
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: compose-owned
+  title: Every observed service belongs to this lab
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - owned
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-ready
+  title: The API can reach PostgreSQL and Redis
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - ready
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-private
+  title: Only the API publishes a host endpoint
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - private
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-persistent
+  title: PostgreSQL uses the assigned owned volume
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - persistent
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-processed
+  title: A real worker completes a newly submitted job
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - processed
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-durable
+  title: PostgreSQL independently contains the completed result
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - durable
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-scaled
+  title: At least two real worker replicas are running
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - scaled
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+capabilities:
+- docker
+- compose
+- postgres-image
+- redis-image
+checkpoint: dispatch-compose-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.
+images:
+- python
+- postgres
+- redis

@@ -1,0 +1,239 @@
+id: m04-permissions
+revision: 1
+module: 4
+order: 2
+title: Repair storage access without widening authority
+summary: Diagnose a healthy-looking API whose non-root process cannot write its volume.
+kind: lesson
+runtime: docker
+minutes: 35
+outcomes:
+- Compare process UID/GID with mounted directory ownership and permissions.
+- Distinguish liveness from a successful persistence operation.
+- Repair a scoped volume without using root as the application identity.
+prerequisites:
+- m04-mounts
+objectives:
+- docker.permissions
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Rebuilding an image fixes /data ownership in its Dockerfile. Must an already-existing mounted volume
+    inherit that repair?
+  options:
+  - No; the existing volume keeps its own stored metadata.
+  - Yes; every start replaces its contents.
+  - Only if the host port changes.
+  correct: 0
+  explanation: A mounted existing volume has a separate lifecycle and covers the image path.
+hints:
+- Inspect the effective UID and the numeric owner of /data.
+- The API is UID 10001; repair the assigned volume rather than replacing the image.
+- Use a short-lived labeled maintenance container to chown /data to 10001:10001, keeping mode 0700 and the API non-root.
+sources:
+- https://docs.docker.com/engine/storage/bind-mounts/
+- https://docs.docker.com/engine/storage/volumes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - docker
+  - volume
+  - create
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - '{{volume}}'
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8080
+  - -v
+  - '{{volume}}:/data'
+  - '{{image}}'
+- args:
+  - docker
+  - run
+  - --rm
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -v
+  - '{{volume}}:/data'
+  - '{{python_image}}'
+  - sh
+  - -c
+  - chown 0:0 /data && chmod 700 /data
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: storage-mount
+  title: The expected writable storage is mounted at /data
+  explanation: Inspect the mount and perform real application and independent database reads.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - storage-volume
+    timeout: 45
+  expectation: json
+  json_path:
+  - mount
+  expected: 'true'
+  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
+    original job and a valid backup.tar.
+- id: storage-roundtrip
+  title: The API can create and read a new job
+  explanation: Inspect the mount and perform real application and independent database reads.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - storage-volume
+    timeout: 45
+  expectation: json
+  json_path:
+  - roundtrip
+  expected: 'true'
+  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
+    original job and a valid backup.tar.
+- id: storage-durable
+  title: A separate read-only container observes the committed job
+  explanation: Inspect the mount and perform real application and independent database reads.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - storage-volume
+    timeout: 45
+  expectation: json
+  json_path:
+  - durable
+  expected: 'true'
+  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
+    original job and a valid backup.tar.
+- id: least-permission
+  title: Storage works for a non-root user without world-write access
+  explanation: Verify the effective process UID and write access, not only source configuration.
+  command:
+    args:
+    - docker
+    - exec
+    - '{{container}}'
+    - python
+    - -c
+    - import os; print(os.getuid()!=0 and os.access("/data", os.W_OK) and not os.stat("/data").st_mode & 2)
+  expectation: equals
+  expected: 'True'
+  diagnostic: Give the application identity ownership or an appropriate group; do not solve this by running the
+    API as root or making the directory world-writable.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-storage-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.

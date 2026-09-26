@@ -65,3 +65,15 @@ A multi-resource integration test confirmed stop/resume/cleanup across two conta
 A separate process-death test confirmed OS operation locks are released after termination and interrupted operation records can be recovered.
 The compatibility manifest now records digest-pinned Python, PostgreSQL, Redis, registry, BusyBox, and kind images.
 These are development evidence for the currently authored units, not completion claims for Docker Modules 3-6 or later phases.
+
+## Networks, persistent data, and Compose
+
+Modules 3-5 now add twelve authored activities, bringing the verified authored inventory to twenty units.
+The networking checks correlate bridge identities, caller-side DNS, private dependency ports, and the peer identity returned by a real request.
+Storage checks create a temporary observation job and independently read its committed database through a read-only mount, then remove only that observation job.
+Backup checks validate the archive database and the original seeded record in the restored service.
+The storage permission starter initially passed because Docker populated an empty volume from the image; moving the deliberate fault after its initial mount produced the intended real write failure, and all four storage references then passed.
+The supplied Compose application builds with hash-locked dependencies and uses PostgreSQL, Redis, a dashboard/API, and scalable workers.
+All four Compose starters failed and their references passed, including a newly submitted job with the expected computed result and an independent direct PostgreSQL read.
+The Compose audit completed in 42.22 seconds on this development run.
+No claim is made yet for Module 6, Kubernetes course units, incidents, or exams.

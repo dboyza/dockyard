@@ -119,7 +119,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
     def state() -> dict[str, Any]:
         return {
             "progress": service.store.progress(),
-            "labs": [lab.model_dump(mode="json") for lab in service.store.labs()],
+            "labs": [service.public_lab(lab) for lab in service.store.labs()],
             "operations": service.store.operations(),
             "theme": service.store.setting("theme", "dark"),
             "last_unit": service.store.setting("last_unit"),

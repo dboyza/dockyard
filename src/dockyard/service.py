@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import secrets
 import shlex
 import shutil
 import socket
@@ -40,6 +41,24 @@ class Service:
         self._cancels: dict[str, threading.Event] = {}
         self._lock = threading.Lock()
 
+    @staticmethod
+    def public_lab(lab: Lab) -> dict[str, Any]:
+        body = lab.model_dump(mode="json")
+        body["resources"] = {
+            key: value
+            for key, value in lab.resources.items()
+            if key not in {"db_password", "bootstrap_token"}
+        }
+        return body
+
+    @staticmethod
+    def redact(value: str, lab: Lab) -> str:
+        for key in ("db_password", "bootstrap_token"):
+            secret = lab.resources.get(key)
+            if secret:
+                value = value.replace(secret, "[redacted lab credential]")
+        return value
+
     def environment(self, lab: Lab | None = None) -> dict[str, str]:
         env = dict(os.environ)
         env.pop("DOCKER_CONTEXT", None)
@@ -65,6 +84,8 @@ class Service:
                 DOCKYARD_NETWORK=f"dockyard-{lab.id[:12]}-net",
                 DOCKYARD_VOLUME=f"dockyard-{lab.id[:12]}-data",
                 DOCKYARD_IMAGE=f"dockyard-{lab.id[:12]}:practice",
+                DOCKYARD_STORAGE=str(Path(lab.workspace).parent / "data"),
+                DOCKYARD_DB_PASSWORD=lab.resources.get("db_password", "practice-only"),
             )
         return env
 
@@ -116,7 +137,11 @@ class Service:
             workspace=str(self.directory / "labs" / lab_id / "workspace"),
             created_at=timestamp(),
             updated_at=timestamp(),
-            resources={"port": str(port), "docker_endpoint": self._docker_endpoint()},
+            resources={
+                "port": str(port),
+                "docker_endpoint": self._docker_endpoint(),
+                "db_password": secrets.token_urlsafe(24),
+            },
         )
         self.store.save_lab(lab)
         return lab
@@ -146,7 +171,7 @@ class Service:
             result: dict[str, Any]
             if action == "prepare":
                 self._prepare(lab, cancel)
-                result = lab.model_dump(mode="json")
+                result = self.public_lab(lab)
             elif action == "check":
                 result = self._check(lab, cancel).model_dump(mode="json")
             elif action == "reset":
@@ -159,13 +184,13 @@ class Service:
                 lab.resources.pop("container_id", None)
                 lab.resources.pop("prepared_revision", None)
                 self._prepare(lab, cancel)
-                result = {"backup": str(backup), "lab": lab.model_dump(mode="json")}
+                result = {"backup": str(backup), "lab": self.public_lab(lab)}
             elif action == "clean":
                 self._cleanup(lab, cancel)
                 lab.resources.pop("prepared_revision", None)
                 lab.state = "absent"
                 self._save(lab)
-                result = lab.model_dump(mode="json")
+                result = self.public_lab(lab)
             else:
                 if action == "stop":
                     lab.state = "stopping"
@@ -173,17 +198,17 @@ class Service:
                 self.docker(lab).change(action, cancel)
                 lab.state = "stopped" if action == "stop" else "ready"
                 self._save(lab)
-                result = lab.model_dump(mode="json")
+                result = self.public_lab(lab)
             if cancel.is_set():
                 raise LabError("The operation was canceled. Your workspace has been preserved.")
             self.store.update_operation(operation_id, "done")
             return result
         except Exception as error:
             lab.state = "failed"
-            lab.error = str(error)
+            lab.error = self.redact(str(error), lab)
             self._save(lab)
             self.store.update_operation(
-                operation_id, "canceled" if cancel.is_set() else "failed", str(error)
+                operation_id, "canceled" if cancel.is_set() else "failed", lab.error
             )
             raise
         finally:
@@ -265,6 +290,7 @@ class Service:
             "network": f"dockyard-{lab.id[:12]}-net",
             "volume": f"dockyard-{lab.id[:12]}-data",
             "project": f"dockyard-{lab.id[:12]}",
+            "storage": str(Path(lab.workspace).parent / "data"),
         }
         values.update({f"{name}_image": image for name, image in COMPATIBILITY["images"].items()})
         for key, replacement in values.items():
@@ -326,8 +352,9 @@ class Service:
             )
         else:
             runtime_before = self.docker(lab).fingerprint()
+            observations: dict[str, ProcessResult] = {}
             for criterion in unit.checks:
-                evidence.append(self._criterion(criterion, lab, cancel))
+                evidence.append(self._criterion(criterion, lab, cancel, observations))
             if all(item.status == CheckStatus.PASS for item in evidence):
                 self.docker(lab).discover()
         current_digest, _ = snapshot(workspace)
@@ -363,17 +390,27 @@ class Service:
         self._save(lab)
         return assessment
 
-    def _criterion(self, criterion: Criterion, lab: Lab, cancel: threading.Event) -> Evidence:
+    def _criterion(
+        self,
+        criterion: Criterion,
+        lab: Lab,
+        cancel: threading.Event,
+        observations: dict[str, ProcessResult],
+    ) -> Evidence:
         command = criterion.command
         try:
-            result = run(
-                [self.expand(arg, lab) for arg in command.args],
-                env=self.environment(lab),
-                cwd=Path(lab.workspace),
-                timeout=command.timeout,
-                cancel=cancel,
-                input_text=self.expand(command.stdin, lab) if command.stdin else None,
-            )
+            key = command.model_dump_json()
+            result = observations.get(key)
+            if result is None:
+                result = run(
+                    [self.expand(arg, lab) for arg in command.args],
+                    env=self.environment(lab),
+                    cwd=Path(lab.workspace),
+                    timeout=command.timeout,
+                    cancel=cancel,
+                    input_text=self.expand(command.stdin, lab) if command.stdin else None,
+                )
+                observations[key] = result
         except FileNotFoundError as error:
             return Evidence(
                 criterion=criterion.id,
@@ -428,7 +465,7 @@ class Service:
                 else CheckStatus.FAIL
             ),
             expected=expected,
-            observed=observed[-8000:],
+            observed=self.redact(observed, lab)[-8000:],
             diagnostic=criterion.diagnostic,
             points=criterion.points,
         )

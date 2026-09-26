@@ -25,7 +25,7 @@ class BusyError(RuntimeError):
 class Store:
     def __init__(self, directory: Path):
         self.directory = directory
-        directory.mkdir(parents=True, exist_ok=True)
+        directory.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.path = directory / "progress.sqlite3"
         with self.connection() as connection:
             version = connection.execute("PRAGMA user_version").fetchone()[0]
@@ -62,6 +62,8 @@ class Store:
                 );
                 PRAGMA user_version=1;
             """)
+
+        self.path.chmod(0o600)
 
     @contextmanager
     def connection(self) -> Iterator[sqlite3.Connection]:

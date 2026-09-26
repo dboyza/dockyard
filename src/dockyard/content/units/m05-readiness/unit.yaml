@@ -1,0 +1,276 @@
+id: m05-readiness
+revision: 1
+module: 5
+order: 2
+title: Separate startup order from readiness
+summary: Add real dependency health checks and make application startup wait for usable services.
+kind: lesson
+runtime: docker
+minutes: 35
+outcomes:
+- Distinguish created, running, healthy, and application-ready states.
+- Choose health checks that exercise the dependency boundary.
+- Use service_healthy dependencies without assuming they solve every later outage.
+prerequisites:
+- m05-services
+objectives:
+- docker.readiness
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: depends_on uses service_started. What does that establish?
+  options:
+  - The dependency container started, not necessarily that it is ready.
+  - Every application query will succeed.
+  - The dependency will never need a retry.
+  correct: 0
+  explanation: A running process can still be initializing. service_healthy uses its declared health check as a
+    stronger startup gate.
+hints:
+- Inspect State.Health and the resolved depends_on conditions separately.
+- Use pg_isready for PostgreSQL, redis-cli ping for Redis, and the supplied /readyz for the API.
+- Set both db and queue conditions to service_healthy for api and worker, recreate with compose up, and wait for
+  observed healthy states.
+sources:
+- https://docs.docker.com/compose/how-tos/startup-order/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - compose
+  - up
+  - -d
+  - --build
+  timeout: 600
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: compose-owned
+  title: Every observed service belongs to this lab
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - owned
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-ready
+  title: The API can reach PostgreSQL and Redis
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - ready
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-private
+  title: Only the API publishes a host endpoint
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - private
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-persistent
+  title: PostgreSQL uses the assigned owned volume
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - persistent
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-processed
+  title: A real worker completes a newly submitted job
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - processed
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-durable
+  title: PostgreSQL independently contains the completed result
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - durable
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-healthy
+  title: The API and both dependencies have healthy live checks
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - healthy
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+- id: compose-guarded
+  title: API and worker wait for dependency health
+  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - compose
+    timeout: 45
+  expectation: json
+  json_path:
+  - guarded
+  expected: 'true'
+  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
+    alone does not prove background processing.
+capabilities:
+- docker
+- compose
+- postgres-image
+- redis-image
+checkpoint: dispatch-compose-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.
+images:
+- python
+- postgres
+- redis

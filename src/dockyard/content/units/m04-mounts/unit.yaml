@@ -1,0 +1,183 @@
+id: m04-mounts
+revision: 1
+module: 4
+order: 1
+title: Move data outside the container layer
+summary: Persist real Dispatch jobs in an explicitly scoped host directory.
+kind: lesson
+runtime: docker
+minutes: 35
+outcomes:
+- Distinguish image files, the container writable layer, bind mounts, and named volumes.
+- Mount the intended data directory without obscuring the application source.
+- Verify committed data from outside the API process.
+prerequisites:
+- m03-mission
+objectives:
+- docker.mounts
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You remove a container whose database is in a bind-mounted host directory. What happens to the directory?
+  options:
+  - It remains unless separately deleted.
+  - Docker always deletes it with the container.
+  - It becomes part of the image.
+  correct: 0
+  explanation: The bind source has a separate lifecycle. Container removal does not remove that host directory.
+hints:
+- The supplied application writes /data/jobs.db. Mount /data, not /app.
+- Create the assigned host storage directory and use your host UID/GID for this bind exercise.
+- Use --mount "type=bind,source=$DOCKYARD_STORAGE,target=/data" and --user "$(id -u):$(id -g)" when running the
+  assigned image.
+sources:
+- https://docs.docker.com/engine/storage/bind-mounts/
+- https://docs.docker.com/engine/storage/volumes/
+starter: {}
+reference: {}
+prepare: []
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: storage-mount
+  title: The expected writable storage is mounted at /data
+  explanation: Inspect the mount and perform real application and independent database reads.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - storage-bind
+    timeout: 45
+  expectation: json
+  json_path:
+  - mount
+  expected: 'true'
+  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
+    original job and a valid backup.tar.
+- id: storage-roundtrip
+  title: The API can create and read a new job
+  explanation: Inspect the mount and perform real application and independent database reads.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - storage-bind
+    timeout: 45
+  expectation: json
+  json_path:
+  - roundtrip
+  expected: 'true'
+  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
+    original job and a valid backup.tar.
+- id: storage-durable
+  title: A separate read-only container observes the committed job
+  explanation: Inspect the mount and perform real application and independent database reads.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - storage-bind
+    timeout: 45
+  expectation: json
+  json_path:
+  - durable
+  expected: 'true'
+  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
+    original job and a valid backup.tar.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-storage-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.

@@ -103,7 +103,11 @@ def main() -> None:
                 os.execvpe("/bin/zsh", ["/bin/zsh", "-i"], env)
             elif arguments.action == "status":
                 lab = service.store.lab(arguments.unit)
-                print(lab.model_dump_json(indent=2) if lab else "This lab is not prepared.")
+                print(
+                    json.dumps(service.public_lab(lab), indent=2)
+                    if lab
+                    else "This lab is not prepared."
+                )
             else:
                 result = service.perform(arguments.unit, arguments.action)
                 print(json.dumps(result, indent=2))

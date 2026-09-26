@@ -1,0 +1,185 @@
+id: m03-ports
+revision: 1
+module: 3
+order: 1
+title: Trace a request across two port spaces
+summary: Repair a host-to-container port mismatch without confusing publication with the application listener.
+kind: lesson
+runtime: docker
+minutes: 35
+outcomes:
+- Distinguish the host endpoint from the container listener.
+- Interpret port mappings using structured inspection.
+- Bind local practice services to the Mac loopback address.
+prerequisites:
+- m02-mission
+objectives:
+- docker.ports
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The application listens on 8080, but the mapping ends in :8081. What does publishing do?
+  options:
+  - It forwards traffic to 8081 without moving the application listener.
+  - It automatically reconfigures the application to 8081.
+  - "It rewrites the image\u2019s EXPOSE instruction."
+  correct: 0
+  explanation: Publication is a network mapping. The application retains its own listening address and port.
+hints:
+- Read the published mapping and the startup log as separate observations.
+- The right-hand port must match the listener inside the container.
+- Remove only the assigned container, then recreate it with -p "127.0.0.1:$DOCKYARD_PORT:8080".
+sources:
+- https://docs.docker.com/engine/network/drivers/bridge/
+- https://docs.docker.com/engine/network/port-publishing/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8081
+  - '{{image}}'
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: self-contained
+  title: The application runs without workspace mounts
+  explanation: The application runs without workspace mounts
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: '[]'
+  json_path:
+  - '0'
+  - Mounts
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: release
+  title: The image serves the expected application release
+  explanation: The image serves the expected application release
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  expected: dispatch-1
+  json_path:
+  - release
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-image-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.
