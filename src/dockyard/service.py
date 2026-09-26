@@ -320,6 +320,10 @@ class Service:
         images = list(
             dict.fromkeys(unit.images + (["kind"] if unit.runtime == Runtime.KUBERNETES else []))
         )
+        if "native-csi" in unit.capabilities:
+            from dockyard.runtimes.native_csi import CONTAINERS
+
+            images = list(dict.fromkeys(images + list(CONTAINERS.values())))
         for image_name in images:
             image_ref = COMPATIBILITY["images"][image_name]
             image = run(
@@ -361,6 +365,10 @@ class Service:
 
                         for image_name in unit.images:
                             load(runtime, COMPATIBILITY["images"][image_name], cancel)
+                        if "native-csi" in unit.capabilities:
+                            from dockyard.runtimes.native_csi import prepare as prepare_csi
+
+                            prepare_csi(runtime, cancel)
                 else:
                     runtime.prepare(unit.nodes, unit.images, cancel, unit.capabilities)
         env = self.environment(lab)

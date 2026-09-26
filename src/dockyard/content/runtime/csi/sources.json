@@ -1,0 +1,60 @@
+{
+  "images": {
+    "csi_hostpath": {
+      "tag": "registry.k8s.io/sig-storage/hostpathplugin:v1.18.0",
+      "reference": "registry.k8s.io/sig-storage/hostpathplugin@sha256:44e2cb773c42f31ea2b6c1d736b53e96805ab03aec743d2ceea445b17b75b85c",
+      "arm64_digest": "sha256:50c72f9a4b904b52e94fc48fbae22aee90b68676d7151bdfcd7cbcfd2f02d062"
+    },
+    "csi_registrar": {
+      "tag": "registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.17.0",
+      "reference": "registry.k8s.io/sig-storage/csi-node-driver-registrar@sha256:f9de845b170155199f2a2a3f9531cf13d78e31235e9db6b6582a8b0db0a50dad",
+      "arm64_digest": "sha256:a2e2060fca736107daafe4958910143bd08af3f456efb1fdc8dc54a9da582b83"
+    },
+    "csi_liveness": {
+      "tag": "registry.k8s.io/sig-storage/livenessprobe:v2.19.0",
+      "reference": "registry.k8s.io/sig-storage/livenessprobe@sha256:06da0d5b8908072f2e4522692aee8dc119fba7247a9658497e1153992cd777e9",
+      "arm64_digest": "sha256:94de3d3bf21334ac646e942b2411100bb38f66ea98bfb9cf43b27dd5c1fb921e"
+    },
+    "csi_attacher": {
+      "tag": "registry.k8s.io/sig-storage/csi-attacher:v4.12.0",
+      "reference": "registry.k8s.io/sig-storage/csi-attacher@sha256:b9dc9a714a484ccdeeb6f86d88d4db9b7a5ecfc5a55da6db3a60bb3fa33c278a",
+      "arm64_digest": "sha256:a2b51767c0f639a1b96c2197526306cd970ac038e542ac46a16d4120c0065020"
+    },
+    "csi_provisioner": {
+      "tag": "registry.k8s.io/sig-storage/csi-provisioner:v6.3.0",
+      "reference": "registry.k8s.io/sig-storage/csi-provisioner@sha256:a4b0b1a37605b7b04a293e136edf7006ec1786a8eb3f4e5a945f81d667dcc371",
+      "arm64_digest": "sha256:6e755c658dff4f5270a9d0214b41d031b64c3df94d0086c0042287cc46cc0862"
+    },
+    "csi_resizer": {
+      "tag": "registry.k8s.io/sig-storage/csi-resizer:v2.2.1",
+      "reference": "registry.k8s.io/sig-storage/csi-resizer@sha256:ea1d25e23479000c7e8eeb92d827df66258df4e482ca054c5e7ce3fc0f5c41a5",
+      "arm64_digest": "sha256:c604852b1bd10a495a2ad5d8c2843a0280e53048fd3572ac20555d32a64e0b6c"
+    }
+  },
+  "rbac": {
+    "external-attacher": {
+      "url": "https://raw.githubusercontent.com/kubernetes-csi/external-attacher/v4.12.0/deploy/kubernetes/rbac.yaml",
+      "sha256": "3a38b5198b0496927c0ce26c63e71d43e2263e2dbbb93a83acdec71d7c90a766"
+    },
+    "external-provisioner": {
+      "url": "https://raw.githubusercontent.com/kubernetes-csi/external-provisioner/v6.3.0/deploy/kubernetes/rbac.yaml",
+      "sha256": "0ee8427b746a1d3b695705b74c2d7fb165121110b1a10c0b6e204918d93e814f"
+    },
+    "external-resizer": {
+      "url": "https://raw.githubusercontent.com/kubernetes-csi/external-resizer/v2.2.1/deploy/kubernetes/rbac.yaml",
+      "sha256": "3615af0d007d51e02e53cd6f7415ff7b418c3a21d33bb6ce506639223619cd82"
+    }
+  },
+  "upstream_archive": {
+    "url": "https://codeload.github.com/kubernetes-csi/csi-driver-host-path/tar.gz/refs/tags/v1.18.0",
+    "sha256": "03d581877ed8a0a87851c59ca3d50b04663e17f8d5310eb964002b0a7fd73421"
+  },
+  "files": {
+    "csi-hostpath-plugin.yaml": "886f526c4ec17289e300efd933f295c42ac82e6cac28b839a057b7c5539e9221",
+    "csi-hostpath-driverinfo.yaml": "464307265464b77189bd4b339774cd2de69589458a62a740028b248f248c7e9a",
+    "external-attacher-rbac.yaml": "3a38b5198b0496927c0ce26c63e71d43e2263e2dbbb93a83acdec71d7c90a766",
+    "external-provisioner-rbac.yaml": "0ee8427b746a1d3b695705b74c2d7fb165121110b1a10c0b6e204918d93e814f",
+    "external-resizer-rbac.yaml": "3615af0d007d51e02e53cd6f7415ff7b418c3a21d33bb6ce506639223619cd82"
+  },
+  "note": "Pristine upstream manifests. Runtime adaptation selects the storage sidecars and applies namespace, topology, resource, and immutable image settings."
+}

@@ -414,3 +414,16 @@ Its fixture starts with a valid certificate and teaches proactive renewal, rathe
 
 The latest backend regression passed 52 tests in 7.45 seconds, and the installed 84-unit browser/real-Docker journey passed in 15.0 seconds with generated frontend contracts.
 CSI infrastructure verification and Modules 22 through 24 remain under implementation.
+
+## Native CSI construction proof
+
+The pinned CSI hostpath reference driver ran inside a dedicated namespace on an owned worker guest with its real provisioner, attacher, resizer, node registrar, and liveness sidecars.
+A WaitForFirstConsumer claim dynamically provisioned a CSI PV with a nonempty volume handle and an attached VolumeAttachment.
+A nonroot consumer mounted the filesystem, wrote a unique sentinel, and read the same bytes after Deployment replacement.
+The owned proof profile was stopped afterward.
+This driver provides node-local reference storage, not production shared storage or automatic data movement between nodes.
+
+Pristine upstream manifests, Apache-2.0 licensing, source checksums, and immutable OCI/ARM64 identities are bundled with the runtime.
+The upstream v1.18.0 deployment template still references a v1.17.1 driver image; Dockyard explicitly selects the separately verified v1.18.0 image.
+Snapshot and health-monitor add-ons are omitted from this teaching fixture.
+Module 22 application integration and its fault/repair audits remain pending.
