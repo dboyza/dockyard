@@ -76,8 +76,11 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     execFileSync(path.join(root, '.runtime/installed/bin/python'), [path.join(root, 'frontend/e2e/repair_lab.py'), profile, 'm01-processes']);
     await page.getByRole('button', { name: 'Refresh resource observation' }).click();
     await expect(page.getByRole('region', { name: 'Observed lab resources' }).getByRole('button', { name: /^Container / })).toBeVisible();
+    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
     await page.getByRole('button', { name: 'Stop', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
     await page.getByRole('button', { name: 'Check work', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'The environment needs attention.' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();

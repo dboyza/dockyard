@@ -299,7 +299,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                           {assessment.revision !== lesson.revision
                             ? "Evidence from an earlier lesson revision."
                             : assessment.status === "pass"
-                              ? "The required behavior is working."
+                              ? "The required behavior passed this check."
                               : assessment.status === "blocked"
                                 ? "The environment needs attention."
                                 : assessment.status === "stale"
@@ -310,12 +310,13 @@ export function LessonPage({ model }: { model: Workbench }) {
                           {assessment.independent
                             ? "Independent assessment"
                             : "Supported practice"}{" "}
-                          ·{" "}
-                          {new Date(
-                            assessment.finished_at,
-                          ).toLocaleTimeString()}{" "}
+                          · {new Date(assessment.finished_at).toLocaleString()}{" "}
                           · Revision {assessment.revision} · Attempt{" "}
                           {assessment.attempt}
+                        </p>
+                        <p className="small">
+                          Evidence records this check. Run Check work again
+                          after changing files or runtime resources.
                         </p>
                       </div>
                     </div>
