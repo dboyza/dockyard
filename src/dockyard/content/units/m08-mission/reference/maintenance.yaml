@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dispatch-maintenance
+  namespace: dispatch
+spec:
+  schedule: '*/5 * * * *'
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: dispatch-maintenance
+        spec:
+          enableServiceLinks: false
+          restartPolicy: Never
+          containers:
+          - name: maintenance
+            image: ${DOCKYARD_IMAGE}
+            imagePullPolicy: Never
+            resources:
+              requests:
+                cpu: 25m
+                memory: 32Mi
+              limits:
+                cpu: 300m
+                memory: 192Mi
+            command:
+            - python
+            - maintenance.py
+            env:
+            - name: DB_HOST
+              value: db
+            - name: DB_PASSWORD
+              value: ${DOCKYARD_DB_PASSWORD}
+            - name: REDIS_URL
+              value: redis://queue:6379/0
+            - name: JOB_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['batch.kubernetes.io/job-name']

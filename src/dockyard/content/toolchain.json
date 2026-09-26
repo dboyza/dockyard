@@ -1,0 +1,20 @@
+{
+  "kind": {
+    "version": "0.33.0",
+    "url": "https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-darwin-arm64",
+    "sha256": "0c8c7dbe5e23594a198b786c4bc13dacc101fa6196b0cb0b23a1ca44e61f4b4f",
+    "path": "bin/kind"
+  },
+  "kubectl": {
+    "version": "1.35.8",
+    "url": "https://dl.k8s.io/release/v1.35.8/bin/darwin/arm64/kubectl",
+    "sha256": "b8be50ae0c6665b646fb009f904a52cad30806deee19ab3b4fe5af2d68bd82eb",
+    "path": "bin/kubectl"
+  },
+  "calico": {
+    "version": "3.32.2",
+    "url": "https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml",
+    "sha256": "a8c828a06a87c629a282ebbc424895b77f3a030251993e41ea400a743675bb02",
+    "path": "downloads/calico-v3.32.2.yaml"
+  }
+}

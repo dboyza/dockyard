@@ -21,6 +21,7 @@ from dockyard.models import Assessment, CheckStatus, Criterion, Evidence, Lab, R
 from dockyard.portfolio import checkpoint
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
+from dockyard.runtimes.kubernetes import KubernetesRuntime
 from dockyard.store import Store, timestamp
 from dockyard.workspace import atomic_write, reset, snapshot, write_files
 
@@ -76,6 +77,9 @@ class Service:
         )
         for name, image in COMPATIBILITY["images"].items():
             env[f"DOCKYARD_{name.upper()}_IMAGE"] = image
+            env[f"DOCKYARD_{name.upper()}_LOCAL_IMAGE"] = (
+                f"dockyard-cache/{name.replace('_', '-')}:{image.split('sha256:')[-1][:16]}"
+            )
         if lab:
             env.update(
                 DOCKYARD_LAB=lab.id,
@@ -95,6 +99,8 @@ class Service:
                 DOCKYARD_STORAGE=str(Path(lab.workspace).parent / "data"),
                 DOCKYARD_DB_PASSWORD=lab.resources.get("db_password", "practice-only"),
                 DOCKYARD_REGISTRY_PORT=lab.resources.get("registry_port", ""),
+                DOCKYARD_CLUSTER=f"dockyard-{lab.id[:12]}",
+                DOCKYARD_NAMESPACE="dispatch",
             )
         return env
 
@@ -208,7 +214,7 @@ class Service:
                 if action == "stop":
                     lab.state = "stopping"
                     self._save(lab)
-                self.docker(lab).change(action, cancel)
+                self.runtime(lab).change(action, cancel)
                 lab.state = "stopped" if action == "stop" else "ready"
                 self._save(lab)
                 result = self.public_lab(lab)
@@ -253,13 +259,16 @@ class Service:
         lab.error = None
         self._save(lab)
         unit = self.catalog.get(lab.unit_id)
-        if unit.runtime != Runtime.DOCKER:
+        if unit.runtime == Runtime.LINUX:
             raise LabError("This runtime adapter is not available in this development build.")
         env = self.environment(lab)
         self._require(
             run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=15, cancel=cancel)
         )
-        for image_name in unit.images:
+        images = list(
+            dict.fromkeys(unit.images + (["kind"] if unit.runtime == Runtime.KUBERNETES else []))
+        )
+        for image_name in images:
             image_ref = COMPATIBILITY["images"][image_name]
             image = run(
                 ["docker", "image", "inspect", image_ref], env=env, timeout=15, cancel=cancel
@@ -271,10 +280,24 @@ class Service:
         workspace = Path(lab.workspace)
         if not workspace.exists():
             write_files(workspace, unit.starter)
+        runtime = self.runtime(lab)
+        if isinstance(runtime, KubernetesRuntime):
+            with operation_lock(self.directory / "locks", "cluster-capacity"):
+                for other in self.store.labs():
+                    if (
+                        other.id != lab.id
+                        and other.runtime == Runtime.KUBERNETES
+                        and other.state == "ready"
+                    ):
+                        with operation_lock(self.directory / "locks", other.unit_id):
+                            self.runtime(other).change("stop", cancel)
+                            other.state = "stopped"
+                            self._save(other)
+                runtime.prepare(unit.nodes, unit.images, cancel)
         commands = (
             [] if lab.resources.get("prepared_revision") == str(unit.revision) else unit.prepare
         )
-        if commands:
+        if commands and unit.runtime == Runtime.DOCKER:
             self.docker(lab).change("clean", cancel)
         for command in commands:
             outcome = run(
@@ -286,7 +309,7 @@ class Service:
                 input_text=self.expand(command.stdin, lab) if command.stdin else None,
             )
             self._require(outcome)
-        self.docker(lab).discover()
+        runtime.discover()
         lab.resources["prepared_revision"] = str(unit.revision)
         lab.revision = unit.revision
         lab.state = "ready"
@@ -305,6 +328,8 @@ class Service:
             "project": f"dockyard-{lab.id[:12]}",
             "storage": str(Path(lab.workspace).parent / "data"),
             "registry_port": lab.resources.get("registry_port", ""),
+            "cluster": f"dockyard-{lab.id[:12]}",
+            "namespace": "dispatch",
         }
         values.update({f"{name}_image": image for name, image in COMPATIBILITY["images"].items()})
         for key, replacement in values.items():
@@ -314,10 +339,15 @@ class Service:
     def docker(self, lab: Lab) -> DockerRuntime:
         return DockerRuntime(lab, self.environment(lab), self._save)
 
+    def runtime(self, lab: Lab) -> DockerRuntime | KubernetesRuntime:
+        if lab.runtime == Runtime.KUBERNETES:
+            return KubernetesRuntime(lab, self.environment(lab), self._save, self.tools)
+        return self.docker(lab)
+
     def _cleanup(self, lab: Lab, cancel: threading.Event) -> None:
         lab.state = "cleaning"
         self._save(lab)
-        self.docker(lab).change("clean", cancel)
+        self.runtime(lab).change("clean", cancel)
 
     def _check(self, lab: Lab, cancel: threading.Event) -> Assessment:
         unit = self.catalog.get(lab.unit_id)
@@ -330,6 +360,7 @@ class Service:
         self._save(lab)
         digest, _ = snapshot(workspace)
         env = self.environment(lab)
+        runtime = self.runtime(lab)
         evidence: list[Evidence] = []
         runtime_before = None
         health = (
@@ -337,6 +368,8 @@ class Service:
             if stopped
             else run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=10, cancel=cancel)
         )
+        if health is not None and health.ok and isinstance(runtime, KubernetesRuntime):
+            health = runtime.health(cancel)
         if stopped:
             evidence.append(
                 Evidence(
@@ -354,23 +387,23 @@ class Service:
             evidence.append(
                 Evidence(
                     criterion="environment",
-                    title="Docker is available",
+                    title="The practice runtime is available",
                     status=CheckStatus.BLOCKED,
-                    expected="A responsive local Docker daemon",
+                    expected="A responsive local runtime and, where required, Kubernetes API",
                     observed=health.stderr,
                     diagnostic=(
-                        "Start Docker Desktop, then retry. "
+                        "Check Docker Desktop and resume the practice environment, then retry. "
                         "This does not count as a learner mistake."
                     ),
                 )
             )
         else:
-            runtime_before = self.docker(lab).fingerprint()
+            runtime_before = runtime.fingerprint()
             observations: dict[str, ProcessResult] = {}
             for criterion in unit.checks:
                 evidence.append(self._criterion(criterion, lab, cancel, observations))
             if all(item.status == CheckStatus.PASS for item in evidence):
-                self.docker(lab).discover()
+                runtime.discover()
         current_digest, _ = snapshot(workspace)
         if cancel.is_set():
             raise LabError("The check was canceled; no assessment was recorded.")
@@ -380,7 +413,7 @@ class Service:
         elif any(item.status == CheckStatus.FAIL for item in evidence):
             status = CheckStatus.FAIL
         if current_digest != digest or (
-            runtime_before is not None and self.docker(lab).fingerprint() != runtime_before
+            runtime_before is not None and runtime.fingerprint() != runtime_before
         ):
             status = CheckStatus.STALE
         progress = self.store.progress().get(unit.id, {})
@@ -547,7 +580,8 @@ class Service:
         rc = (
             "# Dockyard lab shell; global dotfiles are not modified.\n"
             'autoload -Uz compinit && compinit -d "$ZDOTDIR/.zcompdump"\n'
-            f"PROMPT='%F{{blue}}dockyard%f %F{{cyan}}{lab.id[:8]}%f %~ %# '\n"
+            f"PROMPT='%F{{blue}}dockyard%f {lab.unit_id} "
+            f"%F{{cyan}}{lab.id[:8]}%f %1~ %# '\n"
             "print 'Docker and Kubernetes commands here use this lab environment.'\n"
             "print 'Run dockyard lab check to inspect your work; exit closes this shell.'\n"
         )

@@ -90,6 +90,9 @@ export function LabsPage({ model }: { model: Workbench }) {
                   item.unit_id}
               </h2>
               <p className="mono muted small">{item.workspace}</p>
+              {item.state === "preparing" && item.resources?.stage && (
+                <p role="status">{item.resources?.stage}</p>
+              )}
               {item.error && <p className="diagnostic">{item.error}</p>}
             </div>
             <div className="button-row">

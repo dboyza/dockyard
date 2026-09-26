@@ -82,6 +82,17 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(page.getByText('Reset completed.', { exact: true })).toBeVisible();
   }
+  await page.getByRole('textbox', { name: 'Search lessons' }).fill('reconciliation');
+  await page.getByRole('button', { name: /Let a controller maintain the application/ }).click();
+  const model = page.getByRole('region', { name: 'Explore reconciliation' });
+  await model.getByRole('button', { name: 'Delete model Pod 1', exact: true }).click();
+  await expect(model.getByRole('status')).toContainText('1 observed / 2 desired');
+  await model.getByRole('button', { name: 'Advance controller' }).click();
+  await expect(model.getByRole('status')).toContainText('Created Pod 3');
+  await expect(model.getByRole('status')).toContainText('2 observed / 2 desired');
+  await page.setViewportSize({ width: 480, height: 1000 });
+  await model.scrollIntoViewIfNeeded();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(failures).toEqual([]);
   // Keep the browser and its SSE connection open while verifying foreground shutdown.
   const stopped = once(server, 'exit');

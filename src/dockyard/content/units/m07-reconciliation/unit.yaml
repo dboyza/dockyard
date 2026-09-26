@@ -1,0 +1,153 @@
+id: m07-reconciliation
+revision: 1
+module: 7
+order: 1
+title: Let a controller maintain the application
+summary: See how the API, Deployment, ReplicaSet, and Pods cooperate.
+kind: lesson
+runtime: kubernetes
+minutes: 30
+outcomes:
+- Distinguish desired state from observed state.
+- Trace Pod ownership through a ReplicaSet to a Deployment.
+- Observe a controller replace a deleted Pod.
+prerequisites:
+- m06-mission
+objectives:
+- kubernetes.api
+- kubernetes.declarative
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: If you delete one Pod while the Deployment still requests two replicas, what should happen?
+  options:
+  - A replacement Pod is created with a new identity.
+  - The Deployment changes its desired replicas to one.
+  - The deleted Pod keeps its original UID.
+  correct: 0
+  explanation: Controllers reconcile desired state; a replacement is a new object, even when it runs the
+    same image.
+hints:
+- Compare spec.replicas and status.availableReplicas.
+- The starter requests zero replicas; edit the desired state rather than creating a standalone Pod.
+- Set spec.replicas to 2, apply the manifests, and wait for rollout status before checking.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+- https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 60
+checks:
+- id: kube-replicas
+  title: Two desired replicas are available
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - replicas
+  expected: 'true'
+  diagnostic: Compare spec.replicas with readyReplicas, then inspect Pods and events.
+- id: kube-owned-pods
+  title: Both Pods belong to the Dispatch Deployment
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - owned_pods
+  expected: 'true'
+  diagnostic: Inspect the actual Deployment, Pods, and Service. Apply your corrected manifest and wait
+    for the rollout.
+- id: kube-response
+  title: Every replica serves the supplied Dispatch release
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - response
+  expected: 'true'
+  diagnostic: Use kubectl logs and describe pod to locate the failing layer.
+- id: kube-labels
+  title: Pod labels satisfy the application selector
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - labels
+  expected: 'true'
+  diagnostic: The Deployment selector and Pod labels must match app=dispatch.
+- id: kube-service
+  title: Service DNS routes a real request to Dispatch
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - service
+  expected: 'true'
+  diagnostic: The Service must select the Dispatch Pods and target their listening port.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-kubernetes-v1
+images:
+- python
+alternatives:
+- Equivalent manifests and commands are accepted when live ownership, availability, and HTTP behavior
+  satisfy the contract.
+failure_modes:
+- Matching names without matching selectors do not create endpoints.
+- A standalone Pod does not demonstrate Deployment reconciliation.

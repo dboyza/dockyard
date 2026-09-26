@@ -1,0 +1,164 @@
+id: m08-jobs
+revision: 1
+module: 8
+order: 3
+title: Run finite and scheduled maintenance
+summary: Create a real database observation with a Job and CronJob.
+kind: lesson
+runtime: kubernetes
+minutes: 40
+outcomes:
+- Distinguish successful process exit from ongoing availability.
+- Configure retry, schedule, and concurrency behavior.
+- Run a CronJob template on demand and verify its database effect.
+prerequisites:
+- m08-patterns
+objectives:
+- kubernetes.workloads
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: After you repair a CronJob template, does an already-created failed Job automatically receive
+    the new template?
+  options:
+  - No; create a new Job from the repaired template.
+  - Yes; every existing Job is rewritten.
+  - Only when the namespace is default.
+  correct: 0
+  explanation: A CronJob template is used for future Jobs; existing Jobs retain their own specifications.
+hints:
+- Compare the CronJob template command with the supplied maintenance.py file.
+- Remove suspension and use the required schedule and concurrency policy.
+- Run python maintenance.py, apply the CronJob, then recreate only maintenance-proof from its template
+  and wait for Complete.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+- https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+- https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 90
+- args:
+  - kubectl
+  - rollout
+  - status
+  - deployment/dispatch
+  - --timeout=120s
+  timeout: 130
+checks:
+- id: workload-api
+  title: The API is available
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - api
+  expected: 'true'
+  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+- id: workload-workers
+  title: Two worker replicas are available and owned
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - workers
+  expected: 'true'
+  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+- id: workload-processing
+  title: A fresh job is processed with the correct result
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: Inspect worker logs, Pod ownership, database connectivity, and Redis notifications. A fresh
+    job must finish with the expected result.
+- id: workload-schedule
+  title: The CronJob has the required scheduling and retry policy
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - schedule
+  expected: 'true'
+  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+- id: workload-maintenance
+  title: The proof Job completed a real database observation
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - maintenance
+  expected: 'true'
+  diagnostic: Create a Job from the CronJob, wait for Complete, and inspect its actual database observation.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-workloads-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent controller manifests are accepted when live ownership and required application effects satisfy
+  the contract.
+failure_modes:
+- Healthy API Pods without functioning workers do not establish job processing.
+- A completed Pod with a printed success message does not prove the database effect.

@@ -19,7 +19,7 @@ export type UnitSummary = Pick<
   | "kind"
   | "runtime"
   | "outcomes"
->;
+> & { search_text: string };
 export type Lesson = Omit<
   Unit,
   "reference" | "checks" | "prepare" | "hints"

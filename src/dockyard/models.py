@@ -94,6 +94,7 @@ class Unit(Contract):
     capabilities: list[str] = Field(default_factory=list)
     checkpoint: Identifier | None = None
     images: list[str] = Field(default_factory=lambda: ["python"])
+    nodes: int = Field(default=1, ge=1, le=3)
     alternatives: list[str] = Field(default_factory=list)
     failure_modes: list[str] = Field(default_factory=list)
 

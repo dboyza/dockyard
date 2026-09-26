@@ -1,0 +1,7 @@
+.git
+.env
+*.pem
+*.key
+backup*
+evidence
+__pycache__

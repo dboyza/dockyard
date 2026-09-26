@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: dispatch
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: worker
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - python
+        - worker.py
+        env:
+        - name: DB_HOST
+          value: db
+        - name: DB_PASSWORD
+          value: ${DOCKYARD_DB_PASSWORD}
+        - name: REDIS_URL
+          value: redis://queue:6379/0

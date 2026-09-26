@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: dispatch
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: worker
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - sh
+        - -c
+        - test -s /shared/worker.conf && exec python worker.py
+        env:
+        - name: DB_HOST
+          value: db
+        - name: DB_PASSWORD
+          value: ${DOCKYARD_DB_PASSWORD}
+        - name: REDIS_URL
+          value: redis://queue:6379/0
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+      - name: observer
+        image: ${DOCKYARD_BUSYBOX_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - sh
+        - -c
+        - while true; do cat /shared/worker.conf; sleep 2; done
+        volumeMounts:
+        - name: other
+          mountPath: /shared
+      volumes:
+      - name: shared
+        emptyDir: {}
+      - name: other
+        emptyDir: {}
+      initContainers:
+      - name: configure
+        image: ${DOCKYARD_BUSYBOX_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - sh
+        - -c
+        - echo configuration failed >&2; exit 1
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+        securityContext:
+          runAsUser: 0

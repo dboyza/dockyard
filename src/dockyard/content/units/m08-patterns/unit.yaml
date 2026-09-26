@@ -1,0 +1,148 @@
+id: m08-patterns
+revision: 1
+module: 8
+order: 2
+title: Coordinate containers inside a Pod
+summary: Use init containers, shared ephemeral storage, and a supporting sidecar.
+kind: lesson
+runtime: kubernetes
+minutes: 40
+outcomes:
+- Explain init ordering and failure behavior.
+- Use an emptyDir shared by containers in one Pod.
+- Observe a supporting sidecar without confusing it with independent scaling.
+prerequisites:
+- m08-workloads
+objectives:
+- kubernetes.workloads
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A main container restarts within an existing Pod. What happens to that Pod's emptyDir?
+  options:
+  - Its contents remain until the Pod is removed.
+  - It is recreated empty on every container restart.
+  - It becomes a persistent volume automatically.
+  correct: 0
+  explanation: emptyDir is tied to the Pod lifetime, not one container process lifetime.
+hints:
+- Use describe and init-container logs to locate the first blocker.
+- The generated file and its readers must refer to the same volume name.
+- Write the queue line in configure, exit 0, and mount shared at /shared in both worker and observer.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+- https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+- https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 90
+- args:
+  - kubectl
+  - rollout
+  - status
+  - deployment/dispatch
+  - --timeout=120s
+  timeout: 130
+checks:
+- id: workload-api
+  title: The API is available
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - api
+  expected: 'true'
+  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+- id: workload-workers
+  title: Two worker replicas are available and owned
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - workers
+  expected: 'true'
+  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+- id: workload-processing
+  title: A fresh job is processed with the correct result
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: Inspect worker logs, Pod ownership, database connectivity, and Redis notifications. A fresh
+    job must finish with the expected result.
+- id: workload-patterns
+  title: Init and sidecar share the real generated configuration
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - patterns
+  expected: 'true'
+  diagnostic: Inspect init completion, the shared volume, and sidecar logs; both containers must observe
+    the same generated file.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-workloads-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent controller manifests are accepted when live ownership and required application effects satisfy
+  the contract.
+failure_modes:
+- Healthy API Pods without functioning workers do not establish job processing.
+- A completed Pod with a printed success message does not prove the database effect.

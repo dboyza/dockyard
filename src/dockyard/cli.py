@@ -7,6 +7,7 @@ import json
 import os
 import socket
 import sys
+import textwrap
 import threading
 import webbrowser
 from pathlib import Path
@@ -37,6 +38,8 @@ def parser() -> argparse.ArgumentParser:
     for action in ("prepare", "shell", "check", "status", "reset", "stop", "resume", "clean"):
         operation = operations.add_parser(action)
         operation.add_argument("unit", nargs="?", default=os.environ.get("DOCKYARD_UNIT"))
+        if action != "shell":
+            operation.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
         if action in {"reset", "clean"}:
             operation.add_argument("--yes", action="store_true")
     return result
@@ -122,7 +125,23 @@ def main() -> None:
                 )
             else:
                 result = service.perform(arguments.unit, arguments.action)
-                print(json.dumps(result, indent=2))
+                if arguments.action == "check" and not arguments.json:
+                    print(f"\n{result['status'].upper()}  {arguments.unit}")
+                    print(f"Assessment {result['id'][:12]} · revision {result['revision']}")
+                    for evidence in result["evidence"]:
+                        print(f"  {evidence['status'].upper():7} {evidence['title']}")
+                        if evidence["status"] != "pass":
+                            print(
+                                textwrap.fill(
+                                    evidence["diagnostic"],
+                                    width=88,
+                                    initial_indent="          ",
+                                    subsequent_indent="          ",
+                                )
+                            )
+                    print("\nEvidence is saved in the workbench. Use --json for full observations.")
+                else:
+                    print(json.dumps(result, indent=2))
                 if arguments.action == "check" and result.get("status") != "pass":
                     raise SystemExit(1)
     except KeyboardInterrupt:

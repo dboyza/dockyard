@@ -88,3 +88,36 @@ A portfolio test verifies source preservation, exclusion of environment/credenti
 The installed browser journey passed again with the complete Docker course packaged.
 The full Docker regression is still recorded separately from these individual checks; Kubernetes runtime adapters and course content remain to be implemented.
 The complete Docker regression subsequently passed all 26 tests in 118.96 seconds: 24 authored starter/reference journeys and two owned-resource lifecycle/preservation journeys.
+
+## Kubernetes foundations, 2026-09-26
+
+Implemented private kind clusters with recorded node identities, an app-owned kubeconfig, pinned tool integrity checks, Calico networking, bounded operations, and clean/stop/resume behavior.
+The runtime rejects a modified kubeconfig authentication boundary before invoking kubectl.
+Tool downloads support verified partial-file resume and preserve the prior installation when downloaded bytes fail their digest check.
+
+The four Module 7 starters failed and their references passed against actual Kubernetes clusters: 4 tests passed in 162.97 seconds.
+A separate end-to-end lifecycle test passed in 79.86 seconds after verifying preparation, a working application, stop, blocked assessment while stopped, resume, restored behavior, and rejection of an injected kubeconfig exec credential helper.
+Fresh node imports initially exposed kind's multi-platform archive failure; exporting only linux/arm64 before import fixed the reproduced failure.
+Resume testing exposed an API listener appearing before RBAC readiness and application convergence; the adapter now waits for API authorization readiness, and the lifecycle test observes convergence with a bounded deadline.
+
+The browser's reconciliation model was inspected in Chrome and captured at `.artifacts/reconciliation-model.png`.
+Deleting model Pod 1 left two desired replicas and one observed replica; advancing the controller created Pod 3 and restored the count.
+This is explicitly labeled as a concept model separate from the real lab.
+Course search was extended to taught concepts after a real browser search for reconciliation failed to find its lesson.
+
+These are development gates, not evidence that the full planned curriculum or release is complete.
+
+## Kubernetes workload checkpoint, 2026-09-26
+
+All four Module 8 starters failed and their worked repairs passed against real clusters: 4 tests passed in 267.27 seconds.
+The checks validate worker Deployment ownership and availability, submit a unique HTTP job, verify its transformed result independently in PostgreSQL, check DaemonSet coverage, observe shared init/sidecar configuration, and verify a completed maintenance Job's database effect.
+The first full-stack bootstrap reproduced a `DB_PORT` collision with Kubernetes Service environment variables; the supplied manifests now disable implicit Service links and use explicit configuration.
+The PostgreSQL volume at this checkpoint is deliberately ephemeral, which is stated in the teaching material and task limitations.
+
+The Kubernetes browser journey prepared its own cluster and opened WezTerm pane 9 in the assigned workspace.
+The terminal selected `kind-dockyard-b7dc909529a5` through its private kubeconfig, observed the zero-replica starter, repaired and applied the manifest, waited for rollout, and recorded a passing shared CLI assessment.
+The native terminal inspection exposed an excessively long shell prompt, so the prompt now uses the unit, short lab identity, and final directory component.
+CLI assessments now use concise human-readable evidence by default, with `--json` preserving full machine-readable observations.
+
+Current local checks: 20 Python tests passed with real-runtime tests explicitly skipped, strict mypy and Ruff passed, frontend build/lint/Vitest passed, and the installed Chrome journey passed in 3.5 seconds.
+The installed browser journey includes concept search, deletion/reconciliation behavior, a 480-pixel overflow check, and shutdown while the event stream remains open.

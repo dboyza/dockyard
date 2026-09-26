@@ -1,0 +1,153 @@
+id: m07-mission
+revision: 1
+module: 7
+order: 4
+title: 'Mission: reconcile a complete Dispatch deployment'
+summary: Build and diagnose a two-replica application using live Kubernetes evidence.
+kind: mission
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Create and maintain an application with declarative manifests.
+- Demonstrate correct namespace, controller ownership, selectors, and routing.
+- Record an operational explanation supported by observed state.
+prerequisites:
+- m07-declarative
+objectives:
+- kubernetes.api
+- kubernetes.declarative
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which evidence best demonstrates a completed application deployment?
+  options:
+  - Desired state, available owned replicas, and successful application traffic.
+  - kubectl apply printed configured.
+  - 'A YAML file contains replicas: 2.'
+  correct: 0
+  explanation: A source file and accepted API request express intent; live availability and traffic demonstrate
+    behavior.
+hints:
+- Separate the zero-replica problem from the empty Service selector.
+- Inspect the Deployment and Service independently, then compare their label contracts.
+- Request two replicas, select app=dispatch, apply both files, and wait for rollout status.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+- https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 60
+checks:
+- id: kube-replicas
+  title: Two desired replicas are available
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - replicas
+  expected: 'true'
+  diagnostic: Compare spec.replicas with readyReplicas, then inspect Pods and events.
+- id: kube-owned-pods
+  title: Both Pods belong to the Dispatch Deployment
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - owned_pods
+  expected: 'true'
+  diagnostic: Inspect the actual Deployment, Pods, and Service. Apply your corrected manifest and wait
+    for the rollout.
+- id: kube-response
+  title: Every replica serves the supplied Dispatch release
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - response
+  expected: 'true'
+  diagnostic: Use kubectl logs and describe pod to locate the failing layer.
+- id: kube-labels
+  title: Pod labels satisfy the application selector
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - labels
+  expected: 'true'
+  diagnostic: The Deployment selector and Pod labels must match app=dispatch.
+- id: kube-service
+  title: Service DNS routes a real request to Dispatch
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - service
+  expected: 'true'
+  diagnostic: The Service must select the Dispatch Pods and target their listening port.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-kubernetes-v1
+images:
+- python
+alternatives:
+- Equivalent manifests and commands are accepted when live ownership, availability, and HTTP behavior
+  satisfy the contract.
+failure_modes:
+- Matching names without matching selectors do not create endpoints.
+- A standalone Pod does not demonstrate Deployment reconciliation.

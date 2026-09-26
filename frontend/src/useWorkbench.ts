@@ -237,9 +237,9 @@ export function useWorkbench() {
     units.find((unit) => !state.progress[unit.id]?.practiced) ||
     units[0];
   const filtered = units.filter((unit) =>
-    `${unit.title} ${unit.summary}`
+    `${unit.search_text || ""} ${unit.id} ${unit.title} ${unit.summary} ${unit.outcomes.join(" ")}`
       .toLowerCase()
-      .includes(search.toLowerCase()),
+      .includes(search.trim().toLowerCase()),
   );
 
   return {

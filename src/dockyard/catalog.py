@@ -65,18 +65,24 @@ class Catalog:
         return {
             "modules": self.modules,
             "units": [
-                unit.model_dump(
-                    mode="json",
-                    exclude={
-                        "reference",
-                        "starter",
-                        "checks",
-                        "prepare",
-                        "concept",
-                        "debrief",
-                        "hints",
-                    },
-                )
+                {
+                    **unit.model_dump(
+                        mode="json",
+                        exclude={
+                            "reference",
+                            "starter",
+                            "checks",
+                            "prepare",
+                            "concept",
+                            "debrief",
+                            "hints",
+                        },
+                    ),
+                    "search_text": " ".join(
+                        f"{unit.id} {unit.title} {unit.summary} {' '.join(unit.outcomes)} "
+                        f"{unit.concept} {unit.brief}".lower().split()
+                    ),
+                }
                 for unit in sorted(self.units.values(), key=lambda item: (item.module, item.order))
             ],
         }

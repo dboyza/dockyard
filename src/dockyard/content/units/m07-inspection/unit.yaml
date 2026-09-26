@@ -1,0 +1,153 @@
+id: m07-inspection
+revision: 1
+module: 7
+order: 2
+title: Read labels, namespaces, and ownership
+summary: Repair a selector boundary using observations from the API.
+kind: lesson
+runtime: kubernetes
+minutes: 30
+outcomes:
+- Use namespaces to scope names and queries.
+- Distinguish labels, selectors, names, and ownership references.
+- Trace a Service with no endpoints to the selected Pods.
+prerequisites:
+- m07-reconciliation
+objectives:
+- kubernetes.api
+- kubernetes.declarative
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A Service name matches a Deployment name, but its selector matches no Pod labels. Where does
+    traffic go?
+  options:
+  - There are no usable backend endpoints.
+  - Kubernetes selects the similarly named Deployment.
+  - It reaches any Pod in the namespace.
+  correct: 0
+  explanation: Services select labels, not Deployment names.
+hints:
+- List Pod labels and compare them with the Service selector.
+- Inspect EndpointSlices with the kubernetes.io/service-name label.
+- Change service.yaml spec.selector.app to dispatch, then kubectl apply -f service.yaml.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+- https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 60
+checks:
+- id: kube-replicas
+  title: Two desired replicas are available
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - replicas
+  expected: 'true'
+  diagnostic: Compare spec.replicas with readyReplicas, then inspect Pods and events.
+- id: kube-owned-pods
+  title: Both Pods belong to the Dispatch Deployment
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - owned_pods
+  expected: 'true'
+  diagnostic: Inspect the actual Deployment, Pods, and Service. Apply your corrected manifest and wait
+    for the rollout.
+- id: kube-response
+  title: Every replica serves the supplied Dispatch release
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - response
+  expected: 'true'
+  diagnostic: Use kubectl logs and describe pod to locate the failing layer.
+- id: kube-labels
+  title: Pod labels satisfy the application selector
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - labels
+  expected: 'true'
+  diagnostic: The Deployment selector and Pod labels must match app=dispatch.
+- id: kube-service
+  title: Service DNS routes a real request to Dispatch
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - service
+  expected: 'true'
+  diagnostic: The Service must select the Dispatch Pods and target their listening port.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-kubernetes-v1
+images:
+- python
+alternatives:
+- Equivalent manifests and commands are accepted when live ownership, availability, and HTTP behavior
+  satisfy the contract.
+failure_modes:
+- Matching names without matching selectors do not create endpoints.
+- A standalone Pod does not demonstrate Deployment reconciliation.

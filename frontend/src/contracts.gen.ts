@@ -95,6 +95,7 @@ export type Unit = {
   "capabilities"?: Array<string>;
   "checkpoint"?: string | null;
   "images"?: Array<string>;
+  "nodes"?: number;
   "alternatives"?: Array<string>;
   "failure_modes"?: Array<string>;
 };

@@ -1,0 +1,170 @@
+id: m07-declarative
+revision: 1
+module: 7
+order: 3
+title: Apply deliberate changes in the right context
+summary: Manage declarative state, context scope, and API compatibility.
+kind: lesson
+runtime: kubernetes
+minutes: 30
+outcomes:
+- Identify cluster, user, and namespace in a context.
+- Use diff, apply, and rollout status as separate observations.
+- Inspect supported API versions and diagnose removed APIs.
+prerequisites:
+- m07-inspection
+objectives:
+- kubernetes.api
+- kubernetes.declarative
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: An API version has been removed from the server. Will changing the current namespace make
+    that API available?
+  options:
+  - No; the manifest must use a supported API and schema.
+  - Yes; removed APIs still exist in default.
+  - Only if the Deployment already exists.
+  correct: 0
+  explanation: Namespace selection and API schema compatibility are independent concerns.
+hints:
+- Use kubectl api-resources to find the served Deployment API group.
+- Deployments in this cluster use apps/v1 and an explicit spec.selector.
+- 'Set apiVersion: apps/v1, keep matchLabels consistent, apply, and wait for the rollout.'
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+- https://kubernetes.io/docs/reference/using-api/deprecation-guide/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - -c
+  - python render.py bootstrap.yaml | kubectl apply -f -; kubectl apply -f service.yaml
+  timeout: 60
+checks:
+- id: kube-replicas
+  title: Two desired replicas are available
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - replicas
+  expected: 'true'
+  diagnostic: Compare spec.replicas with readyReplicas, then inspect Pods and events.
+- id: kube-owned-pods
+  title: Both Pods belong to the Dispatch Deployment
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - owned_pods
+  expected: 'true'
+  diagnostic: Inspect the actual Deployment, Pods, and Service. Apply your corrected manifest and wait
+    for the rollout.
+- id: kube-response
+  title: Every replica serves the supplied Dispatch release
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - response
+  expected: 'true'
+  diagnostic: Use kubectl logs and describe pod to locate the failing layer.
+- id: kube-labels
+  title: Pod labels satisfy the application selector
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - labels
+  expected: 'true'
+  diagnostic: The Deployment selector and Pod labels must match app=dispatch.
+- id: kube-service
+  title: Service DNS routes a real request to Dispatch
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - service
+  expected: 'true'
+  diagnostic: The Service must select the Dispatch Pods and target their listening port.
+- id: kube-source-api
+  title: The maintained manifest uses apps/v1
+  explanation: Observe the real API object and the running Dispatch application.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - source_api
+  expected: 'true'
+  diagnostic: Inspect the actual Deployment, Pods, and Service. Apply your corrected manifest and wait
+    for the rollout.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-kubernetes-v1
+images:
+- python
+alternatives:
+- Equivalent manifests and commands are accepted when live ownership, availability, and HTTP behavior
+  satisfy the contract.
+failure_modes:
+- Matching names without matching selectors do not create endpoints.
+- A standalone Pod does not demonstrate Deployment reconciliation.

@@ -1,0 +1,148 @@
+id: m08-workloads
+revision: 1
+module: 8
+order: 1
+title: Choose a controller for its lifecycle
+summary: Operate replicated workers and a node-scoped DaemonSet.
+kind: lesson
+runtime: kubernetes
+minutes: 40
+outcomes:
+- Choose between a naked Pod, Deployment, DaemonSet, and Job.
+- Scale a worker Deployment and observe its ownership.
+- Verify a DaemonSet schedules an agent on eligible nodes.
+prerequisites:
+- m07-mission
+objectives:
+- kubernetes.workloads
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which controller is appropriate for one observation agent on each eligible node?
+  options:
+  - DaemonSet.
+  - A Deployment with an arbitrarily large replica count.
+  - CronJob.
+  correct: 0
+  explanation: DaemonSet scheduling follows eligible nodes, whereas Deployment replicas express an application
+    count.
+hints:
+- Inspect both controllers; they fail for different reasons.
+- The workers request zero replicas, while the agent selector excludes every node.
+- Set worker replicas to 2 and remove the impossible nodeSelector; apply and wait for both rollouts.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+- https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
+- https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/
+- https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 90
+- args:
+  - kubectl
+  - rollout
+  - status
+  - deployment/dispatch
+  - --timeout=120s
+  timeout: 130
+checks:
+- id: workload-api
+  title: The API is available
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - api
+  expected: 'true'
+  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+- id: workload-workers
+  title: Two worker replicas are available and owned
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - workers
+  expected: 'true'
+  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+- id: workload-processing
+  title: A fresh job is processed with the correct result
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: Inspect worker logs, Pod ownership, database connectivity, and Redis notifications. A fresh
+    job must finish with the expected result.
+- id: workload-agents
+  title: The DaemonSet covers eligible nodes
+  explanation: Check live controller state and actual processing or maintenance effects.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - workloads
+    timeout: 90
+  expectation: json
+  json_path:
+  - agents
+  expected: 'true'
+  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-workloads-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent controller manifests are accepted when live ownership and required application effects satisfy
+  the contract.
+failure_modes:
+- Healthy API Pods without functioning workers do not establish job processing.
+- A completed Pod with a printed success message does not prove the database effect.

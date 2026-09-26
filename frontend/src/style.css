@@ -1592,7 +1592,7 @@ pre {
 }
 .checkpoint-row {
   padding: 24px 0;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--line);
 }
 .checkpoint-row h3 {
   margin: 8px 0;
@@ -1601,13 +1601,87 @@ pre {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--line);
   border-radius: 6px;
   padding: 10px 14px;
-  color: var(--text);
+  color: var(--ink);
   font-size: 12px;
   text-decoration: none;
 }
 .button-link:hover {
   border-color: var(--accent);
+}
+
+.reconciliation-model {
+  margin: 28px 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-alt);
+}
+.reconciliation-model h3 {
+  margin: 3px 0 0;
+}
+.desired-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.replica-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.replica-control button {
+  padding: 7px;
+}
+.controller-step {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.model-pods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+  min-height: 125px;
+}
+.model-pod {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--blue);
+}
+.model-pod button {
+  padding: 4px 9px;
+  font-size: 11px;
+}
+.model-observation {
+  margin-top: 15px;
+  font-size: 12px;
+}
+.model-observation > span {
+  margin-left: 12px;
+  color: var(--muted);
+}
+.model-observation p {
+  margin-bottom: 0;
 }

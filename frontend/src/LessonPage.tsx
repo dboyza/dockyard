@@ -1,6 +1,7 @@
 import type { Workbench } from "./useWorkbench";
 import { api } from "./api";
 import { Markdown } from "./teaching";
+import { ReconciliationModel } from "./ReconciliationModel";
 import {
   ArrowLeft,
   ArrowRight,
@@ -143,6 +144,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                   </ul>
                 </div>
                 <Markdown>{lesson.concept}</Markdown>
+                {lesson.module === 7 && <ReconciliationModel key={lesson.id} />}
                 <section className="prediction">
                   <div className="eyebrow">PAUSE AND PREDICT</div>
                   <h3>{lesson.prediction.question}</h3>
@@ -338,6 +340,18 @@ export function LessonPage({ model }: { model: Workbench }) {
               {lab?.state || "Not prepared"}
             </div>
             {lab && <p className="mono small muted">{lab.id.slice(0, 12)}</p>}
+            {lab?.state === "preparing" && lab.resources?.stage && (
+              <p className="small" role="status">
+                {lab.resources?.stage}
+              </p>
+            )}
+            {lesson.runtime === "kubernetes" && (
+              <p className="small muted">
+                Private cluster and kubeconfig. Preparing this lab pauses
+                another active Kubernetes lab in this profile to keep memory use
+                bounded.
+              </p>
+            )}
             <p className="small muted">
               {lab
                 ? "Commands run in a dedicated WezTerm session with this lab’s environment."
