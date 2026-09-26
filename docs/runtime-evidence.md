@@ -303,3 +303,34 @@ The cache verifies each archive and its assembled bundle, repairs altered bundle
 The focused cache/download regression passed nine tests, including changed bytes, interrupted metadata, resumed downloads, and integrity failures.
 One cold-start attempt experienced two-minute SSH session delays in a guest; it eventually reached package installation, and the next two fresh profiles started and completed normally.
 The delay was observed but its root cause was not established.
+
+## Module 19: native node and control-plane boundaries
+
+The four native administration units passed their complete broken-starter/reference audits in 750.06 seconds.
+The course now has 76 authored units with successful real-runtime reference audits.
+The new checkpoint runs the hardened Dispatch application on kubeadm guests, imports platform-specific images without host mounts, and stores PostgreSQL on a retained worker-local PV with explicit node affinity.
+The native Pod CIDR is 10.244.0.0/16, separate from the 192.168.104.0/24 guest network.
+A separate proof verified cross-node Service DNS/HTTP, actual ingress denial, and recovery after an explicit allow policy on this configuration.
+
+The native checks observe an actual API process through CRI and its Linux cgroup, active kubelet services and fresh node leases, a separate private guest operator client, serving-certificate trust, and all four static control-plane components.
+The application criterion submits a unique job through the frontend and verifies the worker's result through both HTTP and PostgreSQL before removing its test row.
+The operator criterion requires CA trust and rejects insecure TLS bypass configuration.
+The mission handoff is explicitly self-reviewed rather than semantically graded.
+
+The real browser exposed an omitted native-resource group: the backend returned two VMs while the UI rendered zero cards.
+The corrected view shows the actual guest names, state, CPU/memory allocation, and mount boundary, including observed stopped guests.
+Direct screenshots were inspected at 1440 and 480 pixel widths; the narrow viewport was confirmed through window.innerWidth, with no horizontal overflow.
+A new WezTerm pane showed the expected immutable lab ID, workspace, private LIMA_HOME, private kubeconfig, and the same two stopped guests.
+The installed wheel's Chrome/real-Docker journey passed in 14.3 seconds, and the backend regression passed 50 tests.
+
+The provider logs also exposed unintended automatic forwarding of guest ports onto host loopback.
+The terminal ignore rule now explicitly matches every guest address and both TCP and UDP, after the allowed application/API rules.
+A fresh two-guest lifecycle test proved an explicit API forward, cross-guest HTTP, refusal of an unrelated TCP forward, absence of an unrelated UDP echo, identity checks, stop/resume, and cleanup.
+That test also froze systemd-logind, recovered it using a bounded D-Bus health check, and established a new SSH session without reusing the existing control connection.
+The full boundary/lifecycle test passed in 108.82 seconds.
+Reference: [Lima 2.2.0 forwarding rules](https://github.com/lima-vm/lima/blob/v2.2.0/templates/default.yaml#L482-L529).
+
+Two fresh-boot observations identified an unresponsive guest login manager consuming a CPU core, with pam_systemd session requests timing out after two minutes.
+A short trace showed a repeated nonblocking epoll loop; the underlying upstream defect was not established.
+Guest initialization now checks the login manager and performs bounded recovery only if that service is unresponsive.
+SSH authentication and the learner's Kubernetes services remain configured normally.

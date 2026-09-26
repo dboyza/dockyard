@@ -1,12 +1,14 @@
 """Authoring gate: fail the intended starter, run the reference, observe actual behavior."""
 
 import os
+import tempfile
 import time
 from pathlib import Path
 
 import pytest
 
 from dockyard.catalog import Catalog
+from dockyard.models import Runtime
 from dockyard.process import run
 from dockyard.service import Service
 from dockyard.workspace import write_files
@@ -22,6 +24,15 @@ pytestmark = [
 
 @pytest.mark.parametrize("unit_id", UNITS, ids=UNITS)
 def test_authored_reference_repairs_its_actual_starter(tmp_path, unit_id):
+    if Catalog().get(unit_id).runtime == Runtime.LINUX:
+        # Native providers use Unix sockets whose paths must stay below the macOS limit.
+        with tempfile.TemporaryDirectory(prefix="dy-course-", dir="/private/tmp") as temporary:
+            assert_reference(Path(temporary), unit_id)
+    else:
+        assert_reference(tmp_path, unit_id)
+
+
+def assert_reference(tmp_path, unit_id):
     service = Service(tmp_path)
     unit = service.catalog.get(unit_id)
     try:

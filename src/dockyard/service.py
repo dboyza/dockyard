@@ -348,6 +348,15 @@ class Service:
                 if isinstance(runtime, LinuxRuntime):
                     runtime.prepare(unit.nodes, cancel)
                     runtime.install_node_packages(cancel)
+                    if lab.resources.get("prepared_revision") != str(unit.revision):
+                        if "native-cluster" in unit.capabilities:
+                            from dockyard.runtimes.native_cluster import prepare
+
+                            prepare(runtime, cancel)
+                        from dockyard.runtimes.native_images import load
+
+                        for image_name in unit.images:
+                            load(runtime, COMPATIBILITY["images"][image_name], cancel)
                 else:
                     runtime.prepare(unit.nodes, unit.images, cancel, unit.capabilities)
         env = self.environment(lab)
@@ -612,7 +621,8 @@ class Service:
             status="unavailable",
             message="Prepare and start this lab to observe its resources.",
         )
-        if not lab or lab.state != "ready":
+        observable = {"ready", "stopped"} if unit.runtime == Runtime.LINUX else {"ready"}
+        if not lab or lab.state not in observable:
             if lab and lab.state == "stopped":
                 unavailable.message = "The lab is paused. Resume it to observe current resources."
             elif lab and lab.state not in {"absent", "failed"}:
@@ -623,7 +633,7 @@ class Service:
         try:
             observed = observe(self.runtime(lab))
             current = self.store.lab(unit_id)
-            if not current or current.id != lab.id or current.state != "ready":
+            if not current or current.id != lab.id or current.state != lab.state:
                 unavailable.message = (
                     "The lab changed during observation. Refresh after its operation finishes."
                 )

@@ -1,0 +1,141 @@
+id: m19-mission
+revision: 1
+module: 19
+order: 4
+title: 'Mission: recover the native supervision chain'
+summary: Diagnose independent host and client faults and restore Dispatch evidence.
+kind: mission
+runtime: linux
+nodes: 2
+minutes: 60
+outcomes:
+- Restore CRI inspection, active node supervision, and authenticated operator access.
+- Validate a fresh application workflow after repairing the native layers.
+prerequisites:
+- m19-control-plane
+objectives:
+- cka.nodes
+- cka.components
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: After fixing one fault, what is the strongest completion evidence?
+  options:
+  - Repeat independent checks across every required boundary and complete a fresh job.
+  - Stop after the first successful command.
+  - Assume the unchanged layers are healthy.
+  correct: 0
+  explanation: Compound failures need independent evidence for each repaired boundary.
+hints:
+- Separate the host API client, guest operator client, node agent, and runtime client.
+- Compare actual endpoint paths, systemd service state, lease renewal, and certificate trust before restarting
+  components.
+- The reference boundaries are the containerd Unix socket, active kubelet services, and the working private
+  administrative client supplied by kubeadm.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/container-runtimes/
+- https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
+- https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/
+- https://kubernetes.io/docs/concepts/architecture/leases/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - setup-hosts.py
+  timeout: 60
+- args:
+  - python
+  - inject.py
+  - mission
+  timeout: 90
+checks:
+- id: native-cri
+  title: The worker CRI client observes a real API process in systemd cgroups
+  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native
+    timeout: 180
+  expectation: json
+  json_path:
+  - cri
+  expected: 'true'
+  diagnostic: Inspect the guest CRI socket configuration, daemon readiness, and actual API process cgroup.
+- id: native-kubelet
+  title: Active kubelets publish fresh Ready node heartbeats
+  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native
+    timeout: 180
+  expectation: json
+  json_path:
+  - kubelet
+  expected: 'true'
+  diagnostic: Inspect systemd and the kubelet journal, then verify current node leases.
+- id: native-operator
+  title: The private guest client reaches a certificate-backed control plane
+  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native
+    timeout: 180
+  expectation: json
+  json_path:
+  - operator
+  expected: 'true'
+  diagnostic: Compare the guest client endpoint, private permissions, certificate trust, and static containers.
+- id: native-workflow
+  title: A fresh frontend job is completed and persisted by the native worker
+  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native
+    timeout: 180
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Trace the frontend, Service, API, queue, worker, and persisted database result.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors and diagnostic commands are accepted; no shell history or command sequence is graded.
+- The declared CRI and guest operator configuration paths are interface contracts; their formatting may
+  vary.
+failure_modes:
+- An old Ready condition can outlive the last kubelet heartbeat.
+- A bad diagnostic client endpoint does not itself stop running containers.
+- Disabling TLS verification hides a trust failure instead of demonstrating a valid client.
+starter_failure_checks:
+- native-cri
+- native-kubelet
+- native-operator

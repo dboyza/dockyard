@@ -1,0 +1,113 @@
+id: m19-kubelet
+revision: 1
+module: 19
+order: 2
+title: Reconnect node supervision through systemd
+summary: Use service state, journal evidence, and fresh node leases to recover kubelet.
+kind: lesson
+runtime: linux
+nodes: 2
+minutes: 40
+outcomes:
+- Distinguish container survival from active kubelet supervision.
+- Use systemd and journald to observe a stopped node agent.
+- Verify service recovery and fresh Kubernetes node heartbeats.
+prerequisites:
+- m19-runtime
+objectives:
+- cka.nodes
+- cka.components
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A worker still answers one existing HTTP request after kubelet stops. What does that prove?
+  options:
+  - That request reached a surviving workload, but node supervision still needs verification.
+  - Kubelet is running.
+  - The scheduler has replaced the node.
+  correct: 0
+  explanation: Containerd can preserve an existing process while kubelet heartbeats and reconciliation
+    are unavailable.
+hints:
+- Separate the host API client, guest operator client, node agent, and runtime client.
+- Compare actual endpoint paths, systemd service state, lease renewal, and certificate trust before restarting
+  components.
+- The reference boundaries are the containerd Unix socket, active kubelet services, and the working private
+  administrative client supplied by kubeadm.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/container-runtimes/
+- https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
+- https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/
+- https://kubernetes.io/docs/concepts/architecture/leases/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - setup-hosts.py
+  timeout: 60
+- args:
+  - python
+  - inject.py
+  - kubelet
+  timeout: 90
+checks:
+- id: native-kubelet
+  title: Active kubelets publish fresh Ready node heartbeats
+  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native
+    timeout: 180
+  expectation: json
+  json_path:
+  - kubelet
+  expected: 'true'
+  diagnostic: Inspect systemd and the kubelet journal, then verify current node leases.
+- id: native-workflow
+  title: A fresh frontend job is completed and persisted by the native worker
+  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native
+    timeout: 180
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Trace the frontend, Service, API, queue, worker, and persisted database result.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors and diagnostic commands are accepted; no shell history or command sequence is graded.
+- The declared CRI and guest operator configuration paths are interface contracts; their formatting may
+  vary.
+failure_modes:
+- An old Ready condition can outlive the last kubelet heartbeat.
+- A bad diagnostic client endpoint does not itself stop running containers.
+- Disabling TLS verification hides a trust failure instead of demonstrating a valid client.
+starter_failure_checks:
+- native-kubelet

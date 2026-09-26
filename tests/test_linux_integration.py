@@ -2,14 +2,19 @@
 
 import json
 import os
+import socket
 import tempfile
 import threading
+import time
+import urllib.request
 import uuid
 from pathlib import Path
 
 import pytest
 
+from dockyard.catalog import CONTENT
 from dockyard.models import Lab, Runtime
+from dockyard.process import run
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.service import Service
@@ -28,6 +33,13 @@ def test_linux_guests_network_resume_and_preserve_identity():
     with tempfile.TemporaryDirectory(prefix="dy-vm-", dir="/private/tmp") as temporary:
         profile = Path(temporary)
         service = Service(profile)
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            api_port = listener.getsockname()[1]
+        with socket.socket() as listener, socket.socket(type=socket.SOCK_DGRAM) as datagram:
+            listener.bind(("127.0.0.1", 0))
+            isolated_port = listener.getsockname()[1]
+            datagram.bind(("127.0.0.1", isolated_port))
         lab = Lab(
             id=uuid.uuid4().hex,
             unit_id="m19-runtime",
@@ -37,7 +49,7 @@ def test_linux_guests_network_resume_and_preserve_identity():
             workspace=str(profile / "labs/guest-proof/workspace"),
             created_at=timestamp(),
             updated_at=timestamp(),
-            resources={},
+            resources={"api_port": str(api_port)},
         )
         Path(lab.workspace).mkdir(parents=True)
         runtime = LinuxRuntime(lab, service.environment(), service.store.save_lab, service.tools)
@@ -51,6 +63,18 @@ def test_linux_guests_network_resume_and_preserve_identity():
                 assert runtime.verify(entry)["status"] == "Running"
                 observed = runtime.guest(entry["name"], ["uname", "-m"])
                 assert observed.ok and observed.stdout.strip() == "aarch64"
+            server = f"""import http.server,socket,threading
+class IPv6Server(http.server.ThreadingHTTPServer):
+    address_family=socket.AF_INET6
+for port in (6443,{isolated_port}):
+    handler=IPv6Server(('::',port),http.server.SimpleHTTPRequestHandler)
+    threading.Thread(target=handler.serve_forever,daemon=True).start()
+udp=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+udp.bind(('0.0.0.0',{isolated_port}))
+while True:
+    data,peer=udp.recvfrom(4096)
+    udp.sendto(data,peer)
+"""
             started = runtime.guest(
                 names[0],
                 [
@@ -58,11 +82,8 @@ def test_linux_guests_network_resume_and_preserve_identity():
                     "systemd-run",
                     "--unit=dockyard-network-proof",
                     "/usr/bin/python3",
-                    "-m",
-                    "http.server",
-                    "8097",
-                    "--bind",
-                    "0.0.0.0",
+                    "-c",
+                    server,
                 ],
             )
             assert started.ok, started.stderr
@@ -78,10 +99,66 @@ def test_linux_guests_network_resume_and_preserve_identity():
                     "1",
                     "--max-time",
                     "3",
-                    "http://lima-" + names[0] + ".internal:8097/",
+                    "http://lima-" + names[0] + f".internal:{isolated_port}/",
                 ],
             )
             assert received.ok and "Directory listing" in received.stdout
+            # An explicit API forward must work while unrelated TCP and UDP listeners stay private.
+            deadline = time.monotonic() + 20
+            while True:
+                try:
+                    with urllib.request.urlopen(
+                        f"http://127.0.0.1:{api_port}/", timeout=2
+                    ) as response:
+                        assert b"Directory listing" in response.read()
+                    break
+                except OSError:
+                    if time.monotonic() >= deadline:
+                        raise
+                    time.sleep(0.2)
+            with (
+                pytest.raises(OSError),
+                socket.create_connection(("127.0.0.1", isolated_port), timeout=1),
+            ):
+                pytest.fail("An unrelated guest TCP listener was forwarded")
+            with socket.socket(type=socket.SOCK_DGRAM) as datagram:
+                datagram.settimeout(1)
+                datagram.sendto(b"unforwarded-native-port", ("127.0.0.1", isolated_port))
+                with pytest.raises((TimeoutError, ConnectionRefusedError)):
+                    datagram.recv(4096)
+            # A frozen login manager reproduces the observed D-Bus failure without changing
+            # SSH authentication or the Kubernetes services learners will administer.
+            initial = runtime.guest(
+                names[0], ["systemctl", "show", "systemd-logind", "-p", "MainPID", "--value"]
+            )
+            runtime.require(initial)
+            runtime.require(
+                runtime.guest(names[0], ["sudo", "kill", "-STOP", initial.stdout.strip()])
+            )
+            recovered = runtime.guest(
+                names[0],
+                ["sudo", "env", "DOCKYARD_GUEST=lima-" + names[0], "bash", "-s"],
+                input_text=(CONTENT / "runtime/linux/session-ready.sh").read_text(),
+                timeout=30,
+            )
+            assert recovered.ok, recovered.stderr
+            fresh = run(
+                [
+                    "/usr/bin/ssh",
+                    "-F",
+                    str(runtime.home / names[0] / "ssh.config"),
+                    "-o",
+                    "ControlMaster=no",
+                    "-o",
+                    "ControlPath=none",
+                    "lima-" + names[0],
+                    "printf",
+                    "fresh-session-ready",
+                ],
+                env=runtime.env,
+                timeout=10,
+            )
+            assert fresh.ok and fresh.stdout == "fresh-session-ready", fresh.stderr
             runtime.change("stop", cancel)
             assert all(runtime.verify(entry)["status"] == "Stopped" for entry in entries)
             runtime.change("resume", cancel)

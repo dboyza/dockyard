@@ -4,6 +4,7 @@ import { api } from "./api";
 import type { LabObservation, ObservedResource } from "./contracts.gen";
 
 const groups = [
+  { title: "Linux guests", kinds: ["VirtualMachine"] },
   { title: "Traffic & networks", kinds: ["Service", "Network"] },
   {
     title: "Controllers",
@@ -72,10 +73,15 @@ export function LiveLabMap({
       <div className="live-map-heading">
         <div>
           <span className="eyebrow">YOUR ACTUAL LAB</span>
-          <h2>Follow the resource relationships.</h2>
+          <h2>
+            {snapshot?.runtime === "linux"
+              ? "Inspect your Linux guests."
+              : "Follow the resource relationships."}
+          </h2>
           <p>
-            Inspect ownership, ready endpoints, network connections, and storage
-            bindings.
+            {snapshot?.runtime === "linux"
+              ? "Observe VM state, compute allocation, and host mount boundaries."
+              : "Inspect ownership, ready endpoints, network connections, and storage bindings."}
           </p>
         </div>
         <button
@@ -118,7 +124,11 @@ export function LiveLabMap({
                         onClick={() => setSelection(item.id)}
                         aria-label={label(item)}
                       >
-                        <span className="resource-kind">{item.kind}</span>
+                        <span className="resource-kind">
+                          {item.kind === "VirtualMachine"
+                            ? "Virtual machine"
+                            : item.kind}
+                        </span>
                         <strong>{item.name}</strong>
                         {item.namespace && (
                           <span className="resource-namespace">

@@ -14,6 +14,7 @@ from typing import Any
 
 import yaml
 
+from dockyard.catalog import CONTENT
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes import kubeclient
@@ -164,7 +165,7 @@ class LinuxRuntime:
                 "Linux labs need at least 20 GiB of free disk before provisioning."
             )
         tools = Toolchain(self.tools)
-        for tool in ("limactl", "lima-guestagent", "ubuntu-node"):
+        for tool in ("limactl", "lima-guestagent", "ubuntu-node", "kubectl"):
             tools.ensure(tool, cancel, self.report)
         self.home.mkdir(parents=True, exist_ok=True, mode=0o700)
         if self.home.is_symlink():
@@ -217,7 +218,23 @@ class LinuxRuntime:
                 "networks": [{"lima": "user-v2"}],
                 "ssh": {"loadDotSSHPubKeys": False, "forwardAgent": False},
                 "propagateProxyEnv": False,
-                "portForwards": [{"guestPortRange": [1, 65535], "ignore": True}],
+                "provision": [
+                    {
+                        "mode": "system",
+                        "script": "#!/bin/bash\nexport DOCKYARD_GUEST=lima-"
+                        + name
+                        + "\n"
+                        + (CONTENT / "runtime/linux/session-ready.sh").read_text(),
+                    }
+                ],
+                "portForwards": [
+                    {
+                        "guestPortRange": [1, 65535],
+                        "guestIP": "0.0.0.0",
+                        "proto": "any",
+                        "ignore": True,
+                    }
+                ],
             }
             forwards = configuration["portForwards"]
             if self.lab.resources.get("api_port") and name == (
@@ -280,6 +297,7 @@ class LinuxRuntime:
         config = yaml.safe_load(result.stdout)
         cluster = config["clusters"][0]["cluster"]
         cluster["server"] = "https://127.0.0.1:" + self.lab.resources["api_port"]
+        config["contexts"][0]["context"]["namespace"] = "dispatch"
         path = Path(self.env["KUBECONFIG"])
         atomic_write(path, yaml.safe_dump(config).encode())
         self.lab.resources["kubeconfig_identity"] = kubeclient.identity(path)
@@ -376,14 +394,17 @@ class LinuxRuntime:
 
     def fingerprint(self) -> str:
         records: list[Any] = []
-        script = """import hashlib,json,pathlib,subprocess
+        script = """import hashlib,json,os,pathlib,pwd,subprocess
 paths=[pathlib.Path(p) for p in (
     '/etc/crictl.yaml','/etc/containerd/config.toml','/var/lib/kubelet/config.yaml',
     '/etc/kubernetes/kubelet.conf','/etc/kubernetes/admin.conf',
 )]
 paths += list(pathlib.Path('/etc/kubernetes/manifests').glob('*.yaml'))
 paths += list(pathlib.Path('/etc/kubernetes/pki').rglob('*.crt'))
-files={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in paths if p.is_file()}
+operator=pwd.getpwnam(os.environ['SUDO_USER']).pw_dir
+paths += [pathlib.Path(operator)/'.kube/operator.conf']
+files={str(p):[hashlib.sha256(p.read_bytes()).hexdigest(),p.stat().st_mode & 0o777]
+       for p in paths if p.is_file()}
 services={name:subprocess.run(
     ['systemctl','show',name,'--property=ActiveState,SubState,MainPID'],
     capture_output=True,text=True,timeout=5,

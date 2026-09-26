@@ -355,7 +355,11 @@ export function LessonPage({ model }: { model: Workbench }) {
             <div className="eyebrow">YOUR PRACTICE ENVIRONMENT</div>
             <h3>
               <Terminal size={18} />{" "}
-              {lesson.runtime === "docker" ? "Docker lab" : "Kubernetes lab"}
+              {lesson.runtime === "docker"
+                ? "Docker lab"
+                : lesson.runtime === "linux"
+                  ? "Native Linux lab"
+                  : "Kubernetes lab"}
             </h3>
             <div className="lab-state">
               <span className={`dot ${lab?.state === "ready" ? "pass" : ""}`} />
@@ -367,11 +371,13 @@ export function LessonPage({ model }: { model: Workbench }) {
                 {lab.resources?.stage}
               </p>
             )}
-            {lesson.runtime === "kubernetes" && (
+            {lesson.runtime !== "docker" && (
               <p className="small muted">
-                Private cluster and kubeconfig. Preparing this lab pauses
-                another active Kubernetes lab in this profile to keep memory use
-                bounded.
+                {lesson.runtime === "linux"
+                  ? "Owned Linux guests, private kubeconfig, and no host mounts. "
+                  : "Private cluster and kubeconfig. "}
+                Preparing this lab pauses other active clusters in this profile
+                to keep memory use bounded.
               </p>
             )}
             <p className="small muted">
