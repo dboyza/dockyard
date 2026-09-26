@@ -91,6 +91,7 @@ class Toolchain:
             if partial.is_file() and digest(partial) == entry["sha256"]:
                 self.install_verified(partial, destination, entry)
                 return destination
+            maximum = int(entry.get("max_download_bytes", 512 * 1024 * 1024))
             offset = partial.stat().st_size if partial.exists() else 0
             headers = {"Range": f"bytes={offset}-"} if offset else {}
             report(f"Downloading {name} {entry['version']}")
@@ -101,7 +102,7 @@ class Toolchain:
                         offset if resumed else 0
                     )
                     received = offset if resumed else 0
-                    if total > 512 * 1024 * 1024:
+                    if total > maximum:
                         raise RuntimeErrorBase("The tool download exceeds its size limit.")
                     with partial.open("ab" if resumed else "wb") as output:
                         while block := response.read(1024 * 1024):
@@ -110,7 +111,7 @@ class Toolchain:
                                     "Download canceled; its partial cache is preserved."
                                 )
                             received += len(block)
-                            if received > 512 * 1024 * 1024:
+                            if received > maximum:
                                 raise RuntimeErrorBase("The tool download exceeded its size limit.")
                             output.write(block)
                             report(

@@ -31,3 +31,23 @@ def test_git_and_helm_override_environment_is_isolated(tmp_path, monkeypatch):
     for key, value in overrides.items():
         # Constructing an environment never edits the host process environment.
         assert __import__("os").environ[key] == value
+
+
+def test_scanner_uses_private_offline_defaults_without_telemetry(tmp_path, monkeypatch):
+    monkeypatch.setenv("TRIVY_CONFIG", "/unrelated/scanner.yaml")
+    monkeypatch.setenv("TRIVY_CACHE_DIR", "/unrelated/cache")
+    monkeypatch.setenv("TRIVY_DISABLE_TELEMETRY", "false")
+    service = Service(tmp_path)
+    env = service.environment()
+    assert "TRIVY_CONFIG" not in env
+    assert env["TRIVY_CACHE_DIR"] == str(service.tools / "trivy")
+    for key in (
+        "TRIVY_DISABLE_TELEMETRY",
+        "TRIVY_OFFLINE_SCAN",
+        "TRIVY_SKIP_VERSION_CHECK",
+        "TRIVY_SKIP_DB_UPDATE",
+        "TRIVY_SKIP_JAVA_DB_UPDATE",
+        "TRIVY_SKIP_CHECK_UPDATE",
+        "TRIVY_SKIP_VEX_REPO_UPDATE",
+    ):
+        assert env[key] == "true"

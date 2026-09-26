@@ -1,5 +1,5 @@
 id: m16-pipeline
-revision: 1
+revision: 2
 module: 16
 order: 1
 title: Gate a local image publication

@@ -223,3 +223,46 @@ The working catalog contains 64 course units; the verified curriculum checkpoint
 All four Module 16 starter/reference audits passed in 489.92 seconds after correcting the shared job verifier to address this checkpoint's StatefulSet database.
 The checks independently exercise the published image's HTTP contract, compare source hashes and registry content, follow local/remote Git revisions into healthy Flux conditions, verify the scoped deployer, validate real drift/promotion/revert evidence, and complete a persistent job.
 The working security chapter remains unverified at this point; the verified curriculum now contains 64 units.
+
+## Enforced security and scanner preparation, 2026-09-26
+
+All four Module 17 starter/reference audits passed in 358.51 seconds.
+They observe real token-authenticated Pod reads and forbidden Secret/other-namespace reads, absent API/worker service-account tokens, two-node allowed and denied TCP paths with positive controls, and actual UDP/TCP DNS responses.
+The admission exercise compares accepted compliant and rejected privilege-escalating server-side dry runs, then observes the API process's UID, capabilities, no-new-privileges flag, seccomp mode, and read-only root mount.
+A real job completes through the restricted frontend, API, queue, worker, and persistent database.
+The first starter attempted to add NET_RAW under Baseline and was correctly rejected before its intended exercise could run; the corrected starter uses the Baseline-permitted CHOWN capability and retains the intended admission/runtime faults.
+The working and verified course inventory now contains 68 units; Module 18 is still being authored.
+
+Trivy 0.74.0 and its 2026-09-26 database snapshot are pinned by artifact and installed-content hashes.
+The actual scanner and CycloneDX inventory identified the deliberately unused PyJWT 1.7.1 fixture and CVE-2022-29217.
+Additional base-image findings remain visible and are not represented as remediated by removing that fixture.
+A second real archive scan succeeded with HTTP proxy endpoints pointing to an unavailable loopback port, offline scan flags, skipped updates, and telemetry disabled.
+This verifies that prepared local inputs suffice for that scan; it is not a packet-capture claim about every possible scanner mode.
+Scanner cache checks reject changed bytes, publication/schema mismatches, and symbolic links.
+
+## Delivery pause and resume regression
+
+A fresh real lifecycle test reproduced a Kubernetes 1.35 image authorization interaction after node restart.
+The imported practice tag and the published registry release shared the same image configuration identity.
+The node's ImagePulledRecord authorized the registry repository, while the local alias had no matching credential record and used pull policy Never.
+The image remained fully present in containerd, but kubelet correctly treated that alias as inaccessible.
+Published builds now include explicit release-version and lab-identity labels, separating release provenance from the imported practice configuration without disabling credential verification.
+The fresh delivery lifecycle and shared-probe Module 8 mission regression both passed in 208.21 seconds.
+The test checks retained Git revisions, identical local endpoints, resumed owned services, reconciled workloads, and a real persistent job.
+Reference implementation: [Kubernetes image pull authorization](https://github.com/kubernetes/kubernetes/blob/v1.35.0/pkg/kubelet/images/pullmanager/image_pull_manager.go).
+
+## Hardening module authoring checks
+
+The first real backup rehearsal caught a missing delay_ms setting on the instrumented API's GET /jobs path.
+The checkpoint now supplies that setting, and the hardening workflow validator checks the completed job through both PostgreSQL and the allowed frontend.
+The four-unit audit is being repeated before the chapter is recorded as verified.
+
+All four Module 18 broken-starter/reference audits passed in 410.84 seconds after the read-path correction.
+They verify removal of the unused vulnerable package with an independent current-image scan, matching SBOM/report identities, and inspection of actual running consumers.
+Credential checks test rejected old and successful current TCP authentication plus mounted consumer credentials.
+Recovery checks authenticate the encrypted dump, reject a changed tag, preserve the original claim, compare distinct backing volume paths, and verify the saved completed marker through the frontend.
+The compound capstone additionally repairs the denied frontend path and completes a new persistent job after recovery.
+The verified curriculum now contains 72 units through the first three phases; Linux administration, incidents, exams, and the remaining application/release gates are still outstanding.
+The installed 72-unit wheel passed the real Chrome/Docker journey in 11.9 seconds.
+The backend regression passed 46 tests with five opt-in runtime tests skipped; Ruff, format, and strict typing checks passed.
+The new Lima lifecycle adapter and its VM integration test are being developed separately and are not yet claimed as verified.

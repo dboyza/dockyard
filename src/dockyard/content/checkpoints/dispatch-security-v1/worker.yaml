@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: dispatch
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: worker
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - python
+        - worker.py
+        env:
+        - name: DB_HOST
+          value: db
+        - name: REDIS_URL
+          value: redis://queue:6379/0
+        - name: DB_PASSWORD_FILE
+          value: /var/run/dispatch/password
+        - name: DISPATCH_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: dispatch-settings
+              key: environment
+        volumeMounts:
+        - name: database-credential
+          mountPath: /var/run/dispatch
+          readOnly: true
+        - name: scratch
+          mountPath: /tmp
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+      volumes:
+      - name: database-credential
+        secret:
+          secretName: dispatch-database
+          defaultMode: 292
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault

@@ -1,0 +1,155 @@
+id: m18-mission
+revision: 1
+module: 18
+order: 4
+title: Harden and recover a compound failure
+summary: Restore Dispatch, rotate its credential, and verify the remediated artifact.
+kind: mission
+runtime: kubernetes
+nodes: 2
+minutes: 90
+outcomes:
+- Harden and recover a compound failure.
+- Restore Dispatch, rotate its credential, and verify the remediated artifact.
+prerequisites:
+- m18-recovery
+objectives:
+- kubernetes.security
+- kubernetes.storage
+- platform.delivery
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The restored API answers health checks, but the old password still works. Is the capstone
+    complete?
+  options:
+  - No; credential revocation requires separate evidence.
+  - Yes; health checks cover every security property.
+  - Yes; an encrypted backup revokes old credentials.
+  correct: 0
+  explanation: Availability, data recovery, artifact hygiene, and credential revocation are separate properties.
+hints:
+- Separate artifact identity, database availability, credentials, and network policy observations.
+- Inspect the current Service selector, retained claims, before/after reports, and allowed frontend peer.
+- Use the supplied focused helpers in a deliberate order; do not reapply the bootstrap Secret after rotation.
+sources:
+- https://trivy.dev/latest/docs/target/container_image/
+- https://trivy.dev/latest/docs/supply-chain/sbom/
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://www.postgresql.org/docs/current/backup-dump.html
+- https://cryptography.io/en/latest/hazmat/primitives/aead/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 360
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - scan.py
+  - before
+  timeout: 240
+- args:
+  - python
+  - backup.py
+  timeout: 180
+- args:
+  - python
+  - inject-network-fault.py
+  timeout: 30
+checks:
+- id: hardening-images
+  title: The current artifact and running consumers omit the vulnerable teaching dependency
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - images
+  expected: 'true'
+  diagnostic: Rebuild without unused PyJWT, replace API/worker Pods, and produce matching offline scan
+    and SBOM reports.
+- id: hardening-rotation
+  title: The old database password fails while the current Secret authenticates
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - rotation
+  expected: 'true'
+  diagnostic: Rotate the database credential, update the Secret, refresh consumers, and test actual TCP
+    authentication.
+- id: hardening-recovery
+  title: An authenticated backup serves its marker from distinct storage
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - recovery
+  expected: 'true'
+  diagnostic: Restore into db-recovery, preserve the original claim, and switch the database Service after
+    verification.
+- id: hardening-workflow
+  title: The repaired frontend completes a persistent worker job
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Restore the trusted frontend path and working database/queue consumers.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- scanner
+checkpoint: dispatch-hardening-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent image builds, credential administration, and restore commands are accepted when actual runtime
+  and evidence agree.
+- No exact command history or YAML formatting is required; preserve the documented backup and report formats.
+failure_modes:
+- A changed tag leaves old running containers untouched.
+- A Secret update leaves the database or consumers on a different credential.
+- Reusing the original claim does not prove an independent restore.
+starter_failure_checks:
+- hardening-images
+- hardening-rotation
+- hardening-recovery
+- hardening-workflow

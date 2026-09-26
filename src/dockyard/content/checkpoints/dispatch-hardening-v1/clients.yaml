@@ -1,0 +1,250 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: frontend
+  labels:
+    io.dockyard.lab: ${DOCKYARD_LAB}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dockyard-observer
+  labels:
+    io.dockyard.lab: ${DOCKYARD_LAB}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trusted-client
+  namespace: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trusted
+  template:
+    metadata:
+      labels:
+        app: trusted
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${DOCKYARD_CLUSTER}-control-plane
+      tolerations:
+      - operator: Exists
+      automountServiceAccountToken: false
+      containers:
+      - name: client
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command:
+        - python
+        - -c
+        - import time; time.sleep(86400)
+        resources:
+          requests:
+            cpu: 10m
+            memory: 24Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: scratch
+          mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: untrusted-client
+  namespace: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: untrusted
+  template:
+    metadata:
+      labels:
+        app: untrusted
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${DOCKYARD_CLUSTER}-control-plane
+      tolerations:
+      - operator: Exists
+      automountServiceAccountToken: false
+      containers:
+      - name: client
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command:
+        - python
+        - -c
+        - import time; time.sleep(86400)
+        resources:
+          requests:
+            cpu: 10m
+            memory: 24Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: scratch
+          mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: outside-client
+  namespace: dockyard-observer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trusted
+  template:
+    metadata:
+      labels:
+        app: trusted
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${DOCKYARD_CLUSTER}-control-plane
+      tolerations:
+      - operator: Exists
+      automountServiceAccountToken: false
+      containers:
+      - name: client
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command:
+        - python
+        - -c
+        - import time; time.sleep(86400)
+        resources:
+          requests:
+            cpu: 10m
+            memory: 24Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: scratch
+          mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: egress-target
+  namespace: dockyard-observer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: egress-target
+  template:
+    metadata:
+      labels:
+        app: egress-target
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${DOCKYARD_CLUSTER}-control-plane
+      tolerations:
+      - operator: Exists
+      automountServiceAccountToken: false
+      containers:
+      - name: client
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command:
+        - python
+        - -m
+        - http.server
+        - '8080'
+        resources:
+          requests:
+            cpu: 10m
+            memory: 24Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        volumeMounts:
+        - name: scratch
+          mountPath: /tmp
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: egress-target
+  namespace: dockyard-observer
+spec:
+  selector:
+    app: egress-target
+  ports:
+  - port: 8080
+    targetPort: 8080

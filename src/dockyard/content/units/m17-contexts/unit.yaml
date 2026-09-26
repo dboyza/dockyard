@@ -1,0 +1,137 @@
+id: m17-contexts
+revision: 1
+module: 17
+order: 3
+title: Enforce and observe runtime restrictions
+summary: Connect admission policy with actual kernel process state.
+kind: lesson
+runtime: kubernetes
+nodes: 2
+minutes: 45
+outcomes:
+- Repair Restricted admission and workload security contexts.
+- Keep necessary writes on explicit writable volumes.
+prerequisites:
+- m17-network
+objectives:
+- kubernetes.rbac
+- kubernetes.networkpolicy
+- kubernetes.security
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A namespace changes from Baseline to Restricted. What happens to an already running violating
+    Pod?
+  options:
+  - It continues running; repair the template and replace it.
+  - Admission immediately evicts it.
+  - Its process capabilities are changed in place.
+  correct: 0
+  explanation: Admission evaluates requests; it does not retroactively rewrite or evict existing processes.
+hints:
+- Separate API authorization, network reachability, admission, and process restrictions.
+- Compare the affected Role, peer selector list, DNS protocols, and namespace/runtime settings with the
+  concept.
+- Apply the repaired source, complete the rollout where needed, and inspect each positive and negative
+  observation.
+sources:
+- https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+- https://kubernetes.io/docs/concepts/services-networking/network-policies/
+- https://kubernetes.io/docs/concepts/security/pod-security-standards/
+- https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 420
+checks:
+- id: security-admission
+  title: Restricted admission accepts a compliant Pod and rejects privilege escalation
+  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - security
+    timeout: 120
+  expectation: json
+  json_path:
+  - admission
+  expected: 'true'
+  diagnostic: Enforce Restricted v1.35 and compare server-side dry-run results for compliant and escalating
+    Pods.
+- id: security-runtime
+  title: The live API is non-root, capability-free, filtered, and read-only
+  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - security
+    timeout: 120
+  expectation: json
+  json_path:
+  - runtime
+  expected: 'true'
+  diagnostic: Complete the repaired API rollout and inspect UID, capabilities, NoNewPrivs, Seccomp, and
+    root mount flags.
+- id: security-workflow
+  title: An allowed frontend completes a real persistent job
+  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - security
+    timeout: 120
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Preserve trusted frontend access and API/worker connectivity to PostgreSQL and Redis.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-security-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent additive policy organization and YAML formatting are accepted when the actual allowed and
+  denied paths agree.
+- A different non-root API UID is accepted when process restrictions and application behavior remain correct.
+failure_modes:
+- Separate peer items broaden selectors from an intersection to alternatives.
+- UDP-only DNS can fail when a TCP query is needed.
+- Changing admission policy does not repair existing Pods.
+starter_failure_checks:
+- security-admission
+- security-runtime

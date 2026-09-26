@@ -1,0 +1,15 @@
+{
+  "tool": "trivy",
+  "database": {
+    "repository": "ghcr.io/aquasecurity/trivy-db@sha256:565825412a8cb64154ffedd45a46cb325eeeb7bec56b0c6fe32a6ff064443cd5",
+    "sha256": "9a6662b9f54b6e81ca2a5fcb1eb8eb0fc8e5e2e4ef08abd413393adca74575f7",
+    "updated_at": "2026-09-26T12:58:40.511581833Z",
+    "schema": 2
+  },
+  "fixture": {
+    "toolchain_key": "pyjwt-fixture",
+    "package": "PyJWT",
+    "version": "1.7.1",
+    "advisory": "CVE-2022-29217"
+  }
+}

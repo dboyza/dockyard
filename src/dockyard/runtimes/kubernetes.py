@@ -382,6 +382,10 @@ class KubernetesRuntime:
             from dockyard.runtimes.delivery import install as install_delivery
 
             install_delivery(self, cancel)
+        if capabilities and "scanner" in capabilities:
+            from dockyard.runtimes.scanner import install as install_scanner
+
+            install_scanner(self, cancel)
         self.lab.resources["cluster_capabilities"] = json.dumps(capabilities or [])
         self.lab.resources["cluster_ready"] = "true"
         report("Cluster ready; preparing the exercise")

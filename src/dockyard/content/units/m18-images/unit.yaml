@@ -1,0 +1,111 @@
+id: m18-images
+revision: 1
+module: 18
+order: 1
+title: Remove and verify an unused vulnerable dependency
+summary: Compare a real scan and SBOM before and after rebuilding.
+kind: lesson
+runtime: kubernetes
+nodes: 2
+minutes: 45
+outcomes:
+- Remove and verify an unused vulnerable dependency.
+- Compare a real scan and SBOM before and after rebuilding.
+prerequisites:
+- m17-mission
+objectives:
+- kubernetes.security
+- kubernetes.storage
+- platform.delivery
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The target CVE disappears, but four unrelated findings remain. What can you conclude?
+  options:
+  - The targeted remediation worked; remaining findings still need triage.
+  - The image is completely secure.
+  - The SBOM must be empty.
+  correct: 0
+  explanation: A scoped fix and a complete risk decision are different claims.
+hints:
+- Separate artifact identity, database availability, credentials, and network policy observations.
+- Inspect the current Service selector, retained claims, before/after reports, and allowed frontend peer.
+- Use the supplied focused helpers in a deliberate order; do not reapply the bootstrap Secret after rotation.
+sources:
+- https://trivy.dev/latest/docs/target/container_image/
+- https://trivy.dev/latest/docs/supply-chain/sbom/
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://www.postgresql.org/docs/current/backup-dump.html
+- https://cryptography.io/en/latest/hazmat/primitives/aead/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 360
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - scan.py
+  - before
+  timeout: 240
+checks:
+- id: hardening-images
+  title: The current artifact and running consumers omit the vulnerable teaching dependency
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - images
+  expected: 'true'
+  diagnostic: Rebuild without unused PyJWT, replace API/worker Pods, and produce matching offline scan
+    and SBOM reports.
+- id: hardening-workflow
+  title: The repaired frontend completes a persistent worker job
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Restore the trusted frontend path and working database/queue consumers.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- scanner
+checkpoint: dispatch-hardening-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent image builds, credential administration, and restore commands are accepted when actual runtime
+  and evidence agree.
+- No exact command history or YAML formatting is required; preserve the documented backup and report formats.
+failure_modes:
+- A changed tag leaves old running containers untouched.
+- A Secret update leaves the database or consumers on a different credential.
+- Reusing the original claim does not prove an independent restore.
+starter_failure_checks:
+- hardening-images

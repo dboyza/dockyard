@@ -131,3 +131,13 @@ def test_archive_installs_only_the_pinned_regular_member(tmp_path, link):
         Toolchain.install_verified(archive, destination, entry)
         assert destination.read_bytes() == payload
     assert not (tmp_path.parent / "outside").exists()
+
+
+def test_per_artifact_download_ceiling_rejects_before_install(download, monkeypatch):
+    from dockyard.toolchain import MANIFEST
+
+    toolchain, payload, _ = download
+    monkeypatch.setitem(MANIFEST["test"], "max_download_bytes", len(payload) - 1)
+    with pytest.raises(RuntimeErrorBase, match="size limit"):
+        toolchain.ensure("test", threading.Event(), lambda _: None)
+    assert not (toolchain.root / "bin/test").exists()

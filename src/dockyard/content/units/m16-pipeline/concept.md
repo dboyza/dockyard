@@ -36,3 +36,8 @@ The registry accepts unauthenticated HTTP on an assigned loopback port and the o
 This is a local learning compromise, not a production registry configuration.
 The lab changes containerd mirror files only inside its owned cluster nodes.
 It does not change Docker Desktop trust settings or send an image to an external registry.
+
+The pipeline labels each published artifact with its release version and lab identity.
+This records release provenance and gives the published image a distinct configuration identity from the locally imported practice image.
+Kubernetes 1.35 verifies access to previously pulled images by identity and repository; importing one alias does not authorize every alias of an image pulled elsewhere.
+The lab preserves that credential verification behavior.

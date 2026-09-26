@@ -359,9 +359,11 @@ def main() -> None:
     from dockyard.probes.capacity import capacity
     from dockyard.probes.configuration import configuration
     from dockyard.probes.delivery import delivery
+    from dockyard.probes.hardening import hardening
     from dockyard.probes.packaging import packaging
     from dockyard.probes.releases import releases
     from dockyard.probes.routing import routing
+    from dockyard.probes.security import security
     from dockyard.probes.storage import storage
     from dockyard.probes.visibility import visibility
 
@@ -376,6 +378,8 @@ def main() -> None:
         "packaging": packaging,
         "visibility": visibility,
         "delivery": delivery,
+        "security": security,
+        "hardening": hardening,
     }
     try:
         result = probes[sys.argv[1]]()

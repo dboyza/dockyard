@@ -1,0 +1,112 @@
+id: m18-recovery
+revision: 1
+module: 18
+order: 3
+title: Recover an authenticated backup into separate storage
+summary: Preserve the original volume and verify actual recovered application data.
+kind: lesson
+runtime: kubernetes
+nodes: 2
+minutes: 45
+outcomes:
+- Recover an authenticated backup into separate storage.
+- Preserve the original volume and verify actual recovered application data.
+prerequisites:
+- m18-rotation
+objectives:
+- kubernetes.security
+- kubernetes.storage
+- platform.delivery
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The original database Pod restarts on its original claim. What has been proven?
+  options:
+  - Process recovery, but no independent backup restore.
+  - The encrypted backup is valid.
+  - The backup key can be recovered.
+  correct: 0
+  explanation: An independent restore uses the backup and validates its recovered contents on separate
+    storage.
+hints:
+- Separate artifact identity, database availability, credentials, and network policy observations.
+- Inspect the current Service selector, retained claims, before/after reports, and allowed frontend peer.
+- Use the supplied focused helpers in a deliberate order; do not reapply the bootstrap Secret after rotation.
+sources:
+- https://trivy.dev/latest/docs/target/container_image/
+- https://trivy.dev/latest/docs/supply-chain/sbom/
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://www.postgresql.org/docs/current/backup-dump.html
+- https://cryptography.io/en/latest/hazmat/primitives/aead/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 360
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - backup.py
+  timeout: 180
+checks:
+- id: hardening-recovery
+  title: An authenticated backup serves its marker from distinct storage
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - recovery
+  expected: 'true'
+  diagnostic: Restore into db-recovery, preserve the original claim, and switch the database Service after
+    verification.
+- id: hardening-workflow
+  title: The repaired frontend completes a persistent worker job
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Restore the trusted frontend path and working database/queue consumers.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- scanner
+checkpoint: dispatch-hardening-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent image builds, credential administration, and restore commands are accepted when actual runtime
+  and evidence agree.
+- No exact command history or YAML formatting is required; preserve the documented backup and report formats.
+failure_modes:
+- A changed tag leaves old running containers untouched.
+- A Secret update leaves the database or consumers on a different credential.
+- Reusing the original claim does not prove an independent restore.
+starter_failure_checks:
+- hardening-recovery
+- hardening-workflow

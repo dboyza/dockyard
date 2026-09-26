@@ -1,0 +1,106 @@
+id: m18-rotation
+revision: 1
+module: 18
+order: 2
+title: Revoke a database credential
+summary: Prove old credentials fail while refreshed consumers remain healthy.
+kind: lesson
+runtime: kubernetes
+nodes: 2
+minutes: 45
+outcomes:
+- Revoke a database credential.
+- Prove old credentials fail while refreshed consumers remain healthy.
+prerequisites:
+- m18-images
+objectives:
+- kubernetes.security
+- kubernetes.storage
+- platform.delivery
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Both old and new passwords fail while the database is unreachable. What does this prove?
+  options:
+  - Availability must be restored before credential revocation can be established.
+  - The old credential is successfully revoked.
+  - The new password is definitely wrong.
+  correct: 0
+  explanation: A negative authentication observation needs a successful control against the same server.
+hints:
+- Separate artifact identity, database availability, credentials, and network policy observations.
+- Inspect the current Service selector, retained claims, before/after reports, and allowed frontend peer.
+- Use the supplied focused helpers in a deliberate order; do not reapply the bootstrap Secret after rotation.
+sources:
+- https://trivy.dev/latest/docs/target/container_image/
+- https://trivy.dev/latest/docs/supply-chain/sbom/
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://www.postgresql.org/docs/current/backup-dump.html
+- https://cryptography.io/en/latest/hazmat/primitives/aead/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 360
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+checks:
+- id: hardening-rotation
+  title: The old database password fails while the current Secret authenticates
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - rotation
+  expected: 'true'
+  diagnostic: Rotate the database credential, update the Secret, refresh consumers, and test actual TCP
+    authentication.
+- id: hardening-workflow
+  title: The repaired frontend completes a persistent worker job
+  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - hardening
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Restore the trusted frontend path and working database/queue consumers.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- scanner
+checkpoint: dispatch-hardening-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent image builds, credential administration, and restore commands are accepted when actual runtime
+  and evidence agree.
+- No exact command history or YAML formatting is required; preserve the documented backup and report formats.
+failure_modes:
+- A changed tag leaves old running containers untouched.
+- A Secret update leaves the database or consumers on a different credential.
+- Reusing the original claim does not prove an independent restore.
+starter_failure_checks:
+- hardening-rotation

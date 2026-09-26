@@ -79,9 +79,19 @@ class Service:
     def environment(self, lab: Lab | None = None) -> dict[str, str]:
         env = dict(os.environ)
         for key in list(env):
-            if key.startswith(("HELM_", "GIT_")):
+            if key.startswith(("HELM_", "GIT_", "TRIVY_")):
                 env.pop(key)
         env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL="/dev/null", GIT_TERMINAL_PROMPT="0")
+        env.update(
+            TRIVY_DISABLE_TELEMETRY="true",
+            TRIVY_SKIP_VERSION_CHECK="true",
+            TRIVY_SKIP_DB_UPDATE="true",
+            TRIVY_SKIP_JAVA_DB_UPDATE="true",
+            TRIVY_SKIP_CHECK_UPDATE="true",
+            TRIVY_SKIP_VEX_REPO_UPDATE="true",
+            TRIVY_OFFLINE_SCAN="true",
+            TRIVY_CACHE_DIR=str(self.tools / "trivy"),
+        )
         env.pop("DOCKER_CONTEXT", None)
         env.pop("WEZTERM_UNIX_SOCKET", None)
         env.pop("KIND_EXPERIMENTAL_DOCKER_NETWORK", None)

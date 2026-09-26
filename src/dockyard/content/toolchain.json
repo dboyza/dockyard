@@ -68,5 +68,42 @@
     "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/busybox-extras-1.37.0-r31.apk",
     "sha256": "64a2c66f44f2218473f56dd63355d988c3da0bdae6384d6d94d32587328ccea3",
     "path": "packages/busybox-extras.apk"
+  },
+  "trivy": {
+    "version": "0.74.0",
+    "url": "https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_macOS-ARM64.tar.gz",
+    "sha256": "1caada5e0e2091909357c7525d3aa76f4b660b13821bc143b190c7483e31cc11",
+    "archive_member": "trivy",
+    "installed_sha256": "0ed07c205ca9ecc1065dc57b9f9f77adc79393bb469d9d1de9ec90c8c94ffc2f",
+    "path": "bin/trivy"
+  },
+  "pyjwt-fixture": {
+    "version": "1.7.1",
+    "url": "https://files.pythonhosted.org/packages/87/8b/6a9f14b5f781697e51259d81657e6048fd31a113229cf346880bb7545565/PyJWT-1.7.1-py2.py3-none-any.whl",
+    "sha256": "5c6eca3c2940464d106b99ba83b00c6add741c9becaec087fb7ccdefea71350e",
+    "path": "packages/PyJWT-1.7.1-py2.py3-none-any.whl"
+  },
+  "limactl": {
+    "version": "2.2.0",
+    "url": "https://github.com/lima-vm/lima/releases/download/v2.2.0/lima-2.2.0-Darwin-arm64.tar.gz",
+    "sha256": "bbdef91774885a0d05f7b048c4eb89ae2bcf3a0c252ae7ca7934e63df76d93c3",
+    "archive_member": "./bin/limactl",
+    "installed_sha256": "f19a4fca3875e1017a5285672be4a62699c1e55918fb6a7afce86a14199e10d9",
+    "path": "bin/limactl"
+  },
+  "lima-guestagent": {
+    "version": "2.2.0",
+    "url": "https://github.com/lima-vm/lima/releases/download/v2.2.0/lima-2.2.0-Darwin-arm64.tar.gz",
+    "sha256": "bbdef91774885a0d05f7b048c4eb89ae2bcf3a0c252ae7ca7934e63df76d93c3",
+    "archive_member": "./share/lima/lima-guestagent.Linux-aarch64.gz",
+    "installed_sha256": "d3fda5670ef5fcf14094efec95d410021cd4c585a2a1b6a16a97131f73fbe2f1",
+    "path": "share/lima/lima-guestagent.Linux-aarch64.gz"
+  },
+  "ubuntu-node": {
+    "version": "24.04-20260705",
+    "url": "https://cloud-images.ubuntu.com/releases/noble/release-20260705/ubuntu-24.04-server-cloudimg-arm64.img",
+    "sha256": "7df0201546f75b8bcc1044594c806c35749421ad3c9bc1be2a3ab806cfae39cc",
+    "path": "images/ubuntu-24.04-20260705-arm64.img",
+    "max_download_bytes": 1073741824
   }
 }

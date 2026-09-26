@@ -35,12 +35,17 @@ exec busybox-extras httpd -f -p 8080 -h /www
 
 def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
     docker, env, lab = runtime.docker, runtime.env, runtime.lab
+
+    def report(message: str) -> None:
+        lab.resources["stage"] = message
+        runtime.save(lab)
+
     tools = Toolchain(runtime.tools)
-    flux = tools.ensure("flux", cancel, lambda _: None)
+    flux = tools.ensure("flux", cancel, report)
     build = runtime.root / "git-server-build"
     build.mkdir(exist_ok=True)
     for package in ("git-daemon", "busybox-extras"):
-        source = tools.ensure(package, cancel, lambda _: None)
+        source = tools.ensure(package, cancel, report)
         shutil.copyfile(source, build / f"{package}.apk")
     atomic_write(
         build / "Dockerfile",
@@ -52,12 +57,14 @@ def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
             'ENTRYPOINT ["/bin/sh"]\n'
         ).encode(),
     )
+    report("Building the private Git transport from verified local packages")
     image = f"dockyard-{lab.id[:12]}:git-server"
     docker.require(
         docker.command(
             ["build", "--network=none", "-t", image, str(build)], timeout=180, cancel=cancel
         )
     )
+    report("Starting the owned Git server and image registry")
     for purpose, port, selected_image, command in (
         ("git", 8080, image, ["-c", GIT_SERVER]),
         ("registry", 5000, env["DOCKYARD_REGISTRY_IMAGE"], []),
@@ -144,6 +151,7 @@ def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
                     docker.command(["cp", str(path), f"{node['id']}:{directory}/hosts.toml"])
                 )
         runtime.save(lab)
+    report("Installing and observing the pinned Flux controllers")
     exported = run(
         [str(flux), "install", "--components=source-controller,kustomize-controller", "--export"],
         env=env,

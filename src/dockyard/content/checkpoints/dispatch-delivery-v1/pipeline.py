@@ -22,7 +22,7 @@ if not re.fullmatch(r"dispatch-[0-9]+", version):
 registry = os.environ["DOCKYARD_REGISTRY"]
 image = registry + "/dispatch:" + version
 started = time.time()
-command(["docker", "build", "--build-arg", "BASE_IMAGE=" + os.environ["DOCKYARD_PYTHON_IMAGE"], "-t", image, "."])
+command(["docker", "build", "--build-arg", "BASE_IMAGE=" + os.environ["DOCKYARD_PYTHON_IMAGE"], "--label", "org.opencontainers.image.version=" + version, "--label", "io.dockyard.lab=" + os.environ["DOCKYARD_LAB"], "-t", image, "."])
 settings = json.loads(Path("pipeline.json").read_text())
 tested = settings.get("run_tests") is True
 if tested:

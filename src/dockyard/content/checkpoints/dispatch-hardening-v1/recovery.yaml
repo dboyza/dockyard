@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-recovery
+  namespace: dispatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+      recovery: restored
+  template:
+    metadata:
+      labels:
+        app: db
+        recovery: restored
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: database
+        image: ${DOCKYARD_POSTGRES_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        env:
+        - name: POSTGRES_DB
+          value: dispatch
+        - name: POSTGRES_USER
+          value: dispatch
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dispatch-database
+              key: password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        - name: scratch
+          mountPath: /tmp
+        - name: postgres-socket
+          mountPath: /var/run/postgresql
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -h
+            - 127.0.0.1
+            - -U
+            - dispatch
+          periodSeconds: 2
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+      - name: scratch
+        emptyDir:
+          sizeLimit: 32Mi
+      - name: postgres-socket
+        emptyDir:
+          sizeLimit: 16Mi
+  serviceName: db-recovery-headless
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-recovery-headless
+  namespace: dispatch
+spec:
+  clusterIP: None
+  selector:
+    app: db
+    recovery: restored
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
