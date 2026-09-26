@@ -54,14 +54,20 @@ export function LessonPage({ model }: { model: Workbench }) {
       <div className="lesson-heading">
         <button
           className="text-button muted"
-          onClick={() => navigate("course")}
+          onClick={() =>
+            navigate(lesson.kind === "incident" ? "incidents" : "course")
+          }
         >
           <ArrowLeft size={15} />
-          Course map
+          {lesson.kind === "incident" ? "Incident scenarios" : "Course map"}
         </button>
         <div className="eyebrow">
           MODULE {String(lesson.module).padStart(2, "0")} /{" "}
-          {lesson.kind === "lesson" ? "GUIDED LAB" : "INDEPENDENT MISSION"}
+          {lesson.kind === "lesson"
+            ? "GUIDED LAB"
+            : lesson.kind === "incident"
+              ? "INCIDENT SCENARIO"
+              : "INDEPENDENT MISSION"}
         </div>
         <h1>{lesson.title}</h1>
         <p className="intro">{lesson.summary}</p>

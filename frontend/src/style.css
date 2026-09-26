@@ -2026,3 +2026,53 @@ pre {
     font: inherit;
   }
 }
+
+.incident-guide {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.incident-guide > svg {
+  flex-shrink: 0;
+  color: var(--accent);
+  margin-top: 4px;
+}
+.incident-guide > div {
+  min-width: 0;
+}
+.incident-guide h2 {
+  margin-top: 0;
+}
+.incident-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px);
+  gap: 20px;
+  align-items: end;
+}
+.incident-filters .searchbox {
+  margin: 0;
+  min-width: 0;
+}
+.incident-runtime {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.incident-runtime select {
+  min-width: 0;
+  width: 100%;
+  padding: 10px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+@media (max-width: 600px) {
+  .incident-filters {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}

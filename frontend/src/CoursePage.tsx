@@ -67,7 +67,10 @@ export function CoursePage({ model }: { model: Workbench }) {
                   </summary>
                   <div className="module-lessons">
                     {units
-                      .filter((unit) => unit.module === module.id)
+                      .filter(
+                        (unit) =>
+                          unit.module === module.id && unit.kind !== "incident",
+                      )
                       .map(unitRow)}
                     {!units.some((unit) => unit.module === module.id) && (
                       <p className="development-note">

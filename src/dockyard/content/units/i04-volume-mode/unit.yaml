@@ -1,0 +1,319 @@
+id: i04-volume-mode
+revision: 1
+module: 4
+order: 90
+title: Health is green, but persistence became read-only
+summary: After permission maintenance, creating jobs fails even though the service is still available.
+kind: incident
+runtime: docker
+minutes: 30
+outcomes:
+- Diagnose the reported failure from real runtime evidence.
+- Repair the specific boundary while preserving the stated resource and data constraints.
+- Demonstrate useful behavior with a fresh end-to-end observation.
+prerequisites:
+- m04-mission
+objectives:
+- docker.permissions
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: What should establish that this incident is resolved?
+  options:
+  - The requested fresh behavior works and its preservation constraints still hold.
+  - The most recent command exited zero.
+  - The container list contains a running process.
+  correct: 0
+  explanation: A command result or process state alone does not establish the requested application
+    outcome.
+hints:
+- "Compare process health with an actual POST /jobs and inspect the database file\u2019s mode."
+- Directory ownership is already correct; the existing jobs.db file is owned by UID 10001 but lacks
+  its write bit.
+- Restore owner read/write permission on that exact file, keep the application non-root, and verify
+  both the original record and a fresh persisted write.
+sources:
+- https://docs.docker.com/engine/storage/bind-mounts/
+- https://docs.docker.com/engine/storage/volumes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300.0
+  stdin: null
+  allowed_exit_codes:
+  - 0
+- args:
+  - docker
+  - volume
+  - create
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - '{{volume}}'
+  timeout: 30.0
+  stdin: null
+  allowed_exit_codes:
+  - 0
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8080
+  - -v
+  - '{{volume}}:/data'
+  - '{{image}}'
+  timeout: 30.0
+  stdin: null
+  allowed_exit_codes:
+  - 0
+- args:
+  - docker
+  - exec
+  - --user
+  - '0'
+  - '{{container}}'
+  - python
+  - -c
+  - 'import os,sqlite3
+
+    c=sqlite3.connect(''/data/jobs.db'')
+
+    c.execute(''CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY KEY,title TEXT NOT NULL)'')
+
+    c.execute(''INSERT INTO jobs VALUES (?,?)'',(''incident-{{lab_id}}'',''Keep this original job''))
+
+    c.commit();c.close()
+
+    os.chown(''/data'',10001,10001);os.chmod(''/data'',0o750)
+
+    os.chown(''/data/jobs.db'',10001,10001);os.chmod(''/data/jobs.db'',0o400)
+
+    '
+  timeout: 120
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+    timeout: 30.0
+    stdin: null
+    allowed_exit_codes:
+    - 0
+  expectation: json
+  expected: 'true'
+  output: stdout
+  json_path:
+  - '0'
+  - State
+  - Running
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when
+    its main process exits.
+  points: 1
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+    timeout: 30.0
+    stdin: null
+    allowed_exit_codes:
+    - 0
+  expectation: json
+  expected: '{{lab_id}}'
+  output: stdout
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do
+    not label an unrelated container.
+  points: 1
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published
+    port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+    timeout: 30.0
+    stdin: null
+    allowed_exit_codes:
+    - 0
+  expectation: json
+  expected: dispatch
+  output: stdout
+  json_path:
+  - service
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside
+    the container listens on 8080.
+  points: 1
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+    timeout: 30.0
+    stdin: null
+    allowed_exit_codes:
+    - 0
+  expectation: json
+  expected: '{{port}}'
+  output: stdout
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  points: 1
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+    timeout: 30.0
+    stdin: null
+    allowed_exit_codes:
+    - 0
+  expectation: json
+  expected: 127.0.0.1
+  output: stdout
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  points: 1
+- id: incident-mount
+  title: The original owned named volume is mounted read/write
+  explanation: Observe the actual storage and process boundary after the incident.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incidents
+    - permissions
+    timeout: 90
+  expectation: json
+  json_path:
+  - mount
+  expected: 'true'
+  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
+    behavior.
+- id: incident-roundtrip
+  title: A non-root API creates and reads a fresh job
+  explanation: Observe the actual storage and process boundary after the incident.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incidents
+    - permissions
+    timeout: 90
+  expectation: json
+  json_path:
+  - roundtrip
+  expected: 'true'
+  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
+    behavior.
+- id: incident-durable
+  title: A separate read-only volume reader finds the same new job
+  explanation: Observe the actual storage and process boundary after the incident.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incidents
+    - permissions
+    timeout: 90
+  expectation: json
+  json_path:
+  - durable
+  expected: 'true'
+  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
+    behavior.
+- id: incident-preserved
+  title: The original job remains present
+  explanation: Observe the actual storage and process boundary after the incident.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incidents
+    - permissions
+    timeout: 90
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
+    behavior.
+- id: incident-nonroot
+  title: The application and database retain UID 10001 without broad write access
+  explanation: Observe the actual storage and process boundary after the incident.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incidents
+    - permissions
+    timeout: 90
+  expectation: json
+  json_path:
+  - nonroot
+  expected: 'true'
+  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
+    behavior.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-storage-v1
+images:
+- python
+nodes: 1
+native_version: 1.35.8
+alternatives:
+- Equivalent scoped repairs are accepted when actual outcomes meet every constraint.
+failure_modes:
+- A superficial process or configuration change can leave the user-visible failure intact.
+starter_failure_checks:
+- incident-roundtrip
+- incident-durable

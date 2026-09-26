@@ -13,6 +13,7 @@ import {
 export type Page =
   | "home"
   | "course"
+  | "incidents"
   | "lesson"
   | "labs"
   | "progress"
@@ -117,7 +118,7 @@ export function useWorkbench() {
     setPage(destination);
     setRailOpen(false);
     setError("");
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "instant" });
     if (destination === "labs")
       api<Doctor>("/doctor")
         .then(setDoctor)
@@ -267,7 +268,9 @@ export function useWorkbench() {
   const continueUnit =
     units.find((unit) => unit.id === state.last_unit) ||
     units.find(
-      (unit) => !currentPractice(unit.revision, state.progress[unit.id]),
+      (unit) =>
+        unit.kind !== "incident" &&
+        !currentPractice(unit.revision, state.progress[unit.id]),
     ) ||
     units[0];
   const filtered = units.filter((unit) =>

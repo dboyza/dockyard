@@ -444,3 +444,16 @@ The four activities bring successful course reference audits to 88; later chapte
 The actual Docker mission export also verified byte-for-byte retention of authored HAProxy, CoreDNS, and Helm helper source files.
 The installed browser and real-Docker journey passed in 14.1 seconds after reproducing and fixing a historical-evidence heading that incorrectly used present-tense availability wording after the lab stopped.
 Assessment evidence now includes its full date and describes the completed check explicitly.
+
+## Original Docker incidents and incident navigation
+
+The first four independent incidents passed actual starter/reference audits in 36.77 seconds.
+They exercise a backgrounded server wrapper ending PID 1, a stale staged build context, a worker-only database-name overlay, and an existing database file losing its owner write bit.
+The lifecycle wrapper is built into its image and the repair rebuilds it before replacing the stopped container.
+The storage repair preserves the original job and volume while proving fresh writes through UID 10001 and a separate read-only volume observer.
+
+The incident browser supports symptom search, environment filtering, independent progress, and navigation back from a scenario.
+Incidents retain separate lab identities and no longer appear as extra lessons inside course modules.
+The installed browser and real-Docker journey passed in 12.1 seconds, including the incident route, filtering, and a 480-pixel overflow check.
+Direct desktop and narrow screenshots were inspected after making route changes reset scroll position immediately.
+Eight incidents and the four original exams remain to be implemented and audited.
