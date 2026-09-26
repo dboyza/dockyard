@@ -100,3 +100,56 @@ def test_linux_guests_network_resume_and_preserve_identity():
         assert json.loads(lab.resources["vm_inventory"]) == []
         assert not any(runtime.home.glob("d*-cp*"))
         assert not any(runtime.home.glob("d*-worker"))
+
+
+@pytest.mark.parametrize("version,cri_version", [("1.35.8", "1.35.0"), ("1.34.12", "1.34.0")])
+def test_native_prerequisites_install_with_unusable_package_proxies(version, cri_version):
+    with tempfile.TemporaryDirectory(prefix="dy-offline-", dir="/private/tmp") as temporary:
+        profile = Path(temporary)
+        service = Service(profile)
+        lab = Lab(
+            id=uuid.uuid4().hex,
+            unit_id="m19-runtime",
+            revision=1,
+            runtime=Runtime.LINUX,
+            state="preparing",
+            workspace=str(profile / "labs/guest-proof/workspace"),
+            created_at=timestamp(),
+            updated_at=timestamp(),
+            resources={},
+        )
+        Path(lab.workspace).mkdir(parents=True)
+        runtime = LinuxRuntime(lab, service.environment(), service.store.save_lab, service.tools)
+        cancel = threading.Event()
+        try:
+            runtime.prepare(2, cancel)
+            entries = runtime.discover()
+            for entry in entries:
+                disabled = runtime.guest(
+                    entry["name"],
+                    ["sudo", "tee", "/etc/apt/apt.conf.d/99dockyard-offline"],
+                    input_text='Acquire::http::Proxy "http://127.0.0.1:9";\nAcquire::https::Proxy "http://127.0.0.1:9";\n',
+                )
+                assert disabled.ok, disabled.stderr
+            runtime.install_node_packages(cancel, version)
+            for entry in entries:
+                observed_version = runtime.guest(
+                    entry["name"], ["kubeadm", "version", "-o", "short"]
+                )
+                assert observed_version.ok and observed_version.stdout.strip() == "v" + version
+                observed_version = runtime.guest(entry["name"], ["crictl", "--version"])
+                assert observed_version.ok and cri_version in observed_version.stdout
+                actual = runtime.guest(entry["name"], ["sudo", "crictl", "info"])
+                assert actual.ok, actual.stderr
+                info = json.loads(actual.stdout)
+                assert any(
+                    c["type"] == "RuntimeReady" and c["status"]
+                    for c in info["status"]["conditions"]
+                )
+                assert (
+                    info["config"]["containerd"]["runtimes"]["runc"]["options"]["SystemdCgroup"]
+                    is True
+                )
+            assert len(json.loads(lab.resources["vm_packages"])) == 2
+        finally:
+            runtime.change("clean", cancel)

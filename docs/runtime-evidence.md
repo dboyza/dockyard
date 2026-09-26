@@ -289,3 +289,17 @@ The shared Kubernetes-client extraction passed the existing kind lifecycle and c
 The backend suite passed 48 tests with five opt-in runtime tests skipped, and the focused native identity/environment guards passed six tests after the final cleanup adjustment.
 Native curriculum units, HA behavior, supported minor upgrades, and guest package offline caching remain under implementation.
 The official ARM64 package metadata lists 1.34.12-1.1 as an available kubeadm source version for the planned 1.35.8 minor-upgrade exercise.
+
+## Offline native prerequisites
+
+Fresh two-guest profiles installed the frozen Kubernetes 1.35.8 and 1.34.12 prerequisite sets with HTTP and HTTPS APT proxies set to an unusable loopback endpoint.
+Both version cases passed in 77.44 seconds, including actual kubeadm and crictl versions, the CRI RuntimeReady condition, systemd cgroups, and owned-guest cleanup.
+Each bundle contains 25 pinned Debian archives, approximately 115 MiB, with checksums recorded from the signed Ubuntu and Kubernetes repository metadata.
+The installer uses dpkg directly; it cannot fetch omitted dependencies from a repository.
+The initial APT --no-download path failed to acquire the supplied local archives and was replaced after reproducing that failure in a fresh guest.
+This demonstrates cached prerequisite installation, not a fully offline cluster bootstrap or a packet-captured air gap.
+
+The cache verifies each archive and its assembled bundle, repairs altered bundle bytes or incomplete bundle metadata, and refuses silent package-profile changes on an already prepared guest.
+The focused cache/download regression passed nine tests, including changed bytes, interrupted metadata, resumed downloads, and integrity failures.
+One cold-start attempt experienced two-minute SSH session delays in a guest; it eventually reached package installation, and the next two fresh profiles started and completed normally.
+The delay was observed but its root cause was not established.

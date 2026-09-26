@@ -10,6 +10,7 @@ import tarfile
 import threading
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 from urllib.request import Request, urlopen
 
 from dockyard.catalog import CONTENT
@@ -25,11 +26,12 @@ def digest(path: Path) -> str:
 
 
 class Toolchain:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, manifest: dict[str, Any] | None = None):
         self.root = root
+        self.manifest = MANIFEST if manifest is None else manifest
 
     def ready(self, name: str) -> bool:
-        entry = MANIFEST[name]
+        entry = self.manifest[name]
         destination: Path = self.root / str(entry["path"])
         return (
             destination.is_file()
@@ -79,7 +81,7 @@ class Toolchain:
     def ensure(self, name: str, cancel: threading.Event, report: Callable[[str], None]) -> Path:
         if platform.system() != "Darwin" or platform.machine() != "arm64":
             raise RuntimeErrorBase("This toolchain is validated for Apple Silicon macOS.")
-        entry = MANIFEST[name]
+        entry = self.manifest[name]
         destination: Path = self.root / str(entry["path"])
         with operation_lock(self.root / "locks", "tool-" + name):
             if self.ready(name):

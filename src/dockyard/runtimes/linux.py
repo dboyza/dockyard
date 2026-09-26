@@ -14,7 +14,6 @@ from typing import Any
 
 import yaml
 
-from dockyard.catalog import CONTENT
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes import kubeclient
@@ -286,26 +285,40 @@ class LinuxRuntime:
         self.lab.resources["kubeconfig_identity"] = kubeclient.identity(path)
         self.save(self.lab)
 
-    def install_node_packages(self, cancel: threading.Event) -> None:
-        prepared = json.loads(self.lab.resources.get("vm_packages", "[]"))
-        script = (CONTENT / "runtime/linux/prepare-node.sh").read_text()
-        for entry in self.discover():
-            name = entry["name"]
-            if name in prepared:
-                continue
-            self.report("Installing pinned Kubernetes prerequisites in " + name)
-            self.require(
-                self.guest(
-                    name,
-                    ["sudo", "env", "DOCKYARD_GUEST=lima-" + name, "/bin/bash", "-s"],
-                    timeout=720,
-                    cancel=cancel,
-                    input_text=script,
-                )
+    def copy_to(
+        self,
+        name: str,
+        source: Path,
+        destination: str,
+        *,
+        cancel: threading.Event,
+    ) -> None:
+        entry = next((item for item in self.discover() if item["name"] == name), None)
+        if entry is None or not self.verify(entry):
+            raise RuntimeErrorBase("The requested guest is not owned by this lab.")
+        if (
+            not destination.startswith("/tmp/dockyard-" + self.lab.id)
+            or ".." in Path(destination).parts
+        ):
+            raise RuntimeErrorBase("Guest transfers must target this lab's private temporary area.")
+        if source.is_symlink() or not source.is_file():
+            raise RuntimeErrorBase("The transfer source must be a regular file.")
+        if not any(
+            source.resolve().is_relative_to(root.resolve()) for root in (self.tools, self.root)
+        ):
+            raise RuntimeErrorBase(
+                "Guest transfers must use app-owned lab data or verified cache files."
             )
-            prepared.append(name)
-            self.lab.resources["vm_packages"] = json.dumps(prepared)
-            self.save(self.lab)
+        self.require(
+            self.command(
+                ["copy", str(source), name + ":" + destination], timeout=180, cancel=cancel
+            )
+        )
+
+    def install_node_packages(self, cancel: threading.Event, version: str = "1.35.8") -> None:
+        from dockyard.runtimes.node_packages import install
+
+        install(self, cancel, version)
 
     def change(self, action: str, cancel: threading.Event) -> None:
         for entry in self.discover():

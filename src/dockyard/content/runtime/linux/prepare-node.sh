@@ -17,18 +17,20 @@ net.bridge.bridge-nf-call-ip6tables = 1
 net.ipv4.ip_forward = 1
 EOF
 sysctl --system >/dev/null
-apt-get update -qq
-apt-get install -y -qq ca-certificates curl gnupg containerd conntrack socat iptables iproute2 jq haproxy
+# Every local .deb is pinned to the signed repository metadata and verified on the host.
+# dpkg installs this explicit bundle only and has no repository download mechanism.
+dpkg --install "${DOCKYARD_PACKAGE_DIR:?Private package directory required}"/*.deb >&2
 mkdir -p /etc/containerd /etc/apt/keyrings
 containerd config default >/etc/containerd/config.toml
 sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
 systemctl enable --now containerd
 systemctl restart containerd
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key -o /tmp/dockyard-kubernetes-release.key
-gpg --dearmor --yes -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/dockyard-kubernetes-release.key
-printf '%s\n' 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' >/etc/apt/sources.list.d/kubernetes.list
-apt-get update -qq
-apt-get install -y -qq kubelet=1.35.8-1.1 kubeadm=1.35.8-1.1 kubectl=1.35.8-1.1
+cat >/etc/crictl.yaml <<'EOF'
+runtime-endpoint: unix:///run/containerd/containerd.sock
+image-endpoint: unix:///run/containerd/containerd.sock
+timeout: 10
+debug: false
+EOF
 apt-mark hold kubelet kubeadm kubectl
 systemctl enable kubelet
 kubeadm version -o short

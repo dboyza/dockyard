@@ -1,0 +1,233 @@
+{
+  "base_image_sha256": "7df0201546f75b8bcc1044594c806c35749421ad3c9bc1be2a3ab806cfae39cc",
+  "installed_versions": {
+    "conntrack": "1:1.4.8-1ubuntu1",
+    "containerd": "2.2.1-0ubuntu1~24.04.3",
+    "cri-tools": "1.34.0-1.1",
+    "curl": "8.5.0-2ubuntu10.15",
+    "dirmngr": "2.4.4-2ubuntu17.6",
+    "gnupg": "2.4.4-2ubuntu17.6",
+    "gnupg-l10n": "2.4.4-2ubuntu17.6",
+    "gnupg-utils": "2.4.4-2ubuntu17.6",
+    "gpg": "2.4.4-2ubuntu17.6",
+    "gpg-agent": "2.4.4-2ubuntu17.6",
+    "gpg-wks-client": "2.4.4-2ubuntu17.6",
+    "gpgconf": "2.4.4-2ubuntu17.6",
+    "gpgsm": "2.4.4-2ubuntu17.6",
+    "gpgv": "2.4.4-2ubuntu17.6",
+    "haproxy": "2.8.16-0ubuntu0.24.04.3",
+    "keyboxd": "2.4.4-2ubuntu17.6",
+    "kubeadm": "1.34.12-1.1",
+    "kubectl": "1.34.12-1.1",
+    "kubelet": "1.34.12-1.1",
+    "kubernetes-cni": "1.8.0-1.1",
+    "libcurl3t64-gnutls": "8.5.0-2ubuntu10.15",
+    "libcurl4t64": "8.5.0-2ubuntu10.15",
+    "liblua5.4-0": "5.4.6-3build2",
+    "runc": "1.3.4-0ubuntu1~24.04.1",
+    "socat": "1.8.0.0-4ubuntu0.1"
+  },
+  "kubernetes": "1.34.12",
+  "packages": {
+    "conntrack_1%3a1.4.8-1ubuntu1_arm64.deb": {
+      "path": "native/packages/conntrack_1%3a1.4.8-1ubuntu1_arm64.deb",
+      "sha256": "b6c45e178a1d454e5b3000c3e3eb2b18671850336d803640a841ce7bc31ad647",
+      "size": 37360,
+      "upstream_checksum": "SHA512:45edc0b00186a842bd441e62d300907d15791dd64e5bbcbc21e0a4f00c71b0c97f932274a9b71e2d9279ebffe0bd1640cb6223c9d690df8eea7b3a8e072f6218",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/c/conntrack-tools/conntrack_1.4.8-1ubuntu1_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "containerd_2.2.1-0ubuntu1~24.04.3_arm64.deb": {
+      "path": "native/packages/containerd_2.2.1-0ubuntu1~24.04.3_arm64.deb",
+      "sha256": "e12495f100f025750ca91c07bab3a58c674afb1576fe55516608a8daa4d067bd",
+      "size": 25160084,
+      "upstream_checksum": "SHA512:f867ba4c1fa0cbc07c4a678f8d8c96027b7915d9b5bf311716c143ff124019dd2310bcc46ac397d9b6ddbb5d2650027a152684ecca7ce368fa67c93f4c3cff8b",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/c/containerd-app/containerd_2.2.1-0ubuntu1%7e24.04.3_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "cri-tools_1.34.0-1.1_arm64.deb": {
+      "path": "native/packages/cri-tools_1.34.0-1.1_arm64.deb",
+      "sha256": "7744e4b0abd9e5e484f98c8b2b6c26ed8ccef030ef2dbdc030b4ca054254b57f",
+      "size": 15205544,
+      "upstream_checksum": "SHA256:7744e4b0abd9e5e484f98c8b2b6c26ed8ccef030ef2dbdc030b4ca054254b57f",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.34/deb/arm64/cri-tools_1.34.0-1.1_arm64.deb",
+      "version": "ubuntu24-kubernetes1.34.12"
+    },
+    "curl_8.5.0-2ubuntu10.15_arm64.deb": {
+      "path": "native/packages/curl_8.5.0-2ubuntu10.15_arm64.deb",
+      "sha256": "2decbd1b17f21a8914a1198d90cef891fdb71c7e41e7dab15248807e316bac72",
+      "size": 221824,
+      "upstream_checksum": "SHA512:72d45ec7ee1314e6b05d769eaabbc991e64d82eabd3dfa3d529e5eb83ed5f0d944266d7a04a428c9c7c193b3ef4c1a920f6e6dbc99562f6a16a5d0385f8e336c",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/c/curl/curl_8.5.0-2ubuntu10.15_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "dirmngr_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/dirmngr_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "722648c368457942ecd0cf2f2138102773a9a935c77e49bc4363e9f9adaf3d85",
+      "size": 316344,
+      "upstream_checksum": "SHA512:25942848bf5685d20200e7b845b0af42d0be23cb49e689249e68625392b524d4b962a15f89d2119e6c0132db34eab5ff7f3b539299d52876b04750b20396cdb5",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/dirmngr_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gnupg-l10n_2.4.4-2ubuntu17.6_all.deb": {
+      "path": "native/packages/gnupg-l10n_2.4.4-2ubuntu17.6_all.deb",
+      "sha256": "042af06f1fa4b88a8ac6c212b535587b9f432150843adb75da1d676648d7a046",
+      "size": 66534,
+      "upstream_checksum": "SHA512:73c5322c4e1938a51ae9f8e999aa71cbc064a88e8e34062deba8130b6722a3332e79658f5787647b25c731ca889046fcd1f61c906f519e42f723f35d7e2cc833",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gnupg-l10n_2.4.4-2ubuntu17.6_all.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gnupg-utils_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/gnupg-utils_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "eef4d2b0493daef953398af09ffb1761b1385d06aff9180cb9e0b99920f74b3a",
+      "size": 106610,
+      "upstream_checksum": "SHA512:253a6c0dc88c33e48df3d9eac6fe256359477ee6040f9841e2aed00bfc43a4e7d334328c4a92d9ecfa3c7f69a12237a907ff45faac6e1c02a0d042c3f8befd44",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gnupg-utils_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gnupg_2.4.4-2ubuntu17.6_all.deb": {
+      "path": "native/packages/gnupg_2.4.4-2ubuntu17.6_all.deb",
+      "sha256": "d278c81e407d51dae2b7df30adc08ecd6a0acde5884fc5ba2d1ef107f0e8ab0b",
+      "size": 358890,
+      "upstream_checksum": "SHA512:080b17e6d30862f9026b991bef98ef0b430d87d022dac79cdd5ef7ee0925952c08935db863d4b2fc0b0bb3447385c2690b9bd6a0d476d9db01fac944d08f6fdc",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gnupg_2.4.4-2ubuntu17.6_all.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gpg-agent_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/gpg-agent_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "bd63797c0f64d838c3e9feb47fd6ea41addbe333a2f6172c364035be0bff857a",
+      "size": 221426,
+      "upstream_checksum": "SHA512:8a2c916cd0c3c9f6dd193e3d96e4fc721cb248494e85f66eb6ddcc8cf6d36b1d3c027ff24f81bcc894a0b9e5c57354c61b14aff3d1e5025c8f124dfb3715c3b9",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gpg-agent_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gpg-wks-client_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/gpg-wks-client_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "7fe591ed72701719c8bae0038a98990df9ab8a023f3e73a16f0b5d1e8399c231",
+      "size": 69694,
+      "upstream_checksum": "SHA512:9676b31a9403a634d86d5d45f54e0222640d697e8107328c1217b604f59317a17b85c1d06667b128c311e917879dcef14bcd24fd3554395d752da496520a3f4d",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gpg-wks-client_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gpg_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/gpg_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "59dc23fb52d0cdc67786a7865031f021b5e056c2547f2c1a858a6cbba8b2ec25",
+      "size": 548874,
+      "upstream_checksum": "SHA512:9a5c3ca37aa11b21b3fc77f7e4f881fb73a8ffa5f03084207c4086694d7ed298cbd6e0a1e017b126b281c9b9516d0449fae48dd00cfeac0d0aa5074484ec685e",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gpg_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gpgconf_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/gpgconf_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "b7b1bd7b81bc226444a60eb2175eb4801620d79ee1f33cebbef94b897c5b5a70",
+      "size": 103292,
+      "upstream_checksum": "SHA512:09a795d62763ae4cd0cfa45c20adcc1cb4852992734178bedc54281ba8ad43df2826ccfbe1b1eb92dfb7f23992a0db988be18152ff6b1d015fa8bfc4b63b0773",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gpgconf_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gpgsm_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/gpgsm_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "240530daee555b274f3f4fc0e0eaeacc514dc18c61077f28d0dd64531cc27903",
+      "size": 224818,
+      "upstream_checksum": "SHA512:f0f01740458f3324b4165ee1780a74f218051123e99dc97d97639a677e731cfbbb5dad767544bef80903e6bb6daa4ee05265db56c51c9ef9a84b47dedcff66ed",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gpgsm_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "gpgv_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/gpgv_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "38b5965d0eba9d75ea1c946127f3df8ef66cf0b26801df766ef1c9c481b2bb15",
+      "size": 151008,
+      "upstream_checksum": "SHA512:8ef1dd9826c80e9ef8e8834f086d6d053f17538093ee48755c11db5af5cf1d0041dff7643d9371f279804349356c06f7cad7903b6322bda8be54cc56160cff06",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/gpgv_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "haproxy_2.8.16-0ubuntu0.24.04.3_arm64.deb": {
+      "path": "native/packages/haproxy_2.8.16-0ubuntu0.24.04.3_arm64.deb",
+      "sha256": "036d8bf45d37f4e288d5891fd2b449ee80003551ee09ef9fcd1b3728166a5636",
+      "size": 2075440,
+      "upstream_checksum": "SHA512:2c9dd6d7c9e2718b5c94c54b60989740ebffffb1a8cf8077ddf17e9990a7d317040947c8746ebe133fd9df6bb193e069a8289547d7d0e48c6b4ae3e202531075",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/h/haproxy/haproxy_2.8.16-0ubuntu0.24.04.3_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "keyboxd_2.4.4-2ubuntu17.6_arm64.deb": {
+      "path": "native/packages/keyboxd_2.4.4-2ubuntu17.6_arm64.deb",
+      "sha256": "33bfd8018afa1fb499723c598ec2507b15eeaa076db1024c9ee7e1fb5bd8fb24",
+      "size": 75936,
+      "upstream_checksum": "SHA512:b01c1278d83329674b4bebbf5866e27eaaa95388e9b1b50c12d01fba8885e0cf2e830ca3970fc45d26bfebcc7b7faa76406a79b3eed83716429cda701cdf792a",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/g/gnupg2/keyboxd_2.4.4-2ubuntu17.6_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "kubeadm_1.34.12-1.1_arm64.deb": {
+      "path": "native/packages/kubeadm_1.34.12-1.1_arm64.deb",
+      "sha256": "aa0c88993c78b464992a88be2909c14e5f85d210ab01d2d7495e50d6796f20ab",
+      "size": 10881380,
+      "upstream_checksum": "SHA256:aa0c88993c78b464992a88be2909c14e5f85d210ab01d2d7495e50d6796f20ab",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.34/deb/arm64/kubeadm_1.34.12-1.1_arm64.deb",
+      "version": "ubuntu24-kubernetes1.34.12"
+    },
+    "kubectl_1.34.12-1.1_arm64.deb": {
+      "path": "native/packages/kubectl_1.34.12-1.1_arm64.deb",
+      "sha256": "6b24cceaad7dff362d0958d1fb3ba4713e16140a86613f04aef7c8cacbe1d8b9",
+      "size": 10139480,
+      "upstream_checksum": "SHA256:6b24cceaad7dff362d0958d1fb3ba4713e16140a86613f04aef7c8cacbe1d8b9",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.34/deb/arm64/kubectl_1.34.12-1.1_arm64.deb",
+      "version": "ubuntu24-kubernetes1.34.12"
+    },
+    "kubelet_1.34.12-1.1_arm64.deb": {
+      "path": "native/packages/kubelet_1.34.12-1.1_arm64.deb",
+      "sha256": "6d4757db240b61f2d1ec5113d17ce5f94d3f11e118494340f0fc3531c2c56c2f",
+      "size": 11084992,
+      "upstream_checksum": "SHA256:6d4757db240b61f2d1ec5113d17ce5f94d3f11e118494340f0fc3531c2c56c2f",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.34/deb/arm64/kubelet_1.34.12-1.1_arm64.deb",
+      "version": "ubuntu24-kubernetes1.34.12"
+    },
+    "kubernetes-cni_1.8.0-1.1_arm64.deb": {
+      "path": "native/packages/kubernetes-cni_1.8.0-1.1_arm64.deb",
+      "sha256": "d94433cc9db66266438d48add855ae8c8dd1397e88e97f67b31384c6f4dd56de",
+      "size": 35968368,
+      "upstream_checksum": "SHA256:d94433cc9db66266438d48add855ae8c8dd1397e88e97f67b31384c6f4dd56de",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.35/deb/arm64/kubernetes-cni_1.8.0-1.1_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "libcurl3t64-gnutls_8.5.0-2ubuntu10.15_arm64.deb": {
+      "path": "native/packages/libcurl3t64-gnutls_8.5.0-2ubuntu10.15_arm64.deb",
+      "sha256": "e5c4b45db8d0545e115119a5296b81f87c3f8f353c7976cd2f257d39d69ef68c",
+      "size": 330014,
+      "upstream_checksum": "SHA512:a0700b56e3bc498ed83afa3fdc57519ee5dfa8b1c100b18c9bb0ae11c9b4fcb073a9650aac147dde19c886dba5b1d3f62d008fb828ec00f550d62cbe2dd18098",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/c/curl/libcurl3t64-gnutls_8.5.0-2ubuntu10.15_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "libcurl4t64_8.5.0-2ubuntu10.15_arm64.deb": {
+      "path": "native/packages/libcurl4t64_8.5.0-2ubuntu10.15_arm64.deb",
+      "sha256": "aef804d64b33df366c5126585400280b19a6cda4b54e8ed3fee727c17930ee0c",
+      "size": 336504,
+      "upstream_checksum": "SHA512:6d2d94be0e3908dc6132fdf72001db6228bbf4260caddd9a43b039a46575409fe826efd194ca77bb600e2220ef630feab49e2e5c9a8909bde3e953a409ff7ca5",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/c/curl/libcurl4t64_8.5.0-2ubuntu10.15_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "liblua5.4-0_5.4.6-3build2_arm64.deb": {
+      "path": "native/packages/liblua5.4-0_5.4.6-3build2_arm64.deb",
+      "sha256": "6c7ddb1ac35d241e65e0cd0f7fd6c5508b1f52562021ee4fa681fa44a95bfd77",
+      "size": 157860,
+      "upstream_checksum": "SHA512:1a6d200c14fc2da7b29f68954266ef83a03930510e8603c411eb62c46c02c6b51f529861b89bf8e6942fb27be7c1e772efb1d7af679c0679062b95314ffa9659",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/l/lua5.4/liblua5.4-0_5.4.6-3build2_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "runc_1.3.4-0ubuntu1~24.04.1_arm64.deb": {
+      "path": "native/packages/runc_1.3.4-0ubuntu1~24.04.1_arm64.deb",
+      "sha256": "725a27bbdd5f58d7059ed25d88f14f2d45f6a1ce089585eddc715e04d4a3f79f",
+      "size": 8578418,
+      "upstream_checksum": "SHA512:d234751cad58ed682c13eca1e1be28adc94390a7c407747858657642d719fea4f33476bd892a88f6fa942059d1202964699a622627bb59a8098e4b92087efa2b",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/r/runc-app/runc_1.3.4-0ubuntu1%7e24.04.1_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    },
+    "socat_1.8.0.0-4ubuntu0.1_arm64.deb": {
+      "path": "native/packages/socat_1.8.0.0-4ubuntu0.1_arm64.deb",
+      "sha256": "4230c851d4534710f63753a8322b5baae8aedc1aed21a3a0f2350fa61d44169b",
+      "size": 372916,
+      "upstream_checksum": "SHA512:b1db7e2560544498f3e5365ce077b46c160fac597130d33ea4c4d9a60ed58a5de519f707bc40f38739218a7d8e395a75475adb792e95144a1a66f046917aca03",
+      "url": "https://ports.ubuntu.com/ubuntu-ports/pool/main/s/socat/socat_1.8.0.0-4ubuntu0.1_arm64.deb",
+      "version": "ubuntu24-kubernetes1.35.8"
+    }
+  }
+}
