@@ -8,24 +8,33 @@
     "build": "tsc -b && vite build",
     "check": "tsc -b --pretty false",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "eslint src",
+    "format": "prettier --write src --ignore-path .prettierignore",
+    "format:check": "prettier --check src --ignore-path .prettierignore"
   },
   "dependencies": {
+    "lucide-react": "^0.468.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1",
-    "lucide-react": "^0.468.0"
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.55.0",
     "@testing-library/react": "^16.3.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.0.0",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.9.9",
     "typescript": "^5.9.0",
+    "typescript-eslint": "^8.70.1",
     "vite": "^7.1.0",
-    "vitest": "^3.2.0",
-    "jsdom": "^26.1.0"
+    "vitest": "^3.2.0"
   }
 }

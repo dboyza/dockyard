@@ -28,6 +28,11 @@ Restoring etcd is not instantaneous; observe readiness and object recovery rathe
 The probes verified a two-node administration cluster, not HA failover or version upgrades.
 Those still require their own curriculum validation before release.
 
+The pre-existing fs-sim-x86 container retained its ID but changed from running to exited during the probe period.
+Docker events show SIGTERM, then SIGKILL, stop, and exit code 137 at 15:20 UTC; OOMKilled is false.
+No Dockyard command targeted this container, and it was not restarted or otherwise modified in response.
+Do not report its running state as preserved.
+
 ## Reproducible probes and local artifacts
 
 - `scripts/probes/prepare-node.sh` prepares an owned Linux guest for Kubernetes.
@@ -38,3 +43,14 @@ Those still require their own curriculum validation before release.
 
 Tool archives were checked against their upstream checksum manifests before execution.
 The Ubuntu image digest was verified by Lima.
+
+## First installed learner journey
+
+The first authored lesson, `m01-processes`, now runs through the packaged browser and shared CLI on this Mac.
+Its reference passed live checks for process state, lab identity, the published port, and the real HTTP response from Dispatch.
+The real PTY shell and a dedicated WezTerm pane both opened in its isolated workspace.
+An automated real-Docker regression verifies empty-starter failure, reference success, stop/check blocking, resume, reset backup, retained attempts, and owned-container cleanup.
+The installed-wheel Chrome journey verifies one-time sign-in, keyboard tabs, hints, reference confirmation, persisted notes, 480/760/1440-pixel layouts, themes, and lab lifecycle actions.
+A stopped-lab state regression and Docker's lowercase missing-resource response were reproduced and corrected.
+The package was inspected to confirm compiled browser assets and authored lesson files are included.
+These checks establish the first integrated journey only; they do not establish completion of the remaining curriculum or release gates.

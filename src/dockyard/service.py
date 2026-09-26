@@ -1,0 +1,490 @@
+"""Shared learner operations used by the browser and real-terminal CLI."""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shlex
+import shutil
+import socket
+import sys
+import threading
+import uuid
+from pathlib import Path
+from typing import Any
+
+from dockyard.catalog import Catalog
+from dockyard.models import Assessment, CheckStatus, Criterion, Evidence, Lab, Runtime
+from dockyard.process import ProcessResult, run
+from dockyard.store import Store, timestamp
+from dockyard.workspace import atomic_write, reset, snapshot, write_files
+
+PYTHON_IMAGE = "python@sha256:79e7a9b9ff1cbceff819f856fb374477792a5967759d94df266de7b7b4120e6f"
+
+
+class LabError(RuntimeError):
+    pass
+
+
+class Service:
+    def __init__(self, directory: Path, catalog: Catalog | None = None):
+        self.directory = directory.resolve()
+        self.store = Store(self.directory)
+        self.catalog = catalog or Catalog()
+        development_tools = Path(__file__).resolve().parents[2] / ".tools"
+        self.tools = development_tools if development_tools.exists() else self.directory / "tools"
+        self._cancels: dict[str, threading.Event] = {}
+        self._lock = threading.Lock()
+
+    def environment(self, lab: Lab | None = None) -> dict[str, str]:
+        env = dict(os.environ)
+        env.pop("DOCKER_CONTEXT", None)
+        env.pop("WEZTERM_UNIX_SOCKET", None)
+        env["PATH"] = (
+            f"{self.tools / 'bin'}:{Path(sys.executable).parent}:{env.get('PATH', '/usr/bin:/bin')}"
+        )
+        if lab:
+            env.update(
+                DOCKYARD_LAB=lab.id,
+                DOCKYARD_UNIT=lab.unit_id,
+                DOCKYARD_CONTAINER=f"dockyard-{lab.id[:12]}",
+                DOCKYARD_WORKSPACE=lab.workspace,
+                DOCKYARD_PORT=lab.resources["port"],
+                DOCKYARD_PYTHON_IMAGE=PYTHON_IMAGE,
+                KUBECONFIG=str(Path(lab.workspace).parent / "kubeconfig"),
+                DOCKER_HOST=lab.resources["docker_endpoint"],
+                DOCKYARD_DATA=str(self.directory),
+            )
+        return env
+
+    def doctor(self) -> dict[str, Any]:
+        env = self.environment()
+        tools = {
+            name: shutil.which(name, path=env["PATH"])
+            for name in ("docker", "kubectl", "kind", "wezterm")
+        }
+        docker = (
+            run([tools["docker"], "info", "--format", "{{.ServerVersion}}"], timeout=10)
+            if tools["docker"]
+            else None
+        )
+        return {
+            "tools": tools,
+            "docker_ready": bool(docker and docker.ok),
+            "docker_version": docker.stdout.strip() if docker and docker.ok else None,
+            "docker_error": docker.stderr.strip() if docker and not docker.ok else None,
+            "free_disk_gib": round(shutil.disk_usage(self.directory).free / 1024**3, 1),
+        }
+
+    def _docker_endpoint(self) -> str:
+        endpoint = os.environ.get("DOCKER_HOST")
+        if not endpoint:
+            result = run(["docker", "context", "inspect", "--format", "{{.Endpoints.docker.Host}}"])
+            if not result.ok:
+                raise LabError("Docker is unavailable. Start Docker Desktop and run doctor again.")
+            endpoint = result.stdout.strip()
+        if not endpoint.startswith("unix://"):
+            raise LabError("Dockyard requires a local Unix-socket Docker endpoint.")
+        return endpoint
+
+    def _allocate_lab(self, unit_id: str) -> Lab:
+        existing = self.store.lab(unit_id)
+        if existing:
+            return existing
+        unit = self.catalog.get(unit_id)
+        lab_id = uuid.uuid4().hex
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", 0))
+            port = listener.getsockname()[1]
+        lab = Lab(
+            id=lab_id,
+            unit_id=unit_id,
+            revision=unit.revision,
+            runtime=unit.runtime,
+            state="absent",
+            workspace=str(self.directory / "labs" / lab_id / "workspace"),
+            created_at=timestamp(),
+            updated_at=timestamp(),
+            resources={"port": str(port), "docker_endpoint": self._docker_endpoint()},
+        )
+        self.store.save_lab(lab)
+        return lab
+
+    def _save(self, lab: Lab) -> None:
+        lab.updated_at = timestamp()
+        self.store.save_lab(lab)
+
+    def perform(self, unit_id: str, action: str) -> dict[str, Any]:
+        if action not in {"prepare", "check", "reset", "stop", "resume", "clean"}:
+            raise ValueError("Unknown lab operation.")
+        self.catalog.get(unit_id)
+        lab = self._allocate_lab(unit_id)
+        operation_id = self.store.begin_operation(lab.id, action)
+        cancel = threading.Event()
+        with self._lock:
+            self._cancels[operation_id] = cancel
+        try:
+            result: dict[str, Any]
+            if action == "prepare":
+                self._prepare(lab, cancel)
+                result = lab.model_dump(mode="json")
+            elif action == "check":
+                result = self._check(lab, cancel).model_dump(mode="json")
+            elif action == "reset":
+                self._cleanup(lab, cancel)
+                backup = reset(
+                    Path(lab.workspace),
+                    self.catalog.get(unit_id).starter,
+                    self.directory / "backups",
+                )
+                lab.resources.pop("container_id", None)
+                self._prepare(lab, cancel)
+                result = {"backup": str(backup), "lab": lab.model_dump(mode="json")}
+            elif action == "clean":
+                self._cleanup(lab, cancel)
+                lab.state = "absent"
+                self._save(lab)
+                result = lab.model_dump(mode="json")
+            else:
+                container = self._owned_container(lab)
+                if container:
+                    verb = "stop" if action == "stop" else "start"
+                    outcome = run(
+                        ["docker", verb, container],
+                        env=self.environment(lab),
+                        timeout=45,
+                        cancel=cancel,
+                    )
+                    self._require(outcome)
+                lab.state = "stopped" if action == "stop" else "ready"
+                self._save(lab)
+                result = lab.model_dump(mode="json")
+            if cancel.is_set():
+                raise LabError("The operation was canceled. Your workspace has been preserved.")
+            self.store.update_operation(operation_id, "done")
+            return result
+        except Exception as error:
+            lab.state = "failed"
+            lab.error = str(error)
+            self._save(lab)
+            self.store.update_operation(
+                operation_id, "canceled" if cancel.is_set() else "failed", str(error)
+            )
+            raise
+        finally:
+            with self._lock:
+                self._cancels.pop(operation_id, None)
+
+    def cancel(self, operation_id: str) -> None:
+        with self._lock:
+            event = self._cancels.get(operation_id)
+            if event:
+                event.set()
+                self.store.update_operation(operation_id, "canceling")
+
+    @staticmethod
+    def _require(result: ProcessResult) -> None:
+        if not result.ok:
+            if result.canceled:
+                raise LabError("Operation canceled.")
+            if result.timed_out:
+                raise LabError(
+                    "The operation exceeded its deadline. Inspect lab status before retrying."
+                )
+            raise LabError(
+                result.stderr.strip() or result.stdout.strip() or "The tool exited unsuccessfully."
+            )
+
+    def _prepare(self, lab: Lab, cancel: threading.Event) -> None:
+        lab.state = "preparing"
+        lab.error = None
+        self._save(lab)
+        unit = self.catalog.get(lab.unit_id)
+        if unit.runtime != Runtime.DOCKER:
+            raise LabError("This runtime adapter is not available in this development build.")
+        env = self.environment(lab)
+        self._require(
+            run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=15, cancel=cancel)
+        )
+        image = run(
+            ["docker", "image", "inspect", PYTHON_IMAGE], env=env, timeout=15, cancel=cancel
+        )
+        if not image.ok:
+            self._require(
+                run(["docker", "pull", PYTHON_IMAGE], env=env, timeout=600, cancel=cancel)
+            )
+        workspace = Path(lab.workspace)
+        if not workspace.exists():
+            write_files(workspace, unit.starter)
+        for command in unit.prepare:
+            outcome = run(
+                [self.expand(arg, lab) for arg in command.args],
+                env=env,
+                cwd=workspace,
+                timeout=command.timeout,
+                cancel=cancel,
+                input_text=self.expand(command.stdin, lab) if command.stdin else None,
+            )
+            self._require(outcome)
+        lab.revision = unit.revision
+        lab.state = "ready"
+        self._save(lab)
+
+    def expand(self, value: str, lab: Lab) -> str:
+        values = {
+            "lab_id": lab.id,
+            "container": f"dockyard-{lab.id[:12]}",
+            "port": lab.resources["port"],
+            "workspace": lab.workspace,
+            "python_image": PYTHON_IMAGE,
+        }
+        for key, replacement in values.items():
+            value = value.replace("{{" + key + "}}", replacement)
+        return value
+
+    def _owned_container(self, lab: Lab) -> str | None:
+        name = f"dockyard-{lab.id[:12]}"
+        result = run(["docker", "inspect", name], env=self.environment(lab), timeout=10)
+        if not result.ok:
+            if "no such" in result.stderr.lower():
+                return None
+            raise LabError("Cannot establish resource ownership while Docker is unavailable.")
+        resource = json.loads(result.stdout)[0]
+        labels = resource.get("Config", {}).get("Labels") or {}
+        if labels.get("io.dockyard.lab") != lab.id:
+            raise LabError(
+                "A container with this name lacks the lab ownership label; it was preserved."
+            )
+        known = lab.resources.get("container_id")
+        if known and known != resource["Id"]:
+            # A learner may legitimately remove and recreate their assigned container.
+            # A matching unguessable lab label, assigned name, and new creation time are required.
+            if resource["Created"][:19] < lab.created_at[:19]:
+                raise LabError("The candidate container predates this lab and was preserved.")
+        elif not known and resource["Created"][:19] < lab.created_at[:19]:
+            raise LabError("The candidate container predates this lab and was preserved.")
+        lab.resources["container_id"] = resource["Id"]
+        self._save(lab)
+        return str(resource["Id"])
+
+    def _cleanup(self, lab: Lab, cancel: threading.Event) -> None:
+        lab.state = "cleaning"
+        self._save(lab)
+        container = self._owned_container(lab)
+        if container:
+            self._require(
+                run(
+                    ["docker", "rm", "-f", container],
+                    env=self.environment(lab),
+                    timeout=30,
+                    cancel=cancel,
+                )
+            )
+            lab.resources.pop("container_id", None)
+
+    def _check(self, lab: Lab, cancel: threading.Event) -> Assessment:
+        unit = self.catalog.get(lab.unit_id)
+        started = timestamp()
+        workspace = Path(lab.workspace)
+        if not workspace.exists():
+            raise LabError("Prepare this lab before checking your work.")
+        stopped = lab.state == "stopped"
+        lab.state = "checking"
+        self._save(lab)
+        digest, _ = snapshot(workspace)
+        env = self.environment(lab)
+        evidence: list[Evidence] = []
+        health = (
+            None
+            if stopped
+            else run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=10, cancel=cancel)
+        )
+        if stopped:
+            evidence.append(
+                Evidence(
+                    criterion="environment",
+                    title="The lab is resumed",
+                    status=CheckStatus.BLOCKED,
+                    expected="An active practice environment",
+                    observed="This lab was stopped through Dockyard.",
+                    diagnostic=(
+                        "Resume the lab, then check again. Pausing is not a learner mistake."
+                    ),
+                )
+            )
+        elif health is not None and not health.ok:
+            evidence.append(
+                Evidence(
+                    criterion="environment",
+                    title="Docker is available",
+                    status=CheckStatus.BLOCKED,
+                    expected="A responsive local Docker daemon",
+                    observed=health.stderr,
+                    diagnostic=(
+                        "Start Docker Desktop, then retry. "
+                        "This does not count as a learner mistake."
+                    ),
+                )
+            )
+        else:
+            for criterion in unit.checks:
+                evidence.append(self._criterion(criterion, lab, cancel))
+            if all(item.status == CheckStatus.PASS for item in evidence):
+                self._owned_container(lab)
+        current_digest, _ = snapshot(workspace)
+        if cancel.is_set():
+            raise LabError("The check was canceled; no assessment was recorded.")
+        status = CheckStatus.PASS
+        if any(item.status == CheckStatus.BLOCKED for item in evidence):
+            status = CheckStatus.BLOCKED
+        elif any(item.status == CheckStatus.FAIL for item in evidence):
+            status = CheckStatus.FAIL
+        if current_digest != digest:
+            status = CheckStatus.STALE
+        progress = self.store.progress().get(unit.id, {})
+        assessment = Assessment(
+            id=uuid.uuid4().hex,
+            unit_id=unit.id,
+            revision=unit.revision,
+            lab_id=lab.id,
+            status=status,
+            started_at=started,
+            finished_at=timestamp(),
+            file_digest=digest,
+            evidence=evidence,
+            independent=unit.kind != "lesson"
+            and not (progress.get("hints") or progress.get("reference")),
+            hints_used=int(progress.get("hints", 0)),
+            reference_revealed=bool(progress.get("reference", False)),
+        )
+        self.store.save_assessment(assessment)
+        lab.state = "stopped" if stopped else "ready"
+        self._save(lab)
+        return assessment
+
+    def _criterion(self, criterion: Criterion, lab: Lab, cancel: threading.Event) -> Evidence:
+        command = criterion.command
+        try:
+            result = run(
+                [self.expand(arg, lab) for arg in command.args],
+                env=self.environment(lab),
+                cwd=Path(lab.workspace),
+                timeout=command.timeout,
+                cancel=cancel,
+                input_text=self.expand(command.stdin, lab) if command.stdin else None,
+            )
+        except FileNotFoundError as error:
+            return Evidence(
+                criterion=criterion.id,
+                title=criterion.title,
+                status=CheckStatus.BLOCKED,
+                expected=self.expand(criterion.expected, lab),
+                observed=str(error),
+                diagnostic="Run dockyard doctor to restore the missing tool.",
+                points=criterion.points,
+            )
+        expected = self.expand(criterion.expected, lab)
+        observed = result.stdout.strip()
+        matches = False
+        if result.returncode in command.allowed_exit_codes and not (
+            result.canceled or result.timed_out
+        ):
+            try:
+                if criterion.expectation == "json":
+                    value: Any = json.loads(observed)
+                    for part in criterion.json_path:
+                        value = value[int(part)] if isinstance(value, list) else value[str(part)]
+                    observed = (
+                        value if isinstance(value, str) else json.dumps(value, sort_keys=True)
+                    )
+                    matches = observed == expected
+                elif criterion.expectation == "equals":
+                    matches = observed == expected
+                elif criterion.expectation == "matches":
+                    matches = re.search(expected, observed) is not None
+                elif criterion.expectation == "absent":
+                    matches = expected not in observed
+                else:
+                    matches = expected in observed
+            except (ValueError, KeyError, IndexError, TypeError):
+                matches = False
+        if result.stderr:
+            observed += "\n" + result.stderr.strip()
+        return Evidence(
+            criterion=criterion.id,
+            title=criterion.title,
+            status=(
+                CheckStatus.BLOCKED
+                if result.timed_out or result.canceled
+                else CheckStatus.PASS
+                if matches
+                else CheckStatus.FAIL
+            ),
+            expected=expected,
+            observed=observed[-8000:],
+            diagnostic=criterion.diagnostic,
+            points=criterion.points,
+        )
+
+    def shell_command(self, unit_id: str) -> list[str]:
+        lab = self.store.lab(unit_id)
+        if lab is None or not Path(lab.workspace).exists():
+            raise LabError("Prepare the lab before opening its terminal.")
+        command = [
+            sys.executable,
+            "-m",
+            "dockyard",
+            "--data-dir",
+            str(self.directory),
+            "lab",
+            "shell",
+            unit_id,
+        ]
+        return command
+
+    def open_terminal(self, unit_id: str) -> dict[str, str]:
+        lab = self.store.lab(unit_id)
+        if not lab:
+            raise LabError("Prepare this lab first.")
+        command = self.shell_command(unit_id)
+        env = self.environment(lab)
+        tab = run(
+            ["wezterm", "cli", "--no-auto-start", "spawn", "--cwd", lab.workspace, "--", *command],
+            env=env,
+            timeout=8,
+        )
+        if not tab.ok:
+            # GUI start is a deliberately long-lived process; the CLI child owns its lab shell.
+            import subprocess
+
+            subprocess.Popen(
+                [
+                    "wezterm",
+                    "start",
+                    "--always-new-process",
+                    "--cwd",
+                    lab.workspace,
+                    "--",
+                    *command,
+                ],
+                env=env,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        return {"command": shlex.join(command), "workspace": lab.workspace}
+
+    def write_shell_rc(self, lab: Lab) -> Path:
+        directory = Path(lab.workspace).parent / "shell"
+        directory.mkdir(parents=True, exist_ok=True)
+        rc = (
+            "# Dockyard lab shell; global dotfiles are not modified.\n"
+            'autoload -Uz compinit && compinit -d "$ZDOTDIR/.zcompdump"\n'
+            f"PROMPT='%F{{blue}}dockyard%f %F{{cyan}}{lab.id[:8]}%f %~ %# '\n"
+            "print 'Docker and Kubernetes commands here use this lab environment.'\n"
+            "print 'Run dockyard lab check to inspect your work; exit closes this shell.'\n"
+        )
+        atomic_write(directory / ".zshrc", rc.encode())
+        return directory

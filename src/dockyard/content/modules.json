@@ -1,0 +1,290 @@
+[
+  {
+    "id": 1,
+    "title": "Processes to containers",
+    "phase": 1,
+    "phase_title": "Container engineering",
+    "topics": [
+      "Process/image/container boundaries",
+      "lifecycle and inspection",
+      "logs, signals, exit codes"
+    ],
+    "mission": "Run and diagnose the first Dispatch API container"
+  },
+  {
+    "id": 2,
+    "title": "Reproducible images",
+    "phase": 1,
+    "phase_title": "Container engineering",
+    "topics": [
+      "Dockerfile and build context",
+      "layers and caching",
+      "multi-stage builds and non-root runtime"
+    ],
+    "mission": "Build a small reproducible Dispatch image"
+  },
+  {
+    "id": 3,
+    "title": "Container networking",
+    "phase": 1,
+    "phase_title": "Container engineering",
+    "topics": [
+      "Port publication and loopback",
+      "bridge networks and DNS",
+      "connection diagnosis"
+    ],
+    "mission": "Connect Dispatch to an isolated dependency"
+  },
+  {
+    "id": 4,
+    "title": "Durable data",
+    "phase": 1,
+    "phase_title": "Container engineering",
+    "topics": [
+      "Bind mounts and volumes",
+      "permissions and lifecycle",
+      "backup and verified restore"
+    ],
+    "mission": "Preserve Dispatch data across replacement"
+  },
+  {
+    "id": 5,
+    "title": "Multi-service applications",
+    "phase": 1,
+    "phase_title": "Container engineering",
+    "topics": [
+      "Compose services and configuration",
+      "readiness and dependencies",
+      "profiles and scaling workers"
+    ],
+    "mission": "Run API, PostgreSQL, Redis, and worker together"
+  },
+  {
+    "id": 6,
+    "title": "Shipping containers",
+    "phase": 1,
+    "phase_title": "Container engineering",
+    "topics": [
+      "Tags, digests, and local registry",
+      "architecture and supply-chain basics",
+      "resource limits and runtime hardening"
+    ],
+    "mission": "Capstone: deliver, break, recover, and document the Compose stack"
+  },
+  {
+    "id": 7,
+    "title": "Kubernetes mental model",
+    "phase": 2,
+    "phase_title": "Kubernetes application development",
+    "topics": [
+      "API and reconciliation",
+      "namespaces, labels, and selectors",
+      "contexts, declarative updates, and inspection"
+    ],
+    "mission": "Deploy Dispatch into a dedicated practice cluster"
+  },
+  {
+    "id": 8,
+    "title": "Workload design",
+    "phase": 2,
+    "phase_title": "Kubernetes application development",
+    "topics": [
+      "Pods and Deployments",
+      "init/sidecar patterns",
+      "Jobs and CronJobs"
+    ],
+    "mission": "Add a worker and scheduled maintenance job"
+  },
+  {
+    "id": 9,
+    "title": "Configuration and identity",
+    "phase": 2,
+    "phase_title": "Kubernetes application development",
+    "topics": [
+      "ConfigMaps and environment",
+      "Secrets and delivery",
+      "service accounts and application access"
+    ],
+    "mission": "Configure isolated Dispatch environments"
+  },
+  {
+    "id": 10,
+    "title": "Service communication",
+    "phase": 2,
+    "phase_title": "Kubernetes application development",
+    "topics": [
+      "Services, endpoints, and DNS",
+      "ingress routing and TLS",
+      "Gateway API and HTTP routing"
+    ],
+    "mission": "Expose Dispatch and repair broken routing"
+  },
+  {
+    "id": 11,
+    "title": "Stateful applications",
+    "phase": 2,
+    "phase_title": "Kubernetes application development",
+    "topics": [
+      "PVs, PVCs, and StorageClasses",
+      "StatefulSets and storage lifecycle",
+      "backup and restore"
+    ],
+    "mission": "Preserve database state through pod replacement"
+  },
+  {
+    "id": 12,
+    "title": "Reliable application releases",
+    "phase": 2,
+    "phase_title": "Kubernetes application development",
+    "topics": [
+      "Probes and graceful termination",
+      "rolling updates and rollback",
+      "canary/blue-green patterns"
+    ],
+    "mission": "Capstone: deploy and recover a safe Dispatch release"
+  },
+  {
+    "id": 13,
+    "title": "Scheduling and capacity",
+    "phase": 3,
+    "phase_title": "Platform engineering and security",
+    "topics": [
+      "Requests, limits, and QoS",
+      "affinity, topology, taints, and tolerations",
+      "HPA, metrics, quotas, and disruption budgets"
+    ],
+    "mission": "Keep Dispatch available under load and node drain"
+  },
+  {
+    "id": 14,
+    "title": "Packaging and extensions",
+    "phase": 3,
+    "phase_title": "Platform engineering and security",
+    "topics": [
+      "Kustomize overlays",
+      "Helm values, releases, and rollback",
+      "CRDs and operator reconciliation"
+    ],
+    "mission": "Package a repeatable environment-specific release"
+  },
+  {
+    "id": 15,
+    "title": "Operational visibility",
+    "phase": 3,
+    "phase_title": "Platform engineering and security",
+    "topics": [
+      "Events, logs, and metrics",
+      "dashboards and actionable alerts",
+      "SLOs and incident evidence"
+    ],
+    "mission": "Diagnose and explain a latency regression"
+  },
+  {
+    "id": 16,
+    "title": "Delivery automation",
+    "phase": 3,
+    "phase_title": "Platform engineering and security",
+    "topics": [
+      "Local build/test/publish pipeline",
+      "GitOps reconciliation",
+      "drift, promotion, and rollback"
+    ],
+    "mission": "Release Dispatch from a local Git source"
+  },
+  {
+    "id": 17,
+    "title": "Access and network security",
+    "phase": 3,
+    "phase_title": "Platform engineering and security",
+    "topics": [
+      "RBAC and least privilege",
+      "enforced NetworkPolicy",
+      "Pod Security Admission and runtime security contexts"
+    ],
+    "mission": "Restrict Dispatch without breaking its workflow"
+  },
+  {
+    "id": 18,
+    "title": "Hardening and recovery",
+    "phase": 3,
+    "phase_title": "Platform engineering and security",
+    "topics": [
+      "Image scanning and SBOM interpretation",
+      "credentials, encryption concepts, and rotation",
+      "data recovery and operational runbooks"
+    ],
+    "mission": "Capstone: harden Dispatch and recover a compound failure"
+  },
+  {
+    "id": 19,
+    "title": "Linux and cluster internals",
+    "phase": 4,
+    "phase_title": "Cluster administration",
+    "topics": [
+      "containerd, CRI, and cgroups",
+      "kubelet, systemd, and journald",
+      "certificates and control-plane components"
+    ],
+    "mission": "Locate a failure across host, runtime, and Kubernetes layers"
+  },
+  {
+    "id": 20,
+    "title": "Building a cluster",
+    "phase": 4,
+    "phase_title": "Cluster administration",
+    "topics": [
+      "kubeadm initialization",
+      "CNI and worker join",
+      "HA topology and endpoint behavior"
+    ],
+    "mission": "Bootstrap a working cluster from prepared Linux guests"
+  },
+  {
+    "id": 21,
+    "title": "Cluster maintenance",
+    "phase": 4,
+    "phase_title": "Cluster administration",
+    "topics": [
+      "Drain and node lifecycle",
+      "supported version upgrades",
+      "certificate renewal and component configuration"
+    ],
+    "mission": "Upgrade and validate a disposable cluster"
+  },
+  {
+    "id": 22,
+    "title": "Cluster networking and storage",
+    "phase": 4,
+    "phase_title": "Cluster administration",
+    "topics": [
+      "CNI and packet flow",
+      "CoreDNS and service proxy diagnosis",
+      "CSI behavior, scheduling, and storage failures"
+    ],
+    "mission": "Restore an application affected by infrastructure faults"
+  },
+  {
+    "id": 23,
+    "title": "Control-plane recovery",
+    "phase": 4,
+    "phase_title": "Cluster administration",
+    "topics": [
+      "etcd snapshots and verified restore",
+      "failed kubelet and static-pod recovery",
+      "unavailable API and control-plane diagnosis"
+    ],
+    "mission": "Recover cluster state and prove application continuity"
+  },
+  {
+    "id": 24,
+    "title": "Operational handoff",
+    "phase": 4,
+    "phase_title": "Cluster administration",
+    "topics": [
+      "Multi-layer triage under time pressure",
+      "capacity, reliability, and security decisions",
+      "runbooks, evidence, and exam workflow"
+    ],
+    "mission": "Capstone: build, operate, recover, and hand off Dispatch independently"
+  }
+]

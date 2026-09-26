@@ -121,6 +121,8 @@ class Assessment(Contract):
     file_digest: str
     evidence: list[Evidence]
     independent: bool
+    hints_used: int = Field(default=0, ge=0)
+    reference_revealed: bool = False
 
 
 class Lab(Contract):

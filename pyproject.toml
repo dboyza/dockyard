@@ -20,11 +20,14 @@ dockyard = "dockyard.cli:main"
 [dependency-groups]
 dev = [
   "pytest>=8,<10",
-  "httpx>=0.28,<1",
   "ruff>=0.12,<1",
   "mypy>=1.15,<2",
   "types-PyYAML>=6,<7",
+  "httpx2>=2.13.1",
 ]
+
+[tool.hatch.build]
+artifacts = ["src/dockyard/static/**"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dockyard"]
@@ -37,6 +40,7 @@ markers = ["integration: requires owned Docker or Kubernetes resources"]
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+extend-exclude = ["src/dockyard/content"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -45,4 +49,4 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 python_version = "3.12"
 strict = true
 packages = ["dockyard"]
-
+exclude = ["src/dockyard/content/"]
