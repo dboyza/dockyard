@@ -13,7 +13,7 @@
 
 ## Autonomy and boundaries
 
-- The current phase is planning; the implementation plan remains proposed until the user finishes the planning review.
+- The user approved the full plan through the planning review on 2026-09-26; implementation is authorized.
 - Once implementation is authorized, make routine technical, editorial, naming, and visual decisions independently within the agreed scope.
 - The user has authorized downloading tools and images into the project, starting Docker if needed, and creating/deleting app-owned practice containers, networks, volumes, clusters, and local VMs.
 - Preserve unrelated resources, existing Docker settings, shell configuration, and the user's default kubeconfig.

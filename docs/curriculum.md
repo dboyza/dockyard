@@ -1,6 +1,6 @@
 # Dockyard curriculum contract
 
-Status: proposed for final planning review, 2026-09-26.
+Status: approved for autonomous implementation through the planning review, 2026-09-26.
 The module outcomes below are a scope contract, not claims of completed content.
 Each row specifies three teaching labs and an independent mission, giving 96 course units across 24 modules.
 The sixth module's mission in each phase is the cumulative capstone.

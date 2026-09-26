@@ -1,6 +1,6 @@
 # Dockyard implementation plan
 
-Status: proposed for final planning review, 2026-09-26.
+Status: approved for autonomous implementation through the planning review, 2026-09-26.
 This document describes the intended complete first release, not implemented capabilities.
 Dockyard is the working product name; Dispatch is the application the learner evolves.
 
