@@ -384,3 +384,11 @@ It reports incomplete coverage until the remaining activities exist; it does not
 Its initial run found two superseded Module 17 IDs in the published-objective map, which now point to the authored admission and network-policy lessons.
 All 24 Docker starters were prepared and assessed again in disposable real environments, and their observed failing criteria were recorded explicitly in their authoring contracts.
 Boolean packaged probes retain the stricter false-value requirement, while direct Docker and HTTP checks require the named criterion to fail without imposing a boolean output format.
+
+## HA concept interaction
+
+The HA lesson includes a separate interactive model of endpoint routing and a three-member etcd majority.
+The installed Chrome journey verified a route failure despite a surviving majority, a successful write after selecting a healthy API, and a reachable API unable to commit after losing the majority.
+The complete installed-app and real-Docker journey passed in 15.0 seconds.
+Direct 1440-pixel dark/light and 480-pixel light screenshots were inspected without horizontal overflow.
+The model is explicitly distinguished from observations of the real practice cluster.

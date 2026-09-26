@@ -123,6 +123,7 @@ export type Unit = {
   "checkpoint": string | null;
   "images": Array<string>;
   "nodes": number;
+  "native_version": "1.34.12" | "1.35.8";
   "alternatives": Array<string>;
   "failure_modes": Array<string>;
   "starter_failure_checks": Array<string>;

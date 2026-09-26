@@ -3,6 +3,7 @@ import type { Workbench } from "./useWorkbench";
 import { api } from "./api";
 import { Markdown, referenceTitle } from "./teaching";
 import { ReconciliationModel } from "./ReconciliationModel";
+import { QuorumModel } from "./QuorumModel";
 import { StorageModel } from "./StorageModel";
 import { learningStatus, reviewNeeded } from "./learning";
 import {
@@ -177,6 +178,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                 </aside>
                 {lesson.module === 7 && <ReconciliationModel key={lesson.id} />}
                 {lesson.module === 11 && <StorageModel key={lesson.id} />}
+                {lesson.id === "m20-ha" && <QuorumModel key={lesson.id} />}
                 <section className="prediction">
                   <div className="eyebrow">PAUSE AND PREDICT</div>
                   <h3>{lesson.prediction.question}</h3>
