@@ -1,0 +1,101 @@
+id: m14-kustomize
+revision: 1
+module: 14
+order: 1
+title: Compose environment overlays
+summary: Render a reusable base with deliberate environment-specific differences.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Render a Kustomize base and overlay before applying it.
+- Separate namespace, replica, and configuration transformations.
+- Compare rendered intent with live application behavior.
+prerequisites:
+- m13-mission
+objectives:
+- kubernetes.packaging
+- kubernetes.extensions
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A ConfigMap environment value changes in an applied overlay. What updates the running process?
+  options:
+  - Replacing its Pod so the container reads the new environment.
+  - Only rendering the overlay again.
+  - Reading the ConfigMap with kubectl get.
+  correct: 0
+  explanation: Environment variables are captured at container startup; mounted configuration has different
+    update semantics.
+hints:
+- Compare the declared source with the live object before changing unrelated resources.
+- Use the supplied renderers and scoped namespace; wait for a current-generation ready state.
+- Review the worked commands in the concept, then inspect the measured evidence for each remaining criterion.
+sources:
+- https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
+- https://helm.sh/docs/intro/using_helm/
+- https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
+- https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: packaging-overlay
+  title: Rendered development overlay and running application agree
+  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - packaging
+    timeout: 120
+  expectation: json
+  json_path:
+  - overlay
+  expected: 'true'
+  diagnostic: Render the development overlay, repair replicas and environment, then restart the API.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-packaging-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent overlay patches and chart formatting are accepted when rendered and live values agree.
+- The managed workload must retain the real WorkerPool UID ownership and process work after the recorded
+  drift rehearsal.
+failure_modes:
+- Rendering a resource does not deploy it.
+- A deployed Helm release can still declare an unavailable application.
+- A CRD alone does not implement a reconciliation loop.
+starter_failure_checks:
+- packaging-overlay

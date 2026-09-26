@@ -1,0 +1,150 @@
+id: m13-autoscaling
+revision: 1
+module: 13
+order: 3
+title: Scale from measurements and bound disruption
+summary: Use real metrics, CPU requests, HPA conditions, and a disruption budget.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Explain how CPU utilization is normalized against requests.
+- Observe measured load causing a real HPA scale-up.
+- Distinguish disruption budgets from general availability guarantees.
+prerequisites:
+- m13-placement
+objectives:
+- kubernetes.scheduling
+- kubernetes.autoscaling
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: HPA reports 200 percent CPU utilization for a 50m request. What average use does that represent?
+  options:
+  - About 100m CPU, measured relative to the request.
+  - Two hundred whole CPU cores.
+  - Two percent of the node regardless of the request.
+  correct: 0
+  explanation: The percentage uses the container request as its denominator, not the entire node capacity.
+hints:
+- Inspect scaleTargetRef and the HPA conditions before changing replica counts.
+- Target apps/v1 Deployment dispatch and keep its CPU request.
+- Wait for fresh metrics and four ready replicas while the supplied load remains active.
+sources:
+- https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+- https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+- https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+- https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+- https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 240
+checks:
+- id: capacity-resources
+  title: API resource requests and enforced runtime limits are bounded
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - resources
+  expected: 'true'
+  diagnostic: Compare requests/limits with allocatable capacity, Pod QoS, and the running cgroup values.
+- id: capacity-budget
+  title: LimitRange defaults and quota admission enforce the namespace budget
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - budget
+  expected: 'true'
+  diagnostic: Apply the supplied LimitRange and ResourceQuota, then inspect admission errors for an oversized
+    request.
+- id: capacity-scaling
+  title: Real CPU measurements drive HPA to four available replicas
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - scaling
+  expected: 'true'
+  diagnostic: Repair the HPA target, keep CPU requests, run the supplied load, and inspect current metrics
+    and desired replicas.
+- id: capacity-disruption
+  title: The disruption budget preserves two healthy replicas
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - disruption
+  expected: 'true'
+  diagnostic: Select the stable API Pods and preserve two available replicas through voluntary eviction.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- metrics
+checkpoint: dispatch-capacity-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- metrics_server
+nodes: 1
+alternatives:
+- Equivalent resource quantities, manifests, and scheduling rules are accepted when the declared live
+  capacity and placement behavior holds.
+failure_modes:
+- A toleration permits placement but does not require it.
+- HPA needs usable measurements and resource requests; replica declarations alone do not demonstrate autoscaling.
+- A PDB protects voluntary eviction, not every possible outage.
+starter_failure_checks:
+- capacity-scaling

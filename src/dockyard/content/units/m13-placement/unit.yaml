@@ -1,0 +1,133 @@
+id: m13-placement
+revision: 1
+module: 13
+order: 2
+title: Place workloads across dedicated workers
+summary: Combine affinity, taints, tolerations, and topology spread.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Distinguish node selection from permission to tolerate a taint.
+- Use topology spread to distribute application replicas.
+- Trace scheduling failures through concrete node constraints.
+prerequisites:
+- m13-resources
+objectives:
+- kubernetes.scheduling
+- kubernetes.autoscaling
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A Pod tolerates a worker taint but has no matching affinity or selector. Does the toleration
+    require it to run there?
+  options:
+  - No; it permits placement without requiring that destination.
+  - Yes; tolerations are stronger than required affinity.
+  - Yes; all untainted nodes become forbidden.
+  correct: 0
+  explanation: Tolerations remove a scheduling obstacle; node selection expresses the desired destination.
+hints:
+- Read both required nodeAffinity values and the matching toleration.
+- Both must use the apps value for the dockyard.pool key.
+- Keep maxSkew 1 across kubernetes.io/hostname and verify the two live Pod node names differ.
+sources:
+- https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+- https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+- https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+- https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+- https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 240
+checks:
+- id: capacity-resources
+  title: API resource requests and enforced runtime limits are bounded
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - resources
+  expected: 'true'
+  diagnostic: Compare requests/limits with allocatable capacity, Pod QoS, and the running cgroup values.
+- id: capacity-budget
+  title: LimitRange defaults and quota admission enforce the namespace budget
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - budget
+  expected: 'true'
+  diagnostic: Apply the supplied LimitRange and ResourceQuota, then inspect admission errors for an oversized
+    request.
+- id: capacity-placement
+  title: API Pods are distributed across the dedicated application workers
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - placement
+  expected: 'true'
+  diagnostic: Use the apps node affinity and matching taint toleration, then compare API Pod node names.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-capacity-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+nodes: 3
+alternatives:
+- Equivalent resource quantities, manifests, and scheduling rules are accepted when the declared live
+  capacity and placement behavior holds.
+failure_modes:
+- A toleration permits placement but does not require it.
+- HPA needs usable measurements and resource requests; replica declarations alone do not demonstrate autoscaling.
+- A PDB protects voluntary eviction, not every possible outage.
+starter_failure_checks:
+- capacity-placement

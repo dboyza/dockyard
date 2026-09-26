@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-restore
+  namespace: dispatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-restore
+  template:
+    metadata:
+      labels:
+        app: db-restore
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: database
+        image: ${DOCKYARD_POSTGRES_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        env:
+        - name: POSTGRES_DB
+          value: dispatch
+        - name: POSTGRES_USER
+          value: dispatch
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dispatch-database
+              key: password
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -h
+            - 127.0.0.1
+            - -U
+            - dispatch
+          periodSeconds: 2
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+  serviceName: db-restore-headless
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: standard
+      resources:
+        requests:
+          storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-restore-headless
+  namespace: dispatch
+spec:
+  clusterIP: None
+  selector:
+    app: db-restore
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432

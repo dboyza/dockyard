@@ -1,3 +1,4 @@
+import { LiveLabMap } from "./LiveLabMap";
 import type { Workbench } from "./useWorkbench";
 import { api } from "./api";
 import { Markdown, referenceTitle } from "./teaching";
@@ -257,6 +258,11 @@ export function LessonPage({ model }: { model: Workbench }) {
             )}
             {tab === "evidence" && (
               <>
+                <LiveLabMap
+                  key={lesson.id}
+                  unitId={lesson.id}
+                  labState={lab?.state}
+                />
                 {assessment ? (
                   <>
                     <div className={`assessment-summary ${assessment.status}`}>
@@ -304,6 +310,12 @@ export function LessonPage({ model }: { model: Workbench }) {
                             </pre>
                           </dd>
                         </dl>
+                        {item.details && (
+                          <details>
+                            <summary>Measured state</summary>
+                            <pre>{item.details}</pre>
+                          </details>
+                        )}
                         {item.status !== "pass" && (
                           <p className="diagnostic">{item.diagnostic}</p>
                         )}

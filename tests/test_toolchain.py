@@ -1,6 +1,8 @@
 """Verify interrupted private downloads resume and never install corrupt bytes."""
 
 import hashlib
+import io
+import tarfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -75,3 +77,57 @@ def test_corrupt_partial_never_replaces_installed_tool(download):
     assert not toolchain.ready("test")
     assert not destination.with_suffix(".part").exists()
     assert toolchain.ensure("test", threading.Event(), lambda _: None).read_bytes() == payload
+
+
+def test_complete_partial_installs_without_a_range_request(download):
+    toolchain, payload, requests = download
+    (toolchain.root / "bin").mkdir()
+    (toolchain.root / "bin/test.part").write_bytes(payload)
+    assert toolchain.ensure("test", threading.Event(), lambda _: None).read_bytes() == payload
+    assert not requests
+
+
+def test_download_cache_symlink_never_writes_to_its_target(download, tmp_path):
+    toolchain, _, requests = download
+    (toolchain.root / "bin").mkdir()
+    target = tmp_path / "preserved"
+    target.write_bytes(b"unrelated")
+    (toolchain.root / "bin/test.part").symlink_to(target)
+    with pytest.raises(RuntimeErrorBase, match="symbolic link"):
+        toolchain.ensure("test", threading.Event(), lambda _: None)
+    assert target.read_bytes() == b"unrelated"
+    assert not requests
+
+
+@pytest.mark.parametrize("link", [False, True])
+def test_archive_installs_only_the_pinned_regular_member(tmp_path, link):
+    payload = b"the verified executable"
+    archive = tmp_path / "tool.part"
+    destination = tmp_path / "tool"
+    destination.write_bytes(b"previous version")
+    with tarfile.open(archive, "w:gz") as package:
+        member = tarfile.TarInfo("darwin-arm64/tool")
+        if link:
+            member.type = tarfile.SYMTYPE
+            member.linkname = "../../outside"
+            package.addfile(member)
+        else:
+            member.size = len(payload)
+            package.addfile(member, io.BytesIO(payload))
+        unrelated = tarfile.TarInfo("../../outside")
+        unrelated.size = 3
+        package.addfile(unrelated, io.BytesIO(b"bad"))
+    entry = {
+        "sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+        "installed_sha256": hashlib.sha256(payload).hexdigest(),
+        "archive_member": "darwin-arm64/tool",
+        "path": "bin/tool",
+    }
+    if link:
+        with pytest.raises(RuntimeErrorBase, match="regular file"):
+            Toolchain.install_verified(archive, destination, entry)
+        assert destination.read_bytes() == b"previous version"
+    else:
+        Toolchain.install_verified(archive, destination, entry)
+        assert destination.read_bytes() == payload
+    assert not (tmp_path.parent / "outside").exists()

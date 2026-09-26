@@ -1,0 +1,183 @@
+id: m14-mission
+revision: 1
+module: 14
+order: 4
+title: Package repeatable Dispatch environments
+summary: Combine development overlays, a staging Helm release, and reconciled workers.
+kind: mission
+runtime: kubernetes
+minutes: 65
+outcomes:
+- Keep environment-specific changes out of shared sources.
+- Recover a staging release while preserving development.
+- Demonstrate operator-owned workers and drift reconciliation.
+prerequisites:
+- m14-operators
+objectives:
+- kubernetes.packaging
+- kubernetes.extensions
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which change preserves ownership while making a lasting managed worker count change?
+  options:
+  - Edit the WorkerPool desired count.
+  - Repeatedly scale its generated Deployment against the controller.
+  - Delete all release history.
+  correct: 0
+  explanation: Change the source reconciled by the responsible controller.
+hints:
+- Compare the declared source with the live object before changing unrelated resources.
+- Use the supplied renderers and scoped namespace; wait for a current-generation ready state.
+- Review the worked commands in the concept, then inspect the measured evidence for each remaining criterion.
+sources:
+- https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
+- https://helm.sh/docs/intro/using_helm/
+- https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/
+- https://kubernetes.io/docs/concepts/extend-kubernetes/operator/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: packaging-overlay
+  title: Rendered development overlay and running application agree
+  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - packaging
+    timeout: 120
+  expectation: json
+  json_path:
+  - overlay
+  expected: 'true'
+  diagnostic: Render the development overlay, repair replicas and environment, then restart the API.
+- id: packaging-release
+  title: Helm values and the live staging application are healthy
+  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - packaging
+    timeout: 120
+  expectation: json
+  json_path:
+  - release
+  expected: 'true'
+  diagnostic: Compare chart values, deployed release values, replicas, and the staging /config response.
+- id: packaging-rollback
+  title: Release history records recovery from the failed values change
+  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - packaging
+    timeout: 120
+  expectation: json
+  json_path:
+  - rollback
+  expected: 'true'
+  diagnostic: Use Helm history and rollback to recover the healthy revision; keep its history.
+- id: packaging-extension
+  title: Validated WorkerPool owns two available managed workers
+  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - packaging
+    timeout: 120
+  expectation: json
+  json_path:
+  - extension
+  expected: 'true'
+  diagnostic: Inspect CRD schema, controller availability, WorkerPool generation, and Deployment owner
+    UID.
+- id: packaging-reconciliation
+  title: The controller repaired real generated-workload drift
+  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - packaging
+    timeout: 120
+  expectation: json
+  json_path:
+  - reconciliation
+  expected: 'true'
+  diagnostic: Run operator-proof.py after the controller and two managed workers are ready.
+- id: packaging-workers
+  title: Operator-owned workers complete a unique Dispatch job
+  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - packaging
+    timeout: 120
+  expectation: json
+  json_path:
+  - workers
+  expected: 'true'
+  diagnostic: Keep the ordinary workers at zero and inspect managed-worker logs and dependencies.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- helm
+- workerpool
+checkpoint: dispatch-packaging-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent overlay patches and chart formatting are accepted when rendered and live values agree.
+- The managed workload must retain the real WorkerPool UID ownership and process work after the recorded
+  drift rehearsal.
+failure_modes:
+- Rendering a resource does not deploy it.
+- A deployed Helm release can still declare an unavailable application.
+- A CRD alone does not implement a reconciliation loop.
+starter_failure_checks:
+- packaging-overlay
+- packaging-release
+- packaging-rollback
+- packaging-extension
+- packaging-reconciliation
+- packaging-workers

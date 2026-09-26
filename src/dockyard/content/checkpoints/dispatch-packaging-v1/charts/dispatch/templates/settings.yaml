@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dispatch-settings
+  namespace: {{ .Release.Namespace | quote }}
+data:
+  environment: {{ .Values.environment | quote }}
+  banner.txt: 'Configured through the Kubernetes API.
+
+    '
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dispatch-database
+  namespace: {{ .Release.Namespace | quote }}
+type: Opaque
+stringData:
+  password: {{ required "A private database password is required" .Values.database.password | quote }}

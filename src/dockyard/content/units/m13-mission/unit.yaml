@@ -1,0 +1,186 @@
+id: m13-mission
+revision: 1
+module: 13
+order: 4
+title: Keep Dispatch available through worker maintenance
+summary: Repair placement and autoscaling, then rehearse a worker drain under load.
+kind: mission
+runtime: kubernetes
+minutes: 65
+outcomes:
+- Combine placement, capacity budgets, and measured autoscaling.
+- Use a realistic voluntary-disruption budget.
+- Record real readiness samples across an owned worker drain.
+prerequisites:
+- m13-autoscaling
+objectives:
+- kubernetes.scheduling
+- kubernetes.autoscaling
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Four replicas are healthy and a PDB requires all four to remain available. What can happen
+    during voluntary drain?
+  options:
+  - Eviction can be blocked because no disruption is permitted.
+  - The PDB silently allows any number of evictions.
+  - The HPA disables all disruption budgets.
+  correct: 0
+  explanation: A disruption budget must match the intended maintenance and availability policy.
+hints:
+- Repair placement and measured scale-up before attempting the drain.
+- The API needs the apps pool/toleration, HPA target dispatch, and minAvailable 2.
+- Wait for four replicas, run the rehearsal without force, and inspect both readiness samples and replacement
+  Pod UIDs.
+sources:
+- https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+- https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+- https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+- https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+- https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 240
+checks:
+- id: capacity-resources
+  title: API resource requests and enforced runtime limits are bounded
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - resources
+  expected: 'true'
+  diagnostic: Compare requests/limits with allocatable capacity, Pod QoS, and the running cgroup values.
+- id: capacity-budget
+  title: LimitRange defaults and quota admission enforce the namespace budget
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - budget
+  expected: 'true'
+  diagnostic: Apply the supplied LimitRange and ResourceQuota, then inspect admission errors for an oversized
+    request.
+- id: capacity-placement
+  title: API Pods are distributed across the dedicated application workers
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - placement
+  expected: 'true'
+  diagnostic: Use the apps node affinity and matching taint toleration, then compare API Pod node names.
+- id: capacity-scaling
+  title: Real CPU measurements drive HPA to four available replicas
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - scaling
+  expected: 'true'
+  diagnostic: Repair the HPA target, keep CPU requests, run the supplied load, and inspect current metrics
+    and desired replicas.
+- id: capacity-disruption
+  title: The disruption budget preserves two healthy replicas
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - disruption
+  expected: 'true'
+  diagnostic: Select the stable API Pods and preserve two available replicas through voluntary eviction.
+- id: capacity-drain
+  title: The recorded drain preserved sampled readiness and replaced the worker Pods
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - drain
+  expected: 'true'
+  diagnostic: Run drain-proof.py after four API replicas are available; inspect its samples and replacement
+    Pod identities.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- metrics
+checkpoint: dispatch-capacity-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- metrics_server
+nodes: 3
+alternatives:
+- Equivalent resource quantities, manifests, and scheduling rules are accepted when the declared live
+  capacity and placement behavior holds.
+failure_modes:
+- A toleration permits placement but does not require it.
+- HPA needs usable measurements and resource requests; replica declarations alone do not demonstrate autoscaling.
+- A PDB protects voluntary eviction, not every possible outage.
+starter_failure_checks:
+- capacity-placement
+- capacity-scaling
+- capacity-disruption
+- capacity-drain

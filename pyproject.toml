@@ -12,6 +12,7 @@ dependencies = [
   "uvicorn>=0.30,<1",
   "pydantic>=2.10,<3",
   "PyYAML>=6.0.2,<7",
+  "cryptography>=46,<50",
 ]
 
 [project.scripts]

@@ -163,6 +163,10 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
             "note": service.store.note(unit_id),
         }
 
+    @app.get("/api/units/{unit_id}/observation")
+    def observation(unit_id: str) -> dict[str, Any]:
+        return service.observe(unit_id).model_dump(mode="json")
+
     @app.post("/api/units/{unit_id}/events")
     def learning_event(unit_id: str, body: LearningEvent) -> dict[str, bool]:
         item = service.catalog.get(unit_id)

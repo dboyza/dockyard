@@ -38,6 +38,7 @@ class KubernetesRuntime:
         timeout: float = 30,
         cancel: threading.Event | None = None,
         payload: str | None = None,
+        output_limit: int = 1_000_000,
     ) -> ProcessResult:
         self.verify_kubeconfig()
         return run(
@@ -52,6 +53,7 @@ class KubernetesRuntime:
             timeout=timeout,
             cancel=cancel,
             input_text=payload,
+            output_limit=output_limit,
         )
 
     def config_identity(self) -> str:
@@ -181,6 +183,8 @@ class KubernetesRuntime:
         toolchain = Toolchain(self.tools)
         for tool in ("kind", "kubectl", "calico"):
             toolchain.ensure(tool, cancel, report)
+        if capabilities and "helm" in capabilities:
+            toolchain.ensure("helm", cancel, report)
         inventory = self.discover()
         existing = [entry for entry in inventory if self.verify(entry) is not None]
         if existing and self.lab.resources.get("cluster_ready") == "true":
@@ -225,7 +229,7 @@ class KubernetesRuntime:
         names += [self.name + "-worker" + (str(i) if i > 1 else "") for i in range(1, nodes)]
         self.lab.resources["kind_intent"] = json.dumps(names)
         self.save(self.lab)
-        configuration = {
+        configuration: dict[str, Any] = {
             "kind": "Cluster",
             "apiVersion": "kind.x-k8s.io/v1alpha4",
             "networking": {
@@ -254,6 +258,16 @@ class KubernetesRuntime:
             ]
             + [{"role": "worker"} for _ in range(nodes - 1)],
         }
+        if capabilities and "metrics" in capabilities:
+            configuration["kubeadmConfigPatches"] = [
+                yaml.safe_dump(
+                    {
+                        "apiVersion": "kubelet.config.k8s.io/v1beta1",
+                        "kind": "KubeletConfiguration",
+                        "serverTLSBootstrap": True,
+                    }
+                )
+            ]
         atomic_write(self.root / "kind.yaml", yaml.safe_dump(configuration).encode())
         report("Creating a private Kubernetes cluster")
         try:
@@ -360,6 +374,10 @@ class KubernetesRuntime:
             from dockyard.runtimes.routing import install
 
             install(self, capabilities, cancel)
+        if capabilities and "metrics" in capabilities:
+            from dockyard.runtimes.metrics import install as install_metrics
+
+            install_metrics(self, cancel)
         self.lab.resources["cluster_capabilities"] = json.dumps(capabilities or [])
         self.lab.resources["cluster_ready"] = "true"
         report("Cluster ready; preparing the exercise")
@@ -456,9 +474,12 @@ class KubernetesRuntime:
                 records.append([entry, node["State"]["Running"], node["State"]["StartedAt"]])
         kinds = (
             "deploy,sts,ds,pod,job,cronjob,svc,cm,secret,pvc,pv,storageclass,"
-            "networkpolicy,sa,role,rolebinding,ingress"
+            "networkpolicy,sa,role,rolebinding,clusterrole,clusterrolebinding,ingress,"
+            "node,namespace,hpa,pdb,resourcequota,limitrange,apiservice"
         )
         capabilities = json.loads(self.lab.resources.get("cluster_capabilities", "[]"))
+        if "workerpool" in capabilities:
+            kinds += ",customresourcedefinitions,workerpools.learning.dockyard.local"
         if "routing" in capabilities:
             kinds += ",gateways.gateway.networking.k8s.io,httproutes.gateway.networking.k8s.io"
         if "loadbalancer" in capabilities:
@@ -470,8 +491,14 @@ class KubernetesRuntime:
                 "--all-namespaces",
                 "-o",
                 "json",
-            ]
+            ],
+            output_limit=8_000_000,
         )
+        if result.truncated:
+            raise RuntimeErrorBase(
+                "The cluster state exceeded the bounded observation size. "
+                "Remove unneeded practice resources before checking again."
+            )
         if result.ok:
             for item in json.loads(result.stdout)["items"]:
                 metadata = item["metadata"]

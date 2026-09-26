@@ -1,0 +1,118 @@
+id: m13-resources
+revision: 1
+module: 13
+order: 1
+title: Separate requests, limits, and admission budgets
+summary: Repair impossible scheduling requests and verify runtime enforcement.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Distinguish requested, limited, allocatable, and observed resources.
+- Relate resource settings to QoS and cgroup enforcement.
+- Use LimitRange defaults and ResourceQuota admission checks.
+prerequisites:
+- m12-mission
+objectives:
+- kubernetes.scheduling
+- kubernetes.autoscaling
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A container uses almost no CPU but requests 99 CPUs on a smaller node. Why can it remain Pending?
+  options:
+  - Scheduling uses the declared request, not its currently observed utilization.
+  - The scheduler ignores requests until a container is busy.
+  - A CPU limit automatically creates more node capacity.
+  correct: 0
+  explanation: Requests are the scheduler input; actual use and runtime enforcement are separate observations.
+hints:
+- Read FailedScheduling events and compare the request with allocatable CPU.
+- Use 50m/64Mi requests and 300m/192Mi limits for the API, then wait for readiness.
+- Apply the namespace defaults and aggregate budget after replacing the oversized Pods.
+sources:
+- https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+- https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+- https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
+- https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+- https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 240
+checks:
+- id: capacity-resources
+  title: API resource requests and enforced runtime limits are bounded
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - resources
+  expected: 'true'
+  diagnostic: Compare requests/limits with allocatable capacity, Pod QoS, and the running cgroup values.
+- id: capacity-budget
+  title: LimitRange defaults and quota admission enforce the namespace budget
+  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - capacity
+    timeout: 120
+  expectation: json
+  json_path:
+  - budget
+  expected: 'true'
+  diagnostic: Apply the supplied LimitRange and ResourceQuota, then inspect admission errors for an oversized
+    request.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-capacity-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+nodes: 1
+alternatives:
+- Equivalent resource quantities, manifests, and scheduling rules are accepted when the declared live
+  capacity and placement behavior holds.
+failure_modes:
+- A toleration permits placement but does not require it.
+- HPA needs usable measurements and resource requests; replica declarations alone do not demonstrate autoscaling.
+- A PDB protects voluntary eviction, not every possible outage.
+starter_failure_checks:
+- capacity-resources
+- capacity-budget

@@ -45,6 +45,7 @@ export type Evidence = {
   "expected": string;
   "observed": string;
   "diagnostic": string;
+  "details": string;
   "points": number;
 };
 
@@ -59,6 +60,31 @@ export type Lab = {
   "updated_at": string;
   "resources": Record<string, string>;
   "error": string | null;
+};
+
+export type LabObservation = {
+  "lab_id": string;
+  "observed_at": string;
+  "runtime": Runtime;
+  "status": "observed" | "unavailable";
+  "message": string;
+  "resources": Array<ObservedResource>;
+  "links": Array<ObservedLink>;
+};
+
+export type ObservedLink = {
+  "source": string;
+  "target": string;
+  "relation": string;
+};
+
+export type ObservedResource = {
+  "id": string;
+  "kind": string;
+  "name": string;
+  "namespace": string;
+  "state": string;
+  "summary": string;
 };
 
 export type Prediction = {

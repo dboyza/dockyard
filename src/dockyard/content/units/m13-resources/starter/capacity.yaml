@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dispatch
+  namespace: dispatch
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: dispatch
+      track: stable

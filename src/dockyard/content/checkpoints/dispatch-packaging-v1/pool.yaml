@@ -1,0 +1,7 @@
+apiVersion: learning.dockyard.local/v1alpha1
+kind: WorkerPool
+metadata:
+  name: dispatch
+  namespace: dispatch
+spec:
+  replicas: 2

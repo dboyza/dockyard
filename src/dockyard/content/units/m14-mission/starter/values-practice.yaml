@@ -1,0 +1,3 @@
+api:
+  replicas: 0
+environment: staging

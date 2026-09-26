@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: practice-load
+  namespace: dispatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: practice-load
+  template:
+    metadata:
+      labels:
+        app: practice-load
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: client
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command:
+        - python
+        - -c
+        - "import concurrent.futures,time,urllib.request\n\ndef load():\n    while\
+          \ True:\n        try:\n            with urllib.request.urlopen('http://dispatch:8080/work',timeout=4)\
+          \ as response: response.read()\n        except Exception: time.sleep(.2)\n\
+          with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:\n\
+          \    list(executor.map(lambda _:load(),range(4)))\n"
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 150m
+            memory: 96Mi
+      nodeSelector:
+        node-role.kubernetes.io/control-plane: ''
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule

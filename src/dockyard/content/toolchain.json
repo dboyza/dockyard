@@ -34,5 +34,19 @@
     "url": "https://raw.githubusercontent.com/traefik/traefik/v3.7.13/docs/content/reference/dynamic-configuration/kubernetes-gateway-rbac.yml",
     "sha256": "be058cd1029ce508e83f5f6a6d8a6b4210d37e9e4b63a350087a0de9639cf47a",
     "path": "downloads/traefik-gateway-rbac.yaml"
+  },
+  "metrics-server": {
+    "version": "0.8.1",
+    "url": "https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.8.1/components.yaml",
+    "sha256": "4a672c4891902573a3ff753cece5de1bf1f55dd053403dfec39df9d1636b7ff1",
+    "path": "downloads/metrics-server-v0.8.1.yaml"
+  },
+  "helm": {
+    "version": "4.3.0",
+    "url": "https://get.helm.sh/helm-v4.3.0-darwin-arm64.tar.gz",
+    "sha256": "d3870437e1e95b67f8edbde964156c84a26503f560821d40c542441658934fba",
+    "archive_member": "darwin-arm64/helm",
+    "installed_sha256": "ed7defb5950888de567b2ba32f6795efbba172227aba7dfd2ee110549194f5c4",
+    "path": "bin/helm"
   }
 }

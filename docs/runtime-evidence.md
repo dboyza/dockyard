@@ -159,3 +159,45 @@ The shared Docker regression passed all 27 selected tests in 131.86 seconds afte
 The final installed browser rerun for this checkpoint passed in 10.6 seconds, including a single page-level heading and the revised source labels.
 Python checks passed with 20 tests and 52 opt-in runtime cases skipped; Ruff, strict mypy, frontend lint, build, and Vitest passed.
 The separate 20-unit Kubernetes regression remains in progress and will be recorded when complete.
+
+## Metrics preparation proof, 2026-09-26
+
+The two-node metrics proof returned live CPU and memory samples for both owned nodes.
+Kubelet serving CSRs are checked for a valid signature, the recorded node username and subject, permitted server usages, and only that node's observed DNS/IP addresses before approval.
+Metrics Server validates kubelet certificates against the cluster CA.
+Its aggregation endpoint uses a separate app-generated serving certificate and a pinned APIService CA bundle; neither connection disables TLS verification.
+Seven focused identity tests passed, including rejection of foreign addresses, expanded identities, client-signing usages, unrecorded nodes, and a damaged CSR signature.
+The live proof is stored at `.artifacts/metrics-tls-proof.json`.
+This is platform-runtime feasibility evidence; the scheduling and autoscaling curriculum is still being authored.
+
+The affected 20-unit Kubernetes regression for Modules 8-12 passed in 1387.59 seconds after the TCP-readiness correction.
+The metrics proof also drove a real HPA from one CPU-bound Pod to three, with current CPU utilization and scaling conditions captured at `.artifacts/hpa-proof.json`.
+
+## Scheduling and observed resource maps, 2026-09-26
+
+All four Module 13 starter/reference audits passed in the combined scheduling/packaging run before that run reached a separate Helm values-writer error.
+The three-node drain reproduction captured RemoteDisconnected immediately after eviction, while the HPA evidence separately showed replacement Pod identities missing from the first metrics sample.
+The supplied capacity workload now allows five seconds for endpoint removal before SIGTERM, and the rehearsal waits for measurements of the replacement Pods.
+Three repeated drain observations recorded 89, 36, and 36 successful readiness samples with zero observed failures after the termination change.
+Topology spread now includes pod-template-hash so rollout generations spread independently.
+The final fresh-start Module 13 mission passed its resource, admission, placement, scaling, disruption, and drain criteria.
+These samples establish the bounded local rehearsal, not a production zero-error guarantee.
+
+The browser evidence panel now includes expandable measured details and a read-only resource relationship view.
+A real Kubernetes observation returned 30 resources and 23 ownership, endpoint, or storage relationships without exposing workload credentials.
+A real Docker networking lab returned two containers connected to its owned bridge.
+The browser view preserves its last successful snapshot with an explicit unavailable message when that lab is paused.
+Wide and narrow screenshots were directly inspected at `.artifacts/live-docker-map.png` and `.artifacts/live-map-narrow.png`, with no horizontal overflow at 480 pixels.
+The installed browser journey passed in 11.9 seconds, including a terminal-side container repair, observed resource card, and expandable diagnostic evidence.
+The backend suite passed 38 tests with 60 opt-in runtime cases skipped in 5.02 seconds; type, lint, formatting, and frontend build checks passed at this development checkpoint.
+
+Module 14 and Module 15 are authored but remain under live runtime verification at this checkpoint.
+The Helm audit reproduced an unsupported Path.open opener argument in the private values writer; the corrected builtin open call preserves mode 0600 and passed the Helm starter/reference audit.
+The Kustomize starter/reference audit also passed; the operator and combined packaging mission remain in the running suite.
+
+All four Module 14 starter/reference audits passed in 423.26 seconds after the values-writer correction.
+They exercise real Kustomize rendering and applied configuration, Helm release history and rollback, a validated WorkerPool CRD, exact-UID ownership, controller repair of a scaled-to-zero managed Deployment, and job completion by the operator-owned workers.
+A live observation during the broken packaging mission exposed a legitimate EndpointSlice with endpoints=null; the resource map now treats that as an empty endpoint set instead of failing the request.
+The corrected observer returned 47 actual resources and 35 relationships from that lab.
+The latest backend run passed 39 tests with 64 opt-in cases skipped in 5.52 seconds, and the installed browser journey passed in 15.0 seconds after rebuilding the wheel.
+Module 15 remains in its live audit; it is not included in the verified 56-unit checkpoint.

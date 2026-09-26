@@ -33,6 +33,7 @@
 - Verify every reference solution passes, every broken starter fails for the intended reason, and validators accept legitimate alternatives.
 - Treat browser control as privileged local automation: authenticate sessions, validate origins, and expose only typed operations.
 - An external learner shell has ordinary user privileges; do not describe environment scoping as an OS security sandbox.
+- Keep runtime observations read-only and project explicit safe fields; never expose raw workload environment or Secret bodies.
 - Keep AGENTS.md concise and durable; implementation details belong in docs.
 - Use one complete sentence per physical line in long Markdown.
 - Never use em dashes, add agent co-authors, or manually modify generated files or changelogs.

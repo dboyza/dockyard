@@ -352,7 +352,9 @@ def workloads() -> dict[str, Any]:
 def main() -> None:
     if not os.environ.get("DOCKYARD_LAB") or not os.environ.get("KUBECONFIG"):
         raise SystemExit("Run this check inside a Dockyard practice environment.")
+    from dockyard.probes.capacity import capacity
     from dockyard.probes.configuration import configuration
+    from dockyard.probes.packaging import packaging
     from dockyard.probes.releases import releases
     from dockyard.probes.routing import routing
     from dockyard.probes.storage import storage
@@ -364,6 +366,8 @@ def main() -> None:
         "routing": routing,
         "storage": storage,
         "releases": releases,
+        "capacity": capacity,
+        "packaging": packaging,
     }
     try:
         result = probes[sys.argv[1]]()

@@ -1,0 +1,123 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: workerpools.learning.dockyard.local
+spec:
+  group: learning.dockyard.local
+  scope: Namespaced
+  names:
+    plural: workerpools
+    singular: workerpool
+    kind: WorkerPool
+    shortNames:
+    - wp
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
+    subresources:
+      status: {}
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required:
+            - replicas
+            properties:
+              replicas:
+                type: integer
+                minimum: 0
+                maximum: 4
+          status:
+            type: object
+            x-kubernetes-preserve-unknown-fields: true
+        required:
+        - spec
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: workerpool-controller
+  namespace: dispatch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: workerpool-controller
+  namespace: dispatch
+rules:
+- apiGroups:
+  - learning.dockyard.local
+  resources:
+  - workerpools
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - learning.dockyard.local
+  resources:
+  - workerpools/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - get
+  - list
+  - create
+  - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: workerpool-controller
+  namespace: dispatch
+subjects:
+- kind: ServiceAccount
+  name: workerpool-controller
+  namespace: dispatch
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: workerpool-controller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workerpool-controller
+  namespace: dispatch
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: workerpool-controller
+  template:
+    metadata:
+      labels:
+        app: workerpool-controller
+    spec:
+      serviceAccountName: workerpool-controller
+      containers:
+      - name: controller
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command:
+        - python
+        - workerpool_controller.py
+        env:
+        - name: APP_IMAGE
+          value: ${DOCKYARD_IMAGE}
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi

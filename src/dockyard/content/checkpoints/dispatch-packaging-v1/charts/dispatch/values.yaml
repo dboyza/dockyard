@@ -1,0 +1,10 @@
+api:
+  replicas: 2
+environment: staging
+images:
+  app: ''
+  postgres: ''
+  redis: ''
+  busybox: ''
+database:
+  password: ''

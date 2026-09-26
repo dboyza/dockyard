@@ -115,6 +115,7 @@ class Evidence(Contract):
     expected: str
     observed: str
     diagnostic: str
+    details: str = ""
     points: int = 1
 
 
@@ -161,3 +162,28 @@ class Exam(Contract):
     minutes: int = 120
     tasks: list[ExamTask] = Field(min_length=1)
     reference_policy: str
+
+
+class ObservedResource(Contract):
+    id: str
+    kind: str
+    name: str
+    namespace: str = ""
+    state: str
+    summary: str
+
+
+class ObservedLink(Contract):
+    source: str
+    target: str
+    relation: str
+
+
+class LabObservation(Contract):
+    lab_id: str
+    observed_at: str
+    runtime: Runtime
+    status: Literal["observed", "unavailable"]
+    message: str
+    resources: list[ObservedResource] = Field(default_factory=list)
+    links: list[ObservedLink] = Field(default_factory=list)

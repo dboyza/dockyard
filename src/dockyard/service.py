@@ -17,7 +17,15 @@ from typing import Any
 
 from dockyard.catalog import CONTENT, Catalog
 from dockyard.locking import operation_lock
-from dockyard.models import Assessment, CheckStatus, Criterion, Evidence, Lab, Runtime
+from dockyard.models import (
+    Assessment,
+    CheckStatus,
+    Criterion,
+    Evidence,
+    Lab,
+    LabObservation,
+    Runtime,
+)
 from dockyard.portfolio import checkpoint
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
@@ -70,6 +78,9 @@ class Service:
 
     def environment(self, lab: Lab | None = None) -> dict[str, str]:
         env = dict(os.environ)
+        for key in list(env):
+            if key.startswith("HELM_"):
+                env.pop(key)
         env.pop("DOCKER_CONTEXT", None)
         env.pop("WEZTERM_UNIX_SOCKET", None)
         env.pop("KIND_EXPERIMENTAL_DOCKER_NETWORK", None)
@@ -105,6 +116,12 @@ class Service:
                 DOCKYARD_NAMESPACE="dispatch",
                 DOCKYARD_TLS_PORT=lab.resources.get("registry_port", ""),
                 DOCKYARD_TLS_CERT=str(Path(lab.workspace).parent / "data/tls.crt"),
+                HELM_CACHE_HOME=str(Path(lab.workspace).parent / "helm/cache"),
+                HELM_CONFIG_HOME=str(Path(lab.workspace).parent / "helm/config"),
+                HELM_DATA_HOME=str(Path(lab.workspace).parent / "helm/data"),
+                HELM_PLUGINS=str(Path(lab.workspace).parent / "helm/plugins"),
+                HELM_DRIVER="secret",
+                HELM_NAMESPACE="dispatch",
             )
             if lab.resources.get("kind_network"):
                 env["KIND_EXPERIMENTAL_DOCKER_NETWORK"] = lab.resources["kind_network"]
@@ -494,12 +511,22 @@ class Service:
             else result.stdout
         ).strip()
         matches = False
+        details = ""
         if result.returncode in command.allowed_exit_codes and not (
             result.canceled or result.timed_out
         ):
             try:
                 if criterion.expectation == "json":
                     value: Any = json.loads(observed)
+                    if isinstance(value, dict) and criterion.json_path:
+                        measurements = value.get("_details", {})
+                        measured = (
+                            measurements.get(str(criterion.json_path[0]))
+                            if isinstance(measurements, dict)
+                            else None
+                        )
+                        if measured is not None:
+                            details = json.dumps(measured, indent=2, sort_keys=True)
                     for part in criterion.json_path:
                         value = value[int(part)] if isinstance(value, list) else value[str(part)]
                     observed = (
@@ -531,8 +558,42 @@ class Service:
             expected=expected,
             observed=self.redact(observed, lab)[-8000:],
             diagnostic=criterion.diagnostic,
+            details=self.redact(details, lab)[-8000:],
             points=criterion.points,
         )
+
+    def observe(self, unit_id: str) -> LabObservation:
+        from dockyard.observations import observe
+
+        unit = self.catalog.get(unit_id)
+        lab = self.store.lab(unit_id)
+        unavailable = LabObservation(
+            lab_id=lab.id if lab else "",
+            runtime=unit.runtime,
+            observed_at=timestamp(),
+            status="unavailable",
+            message="Prepare and start this lab to observe its resources.",
+        )
+        if not lab or lab.state != "ready":
+            if lab and lab.state == "stopped":
+                unavailable.message = "The lab is paused. Resume it to observe current resources."
+            elif lab and lab.state not in {"absent", "failed"}:
+                unavailable.message = (
+                    f"The lab is {lab.state}. Observation resumes when its operation finishes."
+                )
+            return unavailable
+        try:
+            observed = observe(self.runtime(lab))
+            current = self.store.lab(unit_id)
+            if not current or current.id != lab.id or current.state != "ready":
+                unavailable.message = (
+                    "The lab changed during observation. Refresh after its operation finishes."
+                )
+                return unavailable
+            return observed
+        except (RuntimeErrorBase, OSError, ValueError, KeyError, TypeError) as error:
+            unavailable.message = self.redact(str(error), lab)[:1000]
+            return unavailable
 
     def shell_command(self, unit_id: str) -> list[str]:
         lab = self.store.lab(unit_id)

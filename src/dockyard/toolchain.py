@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import platform
+import tarfile
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -33,8 +34,47 @@ class Toolchain:
         return (
             destination.is_file()
             and not destination.is_symlink()
-            and digest(destination) == entry["sha256"]
+            and digest(destination) == entry.get("installed_sha256", entry["sha256"])
         )
+
+    @staticmethod
+    def install_verified(partial: Path, destination: Path, entry: dict[str, str]) -> None:
+        if digest(partial) != entry["sha256"]:
+            partial.unlink()
+            raise RuntimeErrorBase("The downloaded tool failed its pinned integrity check.")
+        candidate = partial
+        if member_name := entry.get("archive_member"):
+            candidate = destination.with_suffix(destination.suffix + ".install")
+            if candidate.is_symlink():
+                raise RuntimeErrorBase("The private installation path is a symbolic link.")
+            try:
+                with tarfile.open(partial, "r:gz") as archive:
+                    member = archive.getmember(member_name)
+                    if not member.isfile() or not 0 < member.size <= 256 * 1024**2:
+                        raise RuntimeErrorBase(
+                            "The pinned archive member is not a bounded regular file."
+                        )
+                    source = archive.extractfile(member)
+                    if source is None:
+                        raise RuntimeErrorBase("The pinned tool was not found in its archive.")
+                    with source, candidate.open("wb") as output:
+                        while block := source.read(1024 * 1024):
+                            output.write(block)
+                        output.flush()
+                        os.fsync(output.fileno())
+                if digest(candidate) != entry["installed_sha256"]:
+                    raise RuntimeErrorBase("The extracted tool failed its pinned integrity check.")
+            except (tarfile.TarError, KeyError) as error:
+                candidate.unlink(missing_ok=True)
+                raise RuntimeErrorBase(
+                    "The verified archive does not contain the expected tool."
+                ) from error
+            except BaseException:
+                candidate.unlink(missing_ok=True)
+                raise
+        candidate.chmod(0o755 if entry["path"].startswith("bin/") else 0o600)
+        os.replace(candidate, destination)
+        partial.unlink(missing_ok=True)
 
     def ensure(self, name: str, cancel: threading.Event, report: Callable[[str], None]) -> Path:
         if platform.system() != "Darwin" or platform.machine() != "arm64":
@@ -46,6 +86,11 @@ class Toolchain:
                 return destination
             destination.parent.mkdir(parents=True, exist_ok=True)
             partial = destination.with_suffix(destination.suffix + ".part")
+            if partial.is_symlink():
+                raise RuntimeErrorBase("The private download cache is a symbolic link.")
+            if partial.is_file() and digest(partial) == entry["sha256"]:
+                self.install_verified(partial, destination, entry)
+                return destination
             offset = partial.stat().st_size if partial.exists() else 0
             headers = {"Range": f"bytes={offset}-"} if offset else {}
             report(f"Downloading {name} {entry['version']}")
@@ -74,13 +119,7 @@ class Toolchain:
                             )
                         output.flush()
                         os.fsync(output.fileno())
-                if digest(partial) != entry["sha256"]:
-                    partial.unlink()
-                    raise RuntimeErrorBase(
-                        f"{name} failed its pinned integrity check; nothing was installed."
-                    )
-                partial.chmod(0o755 if entry["path"].startswith("bin/") else 0o600)
-                os.replace(partial, destination)
+                self.install_verified(partial, destination, entry)
                 report(f"Verified {name} {entry['version']}")
                 return destination
             except OSError as error:
