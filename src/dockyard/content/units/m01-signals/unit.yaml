@@ -1,0 +1,123 @@
+id: m01-signals
+revision: 1
+module: 1
+order: 3
+title: Logs, signals, and honest exit codes
+summary: Observe a real request in the logs, then stop Dispatch cleanly and inspect the result.
+kind: lesson
+runtime: docker
+minutes: 35
+outcomes:
+- Read application output independently of container state.
+- Explain how Docker delivers termination signals to the main process.
+- Distinguish a successful exit from a service that is still available.
+prerequisites:
+- m01-lifecycle
+objectives:
+- docker.signals
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You press Control-C while docker logs --follow is running. Which process normally stops?
+  options:
+  - The log viewer in your terminal.
+  - The detached API process.
+  - The Docker daemon.
+  correct: 0
+  explanation: Control-C targets the foreground log-viewing command. The detached application is controlled separately.
+hints:
+- First make a real HTTP request while the process is running.
+- Use docker logs to find the request, then docker stop to request graceful shutdown.
+- Inspect .State.Running and .State.ExitCode. The target is false and 0, with the container still present.
+sources:
+- https://docs.docker.com/engine/containers/run/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8080
+  - -v
+  - '{{workspace}}:/app:ro'
+  - -w
+  - /app
+  - '{{python_image}}'
+  - python
+  - app.py
+checks:
+- id: stopped
+  title: The process has stopped
+  explanation: The process has stopped
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 'false'
+  json_path:
+  - '0'
+  - State
+  - Running
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: clean-exit
+  title: Shutdown completed successfully
+  explanation: Shutdown completed successfully
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: '0'
+  json_path:
+  - '0'
+  - State
+  - ExitCode
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: request-log
+  title: A successful HTTP request was logged
+  explanation: A successful HTTP request was logged
+  command:
+    args:
+    - docker
+    - logs
+    - '{{container}}'
+  output: combined
+  expectation: contains
+  expected: GET /healthz HTTP/1.1" 200
+  json_path: []
+  diagnostic: Make a successful health request before stopping the process; preserve the container logs.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-process-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.

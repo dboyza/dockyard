@@ -168,6 +168,19 @@ class Store:
             raise BusyError("This lab already has an operation in progress.") from error
         return operation_id
 
+    def recover_operations(self, lab_id: str) -> None:
+        """Called only while holding this lab's exclusive OS operation lock."""
+        with self.connection() as connection:
+            connection.execute(
+                "UPDATE operations SET state='failed',updated_at=?,detail=? "
+                "WHERE lab_id=? AND state IN ('queued','running','canceling')",
+                (
+                    timestamp(),
+                    "The owning process ended. Inspect or prepare the preserved lab.",
+                    lab_id,
+                ),
+            )
+
     def update_operation(self, operation_id: str, state: str, detail: str = "") -> None:
         if state not in {"queued", "running", "canceling", "done", "failed", "canceled"}:
             raise ValueError("Invalid operation state.")

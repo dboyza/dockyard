@@ -1,48 +1,42 @@
-id: m01-processes
-revision: 2
-module: 1
+id: m02-dockerfile
+revision: 1
+module: 2
 order: 1
-title: A container is a running process
-summary: Start the Dispatch API and connect the image, container, process, and published port to observable behavior.
+title: Build an image that carries its application
+summary: Turn supplied source files into a runnable artifact that no longer depends on a host bind mount.
 kind: lesson
 runtime: docker
-minutes: 25
+minutes: 35
 outcomes:
-- Explain why an image remains available after its container stops.
-- Run a supplied application as a foreground process inside a detached container.
-- Publish an application port on loopback and verify a real HTTP response.
-prerequisites: []
+- Explain the build context and distinguish build-time from runtime instructions.
+- Write a Dockerfile with an explicit working directory and foreground command.
+- Run the built artifact without mounting the source workspace.
+prerequisites:
+- m01-mission
 objectives:
-- docker.lifecycle
-- docker.ports
+- docker.dockerfile
 concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You stop the container running Dispatch. What happens to the image used to start it?
+  question: A Dockerfile contains EXPOSE 8080. Can you reach it from the Mac without a published port?
   options:
-  - The image remains available for a new container.
-  - Docker deletes the image along with the process.
-  - The image becomes the stopped container's filesystem.
+  - No; EXPOSE does not publish a host port.
+  - Yes; Docker automatically selects host port 8080.
+  - Only if the container runs as root.
   correct: 0
-  explanation: An image is a reusable template. Stopping a container stops its processes; it does not remove the
-    image. A container also has its own writable layer, which is distinct from the image.
+  explanation: EXPOSE records intended use. A runtime port mapping creates the host endpoint.
 hints:
-- The API source is already in app.py. Use a Python image, mount this workspace at /app, and make python app.py
-  the container's main process.
-- The process listens on port 8080 inside the container. Publish the assigned DOCKYARD_PORT on 127.0.0.1 to container
-  port 8080, and use DOCKYARD_CONTAINER for the name.
-- A complete command is in the worked example. Check that the workspace mount uses "$DOCKYARD_WORKSPACE:/app:ro",
-  the working directory is /app, and the final arguments are python app.py.
+- 'Separate COPY and CMD: one adds files at build time, the other records how to start the container.'
+- Use WORKDIR /app and copy both app.py and VERSION from the context.
+- Build with the supplied BASE_IMAGE argument; run the resulting DOCKYARD_IMAGE without -v, but with the same label
+  and loopback port pattern as Module 1.
 sources:
-- https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/
-- https://docs.docker.com/engine/containers/run/
+- https://docs.docker.com/reference/dockerfile/
+- https://docs.docker.com/build/building/context/
 starter: {}
 reference: {}
 prepare: []
-capabilities:
-- docker
-- python-image
 checks:
 - id: process-running
   title: Dispatch's container is running
@@ -131,11 +125,42 @@ checks:
   - '0'
   - HostIp
   diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
-checkpoint: dispatch-process-v1
+- id: self-contained
+  title: The application runs without workspace mounts
+  explanation: The application runs without workspace mounts
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: '[]'
+  json_path:
+  - '0'
+  - Mounts
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: release
+  title: The image serves the expected application release
+  explanation: The image serves the expected application release
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  expected: dispatch-1
+  json_path:
+  - release
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-image-v1
 alternatives:
-- docker run or docker create followed by docker start are both accepted.
-- Any host-side shell syntax that meets the observed process, identity, and endpoint contract is accepted.
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
 failure_modes:
-- A one-shot command exits immediately.
-- Publishing the wrong container port makes the process unreachable.
-- Omitting the loopback address exposes the service more widely than intended.
+- A running container with the wrong application or endpoint does not satisfy the contract.

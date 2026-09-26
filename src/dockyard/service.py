@@ -14,16 +14,19 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from dockyard.catalog import Catalog
+from dockyard.catalog import CONTENT, Catalog
+from dockyard.locking import operation_lock
 from dockyard.models import Assessment, CheckStatus, Criterion, Evidence, Lab, Runtime
 from dockyard.process import ProcessResult, run
+from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.store import Store, timestamp
 from dockyard.workspace import atomic_write, reset, snapshot, write_files
 
-PYTHON_IMAGE = "python@sha256:79e7a9b9ff1cbceff819f856fb374477792a5967759d94df266de7b7b4120e6f"
+COMPATIBILITY = json.loads((CONTENT / "compatibility.json").read_text())
+PYTHON_IMAGE: str = COMPATIBILITY["images"]["python"]
 
 
-class LabError(RuntimeError):
+class LabError(RuntimeErrorBase):
     pass
 
 
@@ -44,6 +47,8 @@ class Service:
         env["PATH"] = (
             f"{self.tools / 'bin'}:{Path(sys.executable).parent}:{env.get('PATH', '/usr/bin:/bin')}"
         )
+        for name, image in COMPATIBILITY["images"].items():
+            env[f"DOCKYARD_{name.upper()}_IMAGE"] = image
         if lab:
             env.update(
                 DOCKYARD_LAB=lab.id,
@@ -55,6 +60,11 @@ class Service:
                 KUBECONFIG=str(Path(lab.workspace).parent / "kubeconfig"),
                 DOCKER_HOST=lab.resources["docker_endpoint"],
                 DOCKYARD_DATA=str(self.directory),
+                COMPOSE_PROJECT_NAME=f"dockyard-{lab.id[:12]}",
+                DOCKYARD_PROJECT=f"dockyard-{lab.id[:12]}",
+                DOCKYARD_NETWORK=f"dockyard-{lab.id[:12]}-net",
+                DOCKYARD_VOLUME=f"dockyard-{lab.id[:12]}-data",
+                DOCKYARD_IMAGE=f"dockyard-{lab.id[:12]}:practice",
             )
         return env
 
@@ -116,6 +126,14 @@ class Service:
         self.store.save_lab(lab)
 
     def perform(self, unit_id: str, action: str) -> dict[str, Any]:
+        self.catalog.get(unit_id)
+        with operation_lock(self.directory / "locks", unit_id):
+            existing = self.store.lab(unit_id)
+            if existing:
+                self.store.recover_operations(existing.id)
+            return self._perform(unit_id, action)
+
+    def _perform(self, unit_id: str, action: str) -> dict[str, Any]:
         if action not in {"prepare", "check", "reset", "stop", "resume", "clean"}:
             raise ValueError("Unknown lab operation.")
         self.catalog.get(unit_id)
@@ -139,24 +157,20 @@ class Service:
                     self.directory / "backups",
                 )
                 lab.resources.pop("container_id", None)
+                lab.resources.pop("prepared_revision", None)
                 self._prepare(lab, cancel)
                 result = {"backup": str(backup), "lab": lab.model_dump(mode="json")}
             elif action == "clean":
                 self._cleanup(lab, cancel)
+                lab.resources.pop("prepared_revision", None)
                 lab.state = "absent"
                 self._save(lab)
                 result = lab.model_dump(mode="json")
             else:
-                container = self._owned_container(lab)
-                if container:
-                    verb = "stop" if action == "stop" else "start"
-                    outcome = run(
-                        ["docker", verb, container],
-                        env=self.environment(lab),
-                        timeout=45,
-                        cancel=cancel,
-                    )
-                    self._require(outcome)
+                if action == "stop":
+                    lab.state = "stopping"
+                    self._save(lab)
+                self.docker(lab).change(action, cancel)
                 lab.state = "stopped" if action == "stop" else "ready"
                 self._save(lab)
                 result = lab.model_dump(mode="json")
@@ -207,17 +221,24 @@ class Service:
         self._require(
             run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=15, cancel=cancel)
         )
-        image = run(
-            ["docker", "image", "inspect", PYTHON_IMAGE], env=env, timeout=15, cancel=cancel
-        )
-        if not image.ok:
-            self._require(
-                run(["docker", "pull", PYTHON_IMAGE], env=env, timeout=600, cancel=cancel)
+        for image_name in unit.images:
+            image_ref = COMPATIBILITY["images"][image_name]
+            image = run(
+                ["docker", "image", "inspect", image_ref], env=env, timeout=15, cancel=cancel
             )
+            if not image.ok:
+                self._require(
+                    run(["docker", "pull", image_ref], env=env, timeout=600, cancel=cancel)
+                )
         workspace = Path(lab.workspace)
         if not workspace.exists():
             write_files(workspace, unit.starter)
-        for command in unit.prepare:
+        commands = (
+            [] if lab.resources.get("prepared_revision") == str(unit.revision) else unit.prepare
+        )
+        if commands:
+            self.docker(lab).change("clean", cancel)
+        for command in commands:
             outcome = run(
                 [self.expand(arg, lab) for arg in command.args],
                 env=env,
@@ -227,6 +248,8 @@ class Service:
                 input_text=self.expand(command.stdin, lab) if command.stdin else None,
             )
             self._require(outcome)
+        self.docker(lab).discover()
+        lab.resources["prepared_revision"] = str(unit.revision)
         lab.revision = unit.revision
         lab.state = "ready"
         self._save(lab)
@@ -238,50 +261,23 @@ class Service:
             "port": lab.resources["port"],
             "workspace": lab.workspace,
             "python_image": PYTHON_IMAGE,
+            "image": f"dockyard-{lab.id[:12]}:practice",
+            "network": f"dockyard-{lab.id[:12]}-net",
+            "volume": f"dockyard-{lab.id[:12]}-data",
+            "project": f"dockyard-{lab.id[:12]}",
         }
+        values.update({f"{name}_image": image for name, image in COMPATIBILITY["images"].items()})
         for key, replacement in values.items():
             value = value.replace("{{" + key + "}}", replacement)
         return value
 
-    def _owned_container(self, lab: Lab) -> str | None:
-        name = f"dockyard-{lab.id[:12]}"
-        result = run(["docker", "inspect", name], env=self.environment(lab), timeout=10)
-        if not result.ok:
-            if "no such" in result.stderr.lower():
-                return None
-            raise LabError("Cannot establish resource ownership while Docker is unavailable.")
-        resource = json.loads(result.stdout)[0]
-        labels = resource.get("Config", {}).get("Labels") or {}
-        if labels.get("io.dockyard.lab") != lab.id:
-            raise LabError(
-                "A container with this name lacks the lab ownership label; it was preserved."
-            )
-        known = lab.resources.get("container_id")
-        if known and known != resource["Id"]:
-            # A learner may legitimately remove and recreate their assigned container.
-            # A matching unguessable lab label, assigned name, and new creation time are required.
-            if resource["Created"][:19] < lab.created_at[:19]:
-                raise LabError("The candidate container predates this lab and was preserved.")
-        elif not known and resource["Created"][:19] < lab.created_at[:19]:
-            raise LabError("The candidate container predates this lab and was preserved.")
-        lab.resources["container_id"] = resource["Id"]
-        self._save(lab)
-        return str(resource["Id"])
+    def docker(self, lab: Lab) -> DockerRuntime:
+        return DockerRuntime(lab, self.environment(lab), self._save)
 
     def _cleanup(self, lab: Lab, cancel: threading.Event) -> None:
         lab.state = "cleaning"
         self._save(lab)
-        container = self._owned_container(lab)
-        if container:
-            self._require(
-                run(
-                    ["docker", "rm", "-f", container],
-                    env=self.environment(lab),
-                    timeout=30,
-                    cancel=cancel,
-                )
-            )
-            lab.resources.pop("container_id", None)
+        self.docker(lab).change("clean", cancel)
 
     def _check(self, lab: Lab, cancel: threading.Event) -> Assessment:
         unit = self.catalog.get(lab.unit_id)
@@ -295,6 +291,7 @@ class Service:
         digest, _ = snapshot(workspace)
         env = self.environment(lab)
         evidence: list[Evidence] = []
+        runtime_before = None
         health = (
             None
             if stopped
@@ -328,10 +325,11 @@ class Service:
                 )
             )
         else:
+            runtime_before = self.docker(lab).fingerprint()
             for criterion in unit.checks:
                 evidence.append(self._criterion(criterion, lab, cancel))
             if all(item.status == CheckStatus.PASS for item in evidence):
-                self._owned_container(lab)
+                self.docker(lab).discover()
         current_digest, _ = snapshot(workspace)
         if cancel.is_set():
             raise LabError("The check was canceled; no assessment was recorded.")
@@ -340,7 +338,9 @@ class Service:
             status = CheckStatus.BLOCKED
         elif any(item.status == CheckStatus.FAIL for item in evidence):
             status = CheckStatus.FAIL
-        if current_digest != digest:
+        if current_digest != digest or (
+            runtime_before is not None and self.docker(lab).fingerprint() != runtime_before
+        ):
             status = CheckStatus.STALE
         progress = self.store.progress().get(unit.id, {})
         assessment = Assessment(
@@ -385,7 +385,13 @@ class Service:
                 points=criterion.points,
             )
         expected = self.expand(criterion.expected, lab)
-        observed = result.stdout.strip()
+        observed = (
+            result.stderr
+            if criterion.output == "stderr"
+            else result.stdout + result.stderr
+            if criterion.output == "combined"
+            else result.stdout
+        ).strip()
         matches = False
         if result.returncode in command.allowed_exit_codes and not (
             result.canceled or result.timed_out
@@ -409,7 +415,7 @@ class Service:
                     matches = expected in observed
             except (ValueError, KeyError, IndexError, TypeError):
                 matches = False
-        if result.stderr:
+        if result.stderr and criterion.output == "stdout":
             observed += "\n" + result.stderr.strip()
         return Evidence(
             criterion=criterion.id,

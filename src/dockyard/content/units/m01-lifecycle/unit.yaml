@@ -1,48 +1,57 @@
-id: m01-processes
-revision: 2
+id: m01-lifecycle
+revision: 1
 module: 1
-order: 1
-title: A container is a running process
-summary: Start the Dispatch API and connect the image, container, process, and published port to observable behavior.
+order: 2
+title: Create, start, stop, inspect
+summary: Separate container identity from process lifetime and bring a prepared Dispatch container online.
 kind: lesson
 runtime: docker
-minutes: 25
+minutes: 35
 outcomes:
-- Explain why an image remains available after its container stops.
-- Run a supplied application as a foreground process inside a detached container.
-- Publish an application port on loopback and verify a real HTTP response.
-prerequisites: []
+- Distinguish created, running, and exited states.
+- Use inspection to find image identity, command, and port mappings.
+- Start an existing container without confusing it with a new instance.
+prerequisites:
+- m01-processes
 objectives:
 - docker.lifecycle
-- docker.ports
 concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You stop the container running Dispatch. What happens to the image used to start it?
+  question: A stopped container still owns a name. What happens if you docker run another container using that name?
   options:
-  - The image remains available for a new container.
-  - Docker deletes the image along with the process.
-  - The image becomes the stopped container's filesystem.
+  - Docker reports a name conflict.
+  - Docker automatically restarts the old instance.
+  - Docker merges their writable layers.
   correct: 0
-  explanation: An image is a reusable template. Stopping a container stops its processes; it does not remove the
-    image. A container also has its own writable layer, which is distinct from the image.
+  explanation: A name belongs to a container until that container is removed or renamed, regardless of whether its
+    process is running.
 hints:
-- The API source is already in app.py. Use a Python image, mount this workspace at /app, and make python app.py
-  the container's main process.
-- The process listens on port 8080 inside the container. Publish the assigned DOCKYARD_PORT on 127.0.0.1 to container
-  port 8080, and use DOCKYARD_CONTAINER for the name.
-- A complete command is in the worked example. Check that the workspace mount uses "$DOCKYARD_WORKSPACE:/app:ro",
-  the working directory is /app, and the final arguments are python app.py.
+- Check all lifecycle states with docker ps -a.
+- The prepared resource already exists, so use docker start rather than docker run.
+- Run docker start "$DOCKYARD_CONTAINER", then curl "http://127.0.0.1:$DOCKYARD_PORT/healthz".
 sources:
-- https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/
 - https://docs.docker.com/engine/containers/run/
 starter: {}
 reference: {}
-prepare: []
-capabilities:
-- docker
-- python-image
+prepare:
+- args:
+  - docker
+  - create
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8080
+  - -v
+  - '{{workspace}}:/app:ro'
+  - -w
+  - /app
+  - '{{python_image}}'
+  - python
+  - app.py
 checks:
 - id: process-running
   title: Dispatch's container is running
@@ -131,11 +140,11 @@ checks:
   - '0'
   - HostIp
   diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+capabilities:
+- docker
+- python-image
 checkpoint: dispatch-process-v1
 alternatives:
-- docker run or docker create followed by docker start are both accepted.
-- Any host-side shell syntax that meets the observed process, identity, and endpoint contract is accepted.
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
 failure_modes:
-- A one-shot command exits immediately.
-- Publishing the wrong container port makes the process unreachable.
-- Omitting the loopback address exposes the service more widely than intended.
+- A running container with the wrong application or endpoint does not satisfy the contract.

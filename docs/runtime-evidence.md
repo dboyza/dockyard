@@ -54,3 +54,14 @@ The installed-wheel Chrome journey verifies one-time sign-in, keyboard tabs, hin
 A stopped-lab state regression and Docker's lowercase missing-resource response were reproduced and corrected.
 The package was inspected to confirm compiled browser assets and authored lesson files are included.
 These checks establish the first integrated journey only; they do not establish completion of the remaining curriculum or release gates.
+
+## Docker foundations and image artifacts
+
+All eight authored activities in Modules 1-2 passed the real-runtime starter/reference audit.
+Each starter failed before the reference was applied, and each completed reference passed the relevant process, HTTP, identity, file-boundary, or non-root checks.
+The image-cache exercise confirmed that the rebuilt and replaced application serves the new release.
+The log/signal exercise grades a retained, gracefully stopped container, distinct from pausing a lab through Dockyard.
+A multi-resource integration test confirmed stop/resume/cleanup across two containers, a network, and a volume while preserving an unlabeled fixture container by its recorded ID.
+A separate process-death test confirmed OS operation locks are released after termination and interrupted operation records can be recovered.
+The compatibility manifest now records digest-pinned Python, PostgreSQL, Redis, registry, BusyBox, and kind images.
+These are development evidence for the currently authored units, not completion claims for Docker Modules 3-6 or later phases.

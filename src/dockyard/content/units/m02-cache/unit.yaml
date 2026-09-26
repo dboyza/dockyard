@@ -1,0 +1,186 @@
+id: m02-cache
+revision: 1
+module: 2
+order: 2
+title: Rebuild what actually changed
+summary: Trace source changes through the build cache into a newly created running container.
+kind: lesson
+runtime: docker
+minutes: 35
+outcomes:
+- Explain why changing host source does not update an existing image or container.
+- Order Dockerfile steps according to their inputs and change frequency.
+- Distinguish rebuilding an image from replacing a running container.
+prerequisites:
+- m02-dockerfile
+objectives:
+- docker.cache
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You rebuild a tag and then docker restart the old container. Which image does that container use?
+  options:
+  - The image recorded when the container was created.
+  - Whatever image the tag points to now.
+  - A merge of both images.
+  correct: 0
+  explanation: Restart reuses container configuration. Recreate the container to select a new image.
+hints:
+- Request /healthz after editing VERSION and observe which artifact the request is actually reaching.
+- Rebuild the tag, then compare docker image inspect .Id with docker inspect .Image.
+- After rebuilding, remove only the assigned container and create a new one from DOCKYARD_IMAGE with its label and
+  published port.
+sources:
+- https://docs.docker.com/build/cache/invalidation/
+- https://docs.docker.com/build/cache/optimize/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8080
+  - '{{image}}'
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: self-contained
+  title: The application runs without workspace mounts
+  explanation: The application runs without workspace mounts
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: '[]'
+  json_path:
+  - '0'
+  - Mounts
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: release
+  title: The image serves the expected application release
+  explanation: The image serves the expected application release
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  expected: dispatch-2
+  json_path:
+  - release
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-image-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.

@@ -1,0 +1,196 @@
+id: m02-mission
+revision: 1
+module: 2
+order: 4
+title: 'Mission: a portable Dispatch release'
+summary: Deliver a self-contained image with the required release and a non-root runtime.
+kind: mission
+runtime: docker
+minutes: 50
+outcomes:
+- Combine a controlled build context, runtime artifact boundary, and explicit process command.
+- Ship a new application release without a development bind mount.
+- Verify process identity, release response, and local-only exposure.
+prerequisites:
+- m02-multistage
+objectives:
+- docker.mission
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The image builds successfully but its non-root process cannot read VERSION. Which evidence proves the
+    release works?
+  options:
+  - A live response from the actual non-root container.
+  - Only the final build exit code.
+  - The existence of a USER instruction in any stage.
+  correct: 0
+  explanation: Build success and source instructions do not establish behavior in the final running container.
+hints:
+- "Use the previous lab\u2019s artifact boundary but select the release required by this brief."
+- VERSION must be part of the built image and readable by the final user.
+- Build the image, run it without -v, and check both its health response and UID with docker exec.
+sources:
+- https://docs.docker.com/reference/dockerfile/
+- https://docs.docker.com/build/building/context/
+starter: {}
+reference: {}
+prepare: []
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: The container must still be running when its application is checked.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
+    exits.
+- id: lab-identity
+  title: The container belongs to this lab
+  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
+    unrelated container.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running process alone is insufficient; the application must respond through the published port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
+    listens on 8080.
+- id: published-port
+  title: The assigned endpoint belongs to this container
+  explanation: The responding host port must actually be published by the assessed container.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - NetworkSettings
+  - Ports
+  - 8080/tcp
+  - '0'
+  - HostPort
+  expected: '{{port}}'
+  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+- id: loopback-binding
+  title: Only the local Mac can reach the published port
+  explanation: Only the local Mac can reach the published port
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: 127.0.0.1
+  json_path:
+  - '0'
+  - HostConfig
+  - PortBindings
+  - 8080/tcp
+  - '0'
+  - HostIp
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: self-contained
+  title: The application runs without workspace mounts
+  explanation: The application runs without workspace mounts
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  expected: '[]'
+  json_path:
+  - '0'
+  - Mounts
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: release
+  title: The image serves the expected application release
+  explanation: The image serves the expected application release
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  expected: dispatch-release
+  json_path:
+  - release
+  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+- id: non-root-process
+  title: The application actually runs without root identity
+  explanation: The application actually runs without root identity
+  command:
+    args:
+    - docker
+    - exec
+    - '{{container}}'
+    - python
+    - -c
+    - import os; print(os.getuid() != 0)
+  expectation: equals
+  expected: 'True'
+  json_path: []
+  diagnostic: Set a non-root USER in the final image stage and recreate the container.
+- id: no-build-tree
+  title: The final image excludes the verification source directory
+  explanation: The final image excludes the verification source directory
+  command:
+    args:
+    - docker
+    - exec
+    - '{{container}}'
+    - python
+    - -c
+    - from pathlib import Path; print(not Path("/source").exists())
+  expectation: equals
+  expected: 'True'
+  json_path: []
+  diagnostic: Copy only runtime files into a separate final stage.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-image-v1
+alternatives:
+- Equivalent Docker commands are accepted when the resulting behavior meets every criterion.
+failure_modes:
+- A running container with the wrong application or endpoint does not satisfy the contract.

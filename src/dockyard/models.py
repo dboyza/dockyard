@@ -62,6 +62,7 @@ class Criterion(Contract):
     command: Command
     expectation: Literal["contains", "equals", "matches", "json", "absent"] = "contains"
     expected: str
+    output: Literal["stdout", "stderr", "combined"] = "stdout"
     json_path: list[str | int] = Field(default_factory=list)
     diagnostic: str
     points: int = Field(default=1, ge=1)
@@ -91,7 +92,10 @@ class Unit(Contract):
     prepare: list[Command] = Field(default_factory=list)
     checks: list[Criterion] = Field(min_length=1)
     capabilities: list[str] = Field(default_factory=list)
-    checkpoint: str | None = None
+    checkpoint: Identifier | None = None
+    images: list[str] = Field(default_factory=lambda: ["python"])
+    alternatives: list[str] = Field(default_factory=list)
+    failure_modes: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def unique_checks(self) -> Unit:

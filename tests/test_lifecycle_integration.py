@@ -52,3 +52,74 @@ def test_stop_check_resume_and_reset_preserve_learner_work(tmp_path):
         assert len(service.store.attempts(unit)) >= 4
     finally:
         service.perform(unit, "clean")
+
+
+def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tmp_path):
+    service = Service(tmp_path)
+    unit = "m01-processes"
+    service.perform(unit, "prepare")
+    lab = service.store.lab(unit)
+    assert lab is not None
+    runtime = service.docker(lab)
+    env = service.environment(lab)
+    name = env["DOCKYARD_CONTAINER"]
+    network = env["DOCKYARD_NETWORK"]
+    volume = env["DOCKYARD_VOLUME"]
+    outsider = name + "-unlabeled"
+    label = f"io.dockyard.lab={lab.id}"
+    outsider_id = None
+    try:
+        for args in (
+            ["network", "create", "--label", label, network],
+            ["volume", "create", "--label", label, volume],
+            [
+                "run",
+                "-d",
+                "--name",
+                name,
+                "--label",
+                label,
+                "--network",
+                network,
+                "-v",
+                f"{volume}:/data",
+                env["DOCKYARD_PYTHON_IMAGE"],
+                "sleep",
+                "300",
+            ],
+            [
+                "run",
+                "-d",
+                "--name",
+                name + "-worker",
+                "--label",
+                label,
+                env["DOCKYARD_PYTHON_IMAGE"],
+                "sleep",
+                "300",
+            ],
+        ):
+            result = runtime.command(args)
+            assert result.ok, result.stderr
+        outsider_result = runtime.command(
+            ["create", "--name", outsider, env["DOCKYARD_PYTHON_IMAGE"], "sleep", "300"]
+        )
+        assert outsider_result.ok, outsider_result.stderr
+        outsider_id = outsider_result.stdout.strip()
+        inventory = runtime.discover()
+        assert len(inventory) == 4
+        service.perform(unit, "stop")
+        assert not runtime.inspect("container", name)["State"]["Running"]
+        assert not runtime.inspect("container", name + "-worker")["State"]["Running"]
+        service.perform(unit, "resume")
+        assert runtime.inspect("container", name + "-worker")["State"]["Running"]
+        service.perform(unit, "clean")
+        assert runtime.inspect("container", name) is None
+        assert runtime.inspect("network", network) is None
+        assert runtime.inspect("volume", volume) is None
+        assert runtime.inspect("container", outsider_id)["Id"] == outsider_id
+    finally:
+        service.perform(unit, "clean")
+        if outsider_id:
+            # This fixture created and recorded this ID itself; no broad cleanup.
+            runtime.require(runtime.command(["container", "rm", "--force", outsider_id]))

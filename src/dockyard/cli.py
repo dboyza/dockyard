@@ -11,6 +11,7 @@ import threading
 import webbrowser
 from pathlib import Path
 
+from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.service import LabError, Service
 
 
@@ -108,6 +109,6 @@ def main() -> None:
                 print(json.dumps(result, indent=2))
                 if arguments.action == "check" and result.get("status") != "pass":
                     raise SystemExit(1)
-    except (LabError, ValueError, FileNotFoundError) as error:
+    except (RuntimeErrorBase, ValueError, FileNotFoundError) as error:
         print(f"Dockyard: {error}", file=sys.stderr)
         raise SystemExit(2) from error

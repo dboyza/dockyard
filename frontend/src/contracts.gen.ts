@@ -31,6 +31,7 @@ export type Criterion = {
   "command": Command;
   "expectation"?: "contains" | "equals" | "matches" | "json" | "absent";
   "expected": string;
+  "output"?: "stdout" | "stderr" | "combined";
   "json_path"?: Array<string | number>;
   "diagnostic": string;
   "points"?: number;
@@ -93,6 +94,9 @@ export type Unit = {
   "checks": Array<Criterion>;
   "capabilities"?: Array<string>;
   "checkpoint"?: string | null;
+  "images"?: Array<string>;
+  "alternatives"?: Array<string>;
+  "failure_modes"?: Array<string>;
 };
 
 export type UnitKind = "lesson" | "mission" | "incident";

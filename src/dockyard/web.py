@@ -15,7 +15,8 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
-from dockyard.service import LabError, Service
+from dockyard.runtimes.docker import RuntimeErrorBase
+from dockyard.service import Service
 from dockyard.store import BusyError
 
 
@@ -85,7 +86,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
             response.headers["Cache-Control"] = "no-store"
         return response
 
-    @app.exception_handler(LabError)
+    @app.exception_handler(RuntimeErrorBase)
     @app.exception_handler(ValueError)
     async def lab_error(request: Request, error: Exception) -> JSONResponse:
         return JSONResponse({"detail": str(error)}, status_code=400)

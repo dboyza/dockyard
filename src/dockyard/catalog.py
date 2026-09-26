@@ -26,10 +26,23 @@ class Catalog:
                 raw[field] = path.parent.joinpath(*relative.parts).read_text()
             for field in ("starter", "reference"):
                 folder = path.parent / field
+                inherited: dict[str, str] = {}
+                if field == "starter" and raw.get("checkpoint"):
+                    checkpoint = root / "checkpoints" / str(safe_relative(raw["checkpoint"]))
+                    if not checkpoint.is_dir():
+                        raise ValueError(f"Unknown checkpoint: {raw['checkpoint']}")
+                    inherited = {
+                        file.relative_to(checkpoint).as_posix(): file.read_text()
+                        for file in sorted(checkpoint.rglob("*"))
+                        if file.is_file()
+                    }
                 raw[field] = {
-                    file.relative_to(folder).as_posix(): file.read_text()
-                    for file in sorted(folder.rglob("*"))
-                    if file.is_file()
+                    **inherited,
+                    **{
+                        file.relative_to(folder).as_posix(): file.read_text()
+                        for file in sorted(folder.rglob("*"))
+                        if file.is_file()
+                    },
                 }
             unit = Unit.model_validate(raw)
             if unit.id in self.units:
