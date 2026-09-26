@@ -72,6 +72,8 @@ class Service:
         env = dict(os.environ)
         env.pop("DOCKER_CONTEXT", None)
         env.pop("WEZTERM_UNIX_SOCKET", None)
+        env.pop("KIND_EXPERIMENTAL_DOCKER_NETWORK", None)
+        env["KIND_EXPERIMENTAL_PROVIDER"] = "docker"
         env["PATH"] = (
             f"{self.tools / 'bin'}:{Path(sys.executable).parent}:{env.get('PATH', '/usr/bin:/bin')}"
         )
@@ -101,7 +103,11 @@ class Service:
                 DOCKYARD_REGISTRY_PORT=lab.resources.get("registry_port", ""),
                 DOCKYARD_CLUSTER=f"dockyard-{lab.id[:12]}",
                 DOCKYARD_NAMESPACE="dispatch",
+                DOCKYARD_TLS_PORT=lab.resources.get("registry_port", ""),
+                DOCKYARD_TLS_CERT=str(Path(lab.workspace).parent / "data/tls.crt"),
             )
+            if lab.resources.get("kind_network"):
+                env["KIND_EXPERIMENTAL_DOCKER_NETWORK"] = lab.resources["kind_network"]
         return env
 
     def doctor(self) -> dict[str, Any]:
@@ -178,7 +184,7 @@ class Service:
             return self._perform(unit_id, action)
 
     def _perform(self, unit_id: str, action: str) -> dict[str, Any]:
-        if action not in {"prepare", "check", "reset", "stop", "resume", "clean"}:
+        if action not in {"prepare", "check", "reset", "retake", "stop", "resume", "clean"}:
             raise ValueError("Unknown lab operation.")
         self.catalog.get(unit_id)
         lab = self._allocate_lab(unit_id)
@@ -193,7 +199,7 @@ class Service:
                 result = self.public_lab(lab)
             elif action == "check":
                 result = self._check(lab, cancel).model_dump(mode="json")
-            elif action == "reset":
+            elif action in {"reset", "retake"}:
                 self._cleanup(lab, cancel)
                 backup = reset(
                     Path(lab.workspace),
@@ -203,6 +209,8 @@ class Service:
                 lab.resources.pop("container_id", None)
                 lab.resources.pop("prepared_revision", None)
                 self._prepare(lab, cancel)
+                if action == "retake":
+                    self.store.start_attempt(unit_id, self.catalog.get(unit_id).revision)
                 result = {"backup": str(backup), "lab": self.public_lab(lab)}
             elif action == "clean":
                 self._cleanup(lab, cancel)
@@ -293,7 +301,7 @@ class Service:
                             self.runtime(other).change("stop", cancel)
                             other.state = "stopped"
                             self._save(other)
-                runtime.prepare(unit.nodes, unit.images, cancel)
+                runtime.prepare(unit.nodes, unit.images, cancel, unit.capabilities)
         commands = (
             [] if lab.resources.get("prepared_revision") == str(unit.revision) else unit.prepare
         )
@@ -431,6 +439,7 @@ class Service:
             and not (progress.get("hints") or progress.get("reference")),
             hints_used=int(progress.get("hints", 0)),
             reference_revealed=bool(progress.get("reference", False)),
+            attempt=self.store.setting(f"attempt-number:{unit.id}", 1),
         )
         saved_checkpoint = None
         if assessment.status == CheckStatus.PASS and unit.kind == "mission":

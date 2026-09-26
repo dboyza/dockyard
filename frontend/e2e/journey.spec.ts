@@ -13,6 +13,8 @@ let profile: string;
 test.beforeAll(async () => {
   mkdirSync(path.join(root, '.runtime/e2e'), { recursive: true });
   profile = mkdtempSync(path.join(root, '.runtime/e2e/profile-'));
+  execFileSync(path.join(root, '.runtime/installed/bin/python'), ['-c',
+    "import sys,sqlite3; from pathlib import Path; from dockyard.service import Service; s=Service(Path(sys.argv[1])); s.store.mark('m08-mission','viewed',1); c=sqlite3.connect(Path(sys.argv[1])/'progress.sqlite3'); c.execute(\"UPDATE progress SET practiced=1,demonstrated=1 WHERE unit_id='m08-mission'\"); c.commit(); c.close()", profile]);
   server = spawn(binary, ['--data-dir', profile, 'launch', '--port', '0', '--no-open'], { cwd: root });
   url = await new Promise<string>((resolve, reject) => {
     let output = '';
@@ -30,6 +32,7 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   if (process.env.DOCKYARD_INTEGRATION === '1') {
     execFileSync(binary, ['--data-dir', profile, 'lab', 'clean', 'm01-processes', '--yes']);
+    execFileSync(binary, ['--data-dir', profile, 'lab', 'clean', 'm01-mission', '--yes']);
   }
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
 });
@@ -81,6 +84,19 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await page.getByRole('button', { name: 'Reset', exact: true }).click();
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(page.getByText('Reset completed.', { exact: true })).toBeVisible();
+    await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-mission');
+    await page.getByRole('button', { name: /Mission: restore the first Dispatch service/ }).click();
+    await page.getByRole('button', { name: 'Prepare lab' }).click();
+    await expect(page.getByRole('button', { name: 'Open in WezTerm' })).toBeEnabled();
+    await page.getByRole('tab', { name: 'Your task' }).click();
+    await page.getByRole('button', { name: 'Reveal hint 1' }).click();
+    await expect(page.getByText('HINT 1', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Independent retake', exact: true }).click();
+    await expect(page.getByRole('dialog')).toContainText('Previous evidence and notes remain');
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(page.getByText('Retake completed.', { exact: true })).toBeVisible();
+    await expect(page.getByText('HINT 1', { exact: true })).not.toBeVisible();
+    await expect(page.getByRole('button', { name: 'Reveal hint 1' })).toBeVisible();
   }
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('reconciliation');
   await page.getByRole('button', { name: /Let a controller maintain the application/ }).click();
@@ -93,6 +109,27 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await page.setViewportSize({ width: 480, height: 1000 });
   await model.scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('textbox', { name: 'Search lessons' }).fill('m11-claims');
+  await page.getByRole('button', { name: /Connect claims to durable database storage/ }).click();
+  const storage = page.getByRole('region', { name: 'Explore storage lifetimes' });
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await storage.getByRole('button', { name: 'Remove workload' }).click();
+  await storage.getByRole('button', { name: 'Start replacement Pod' }).click();
+  await expect(storage.getByText('Pod 2', { exact: true })).toBeVisible();
+  await expect(storage.getByText('2 stored records', { exact: true })).toBeVisible();
+  await storage.getByRole('button', { name: 'Remove workload' }).click();
+  await storage.getByRole('combobox', { name: 'PV reclaim policy' }).selectOption('Retain');
+  await storage.getByRole('button', { name: 'Delete claim' }).click();
+  await expect(storage.getByText('Released volume', { exact: true })).toBeVisible();
+  await expect(storage.getByRole('button', { name: 'Start replacement Pod' })).toBeDisabled();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 480, height: 1000 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('textbox', { name: 'Search lessons' }).fill('m08-mission');
+  await page.getByRole('button', { name: /Mission: process work and prove maintenance/ }).click();
+  await expect(page.locator('.metadata')).toContainText('Review needed');
   expect(failures).toEqual([]);
   // Keep the browser and its SSE connection open while verifying foreground shutdown.
   const stopped = once(server, 'exit');

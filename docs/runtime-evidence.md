@@ -121,3 +121,41 @@ CLI assessments now use concise human-readable evidence by default, with `--json
 
 Current local checks: 20 Python tests passed with real-runtime tests explicitly skipped, strict mypy and Ruff passed, frontend build/lint/Vitest passed, and the installed Chrome journey passed in 3.5 seconds.
 The installed browser journey includes concept search, deletion/reconciliation behavior, a 480-pixel overflow check, and shutdown while the event stream remains open.
+
+## Configuration, routing, storage, and releases, 2026-09-26
+
+Module 9 adds ConfigMap and Secret delivery, a workload-token RBAC check, and an isolated preview environment.
+Its four starter/reference audits passed in 263.81 seconds.
+A strengthened combined audit of Modules 7-9 passed all 12 tests in 755.77 seconds, requiring explicitly declared starter failures to report false rather than accepting unrelated command errors.
+The runtime fingerprint now includes learner resources outside the default namespace and routing/storage resources when available.
+The lifecycle audit accepted a named Service target port and an additional matching selector, detected a ConfigMap change in preview, rejected an altered kubeconfig authentication boundary, and passed stop/resume and owned-network cleanup in 92.81 seconds.
+
+Each new kind cluster has its own labeled Docker bridge.
+The routing profile supplies pinned MetalLB, Traefik, and Gateway API components.
+A real external Docker-network client reached an assigned LoadBalancer IP, strict certificate-validated curl reached the TLS ingress, and a Host-header request traversed Gateway API.
+The initial TLS proof exposed a missing node-read permission in the ingress provider; the corrected controller passed without bypassing certificate verification.
+All four Module 10 audits passed with live Service, EndpointSlice, NodePort, LoadBalancer, TLS, and Gateway observations.
+The initial curriculum audit also caught the full-stack checkpoint omitting Pod identity from its health response; that response now identifies the actual serving Pod.
+
+Module 11 verifies claim-to-volume binding, StatefulSet identity and retention, preservation of a unique database marker across a changed Pod UID, and logical restore onto a distinct claim and backing volume.
+Its backup lesson passed, the claims lesson passed in 54.33 seconds, and the StatefulSet/mission pair passed in 113.29 seconds.
+A transient first-query failure prompted a focused PostgreSQL reproduction: the image's temporary initialization server accepted a socket readiness probe while the TCP listener remained unavailable.
+The supplied Kubernetes database probes now require TCP readiness, and previously committed Module 8 content revisions advanced accordingly.
+The focused observation is recorded in `.artifacts/postgres-readiness-race.json`.
+A broader affected-curriculum regression is still running at this development checkpoint.
+
+All four Module 12 audits passed in 345.31 seconds.
+They verify distinct startup/readiness/liveness behavior, an actual clean SIGTERM exit, failed ReplicaSet history and restored image, rolling availability settings, and separate stable/candidate responses through shared and preview Services.
+These are local mechanism checks, not a claim of production availability under arbitrary traffic or failure conditions.
+
+Independent retakes preserve prior evidence, notes, and source backups while starting a new assistance record.
+A guided mission followed by an independent retake passed the real Docker audit in 2.83 seconds.
+The installed browser journey passed in 10.4 seconds with real Docker lifecycle operations, retakes, storage-model interactions, narrow layout, and revision-aware progress.
+The browser reproduction showed an older revision incorrectly labeled Demonstrated; current counts and labels now distinguish it as Review needed while preserving its historical assessment.
+The storage model was directly inspected at `.artifacts/storage-model.png`.
+The content currently contains 48 course units; platform engineering, VM curriculum, incidents, mocks, and remaining release gates are still implementation work.
+
+The shared Docker regression passed all 27 selected tests in 131.86 seconds after these runtime changes.
+The final installed browser rerun for this checkpoint passed in 10.6 seconds, including a single page-level heading and the revised source labels.
+Python checks passed with 20 tests and 52 opt-in runtime cases skipped; Ruff, strict mypy, frontend lint, build, and Vitest passed.
+The separate 20-unit Kubernetes regression remains in progress and will be recorded when complete.

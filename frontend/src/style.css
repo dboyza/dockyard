@@ -788,7 +788,7 @@ pre {
   border-radius: 7px;
   margin-bottom: 35px;
 }
-.outcomes h3 {
+.outcomes h2 {
   font-size: 13px;
   margin-bottom: 12px;
 }
@@ -812,15 +812,15 @@ pre {
   font-size: 14px;
   line-height: 1.9;
 }
-.prose h1 {
+.prose h2 {
   font-size: 28px;
   margin-bottom: 22px;
 }
-.prose h2 {
+.prose h3 {
   font-size: 21px;
   margin: 34px 0 18px;
 }
-.prose h3 {
+.prose h4 {
   font-size: 17px;
   margin: 27px 0 15px;
 }
@@ -1684,4 +1684,40 @@ pre {
 }
 .model-observation p {
   margin-bottom: 0;
+}
+
+.storage-policy {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+.storage-policy select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+.storage-chain {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.storage-chain .model-pod {
+  min-width: 0;
+}
+.storage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+@media (max-width: 600px) {
+  .storage-chain {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

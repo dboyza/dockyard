@@ -1,32 +1,16 @@
+import { UnitRow } from "./UnitRow";
 import type { Workbench } from "./useWorkbench";
-import { Check, ChevronDown, ChevronRight, Circle } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { UnitSummary } from "./api";
 export function CoursePage({ model }: { model: Workbench }) {
   const { catalog, lesson, search, units, filtered, state, openLesson } = model;
   const unitRow = (unit: UnitSummary) => (
-    <button
-      className="unitrow"
+    <UnitRow
       key={unit.id}
-      onClick={() => void openLesson(unit.id)}
-    >
-      <span
-        className={`unitstatus ${state.progress[unit.id]?.practiced ? "done" : ""}`}
-      >
-        {state.progress[unit.id]?.practiced ? (
-          <Check size={17} />
-        ) : (
-          <Circle size={15} />
-        )}
-      </span>
-      <span>
-        <strong>{unit.title}</strong>
-        <span className="muted small">{unit.summary}</span>
-      </span>
-      <span className="unitmeta">
-        <span>{unit.minutes} min</span>
-        <ChevronRight size={17} />
-      </span>
-    </button>
+      unit={unit}
+      progress={state.progress[unit.id]}
+      onOpen={openLesson}
+    />
   );
   return (
     <>

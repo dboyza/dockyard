@@ -1,0 +1,191 @@
+id: m10-mission
+revision: 1
+module: 10
+order: 4
+title: Publish Dispatch through verified local routes
+summary: Repair internal traffic, a LoadBalancer, TLS ingress, and a Gateway route.
+kind: mission
+runtime: kubernetes
+minutes: 55
+outcomes:
+- Diagnose failures across independent exposure paths.
+- Validate certificate identity and current route conditions.
+- Document client, proxy, Service, and endpoint evidence.
+prerequisites:
+- m10-gateway
+objectives:
+- kubernetes.services
+- kubernetes.routing
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The internal Service works after repair. What does this establish about TLS ingress and the
+    Gateway route?
+  options:
+  - They still require separate route and traffic verification.
+  - Both must work because they share a backend.
+  - Their status conditions are no longer relevant.
+  correct: 0
+  explanation: Shared backend health does not establish independent frontend routing or TLS identity.
+hints:
+- Repair the internal Service first, then test each exposure path independently.
+- Compare selectors, ports, TLS Secret names, parentRefs, and current conditions with the live resources.
+- The working contract uses app=dispatch, port 8080, Secret dispatch-tls, and parent dispatch-gateway
+  with the two explicit hostnames.
+sources:
+- https://kubernetes.io/docs/concepts/services-networking/service/
+- https://kubernetes.io/docs/concepts/services-networking/ingress/
+- https://gateway-api.sigs.k8s.io/concepts/api-overview/
+- https://doc.traefik.io/traefik/reference/install-configuration/providers/kubernetes/kubernetes-gateway/
+- https://metallb.io/concepts/layer2/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 120
+- args:
+  - kubectl
+  - rollout
+  - status
+  - deployment/dispatch
+  - --timeout=120s
+  timeout: 130
+checks:
+- id: routing-service
+  title: ClusterIP DNS and real application traffic work
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - service
+  expected: 'true'
+  diagnostic: Compare Service selectors, EndpointSlices, target ports, and the application listener.
+- id: routing-endpoints
+  title: EndpointSlices identify the owned ready API Pods
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - endpoints
+  expected: 'true'
+  diagnostic: Inspect the specific request path from the client through the Service to the application.
+- id: routing-loadbalancer
+  title: An external client reaches the real LoadBalancer IP
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - loadbalancer
+  expected: 'true'
+  diagnostic: Inspect dispatch-public and its external IP, then send traffic from the supplied private-network
+    client.
+- id: routing-tls
+  title: Ingress serves Dispatch over certificate-validated TLS
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - tls
+  expected: 'true'
+  diagnostic: Inspect ingress class, backend port, host, and TLS Secret. Verify with the supplied certificate;
+    do not use --insecure.
+- id: routing-gateway
+  title: The accepted HTTPRoute carries real host-routed traffic
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - gateway
+  expected: 'true'
+  diagnostic: Inspect Gateway and HTTPRoute status conditions, parentRefs, hostnames, and backend references.
+- id: routing-host-boundary
+  title: An unmatched hostname does not reach the application
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - host_boundary
+  expected: 'true'
+  diagnostic: Inspect the specific request path from the client through the Service to the application.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- loadbalancer
+- routing
+checkpoint: dispatch-routing-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- metallb_controller
+- metallb_speaker
+- traefik
+alternatives:
+- Equivalent selectors, named target ports, and manifests are accepted when the required live endpoint
+  and route behavior is demonstrated.
+failure_modes:
+- An assigned external IP or accepted manifest does not prove application traffic works.
+- Bypassing certificate verification does not demonstrate correct TLS identity.
+starter_failure_checks:
+- routing-loadbalancer
+- routing-tls
+- routing-gateway

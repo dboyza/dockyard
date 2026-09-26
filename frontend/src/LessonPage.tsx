@@ -1,7 +1,9 @@
 import type { Workbench } from "./useWorkbench";
 import { api } from "./api";
-import { Markdown } from "./teaching";
+import { Markdown, referenceTitle } from "./teaching";
 import { ReconciliationModel } from "./ReconciliationModel";
+import { StorageModel } from "./StorageModel";
+import { learningStatus, reviewNeeded } from "./learning";
 import {
   ArrowLeft,
   ArrowRight,
@@ -72,14 +74,17 @@ export function LessonPage({ model }: { model: Workbench }) {
           </span>
           <span>
             <Circle size={12} />
-            {state.progress[lesson.id]?.demonstrated
-              ? "Demonstrated"
-              : state.progress[lesson.id]?.practiced
-                ? "Practiced"
-                : "In progress"}
+            {learningStatus(lesson.revision, state.progress[lesson.id])}
           </span>
         </div>
       </div>
+      {reviewNeeded(lesson.revision, state.progress[lesson.id]) && (
+        <p className="notice" role="status">
+          This lesson has changed since your last passing assessment. Your
+          earlier evidence is preserved. Check the current revision to update
+          your skills record.
+        </p>
+      )}
       <div className="lesson-layout">
         <section className="lesson-content">
           <div className="tabs" role="tablist" aria-label="Lesson sections">
@@ -133,7 +138,7 @@ export function LessonPage({ model }: { model: Workbench }) {
             {tab === "learn" && (
               <>
                 <div className="outcomes">
-                  <h3>By the end of this lab</h3>
+                  <h2>By the end of this lab</h2>
                   <ul>
                     {lesson.outcomes.map((outcome) => (
                       <li key={outcome}>
@@ -145,6 +150,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                 </div>
                 <Markdown>{lesson.concept}</Markdown>
                 {lesson.module === 7 && <ReconciliationModel key={lesson.id} />}
+                {lesson.module === 11 && <StorageModel key={lesson.id} />}
                 <section className="prediction">
                   <div className="eyebrow">PAUSE AND PREDICT</div>
                   <h3>{lesson.prediction.question}</h3>
@@ -257,13 +263,15 @@ export function LessonPage({ model }: { model: Workbench }) {
                       <ShieldCheck size={25} />
                       <div>
                         <h2>
-                          {assessment.status === "pass"
-                            ? "The required behavior is working."
-                            : assessment.status === "blocked"
-                              ? "The environment needs attention."
-                              : assessment.status === "stale"
-                                ? "Your work changed during the check."
-                                : "Here is what the lab observed."}
+                          {assessment.revision !== lesson.revision
+                            ? "Evidence from an earlier lesson revision."
+                            : assessment.status === "pass"
+                              ? "The required behavior is working."
+                              : assessment.status === "blocked"
+                                ? "The environment needs attention."
+                                : assessment.status === "stale"
+                                  ? "Your work changed during the check."
+                                  : "Here is what the lab observed."}
                         </h2>
                         <p>
                           {assessment.independent
@@ -272,7 +280,9 @@ export function LessonPage({ model }: { model: Workbench }) {
                           ·{" "}
                           {new Date(
                             assessment.finished_at,
-                          ).toLocaleTimeString()}
+                          ).toLocaleTimeString()}{" "}
+                          · Revision {assessment.revision} · Attempt{" "}
+                          {assessment.attempt}
                         </p>
                       </div>
                     </div>
@@ -432,6 +442,15 @@ export function LessonPage({ model }: { model: Workbench }) {
                     Reset
                   </button>
                 </div>
+                {lesson.kind !== "lesson" && (
+                  <button
+                    className="full"
+                    disabled={!!busy}
+                    onClick={() => void perform("retake")}
+                  >
+                    <RefreshCw size={14} /> Independent retake
+                  </button>
+                )}
                 <details className="workspace-location">
                   <summary>Workspace location</summary>
                   <p className="mono">{lab.workspace}</p>
@@ -484,9 +503,9 @@ export function LessonPage({ model }: { model: Workbench }) {
           </section>
           <section className="source-card">
             <h3>Go deeper</h3>
-            {lesson.sources.map((source, index) => (
+            {lesson.sources.map((source) => (
               <a href={source} key={source} target="_blank" rel="noreferrer">
-                Official reference {index + 1}
+                {referenceTitle(source)}
                 <ExternalLink size={13} />
               </a>
             ))}

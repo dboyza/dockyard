@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Assessment } from "./contracts.gen";
+import { currentPractice } from "./learning";
 import {
   api,
   connect,
@@ -147,13 +148,20 @@ export function useWorkbench() {
     unitId = lesson?.id,
   ) => {
     if (!unitId) return;
-    if (["reset", "clean"].includes(action) && !confirmed) {
+    if (["reset", "retake", "clean"].includes(action) && !confirmed) {
       setDialog({
-        title: action === "reset" ? "Reset this lab?" : "Clean up this lab?",
+        title:
+          action === "retake"
+            ? "Start an independent retake?"
+            : action === "reset"
+              ? "Reset this lab?"
+              : "Clean up this lab?",
         body:
-          action === "reset"
-            ? "Your entire workspace will be backed up before the starter is restored. Only this lab’s owned resources are removed. Reopen its terminal afterward."
-            : "This removes only the resources verified as belonging to this lab. Your source files and progress remain available.",
+          action === "retake"
+            ? "Your workspace will be backed up and restored to the starter. Hints and references start closed for the new attempt. Previous evidence and notes remain. Reopen the terminal afterward."
+            : action === "reset"
+              ? "Your entire workspace will be backed up before the starter is restored. Only this lab’s owned resources are removed. Reopen its terminal afterward."
+              : "This removes only the resources verified as belonging to this lab. Your source files and progress remain available.",
         action: () => {
           setDialog(null);
           void perform(action, true, unitId);
@@ -177,7 +185,13 @@ export function useWorkbench() {
       if (action === "check") {
         setAssessment(result);
         setTab("evidence");
-      } else
+      } else {
+        if (action === "retake") {
+          setHints([]);
+          setReference(null);
+          setAssessment(null);
+          setTab("mission");
+        }
         setNotice(
           action === "terminal"
             ? "A dedicated WezTerm lab session is opening."
@@ -185,6 +199,7 @@ export function useWorkbench() {
               ? "Your workspace is ready. Open the terminal to begin."
               : `${action.charAt(0).toUpperCase() + action.slice(1)} completed.`,
         );
+      }
       await refresh();
     } catch (reason) {
       if (sequence === opened.current) setError((reason as Error).message);
@@ -226,15 +241,19 @@ export function useWorkbench() {
     });
   };
   const units = catalog?.units || [];
-  const completed = units.filter(
-    (unit) => state.progress[unit.id]?.practiced,
+  const completed = units.filter((unit) =>
+    currentPractice(unit.revision, state.progress[unit.id]),
   ).length;
   const demonstrated = units.filter(
-    (unit) => state.progress[unit.id]?.demonstrated,
+    (unit) =>
+      currentPractice(unit.revision, state.progress[unit.id]) &&
+      state.progress[unit.id]?.demonstrated,
   ).length;
   const continueUnit =
     units.find((unit) => unit.id === state.last_unit) ||
-    units.find((unit) => !state.progress[unit.id]?.practiced) ||
+    units.find(
+      (unit) => !currentPractice(unit.revision, state.progress[unit.id]),
+    ) ||
     units[0];
   const filtered = units.filter((unit) =>
     `${unit.search_text || ""} ${unit.id} ${unit.title} ${unit.summary} ${unit.outcomes.join(" ")}`

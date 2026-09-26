@@ -1,0 +1,131 @@
+id: m11-statefulsets
+revision: 1
+module: 11
+order: 2
+title: Preserve stateful workload identity
+summary: Use a headless Service, claim templates, and explicit retention policies.
+kind: lesson
+runtime: kubernetes
+minutes: 40
+outcomes:
+- Explain stable StatefulSet Pod names and per-Pod claim identity.
+- Distinguish claim retention from PV reclaim behavior.
+- Verify database persistence through controller-driven Pod replacement.
+prerequisites:
+- m11-claims
+objectives:
+- kubernetes.storage
+- kubernetes.statefulsets
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: db-0 is replaced with a new Pod UID. Which identity should keep its data available?
+  options:
+  - Its retained per-ordinal claim and bound volume.
+  - The deleted Pod UID itself.
+  - An unrelated emptyDir in the replacement Pod.
+  correct: 0
+  explanation: The Pod is replaceable; the claim and persistent volume have independent lifetimes.
+hints:
+- Inspect replicas and both persistentVolumeClaimRetentionPolicy fields.
+- Set one replica and Retain for whenDeleted and whenScaled.
+- Wait for db-0, then run storage-proof.py and compare its new UID with the stored marker.
+sources:
+- https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+- https://kubernetes.io/docs/concepts/storage/storage-classes/
+- https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/
+- https://www.postgresql.org/docs/17/backup-dump.html
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 240
+checks:
+- id: storage-claim
+  title: The database uses a bound claim and its actual persistent volume
+  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - storage
+    timeout: 75
+  expectation: json
+  json_path:
+  - claim
+  expected: 'true'
+  diagnostic: Inspect the database Pod volume, PVC binding, and referenced PV.
+- id: storage-persistence
+  title: A replacement Pod reads the original database marker
+  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - storage
+    timeout: 75
+  expectation: json
+  json_path:
+  - persistence
+  expected: 'true'
+  diagnostic: Run the supplied storage proof after mounting persistent storage; compare old and new Pod
+    UIDs.
+- id: storage-identity
+  title: The StatefulSet retains stable Pod, Service, and claim identity
+  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - storage
+    timeout: 75
+  expectation: json
+  json_path:
+  - identity
+  expected: 'true'
+  diagnostic: Inspect StatefulSet replicas, headless Service, claim templates, and both retention policies.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-stateful-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent manifests and logical backup commands are accepted when the named workload preserves its
+  marker across Pod replacement and the recovery target uses a distinct bound claim.
+failure_modes:
+- A Bound claim that is not mounted by PostgreSQL does not protect database data.
+- A schema-only dump cannot restore application records.
+- Local node storage does not survive deletion of the entire practice cluster.
+starter_failure_checks:
+- storage-persistence
+- storage-identity

@@ -1,0 +1,131 @@
+id: m09-configmaps
+revision: 1
+module: 9
+order: 1
+title: Deliver configuration without rebuilding
+summary: Observe environment and file-based ConfigMap delivery.
+kind: lesson
+runtime: kubernetes
+minutes: 35
+outcomes:
+- Separate application artifacts from environment configuration.
+- Reference ConfigMap keys through environment variables and volumes.
+- Explain why existing process environments do not refresh after a ConfigMap edit.
+prerequisites:
+- m08-mission
+objectives:
+- kubernetes.configuration
+- kubernetes.identity
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You edit a ConfigMap key used as a container environment variable. Does an already-running
+    process receive the new value?
+  options:
+  - No; replace the container through its controller.
+  - Yes; environment variables update immediately.
+  - Only if the image uses a non-root user.
+  correct: 0
+  explanation: The environment is supplied at process startup; it is not a live view of the API object.
+hints:
+- Compare the ConfigMap with the Pod template rather than assuming matching names connect them.
+- Use configMapKeyRef for DISPATCH_ENV and a ConfigMap volume for banner.txt.
+- Remove the literal stale value, reference dispatch-settings/environment, and mount the ConfigMap at
+  /config.
+sources:
+- https://kubernetes.io/docs/concepts/configuration/configmap/
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://kubernetes.io/docs/concepts/security/service-accounts/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 90
+checks:
+- id: configuration-config
+  title: The process and mounted file consume the intended ConfigMap
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - config
+  expected: 'true'
+  diagnostic: Inspect the ConfigMap, Pod references, mounted file, and process environment. Restart the
+    Deployment after changing environment-based configuration.
+- id: configuration-secret
+  title: The application authenticates using its mounted Secret
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - secret
+  expected: 'true'
+  diagnostic: Inspect the Secret key and read-only volume reference without printing credentials; the
+    API must authenticate to its database using the mounted file.
+- id: configuration-processing
+  title: A fresh job completes through the configured stack
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: Inspect the actual resource state and application response, then reconcile the relevant
+    workload.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-config-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent resource definitions are accepted when actual delivery, application behavior, and allowed/denied
+  API requests satisfy the contract.
+failure_modes:
+- A ConfigMap or Secret existing in the API does not prove a running process consumes it.
+- Administrator permissions do not demonstrate workload authorization.
+starter_failure_checks:
+- configuration-config

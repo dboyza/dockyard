@@ -119,6 +119,41 @@ class Store:
             rows = connection.execute("SELECT * FROM progress").fetchall()
         return {row["unit_id"]: dict(row) for row in rows}
 
+    def start_attempt(self, unit_id: str, revision: int) -> int:
+        key = f"attempt-number:{unit_id}"
+        with self.connection() as connection:
+            row = connection.execute("SELECT value FROM settings WHERE key=?", (key,)).fetchone()
+            previous = int(json.loads(row[0])) if row else 1
+            progress = connection.execute(
+                "SELECT * FROM progress WHERE unit_id=?", (unit_id,)
+            ).fetchone()
+            connection.execute(
+                "INSERT INTO settings(key,value) VALUES(?,?)",
+                (
+                    f"attempt-history:{unit_id}:{previous}",
+                    json.dumps(
+                        {
+                            "finished_at": timestamp(),
+                            "progress": dict(progress) if progress else {},
+                        }
+                    ),
+                ),
+            )
+            connection.execute(
+                "INSERT OR IGNORE INTO progress(unit_id,revision,updated_at) VALUES(?,?,?)",
+                (unit_id, revision, timestamp()),
+            )
+            connection.execute(
+                "UPDATE progress SET hints=0,reference=0,updated_at=? WHERE unit_id=?",
+                (timestamp(), unit_id),
+            )
+            connection.execute(
+                "INSERT INTO settings(key,value) VALUES(?,?) "
+                "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                (key, json.dumps(previous + 1)),
+            )
+        return previous + 1
+
     def save_assessment(
         self, assessment: Assessment, checkpoint: dict[str, Any] | None = None
     ) -> None:

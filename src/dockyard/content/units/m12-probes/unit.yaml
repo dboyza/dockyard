@@ -1,0 +1,129 @@
+id: m12-probes
+revision: 1
+module: 12
+order: 1
+title: Separate startup, readiness, and liveness
+summary: Protect a warming application and observe graceful SIGTERM handling.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Assign distinct responsibilities to startup, readiness, and liveness probes.
+- Prevent dependency outages from triggering destructive restart loops.
+- Observe a real process exiting cleanly after SIGTERM.
+prerequisites:
+- m11-mission
+objectives:
+- kubernetes.releases
+- kubernetes.reliability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: PostgreSQL is temporarily unavailable while the API process still responds. Which probe should
+    normally remove it from traffic?
+  options:
+  - Readiness, without making that dependency failure a reason to restart the API.
+  - Liveness, because restarting every API repairs PostgreSQL.
+  - Startup forever, even after initialization completed.
+  correct: 0
+  explanation: Dependency readiness and process restart policy serve different purposes.
+hints:
+- Compare all three paths with what the supplied application actually reports.
+- Use a startup budget of at least thirty seconds, healthz for liveness, and readyz for readiness.
+- Wait for the rollout, then execute the isolated termination proof and inspect its completed Pod.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
+- https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: release-available
+  title: Two stable replicas serve the expected healthy release
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - available
+  expected: 'true'
+  diagnostic: Inspect rollout status, Pod events, image names, and the live /healthz response.
+- id: release-probes
+  title: Startup, liveness, and readiness have distinct working contracts
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - probes
+  expected: 'true'
+  diagnostic: Use /startupz for startup, /healthz for liveness, and /readyz for dependency-aware readiness.
+- id: release-termination
+  title: The supplied application handles SIGTERM and exits cleanly
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - termination
+  expected: 'true'
+  diagnostic: Run termination-proof.py and inspect the completed proof Pod and its termination log.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-release-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent manifests and rollout commands are accepted when actual stable/candidate responses, availability
+  settings, and the requested process behavior are verified.
+failure_modes:
+- Readiness is not liveness; restarting on a dependency outage can worsen the incident.
+- A Service selecting multiple tracks does not guarantee an exact request percentage.
+- A rollback of a Pod template does not undo database migrations.
+starter_failure_checks:
+- release-probes

@@ -35,12 +35,22 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("catalog", help="List the authored curriculum")
     lab = commands.add_parser("lab", help="Manage and check a dedicated practice lab")
     operations = lab.add_subparsers(dest="action", required=True)
-    for action in ("prepare", "shell", "check", "status", "reset", "stop", "resume", "clean"):
+    for action in (
+        "prepare",
+        "shell",
+        "check",
+        "status",
+        "reset",
+        "retake",
+        "stop",
+        "resume",
+        "clean",
+    ):
         operation = operations.add_parser(action)
         operation.add_argument("unit", nargs="?", default=os.environ.get("DOCKYARD_UNIT"))
         if action != "shell":
             operation.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
-        if action in {"reset", "clean"}:
+        if action in {"reset", "retake", "clean"}:
             operation.add_argument("--yes", action="store_true")
     return result
 
@@ -104,7 +114,7 @@ def main() -> None:
         elif arguments.command == "lab":
             if not arguments.unit:
                 raise LabError("Name a unit, or run this command inside its Dockyard lab shell.")
-            if arguments.action in {"reset", "clean"} and not arguments.yes:
+            if arguments.action in {"reset", "retake", "clean"} and not arguments.yes:
                 raise LabError(
                     "This changes the current lab. Review its scope, then repeat with --yes."
                 )

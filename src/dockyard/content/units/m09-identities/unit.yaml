@@ -1,0 +1,147 @@
+id: m09-identities
+revision: 1
+module: 9
+order: 3
+title: Give an application a specific API identity
+summary: Verify ServiceAccount authentication and namespace-scoped authorization.
+kind: lesson
+runtime: kubernetes
+minutes: 35
+outcomes:
+- Separate a ServiceAccount identity from permissions granted to it.
+- Use a Role and RoleBinding for a small namespaced permission set.
+- Verify allowed and denied requests with the actual projected token.
+prerequisites:
+- m09-secrets
+objectives:
+- kubernetes.configuration
+- kubernetes.identity
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Your administrator can list Pods, but the inventory Pod receives HTTP 403. What should you
+    inspect first?
+  options:
+  - The Pod's ServiceAccount and the binding for that identity.
+  - The administrator's successful command history.
+  - The image tag, because 403 always means an image pull failure.
+  correct: 0
+  explanation: The two requests authenticate as different identities; authorization must be checked for
+    the workload itself.
+hints:
+- Read serviceAccountName from the actual inventory Pod.
+- Compare that identity and namespace with the RoleBinding subjects.
+- Bind dispatch-reader in namespace dispatch to the existing dispatch-pod-reader Role.
+sources:
+- https://kubernetes.io/docs/concepts/configuration/configmap/
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://kubernetes.io/docs/concepts/security/service-accounts/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 90
+checks:
+- id: configuration-config
+  title: The process and mounted file consume the intended ConfigMap
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - config
+  expected: 'true'
+  diagnostic: Inspect the ConfigMap, Pod references, mounted file, and process environment. Restart the
+    Deployment after changing environment-based configuration.
+- id: configuration-secret
+  title: The application authenticates using its mounted Secret
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - secret
+  expected: 'true'
+  diagnostic: Inspect the Secret key and read-only volume reference without printing credentials; the
+    API must authenticate to its database using the mounted file.
+- id: configuration-processing
+  title: A fresh job completes through the configured stack
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: Inspect the actual resource state and application response, then reconcile the relevant
+    workload.
+- id: configuration-identity
+  title: The real workload identity has only the required access
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - identity
+  expected: 'true'
+  diagnostic: Verify the ServiceAccount, namespace-scoped binding, actual list request, and denied Secret
+    or cross-namespace access.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-config-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent resource definitions are accepted when actual delivery, application behavior, and allowed/denied
+  API requests satisfy the contract.
+failure_modes:
+- A ConfigMap or Secret existing in the API does not prove a running process consumes it.
+- Administrator permissions do not demonstrate workload authorization.
+starter_failure_checks:
+- configuration-identity

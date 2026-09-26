@@ -1,0 +1,146 @@
+id: m12-rollouts
+revision: 1
+module: 12
+order: 2
+title: Recover a failed rolling release
+summary: Read rollout history and restore available capacity with a bounded update strategy.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Inspect Deployment generations, ReplicaSets, and rollout conditions.
+- Calculate the availability budget from maxUnavailable and maxSurge.
+- Recover a failed image change and reconcile the desired manifest.
+prerequisites:
+- m12-probes
+objectives:
+- kubernetes.releases
+- kubernetes.reliability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: rollout undo repairs the live Deployment, but the local manifest still names the bad image.
+    What happens on the next apply?
+  options:
+  - The bad desired image can be reintroduced.
+  - Undo automatically rewrites every local manifest.
+  - Kubernetes ignores future applies after rollback.
+  correct: 0
+  explanation: Live history and the source manifest are separate state that must be reconciled.
+hints:
+- Inspect rollout history and the image in each ReplicaSet before deleting anything.
+- Restore the original DOCKYARD_IMAGE and configure maxUnavailable 0, maxSurge 1.
+- Apply the corrected source, wait for two available replicas, and leave prior ReplicaSets available for
+  inspection.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
+- https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: release-available
+  title: Two stable replicas serve the expected healthy release
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - available
+  expected: 'true'
+  diagnostic: Inspect rollout status, Pod events, image names, and the live /healthz response.
+- id: release-probes
+  title: Startup, liveness, and readiness have distinct working contracts
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - probes
+  expected: 'true'
+  diagnostic: Use /startupz for startup, /healthz for liveness, and /readyz for dependency-aware readiness.
+- id: release-rollout
+  title: Rolling updates preserve available capacity
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - rollout
+  expected: 'true'
+  diagnostic: Keep two replicas and configure maxUnavailable 0 with maxSurge 1.
+- id: release-history
+  title: A failed release is retained in history while the stable image is restored
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - history
+  expected: 'true'
+  diagnostic: Inspect ReplicaSets and rollout history; restore the original pinned application image.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-release-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent manifests and rollout commands are accepted when actual stable/candidate responses, availability
+  settings, and the requested process behavior are verified.
+failure_modes:
+- Readiness is not liveness; restarting on a dependency outage can worsen the incident.
+- A Service selecting multiple tracks does not guarantee an exact request percentage.
+- A rollback of a Pod template does not undo database migrations.
+starter_failure_checks:
+- release-available
+- release-rollout

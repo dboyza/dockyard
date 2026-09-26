@@ -1,5 +1,5 @@
 id: m08-jobs
-revision: 1
+revision: 2
 module: 8
 order: 3
 title: Run finite and scheduled maintenance
@@ -162,3 +162,6 @@ alternatives:
 failure_modes:
 - Healthy API Pods without functioning workers do not establish job processing.
 - A completed Pod with a printed success message does not prove the database effect.
+starter_failure_checks:
+- workload-maintenance
+- workload-schedule

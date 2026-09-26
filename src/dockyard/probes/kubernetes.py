@@ -129,11 +129,13 @@ def foundation() -> dict[str, Any]:
     return output
 
 
-def owned_pods(name: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    deployment = get("deployment", name)
+def owned_pods(
+    name: str, namespace: str = "dispatch"
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    deployment = get("deployment", name, namespace)
     sets = {
         item["metadata"]["uid"]
-        for item in get("rs")["items"]
+        for item in get("rs", namespace=namespace)["items"]
         if any(
             owner["uid"] == deployment["metadata"]["uid"]
             for owner in item["metadata"].get("ownerReferences", [])
@@ -141,7 +143,7 @@ def owned_pods(name: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     }
     pods = [
         pod
-        for pod in get("pods")["items"]
+        for pod in get("pods", namespace=namespace)["items"]
         if not pod["metadata"].get("deletionTimestamp")
         and any(owner["uid"] in sets for owner in pod["metadata"].get("ownerReferences", []))
     ]
@@ -157,11 +159,11 @@ def available(deployment: dict[str, Any], count: int) -> bool:
     )
 
 
-def sql(query: str) -> str:
+def sql(query: str, namespace: str = "dispatch") -> str:
     return kubectl(
         "exec",
         "-n",
-        "dispatch",
+        namespace,
         "deployment/db",
         "--",
         "psql",
@@ -176,7 +178,10 @@ def sql(query: str) -> str:
 
 
 def api_request(
-    path: str, payload: dict[str, Any] | None = None, method: str = "GET"
+    path: str,
+    payload: dict[str, Any] | None = None,
+    method: str = "GET",
+    namespace: str = "dispatch",
 ) -> dict[str, Any]:
     script = (
         "import json,urllib.request; "
@@ -190,7 +195,7 @@ def api_request(
             kubectl(
                 "exec",
                 "-n",
-                "dispatch",
+                namespace,
                 "deployment/dispatch",
                 "-c",
                 "api",
@@ -203,31 +208,24 @@ def api_request(
     )
 
 
-def workloads() -> dict[str, Any]:
-    api, _ = owned_pods("dispatch")
-    worker, pods = owned_pods("worker")
-    result: dict[str, Any] = {
-        "api": available(api, 2),
-        "workers": available(worker, 2) and len(pods) == 2,
-        "processing": False,
-        "agents": False,
-        "patterns": False,
-        "schedule": False,
-        "maintenance": False,
-    }
+def job_roundtrip(namespace: str = "dispatch") -> bool:
+    _, pods = owned_pods("worker", namespace)
+    succeeded = False
     job_id = None
     try:
         title = "dockyard-observation-" + uuid.uuid4().hex
-        job_id = str(api_request("/jobs", {"title": title}, "POST")["id"])
+        job_id = str(api_request("/jobs", {"title": title}, "POST", namespace)["id"])
         if len(job_id) != 32 or not all(c in "0123456789abcdef" for c in job_id):
             raise ValueError("The API returned an invalid job identity.")
         deadline = time.monotonic() + 12
         while time.monotonic() < deadline:
-            jobs = api_request("/jobs")["jobs"]
+            jobs = api_request("/jobs", namespace=namespace)["jobs"]
             current = next((item for item in jobs if item["id"] == job_id), None)
             if current and current["status"] == "done":
-                stored = json.loads(sql(f"SELECT row_to_json(j) FROM jobs j WHERE id='{job_id}'"))
-                result["processing"] = (
+                stored = json.loads(
+                    sql(f"SELECT row_to_json(j) FROM jobs j WHERE id='{job_id}'", namespace)
+                )
+                succeeded = (
                     stored["title"] == title
                     and stored["status"] == "done"
                     and stored["result"]
@@ -245,7 +243,23 @@ def workloads() -> dict[str, Any]:
     finally:
         if job_id and len(job_id) == 32 and all(c in "0123456789abcdef" for c in job_id):
             with suppress(RuntimeError):
-                sql(f"DELETE FROM jobs WHERE id='{job_id}'")
+                sql(f"DELETE FROM jobs WHERE id='{job_id}'", namespace)
+    return bool(succeeded)
+
+
+def workloads() -> dict[str, Any]:
+    api, _ = owned_pods("dispatch")
+    worker, pods = owned_pods("worker")
+    result: dict[str, Any] = {
+        "api": available(api, 2),
+        "workers": available(worker, 2) and len(pods) == 2,
+        "processing": False,
+        "agents": False,
+        "patterns": False,
+        "schedule": False,
+        "maintenance": False,
+    }
+    result["processing"] = job_roundtrip()
     agent = get("daemonset", "dispatch-node-agent")
     status = agent.get("status", {})
     desired = status.get("desiredNumberScheduled", 0)
@@ -338,7 +352,19 @@ def workloads() -> dict[str, Any]:
 def main() -> None:
     if not os.environ.get("DOCKYARD_LAB") or not os.environ.get("KUBECONFIG"):
         raise SystemExit("Run this check inside a Dockyard practice environment.")
-    probes = {"foundation": foundation, "workloads": workloads}
+    from dockyard.probes.configuration import configuration
+    from dockyard.probes.releases import releases
+    from dockyard.probes.routing import routing
+    from dockyard.probes.storage import storage
+
+    probes = {
+        "foundation": foundation,
+        "workloads": workloads,
+        "configuration": configuration,
+        "routing": routing,
+        "storage": storage,
+        "releases": releases,
+    }
     try:
         result = probes[sys.argv[1]]()
     except (RuntimeError, ValueError, KeyError, IndexError, OSError) as error:

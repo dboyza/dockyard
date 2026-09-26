@@ -2,12 +2,29 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { ExternalLink } from "lucide-react";
 
+export function referenceTitle(source: string) {
+  const url = new URL(source);
+  const topic = decodeURIComponent(
+    url.pathname.split("/").filter(Boolean).at(-1) || "Documentation",
+  )
+    .replace(/\.(html|md|pdf)$/, "")
+    .replace(/[-_]/g, " ");
+  const title = topic.charAt(0).toUpperCase() + topic.slice(1);
+  const publisher = url.hostname.replace(/^(www\.|docs\.|doc\.)/, "");
+  return `${title} · ${publisher}`;
+}
+
 export function Markdown({ children }: { children: string }) {
   return (
     <div className="prose">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          h1: ({ children }) => <h2>{children}</h2>,
+          h2: ({ children }) => <h3>{children}</h3>,
+          h3: ({ children }) => <h4>{children}</h4>,
+          h4: ({ children }) => <h5>{children}</h5>,
+          h5: ({ children }) => <h6>{children}</h6>,
           a: ({ children, ...props }) => (
             <a {...props} target="_blank" rel="noreferrer">
               {children}

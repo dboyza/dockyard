@@ -11,17 +11,18 @@ export type Assessment = {
   "file_digest": string;
   "evidence": Array<Evidence>;
   "independent": boolean;
-  "hints_used"?: number;
-  "reference_revealed"?: boolean;
+  "hints_used": number;
+  "reference_revealed": boolean;
+  "attempt": number;
 };
 
 export type CheckStatus = "pass" | "fail" | "blocked" | "stale";
 
 export type Command = {
   "args": Array<string>;
-  "timeout"?: number;
-  "stdin"?: string | null;
-  "allowed_exit_codes"?: Array<number>;
+  "timeout": number;
+  "stdin": string | null;
+  "allowed_exit_codes": Array<number>;
 };
 
 export type Criterion = {
@@ -29,12 +30,12 @@ export type Criterion = {
   "title": string;
   "explanation": string;
   "command": Command;
-  "expectation"?: "contains" | "equals" | "matches" | "json" | "absent";
+  "expectation": "contains" | "equals" | "matches" | "json" | "absent";
   "expected": string;
-  "output"?: "stdout" | "stderr" | "combined";
-  "json_path"?: Array<string | number>;
+  "output": "stdout" | "stderr" | "combined";
+  "json_path": Array<string | number>;
   "diagnostic": string;
-  "points"?: number;
+  "points": number;
 };
 
 export type Evidence = {
@@ -44,7 +45,7 @@ export type Evidence = {
   "expected": string;
   "observed": string;
   "diagnostic": string;
-  "points"?: number;
+  "points": number;
 };
 
 export type Lab = {
@@ -56,8 +57,8 @@ export type Lab = {
   "workspace": string;
   "created_at": string;
   "updated_at": string;
-  "resources"?: Record<string, string>;
-  "error"?: string | null;
+  "resources": Record<string, string>;
+  "error": string | null;
 };
 
 export type Prediction = {
@@ -71,17 +72,17 @@ export type Runtime = "docker" | "kubernetes" | "linux";
 
 export type Unit = {
   "id": string;
-  "revision"?: number;
+  "revision": number;
   "module": number;
   "order": number;
   "title": string;
   "summary": string;
-  "kind"?: UnitKind;
+  "kind": UnitKind;
   "runtime": Runtime;
   "minutes": number;
   "outcomes": Array<string>;
-  "prerequisites"?: Array<string>;
-  "objectives"?: Array<string>;
+  "prerequisites": Array<string>;
+  "objectives": Array<string>;
   "concept": string;
   "brief": string;
   "debrief": string;
@@ -90,14 +91,15 @@ export type Unit = {
   "sources": Array<string>;
   "starter": Record<string, string>;
   "reference": Record<string, string>;
-  "prepare"?: Array<Command>;
+  "prepare": Array<Command>;
   "checks": Array<Criterion>;
-  "capabilities"?: Array<string>;
-  "checkpoint"?: string | null;
-  "images"?: Array<string>;
-  "nodes"?: number;
-  "alternatives"?: Array<string>;
-  "failure_modes"?: Array<string>;
+  "capabilities": Array<string>;
+  "checkpoint": string | null;
+  "images": Array<string>;
+  "nodes": number;
+  "alternatives": Array<string>;
+  "failure_modes": Array<string>;
+  "starter_failure_checks": Array<string>;
 };
 
 export type UnitKind = "lesson" | "mission" | "incident";

@@ -151,3 +151,6 @@ alternatives:
 failure_modes:
 - Matching names without matching selectors do not create endpoints.
 - A standalone Pod does not demonstrate Deployment reconciliation.
+starter_failure_checks:
+- kube-replicas
+- kube-service

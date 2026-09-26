@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatch-canary
+  namespace: dispatch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dispatch
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: dispatch
+        track: canary
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: api
+        image: ${DOCKYARD_IMAGE}-candidate
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        env:
+        - name: DB_HOST
+          value: db
+        - name: REDIS_URL
+          value: redis://queue:6379/0
+        - name: DB_PASSWORD_FILE
+          value: /var/run/dispatch/password
+        - name: DISPATCH_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: dispatch-settings
+              key: environment
+        - name: STARTUP_SECONDS
+          value: '12'
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          periodSeconds: 2
+          failureThreshold: 2
+        volumeMounts:
+        - name: database-credential
+          mountPath: /var/run/dispatch
+          readOnly: true
+        - name: settings
+          mountPath: /config
+          readOnly: true
+        startupProbe:
+          httpGet:
+            path: /startupz
+            port: 8080
+          periodSeconds: 2
+          failureThreshold: 15
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          periodSeconds: 3
+          failureThreshold: 3
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+      volumes:
+      - name: database-credential
+        secret:
+          secretName: dispatch-database
+          defaultMode: 292
+      - name: settings
+        configMap:
+          name: dispatch-settings
+      terminationGracePeriodSeconds: 20
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 2
+  progressDeadlineSeconds: 120
+  revisionHistoryLimit: 5

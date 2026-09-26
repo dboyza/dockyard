@@ -1,0 +1,346 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: preview
+  labels:
+    io.dockyard.lab: ${DOCKYARD_LAB}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dispatch-settings
+  namespace: preview
+data:
+  environment: preview
+  banner.txt: 'Configured through the Kubernetes API.
+
+    '
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dispatch-database
+  namespace: preview
+type: Opaque
+stringData:
+  password: ${DOCKYARD_DB_PASSWORD}-preview
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dispatch-app
+  namespace: preview
+automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dispatch-reader
+  namespace: preview
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dispatch-pod-reader
+  namespace: preview
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dispatch-pod-reader
+  namespace: preview
+subjects:
+- kind: ServiceAccount
+  name: dispatch-reader
+  namespace: preview
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: dispatch-pod-reader
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory
+  namespace: preview
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inventory
+  template:
+    metadata:
+      labels:
+        app: inventory
+    spec:
+      serviceAccountName: dispatch-reader
+      enableServiceLinks: false
+      containers:
+      - name: client
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command:
+        - python
+        - -c
+        - import time; time.sleep(86400)
+        resources:
+          requests:
+            cpu: 10m
+            memory: 24Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dispatch
+  namespace: preview
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dispatch
+  template:
+    metadata:
+      labels:
+        app: dispatch
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: api
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        env:
+        - name: DB_HOST
+          value: db
+        - name: REDIS_URL
+          value: redis://queue:6379/0
+        - name: DB_PASSWORD_FILE
+          value: /var/run/dispatch/password
+        - name: DISPATCH_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: dispatch-settings
+              key: environment
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          periodSeconds: 2
+        volumeMounts:
+        - name: database-credential
+          mountPath: /var/run/dispatch
+          readOnly: true
+        - name: settings
+          mountPath: /config
+          readOnly: true
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+      volumes:
+      - name: database-credential
+        secret:
+          secretName: dispatch-database
+          defaultMode: 292
+      - name: settings
+        configMap:
+          name: dispatch-settings
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: preview
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: database
+        image: ${DOCKYARD_POSTGRES_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        env:
+        - name: POSTGRES_DB
+          value: dispatch
+        - name: POSTGRES_USER
+          value: dispatch
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dispatch-database
+              key: password
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/postgresql/data
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -h
+            - 127.0.0.1
+            - -U
+            - dispatch
+          periodSeconds: 2
+      volumes:
+      - name: data
+        emptyDir: {}
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: queue
+  namespace: preview
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: queue
+  template:
+    metadata:
+      labels:
+        app: queue
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: queue
+        image: ${DOCKYARD_REDIS_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - redis-server
+        - --save
+        - ''
+        - --appendonly
+        - 'no'
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dispatch
+  namespace: preview
+spec:
+  selector:
+    app: dispatch
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: preview
+spec:
+  selector:
+    app: db
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: queue
+  namespace: preview
+spec:
+  selector:
+    app: queue
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: preview
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: worker
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - python
+        - worker.py
+        env:
+        - name: DB_HOST
+          value: db
+        - name: REDIS_URL
+          value: redis://queue:6379/0
+        - name: DB_PASSWORD_FILE
+          value: /var/run/dispatch/password
+        - name: DISPATCH_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: dispatch-settings
+              key: environment
+        volumeMounts:
+        - name: database-credential
+          mountPath: /var/run/dispatch
+          readOnly: true
+      serviceAccountName: dispatch-app
+      automountServiceAccountToken: false
+      volumes:
+      - name: database-credential
+        secret:
+          secretName: dispatch-database
+          defaultMode: 292

@@ -167,7 +167,13 @@ class KubernetesRuntime:
             archive.unlink(missing_ok=True)
         return local
 
-    def prepare(self, nodes: int, images: list[str], cancel: threading.Event) -> None:
+    def prepare(
+        self,
+        nodes: int,
+        images: list[str],
+        cancel: threading.Event,
+        capabilities: list[str] | None = None,
+    ) -> None:
         def report(message: str) -> None:
             self.lab.resources["stage"] = message
             self.save(self.lab)
@@ -192,6 +198,29 @@ class KubernetesRuntime:
             )
         if shutil.disk_usage(self.root).free < 10 * 1024**3:
             raise RuntimeErrorBase("Free at least 10 GiB of disk before creating this cluster.")
+        network = self.env["DOCKYARD_NETWORK"]
+        found = self.docker.inspect("network", network)
+        if (
+            found is not None
+            and self.docker.labels("network", found).get("io.dockyard.lab") != self.lab.id
+        ):
+            raise RuntimeErrorBase("The requested network name belongs to another resource.")
+        if found is None:
+            self.docker.require(
+                self.docker.command(
+                    [
+                        "network",
+                        "create",
+                        "--label",
+                        f"io.dockyard.lab={self.lab.id}",
+                        network,
+                    ],
+                    cancel=cancel,
+                )
+            )
+        self.docker.discover()
+        self.lab.resources["kind_network"] = network
+        self.env["KIND_EXPERIMENTAL_DOCKER_NETWORK"] = network
         names = [self.name + "-control-plane"]
         names += [self.name + "-worker" + (str(i) if i > 1 else "") for i in range(1, nodes)]
         self.lab.resources["kind_intent"] = json.dumps(names)
@@ -213,7 +242,13 @@ class KubernetesRuntime:
                             "hostPort": int(self.lab.resources["port"]),
                             "listenAddress": "127.0.0.1",
                             "protocol": "TCP",
-                        }
+                        },
+                        {
+                            "containerPort": 30443,
+                            "hostPort": int(self.lab.resources["registry_port"]),
+                            "listenAddress": "127.0.0.1",
+                            "protocol": "TCP",
+                        },
                     ],
                 }
             ]
@@ -321,6 +356,11 @@ class KubernetesRuntime:
                 cancel=cancel,
             )
         )
+        if capabilities and set(capabilities) & {"routing", "loadbalancer"}:
+            from dockyard.runtimes.routing import install
+
+            install(self, capabilities, cancel)
+        self.lab.resources["cluster_capabilities"] = json.dumps(capabilities or [])
         self.lab.resources["cluster_ready"] = "true"
         report("Cluster ready; preparing the exercise")
 
@@ -397,7 +437,9 @@ class KubernetesRuntime:
                 args = ["container", "stop" if action == "stop" else "start", entry["id"]]
             self.docker.require(self.docker.command(args, timeout=60, cancel=cancel))
         if action == "clean":
+            self.docker.change("clean", cancel)
             self.lab.resources["kind_inventory"] = "[]"
+            self.lab.resources.pop("kind_network", None)
             self.lab.resources.pop("cluster_ready", None)
             self.lab.resources.pop("kubeconfig_identity", None)
             self.lab.resources.pop("prepared_revision", None)
@@ -412,12 +454,20 @@ class KubernetesRuntime:
             node = self.verify(entry)
             if node:
                 records.append([entry, node["State"]["Running"], node["State"]["StartedAt"]])
+        kinds = (
+            "deploy,sts,ds,pod,job,cronjob,svc,cm,secret,pvc,pv,storageclass,"
+            "networkpolicy,sa,role,rolebinding,ingress"
+        )
+        capabilities = json.loads(self.lab.resources.get("cluster_capabilities", "[]"))
+        if "routing" in capabilities:
+            kinds += ",gateways.gateway.networking.k8s.io,httproutes.gateway.networking.k8s.io"
+        if "loadbalancer" in capabilities:
+            kinds += ",ipaddresspools.metallb.io,l2advertisements.metallb.io"
         result = self.kubectl(
             [
                 "get",
-                "deploy,sts,ds,svc,cm,secret,pvc,networkpolicy,sa,role,rolebinding",
-                "-n",
-                "dispatch",
+                kinds,
+                "--all-namespaces",
                 "-o",
                 "json",
             ]
@@ -425,9 +475,18 @@ class KubernetesRuntime:
         if result.ok:
             for item in json.loads(result.stdout)["items"]:
                 metadata = item["metadata"]
+                if metadata.get("namespace") in {
+                    "kube-system",
+                    "kube-public",
+                    "kube-node-lease",
+                    "local-path-storage",
+                    "dockyard-observer",
+                }:
+                    continue
                 records.append(
                     [
                         item["kind"],
+                        metadata.get("namespace"),
                         metadata["name"],
                         metadata["uid"],
                         metadata.get("generation"),
@@ -436,6 +495,10 @@ class KubernetesRuntime:
                         item.get("data"),
                         item.get("rules"),
                         item.get("subjects"),
+                        [
+                            [container.get("containerID"), container.get("restartCount")]
+                            for container in item.get("status", {}).get("containerStatuses", [])
+                        ],
                     ]
                 )
         else:

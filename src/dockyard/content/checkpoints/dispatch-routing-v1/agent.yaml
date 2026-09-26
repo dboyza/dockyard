@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: dispatch-node-agent
+  namespace: dispatch
+spec:
+  selector:
+    matchLabels:
+      app: dispatch-node-agent
+  template:
+    metadata:
+      labels:
+        app: dispatch-node-agent
+    spec:
+      containers:
+      - name: agent
+        image: ${DOCKYARD_BUSYBOX_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        resources:
+          requests:
+            cpu: 25m
+            memory: 32Mi
+          limits:
+            cpu: 300m
+            memory: 192Mi
+        command:
+        - sh
+        - -c
+        - while true; do echo "node observation $(hostname)"; sleep 30; done

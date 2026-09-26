@@ -1,0 +1,157 @@
+id: m10-services
+revision: 1
+module: 10
+order: 1
+title: Trace Services from DNS to real traffic
+summary: Compare ClusterIP, NodePort, and an actual local LoadBalancer.
+kind: lesson
+runtime: kubernetes
+minutes: 40
+outcomes:
+- Trace Service DNS, selectors, EndpointSlices, and target ports.
+- Distinguish three Service exposure methods.
+- Verify LoadBalancer traffic from outside Kubernetes.
+prerequisites:
+- m09-mission
+objectives:
+- kubernetes.services
+- kubernetes.routing
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A LoadBalancer Service has an external IP, but its selector matches no Pods. What does the
+    IP alone prove?
+  options:
+  - An address was allocated; backend application traffic still needs verification.
+  - The application is necessarily available.
+  - Every Pod in the cluster is now public.
+  correct: 0
+  explanation: Address allocation and backend readiness are separate observations.
+hints:
+- Inspect selectors and target ports independently for each Service.
+- Compare EndpointSlice addresses with the two Dispatch Pods.
+- Target port 8080 for both internal and node Services, and select app=dispatch for dispatch-public.
+sources:
+- https://kubernetes.io/docs/concepts/services-networking/service/
+- https://kubernetes.io/docs/concepts/services-networking/ingress/
+- https://gateway-api.sigs.k8s.io/concepts/api-overview/
+- https://doc.traefik.io/traefik/reference/install-configuration/providers/kubernetes/kubernetes-gateway/
+- https://metallb.io/concepts/layer2/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 120
+- args:
+  - kubectl
+  - rollout
+  - status
+  - deployment/dispatch
+  - --timeout=120s
+  timeout: 130
+checks:
+- id: routing-service
+  title: ClusterIP DNS and real application traffic work
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - service
+  expected: 'true'
+  diagnostic: Compare Service selectors, EndpointSlices, target ports, and the application listener.
+- id: routing-endpoints
+  title: EndpointSlices identify the owned ready API Pods
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - endpoints
+  expected: 'true'
+  diagnostic: Inspect the specific request path from the client through the Service to the application.
+- id: routing-nodeport
+  title: The assigned loopback NodePort reaches Dispatch
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - nodeport
+  expected: 'true'
+  diagnostic: Inspect the specific request path from the client through the Service to the application.
+- id: routing-loadbalancer
+  title: An external client reaches the real LoadBalancer IP
+  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - routing
+    timeout: 90
+  expectation: json
+  json_path:
+  - loadbalancer
+  expected: 'true'
+  diagnostic: Inspect dispatch-public and its external IP, then send traffic from the supplied private-network
+    client.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- loadbalancer
+checkpoint: dispatch-routing-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- metallb_controller
+- metallb_speaker
+alternatives:
+- Equivalent selectors, named target ports, and manifests are accepted when the required live endpoint
+  and route behavior is demonstrated.
+failure_modes:
+- An assigned external IP or accepted manifest does not prove application traffic works.
+- Bypassing certificate verification does not demonstrate correct TLS identity.
+starter_failure_checks:
+- routing-service
+- routing-nodeport
+- routing-loadbalancer

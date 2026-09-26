@@ -11,7 +11,7 @@ Identifier = Annotated[str, Field(pattern=r"^[a-z][a-z0-9-]{1,79}$")]
 
 
 class Contract(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", json_schema_serialization_defaults_required=True)
 
 
 class Runtime(StrEnum):
@@ -97,11 +97,14 @@ class Unit(Contract):
     nodes: int = Field(default=1, ge=1, le=3)
     alternatives: list[str] = Field(default_factory=list)
     failure_modes: list[str] = Field(default_factory=list)
+    starter_failure_checks: list[Identifier] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def unique_checks(self) -> Unit:
         if len({check.id for check in self.checks}) != len(self.checks):
             raise ValueError("Criterion identifiers must be unique within a unit.")
+        if not set(self.starter_failure_checks) <= {check.id for check in self.checks}:
+            raise ValueError("Starter failure checks must name assessment criteria.")
         return self
 
 
@@ -128,6 +131,7 @@ class Assessment(Contract):
     independent: bool
     hints_used: int = Field(default=0, ge=0)
     reference_revealed: bool = False
+    attempt: int = Field(default=1, ge=1)
 
 
 class Lab(Contract):

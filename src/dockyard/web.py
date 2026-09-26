@@ -196,7 +196,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
 
     @app.post("/api/units/{unit_id}/lab")
     def lab_action(unit_id: str, body: Action) -> dict[str, Any]:
-        if body.action in {"reset", "clean"} and not body.confirmed:
+        if body.action in {"reset", "retake", "clean"} and not body.confirmed:
             raise HTTPException(400, "Confirm this change to the current lab first.")
         if body.action == "terminal":
             return service.open_terminal(unit_id)

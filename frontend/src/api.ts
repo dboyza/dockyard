@@ -11,6 +11,7 @@ export type Module = {
 export type UnitSummary = Pick<
   Unit,
   | "id"
+  | "revision"
   | "title"
   | "summary"
   | "module"

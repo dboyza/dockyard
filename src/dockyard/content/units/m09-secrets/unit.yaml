@@ -1,0 +1,129 @@
+id: m09-secrets
+revision: 1
+module: 9
+order: 2
+title: Deliver a credential through a Secret
+summary: Repair a secret volume and prove authenticated application behavior.
+kind: lesson
+runtime: kubernetes
+minutes: 35
+outcomes:
+- Distinguish Secret representation from encryption and access control.
+- Deliver credentials through a referenced read-only volume.
+- Verify that the application uses the intended credential without exposing its value.
+prerequisites:
+- m09-configmaps
+objectives:
+- kubernetes.configuration
+- kubernetes.identity
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A Secret value appears as base64 in API output. What does that establish?
+  options:
+  - It is encoded; encryption and access controls are separate concerns.
+  - It is encrypted against anyone who can read the Secret.
+  - The application is guaranteed not to log it.
+  correct: 0
+  explanation: Encoding does not prevent a reader from recovering the original bytes.
+hints:
+- Inspect the volume events and key mapping, without decoding the credential.
+- The Secret key is password, and the application opens /var/run/dispatch/password.
+- Map the password key to password in the read-only Secret volume and keep DB_PASSWORD_FILE unchanged.
+sources:
+- https://kubernetes.io/docs/concepts/configuration/configmap/
+- https://kubernetes.io/docs/concepts/configuration/secret/
+- https://kubernetes.io/docs/concepts/security/service-accounts/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 90
+checks:
+- id: configuration-config
+  title: The process and mounted file consume the intended ConfigMap
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - config
+  expected: 'true'
+  diagnostic: Inspect the ConfigMap, Pod references, mounted file, and process environment. Restart the
+    Deployment after changing environment-based configuration.
+- id: configuration-secret
+  title: The application authenticates using its mounted Secret
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - secret
+  expected: 'true'
+  diagnostic: Inspect the Secret key and read-only volume reference without printing credentials; the
+    API must authenticate to its database using the mounted file.
+- id: configuration-processing
+  title: A fresh job completes through the configured stack
+  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - configuration
+    timeout: 90
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: Inspect the actual resource state and application response, then reconcile the relevant
+    workload.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-config-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent resource definitions are accepted when actual delivery, application behavior, and allowed/denied
+  API requests satisfy the contract.
+failure_modes:
+- A ConfigMap or Secret existing in the API does not prove a running process consumes it.
+- Administrator permissions do not demonstrate workload authorization.
+starter_failure_checks:
+- configuration-secret

@@ -1,0 +1,147 @@
+id: m12-strategies
+revision: 1
+module: 12
+order: 3
+title: Compare stable and candidate releases
+summary: Run a small canary and verify a preview Service before promotion.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Keep stable and candidate controllers disjoint while intentionally sharing a Service.
+- Verify both release identities and a candidate-only preview path.
+- Distinguish replica-based canaries from precise traffic weighting and blue-green switching.
+prerequisites:
+- m12-rollouts
+objectives:
+- kubernetes.releases
+- kubernetes.reliability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Two stable Pods and one canary Pod share a Service. Does that guarantee exactly one third
+    of HTTP requests reaches the canary?
+  options:
+  - No; endpoint counts do not guarantee exact request-level weighting.
+  - Yes; Kubernetes enforces a strict three-request rotation.
+  - No traffic can reach a Service with more than one Deployment.
+  correct: 0
+  explanation: Connection reuse and routing behavior can produce a different request distribution.
+hints:
+- Inspect the candidate replica count and the preview Service track selector.
+- Run one candidate replica and select track=canary in dispatch-preview.
+- Keep the primary Service on app=dispatch and verify the distinct release strings from stable and candidate
+  Pods.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+- https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
+- https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 360
+checks:
+- id: release-available
+  title: Two stable replicas serve the expected healthy release
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - available
+  expected: 'true'
+  diagnostic: Inspect rollout status, Pod events, image names, and the live /healthz response.
+- id: release-probes
+  title: Startup, liveness, and readiness have distinct working contracts
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - probes
+  expected: 'true'
+  diagnostic: Use /startupz for startup, /healthz for liveness, and /readyz for dependency-aware readiness.
+- id: release-canary
+  title: Stable and candidate Pods coexist behind the shared Service
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - canary
+  expected: 'true'
+  diagnostic: Start one candidate replica, keep two stable replicas, and let the primary Service select
+    both tracks.
+- id: release-preview
+  title: The preview Service reaches only the candidate release
+  explanation: Compare controller state, process behavior, and actual release responses.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - releases
+    timeout: 90
+  expectation: json
+  json_path:
+  - preview
+  expected: 'true'
+  diagnostic: Select track=canary for dispatch-preview and verify release dispatch-release-2.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-release-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent manifests and rollout commands are accepted when actual stable/candidate responses, availability
+  settings, and the requested process behavior are verified.
+failure_modes:
+- Readiness is not liveness; restarting on a dependency outage can worsen the incident.
+- A Service selecting multiple tracks does not guarantee an exact request percentage.
+- A rollback of a Pod template does not undo database migrations.
+starter_failure_checks:
+- release-canary
+- release-preview

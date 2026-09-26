@@ -1,0 +1,149 @@
+id: m11-mission
+revision: 1
+module: 11
+order: 4
+title: Prove database durability and recovery
+summary: Preserve the source across replacement and recover its records onto a separate volume.
+kind: mission
+runtime: kubernetes
+minutes: 55
+outcomes:
+- Repair retention and backup faults without destroying source data.
+- Demonstrate persistence using Pod and volume identities.
+- Produce concrete source-versus-restore evidence.
+prerequisites:
+- m11-backup
+objectives:
+- kubernetes.storage
+- kubernetes.statefulsets
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The source survives Pod replacement, but no independent restore has been checked. What remains
+    unproven?
+  options:
+  - Recovery from a backup after source storage is unavailable.
+  - Whether a Pod can have a UID.
+  - Whether a Service has a name.
+  correct: 0
+  explanation: Persistence across one Pod replacement and recovery after storage loss are different guarantees.
+hints:
+- Inspect claim retention and dump options before deleting or replacing anything.
+- Retain claims for scale-down and deletion, and include data in the logical dump.
+- Use storage-proof.py and backup.sh, then compare both databases and their distinct storage identities.
+sources:
+- https://kubernetes.io/docs/concepts/storage/persistent-volumes/
+- https://kubernetes.io/docs/concepts/storage/storage-classes/
+- https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/
+- https://www.postgresql.org/docs/17/backup-dump.html
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 240
+checks:
+- id: storage-claim
+  title: The database uses a bound claim and its actual persistent volume
+  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - storage
+    timeout: 75
+  expectation: json
+  json_path:
+  - claim
+  expected: 'true'
+  diagnostic: Inspect the database Pod volume, PVC binding, and referenced PV.
+- id: storage-persistence
+  title: A replacement Pod reads the original database marker
+  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - storage
+    timeout: 75
+  expectation: json
+  json_path:
+  - persistence
+  expected: 'true'
+  diagnostic: Run the supplied storage proof after mounting persistent storage; compare old and new Pod
+    UIDs.
+- id: storage-identity
+  title: The StatefulSet retains stable Pod, Service, and claim identity
+  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - storage
+    timeout: 75
+  expectation: json
+  json_path:
+  - identity
+  expected: 'true'
+  diagnostic: Inspect StatefulSet replicas, headless Service, claim templates, and both retention policies.
+- id: storage-restore
+  title: An independent claim contains the restored records and database marker
+  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - storage
+    timeout: 75
+  expectation: json
+  json_path:
+  - restore
+  expected: 'true'
+  diagnostic: Use a full logical dump, restore into db-restore, and compare actual records from both independent
+    claims.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-stateful-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent manifests and logical backup commands are accepted when the named workload preserves its
+  marker across Pod replacement and the recovery target uses a distinct bound claim.
+failure_modes:
+- A Bound claim that is not mounted by PostgreSQL does not protect database data.
+- A schema-only dump cannot restore application records.
+- Local node storage does not survive deletion of the entire practice cluster.
+starter_failure_checks:
+- storage-persistence
+- storage-restore
+- storage-identity
