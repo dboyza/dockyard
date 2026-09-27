@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from dockyard import host
+from dockyard import host, terminals
 from dockyard.catalog import CONTENT
 from dockyard.models import Lab, Runtime
 from dockyard.process import ProcessResult
@@ -100,7 +100,15 @@ def test_wsl_terminal_keeps_distribution_paths_and_arguments(monkeypatch, tmp_pa
     )
     Path(lab.workspace).mkdir(parents=True)
     service.store.save_lab(lab)
-    monkeypatch.setattr(host, "wezterm", lambda: "/mnt/c/Program Files/WezTerm/wezterm.exe")
+    monkeypatch.setattr(
+        terminals,
+        "available",
+        lambda: [
+            terminals.Terminal(
+                "wezterm-windows", "WezTerm (Windows)", "/mnt/c/Program Files/WezTerm/wezterm.exe"
+            )
+        ],
+    )
     monkeypatch.setattr(host, "is_wsl", lambda: True)
     monkeypatch.setenv("WSL_DISTRO_NAME", "Ubuntu Test")
     calls = []
@@ -109,7 +117,7 @@ def test_wsl_terminal_keeps_distribution_paths_and_arguments(monkeypatch, tmp_pa
         calls.append(args)
         return ProcessResult(tuple(args), 0, "1", "", 0)
 
-    monkeypatch.setattr("dockyard.service.run", run)
+    monkeypatch.setattr("dockyard.terminals.run", run)
     service.open_terminal(lab.unit_id)
     argv = calls[0]
     assert argv[argv.index("--domain-name") + 1] == "local"

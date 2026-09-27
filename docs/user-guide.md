@@ -18,7 +18,7 @@ Reference desk contains supporting primers and a searchable glossary.
 
 1. Read **Understand** and answer the prediction before inspecting the explanation.
 2. Read **Your task** and prepare the owned environment.
-3. Select **Open in WezTerm** to open an ordinary terminal in that activity's workspace.
+3. Select **Open terminal** to open an ordinary terminal in that activity's workspace.
 4. Edit files and run commands using your preferred terminal tools.
 5. Select **Check work** and read both passing observations and failed boundaries.
 6. Save observations and use the debrief to explain why the repair worked.

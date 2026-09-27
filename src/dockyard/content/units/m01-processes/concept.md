@@ -27,7 +27,7 @@ Binding it to `127.0.0.1` makes it reachable from this host computer rather than
 
 ## Run the supplied API
 
-Prepare the lab and open its WezTerm tab.
+Prepare the lab and open its lab terminal session.
 Dockyard sets a few variables so the resources stay specific to this exercise:
 
 - `DOCKYARD_CONTAINER` is the name reserved for your container.

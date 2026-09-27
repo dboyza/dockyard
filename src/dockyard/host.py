@@ -86,16 +86,6 @@ def shell() -> str:
     raise ValueError("Install Bash or Zsh to use the real lesson shell.")
 
 
-def wezterm() -> str | None:
-    if is_wsl():
-        if found := shutil.which("wezterm.exe"):
-            return found
-        installed = Path("/mnt/c/Program Files/WezTerm/wezterm.exe")
-        if installed.is_file():
-            return str(installed)
-    return shutil.which("wezterm")
-
-
 def docker_plugin_blocker(environment: dict[str, str]) -> str | None:
     from dockyard.process import run
 

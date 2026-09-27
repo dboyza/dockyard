@@ -2259,6 +2259,7 @@ pre {
   color: var(--muted);
   font-size: 13px;
 }
+.terminal-choice select,
 .exam-history select,
 .continuation-target select,
 .cache-controls select {
@@ -2485,4 +2486,35 @@ pre {
 
 .doctor .readiness-grid + p {
   margin-top: 18px;
+}
+
+.terminal-launcher {
+  min-width: 0;
+  width: 100%;
+}
+.terminal-choice {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.terminal-command {
+  margin-top: 12px;
+  font-size: 12px;
+}
+.terminal-command summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.terminal-command code {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 10px 0;
+  line-height: 1.65;
+}
+.exam-toolbar .terminal-launcher {
+  flex: 1 1 300px;
+  max-width: 450px;
 }

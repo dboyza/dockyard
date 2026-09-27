@@ -70,7 +70,32 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   if (process.env.DOCKYARD_INTEGRATION === '1') {
     await page.getByRole('button', { name: 'Prepare lab' }).click();
-    await expect(page.getByRole('button', { name: 'Open in WezTerm' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Open terminal' })).toBeEnabled();
+    const terminal = page.locator('.terminal-launcher');
+    await expect(terminal.getByRole('combobox', { name: 'Terminal application' })).toBeVisible();
+    await terminal.getByText('Use an existing terminal', { exact: true }).click();
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await terminal.getByRole('button', { name: 'Copy lab command' }).click();
+    const command = await page.evaluate(() => navigator.clipboard.readText());
+    expect(command).toBe(await terminal.locator('code').innerText());
+    execFileSync(path.join(root, '.runtime/installed/bin/python'), [path.join(root, 'frontend/e2e/check_terminal.py'), profile, command]);
+    await terminal.screenshot({ path: path.join(root, '.artifacts/terminals/picker-wide.png') });
+    await page.setViewportSize({ width: 480, height: 1000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await terminal.screenshot({ path: path.join(root, '.artifacts/terminals/picker-narrow.png') });
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    // Simulate discovery on a headless host, while retaining the real prepared lab and API command.
+    await page.route('**/api/units/m01-processes/terminal', async route => {
+      const response = await route.fetch();
+      const info = await response.json();
+      await route.fulfill({ json: { ...info, options: [], automatic: null, selected: 'auto' } });
+    });
+    await page.reload();
+    await page.getByRole('button', { name: 'Continue lesson' }).click();
+    await expect(terminal.getByRole('button', { name: 'Copy lab command' })).toBeVisible();
+    await expect(terminal.getByRole('button', { name: 'Open terminal' })).toHaveCount(0);
+    await page.unroute('**/api/units/m01-processes/terminal');
+
     await page.getByRole('button', { name: 'Check work', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Here is what the lab observed.' })).toBeVisible();
     execFileSync(path.join(root, '.runtime/installed/bin/python'), [path.join(root, 'frontend/e2e/repair_lab.py'), profile, 'm01-processes']);
@@ -92,7 +117,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-mission');
     await page.getByRole('button', { name: /Mission: restore the first Dispatch service/ }).click();
     await page.getByRole('button', { name: 'Prepare lab' }).click();
-    await expect(page.getByRole('button', { name: 'Open in WezTerm' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Open terminal' })).toBeEnabled();
     await page.getByRole('tab', { name: 'Your task' }).click();
     await page.getByRole('button', { name: 'Reveal hint 1' }).click();
     await expect(page.getByText('HINT 1', { exact: true })).toBeVisible();

@@ -15,7 +15,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from dockyard import host
+from dockyard import host, terminals
 from dockyard.catalog import CONTENT, Catalog
 from dockyard.locking import operation_lock
 from dockyard.models import (
@@ -163,8 +163,7 @@ class Service:
 
         env = self.environment()
         tools = {
-            name: shutil.which(name, path=env["PATH"])
-            for name in ("docker", "kubectl", "kind", "wezterm")
+            name: shutil.which(name, path=env["PATH"]) for name in ("docker", "kubectl", "kind")
         }
         docker = (
             run([tools["docker"], "info", "--format", "{{.ServerVersion}}"], timeout=10)
@@ -175,7 +174,9 @@ class Service:
             **host_readiness(self.directory),
             "tools": tools,
             "docker_ready": bool(docker and docker.ok),
-            "terminal": host.wezterm(),
+            "terminal": (
+                selected.label if (selected := terminals.choose(terminals.available())) else None
+            ),
             "docker_tools_error": host.docker_plugin_blocker(env) if tools["docker"] else None,
             "docker_version": docker.stdout.strip() if docker and docker.ok else None,
             "docker_error": docker.stderr.strip() if docker and not docker.ok else None,
@@ -706,74 +707,43 @@ class Service:
         ]
         return command
 
-    def open_terminal(self, unit_id: str) -> dict[str, str]:
-        lab = self.store.lab(unit_id)
-        if not lab:
-            raise LabError("Prepare this lab first.")
+    def terminal_info(self, unit_id: str) -> dict[str, Any]:
         command = self.shell_command(unit_id)
-        env = self.environment(lab)
-        terminal = host.wezterm()
-        if not terminal:
+        options = terminals.available()
+        selected = self.store.setting("terminal", "auto")
+        if selected not in {item.id for item in options}:
+            selected = "auto"
+        automatic = terminals.choose(options)
+        return {
+            "options": [{"id": item.id, "label": item.label} for item in options],
+            "selected": selected,
+            "automatic": automatic.label if automatic else None,
+            "command": shlex.join(command),
+            "wsl": host.is_wsl(),
+        }
+
+    def open_terminal(self, unit_id: str, preference: str = "auto") -> dict[str, str]:
+        command = self.shell_command(unit_id)
+        lab = self.store.lab(unit_id)
+        assert lab is not None
+        selected = terminals.choose(terminals.available(), preference)
+        if selected is None:
             raise LabError(
-                "Install WezTerm to open a new terminal, or use the displayed lab shell command."
+                "No desktop terminal was found. Copy the lab command into your terminal."
             )
-        terminal_cwd = lab.workspace
-        domain: list[str] = []
-        start_domain: list[str] = []
-        if terminal.lower().endswith(".exe") and host.is_wsl():
-            distribution = os.environ.get("WSL_DISTRO_NAME")
-            if not distribution:
-                raise LabError("WSL_DISTRO_NAME is unavailable; open the lab shell inside WSL 2.")
-            command = [
-                "wsl.exe",
-                "--distribution",
-                distribution,
-                "--cd",
-                lab.workspace,
-                "--exec",
-                *command,
-            ]
-            terminal_cwd = "C:\\"
-            domain = ["--domain-name", "local"]
-            start_domain = ["--domain", "local"]
-
-        tab = run(
-            [
-                terminal,
-                "cli",
-                "--no-auto-start",
-                "spawn",
-                *domain,
-                "--cwd",
-                terminal_cwd,
-                "--",
-                *command,
-            ],
-            env=env,
-            timeout=8,
+        terminals.launch(
+            selected,
+            command,
+            lab.workspace,
+            self.environment(lab),
+            Path(lab.workspace).parent / "shell",
         )
-        if not tab.ok:
-            # GUI start is a deliberately long-lived process; the CLI child owns its lab shell.
-            import subprocess
-
-            subprocess.Popen(
-                [
-                    terminal,
-                    "start",
-                    "--always-new-process",
-                    *start_domain,
-                    "--cwd",
-                    terminal_cwd,
-                    "--",
-                    *command,
-                ],
-                env=env,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,
-            )
-        return {"command": shlex.join(command), "workspace": lab.workspace}
+        self.store.set_setting("terminal", preference)
+        return {
+            "command": shlex.join(command),
+            "workspace": lab.workspace,
+            "terminal": selected.label,
+        }
 
     def write_shell_rc(self, lab: Lab) -> Path:
         directory = Path(lab.workspace).parent / "shell"

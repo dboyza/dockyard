@@ -1,3 +1,4 @@
+import { TerminalLauncher } from "./TerminalLauncher";
 import { LiveLabMap } from "./LiveLabMap";
 import type { Workbench } from "./useWorkbench";
 import { api } from "./api";
@@ -367,8 +368,8 @@ export function LessonPage({ model }: { model: Workbench }) {
                     <ShieldCheck size={36} />
                     <h2>Evidence comes from your lab.</h2>
                     <p>
-                      Prepare the environment, work in WezTerm, then check the
-                      actual result. Reading the instructions alone does not
+                      Prepare the environment, work in your terminal, then check
+                      the actual result. Reading the instructions alone does not
                       mark the skill as demonstrated.
                     </p>
                     <button
@@ -416,7 +417,7 @@ export function LessonPage({ model }: { model: Workbench }) {
             )}
             <p className="small muted">
               {lab
-                ? "Commands run in a dedicated WezTerm session with this lab’s environment."
+                ? "Commands run in a dedicated terminal session with this lab’s environment."
                 : "Prepare the application files and runtime, then do the work in your terminal."}
             </p>
             {!lab || lab.state === "absent" || lab.state === "failed" ? (
@@ -434,14 +435,11 @@ export function LessonPage({ model }: { model: Workbench }) {
               </button>
             ) : (
               <>
-                <button
-                  className="primary full"
-                  disabled={!!busy}
-                  onClick={() => void perform("terminal")}
-                >
-                  <Terminal size={16} />
-                  Open in WezTerm
-                </button>
+                <TerminalLauncher
+                  key={lesson.id}
+                  model={model}
+                  unitId={lesson.id}
+                />
                 <button
                   className="full"
                   disabled={!!busy}

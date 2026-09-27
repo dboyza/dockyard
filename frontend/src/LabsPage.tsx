@@ -65,8 +65,8 @@ export function LabsPage({ model }: { model: Workbench }) {
               </div>
               <div>
                 <Terminal size={16} />
-                <strong>WezTerm</strong>
-                <span>{doctor.terminal ? "Available" : "Not found"}</span>
+                <strong>Terminal</strong>
+                <span>{doctor.terminal || "Use an existing terminal"}</span>
               </div>
             </div>
             <p className="small muted">

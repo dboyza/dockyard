@@ -69,7 +69,7 @@ Chrome must be available.
 ./scripts/install.sh
 DOCKYARD_INTEGRATION=1 npm --prefix frontend run test:e2e -- e2e/journey.spec.ts e2e/portability.spec.ts e2e/recovery.spec.ts
 DOCKYARD_PROJECT_INTEGRATION=1 npm --prefix frontend run test:e2e -- e2e/project.spec.ts
-npm --prefix frontend run test:e2e -- e2e/accessibility.spec.ts
+npm --prefix frontend run test:e2e -- e2e/accessibility.spec.ts e2e/terminal-layout.spec.ts
 ```
 
 The exam browser suite additionally requires an explicitly prepared disposable exam profile in `DOCKYARD_EXAM_PROFILE`.

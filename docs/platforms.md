@@ -2,7 +2,7 @@
 
 Dockyard uses one browser workbench and one Linux-container curriculum across platforms.
 The backend runs on Apple Silicon macOS or ARM64/x86-64 Linux.
-On Windows, run the backend inside WSL 2 and use your Windows browser and WezTerm.
+On Windows, run the backend inside WSL 2 and use your Windows browser and preferred terminal.
 Native Windows Python and Windows containers are outside this implementation.
 
 | Platform | Lesson backend and shell | Application labs | Advanced native-node labs |
@@ -20,7 +20,8 @@ Use a supported, current Docker Engine with API 1.49 or newer, including a match
 Dockyard uses platform-specific image inspection and save operations.
 Verify `docker info`, `docker buildx version`, `docker compose version`, and `docker version` in the same host environment that runs Dockyard.
 The daemon must be reachable through a local Unix socket.
-Install WezTerm for the browser's **Open in WezTerm** action; any existing terminal can also run the displayed `dockyard lab shell` command.
+Use your preferred terminal: the browser detects supported desktop applications and also provides a copyable lab command.
+See [terminal compatibility](terminals.md) for automatic launch support, editor terminals, and headless sessions.
 Install Git, curl, Bash, Node.js 22.12 or newer, npm, and uv before using the source installer.
 The installer builds the web assets and installs Python dependencies into private project environments.
 It downloads Python 3.14 through uv if necessary.
@@ -61,7 +62,7 @@ Install WSL 2 and a Linux distribution, such as Ubuntu 24.04, following [Microso
 Use `wsl --list --verbose` in PowerShell to confirm the distribution uses version 2.
 Configure Docker Desktop's WSL integration for that distribution, following [Microsoft's Docker guidance](https://learn.microsoft.com/windows/dev-environment/docker/overview), or configure Docker Engine directly inside it.
 Choose one Docker daemon for the distribution.
-Install WezTerm on Windows, and install Git, curl, Bash, uv, Node, and npm inside Linux.
+Use Windows Terminal or another terminal with a WSL session, and install Git, curl, Bash, uv, Node, and npm inside Linux.
 
 Open the distribution's terminal and keep the checkout in its Linux filesystem:
 
@@ -94,8 +95,8 @@ The optional PowerShell launchers target a distribution explicitly without chang
 
 The launchers preserve argument boundaries and propagate the WSL process's exit code.
 They do not install WSL, change execution policy, enable virtualization, or alter Docker settings.
-The browser terminal action opens Windows WezTerm in its local domain and enters the exact selected distribution through `wsl.exe`.
-If Windows interoperability or WezTerm discovery is disabled, run the displayed lab shell command inside the existing WSL terminal.
+The browser terminal picker detects supported Windows applications through WSL interoperability and enters the exact selected distribution through `wsl.exe`.
+If interoperability or automatic discovery is unavailable, run the displayed lab shell command inside an existing WSL terminal.
 
 Native kubeadm labs additionally require working nested virtualization and readable/writable `/dev/kvm` inside WSL.
 Availability depends on the Windows version, processor, WSL kernel, and virtualization configuration.

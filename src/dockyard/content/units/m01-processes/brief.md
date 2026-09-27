@@ -1,6 +1,6 @@
 Run the supplied Dispatch API in a container and make it reachable from this host computer.
 
-1. Prepare the lab and open its dedicated WezTerm tab.
+1. Prepare the lab and open its dedicated lab terminal session.
 2. Inspect `app.py`, then start it using the Python image and the assigned container name, label, and loopback port.
 3. Request `/healthz` and inspect the application logs.
 4. Stop the container, observe a failed request, and start the same container again.

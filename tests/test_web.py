@@ -118,3 +118,50 @@ def test_progress_preview_is_bounded_and_requires_the_same_confirmed_archive(
     assert (
         client.post("/api/progress/preview", content=b"x" * 33, headers=HEADERS).status_code == 413
     )
+
+
+def test_terminal_choices_cannot_execute_arbitrary_programs(connected, monkeypatch, tmp_path):
+    from dockyard import terminals
+    from dockyard.models import Lab, Runtime
+    from dockyard.store import timestamp
+
+    client, service = connected
+    workspace = tmp_path / "lab workspace"
+    workspace.mkdir()
+    lab = Lab(
+        id="f" * 32,
+        unit_id="m01-processes",
+        revision=1,
+        runtime=Runtime.DOCKER,
+        state="ready",
+        workspace=str(workspace),
+        created_at=timestamp(),
+        updated_at=timestamp(),
+        resources={"port": "32123", "docker_endpoint": "unix:///owned.sock"},
+    )
+    service.store.save_lab(lab)
+    monkeypatch.setattr(
+        terminals, "available", lambda: [terminals.Terminal("xterm", "xterm", "/xterm")]
+    )
+    called = []
+    monkeypatch.setattr(terminals, "launch", lambda *args: called.append(args))
+    info = client.get("/api/units/m01-processes/terminal").json()
+    assert info["options"] == [{"id": "xterm", "label": "xterm"}]
+    assert "--data-dir" in info["command"] and "lab shell m01-processes" in info["command"]
+    response = client.post(
+        "/api/units/m01-processes/lab",
+        json={"action": "terminal", "terminal": "/untrusted"},
+        headers=HEADERS,
+    )
+    assert response.status_code == 400 and not called
+    response = client.post(
+        "/api/units/m01-processes/lab",
+        json={"action": "terminal", "terminal": "xterm"},
+        headers=HEADERS,
+    )
+    assert response.status_code == 200 and called[0][0].id == "xterm"
+    assert service.store.setting("terminal") == "xterm"
+    assert client.get("/api/units/m01-processes/terminal").json()["selected"] == "xterm"
+    monkeypatch.setattr(terminals, "available", lambda: [])
+    info = client.get("/api/units/m01-processes/terminal").json()
+    assert info["options"] == [] and info["command"] and info["selected"] == "auto"

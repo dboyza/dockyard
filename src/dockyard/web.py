@@ -33,6 +33,7 @@ class SignIn(Body):
 class Action(Body):
     action: str
     confirmed: bool = False
+    terminal: str = "auto"
 
 
 class LearningEvent(Body):
@@ -354,12 +355,16 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
         service.store.save_note(unit_id, body.body)
         return {"saved": True}
 
+    @app.get("/api/units/{unit_id}/terminal")
+    def terminal_info(unit_id: str) -> dict[str, Any]:
+        return service.terminal_info(unit_id)
+
     @app.post("/api/units/{unit_id}/lab")
     def lab_action(unit_id: str, body: Action) -> dict[str, Any]:
         if body.action in {"reset", "retake", "clean"} and not body.confirmed:
             raise HTTPException(400, "Confirm this change to the current lab first.")
         if body.action == "terminal":
-            return service.open_terminal(unit_id)
+            return service.open_terminal(unit_id, body.terminal)
         return service.perform(unit_id, body.action)
 
     @app.post("/api/operations/{operation_id}/cancel")

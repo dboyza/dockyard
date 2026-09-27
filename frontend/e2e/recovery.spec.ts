@@ -62,7 +62,7 @@ test('port collision, unavailable Docker, cancellation, and concurrent clients r
     }).toBe(true);
     await restoreDocker();
     await page.getByRole('button', { name: 'Prepare lab', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Open in WezTerm' })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Open terminal' })).toBeEnabled();
     execFileSync(python, [path.join(root, 'frontend/e2e/repair_lab.py'), profile, 'm01-processes'], { env: environment });
     await page.getByRole('button', { name: 'Check work', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();

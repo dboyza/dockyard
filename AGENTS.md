@@ -3,7 +3,7 @@
 ## Product contract
 
 - Build a personal, local-first Docker and Kubernetes learning workbench for Apple Silicon macOS, ARM64/x86-64 Linux, and Windows through WSL 2.
-- Use browser lessons beside the real external WezTerm terminal.
+- Use browser lessons beside the real external terminal of the learner's choice.
 - Teach beginners through advanced practice; offer an intermediate placement path.
 - Follow [the implementation plan](docs/implementation-plan.md) and [the curriculum](docs/curriculum.md).
 - Include Docker, practical platform engineering, CKA and CKAD preparation, and advanced security labs.

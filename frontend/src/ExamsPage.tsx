@@ -1,13 +1,6 @@
+import { TerminalLauncher } from "./TerminalLauncher";
 import { useEffect, useState } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  Flag,
-  Play,
-  Terminal,
-  Timer,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Flag, Play, Timer } from "lucide-react";
 import { api } from "./api";
 import type { Assessment, ExamAttempt } from "./contracts.gen";
 import type { Workbench } from "./useWorkbench";
@@ -209,13 +202,12 @@ export function ExamsPage({ model }: { model: Workbench }) {
                   : "Remaining"}
               </span>
             </div>
+            <TerminalLauncher
+              key={exam.unit_id}
+              model={model}
+              unitId={exam.unit_id}
+            />
             <div className="button-row">
-              <button
-                disabled={!!busy}
-                onClick={() => void perform("terminal", false, exam.unit_id)}
-              >
-                <Terminal size={16} /> Open WezTerm
-              </button>
               <button
                 className="primary"
                 disabled={

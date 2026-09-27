@@ -179,6 +179,7 @@ export function useWorkbench() {
     action: string,
     confirmed = false,
     unitId = lesson?.id,
+    terminal = "auto",
   ) => {
     if (!unitId) return;
     if (["reset", "retake", "clean"].includes(action) && !confirmed) {
@@ -207,10 +208,9 @@ export function useWorkbench() {
     setError("");
     setNotice("");
     try {
-      const result = await api<Assessment & { command?: string }>(
-        `/units/${unitId}/lab`,
-        { action, confirmed },
-      );
+      const result = await api<
+        Assessment & { command?: string; terminal?: string }
+      >(`/units/${unitId}/lab`, { action, confirmed, terminal });
       if (sequence !== opened.current) {
         await refresh();
         return;
@@ -227,7 +227,7 @@ export function useWorkbench() {
         }
         setNotice(
           action === "terminal"
-            ? "A dedicated WezTerm lab session is opening."
+            ? `Opening a lab session in ${result.terminal || "your terminal"}.`
             : action === "prepare"
               ? "Your workspace is ready. Open the terminal to begin."
               : `${action.charAt(0).toUpperCase() + action.slice(1)} completed.`,

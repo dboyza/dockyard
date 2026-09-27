@@ -8,7 +8,7 @@ Dockyard is the working product name; Dispatch is the application the learner ev
 
 Deliver a polished local learning product that teaches the user to build, run, debug, secure, deploy, and operate containerized applications with Docker and Kubernetes.
 The primary learner is this user, who has intermediate programming, terminal, Linux, and networking familiarity but wants a complete beginner-to-advanced path in these technologies.
-The application combines browser-based learning with commands and file editing in the real external WezTerm terminal.
+The application combines browser-based learning with commands and file editing in a real external terminal.
 It includes practical engineering, CKA and CKAD preparation mapped to published objectives, and advanced security exercises.
 Full CKS certification preparation is a later extension, not part of this release.
 No AI, account, telemetry, subscription, cloud cluster, or paid API is involved.
@@ -61,11 +61,11 @@ For a cluster-installation lesson, it prepares clean Linux machines and package 
 For an incident, it provisions a deliberately broken environment.
 For an application task, it supplies application source while leaving the Dockerfile, Compose configuration, or Kubernetes manifests to the learner as appropriate.
 
-Open in WezTerm starts a new tab in that lab's workspace with a clearly marked lab shell.
+Open terminal starts a new session in that lab's workspace with a clearly marked lab shell.
 The shell receives an isolated KUBECONFIG, explicit Docker endpoint/context settings, app-owned tool PATH, workspace identifier, and lab identity without modifying global dotfiles.
 Ordinary docker, kubectl, helm, git, and editor commands remain ordinary commands.
 The browser does not need an embedded terminal or editor for release one.
-If WezTerm integration fails, the browser supplies an exact CLI entry command and the workspace path.
+If automatic terminal launch fails, the browser supplies an exact CLI entry command and the workspace path.
 The learner may use any installed editor.
 
 The CLI supports launch, doctor, lab prepare, lab shell, lab status, lab check, lab reset, lab stop, lab resume, lab clean, cache prepare, progress export, and progress import.
