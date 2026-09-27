@@ -1,12 +1,12 @@
 ## A request crosses an explicit mapping
 
-The address your browser uses belongs to the Mac.
+The address your browser uses belongs to the host computer.
 The address the application listens on belongs to its container's network namespace.
-A mapping such as `127.0.0.1:49152:8080` connects the Mac's loopback port 49152 to container port 8080.
+A mapping such as `127.0.0.1:49152:8080` connects the host computer's loopback port 49152 to container port 8080.
 These port numbers may differ, and neither number changes the application's configured listener.
 
-Docker Desktop carries the forwarded traffic through its Linux VM.
-On this Mac, directly using a container's private bridge IP from the host is not the intended portable access path.
+Docker Desktop carries the forwarded traffic through its Linux environment; native Linux Docker Engine publishes it on its host.
+On this host computer, directly using a container's private bridge IP from the host is not the intended portable access path.
 Use the published host endpoint for host-to-container requests.
 
 ## Worked example: read the mapping left to right
@@ -22,7 +22,8 @@ It would forward requests to a port where that application is not listening.
 
 ## Two different loopbacks
 
-`127.0.0.1` in your terminal refers to your Mac.
+`127.0.0.1` in your terminal refers to the host environment running that terminal.
+On Windows, the lab terminal runs inside WSL 2, with Windows browser access handled by localhost forwarding.
 Inside a container, that address refers to the container itself.
 A server bound only to container loopback cannot normally receive packets forwarded to its container interface.
 The supplied API listens on `0.0.0.0:8080` inside its container, accepting traffic to any of that namespace's interfaces.

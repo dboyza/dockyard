@@ -1,4 +1,4 @@
-"""Publish a verified local ARM64 OCI image through an owned loopback registry API."""
+"""Publish a verified local native-architecture OCI image through an owned loopback registry API."""
 
 from __future__ import annotations
 
@@ -12,6 +12,8 @@ from typing import Any
 from urllib.error import HTTPError
 from urllib.parse import urlencode, urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+from dockyard import host
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -76,7 +78,8 @@ def publish(archive: Path, registry: str, password: str) -> str:
             for descriptor in descriptors:
                 platform = descriptor.get("platform", {})
                 if platform and (
-                    platform.get("architecture") != "arm64" or platform.get("os") != "linux"
+                    platform.get("architecture") != host.architecture()
+                    or platform.get("os") != "linux"
                 ):
                     continue
                 data = blob(descriptor)
@@ -85,9 +88,12 @@ def publish(archive: Path, registry: str, password: str) -> str:
                     return image(document["manifests"], depth + 1)
                 if "config" in document:
                     config = json.loads(blob(document["config"]))
-                    if config.get("architecture") == "arm64" and config.get("os") == "linux":
+                    if (
+                        config.get("architecture") == host.architecture()
+                        and config.get("os") == "linux"
+                    ):
                         return data, document
-            raise ValueError("No Linux ARM64 image was found in the owned archive.")
+            raise ValueError("No Linux native-architecture image was found in the owned archive.")
 
         manifest_bytes, manifest = image(json.loads(read("index.json", 1_000_000))["manifests"])
         for descriptor in [manifest["config"], *manifest["layers"]]:

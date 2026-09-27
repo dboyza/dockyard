@@ -20,7 +20,7 @@ image = os.environ["DOCKYARD_IMAGE"]
 archive = Path(os.environ["DOCKYARD_STORAGE"]) / ("scan-" + phase + ".tar")
 archive.parent.mkdir(parents=True, exist_ok=True)
 subprocess.run(
-    ["docker", "image", "save", "--platform=linux/arm64", "--output", str(archive), image],
+    ["docker", "image", "save", "--platform=" + os.environ["DOCKER_DEFAULT_PLATFORM"], "--output", str(archive), image],
     check=True,
     timeout=120,
 )
@@ -30,7 +30,7 @@ with tarfile.open(archive) as source:
     configuration = source.extractfile(manifest[0]["Config"]).read()
 configuration_id = "sha256:" + hashlib.sha256(configuration).hexdigest()
 identity = subprocess.check_output(
-    ["docker", "image", "inspect", "--platform=linux/arm64", "--format", "{{.Id}}", image],
+    ["docker", "image", "inspect", "--platform=" + os.environ["DOCKER_DEFAULT_PLATFORM"], "--format", "{{.Id}}", image],
     text=True,
 ).strip()
 common = [

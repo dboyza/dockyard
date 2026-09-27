@@ -12,7 +12,7 @@ The assessment checks all these boundaries against live state.
 
 Dispatch now runs on two real Ubuntu guests, with containerd and kubeadm rather than kind nodes.
 The host terminal keeps its private Kubernetes client; `limactl` opens a separate Linux guest session.
-The guest's root account is confined to that app-owned VM, but the external macOS shell still has your normal user privileges.
+The guest's root account is confined to that app-owned VM, but the external host shell still has your normal user privileges.
 No host directories are mounted into either guest.
 The database uses a retained local PersistentVolume on the worker, which deliberately has node affinity and is not replicated storage.
 The hardened API, queue, worker, and frontend retain the application and access boundaries from the previous phase.

@@ -5,7 +5,7 @@ On each node, kubelet asks the container runtime to create and maintain Pod sand
 `crictl` is a diagnostic client of that same interface; `ctr` is containerd's lower-level administrative client.
 A successful `ctr` command does not prove that the CRI plugin is ready, and a broken `crictl` configuration does not itself stop existing containers.
 Here the CRI endpoint is the Unix socket `/run/containerd/containerd.sock` inside the guest.
-The Docker daemon on your Mac is a separate runtime used to build and cache images.
+The Docker daemon on your host computer is a separate runtime used to build and cache images.
 
 ## What cgroups establish
 
@@ -42,7 +42,7 @@ The first observation that contradicts your hypothesis should change your next a
 
 Dispatch now runs on two real Ubuntu guests, with containerd and kubeadm rather than kind nodes.
 The host terminal keeps its private Kubernetes client; `limactl` opens a separate Linux guest session.
-The guest's root account is confined to that app-owned VM, but the external macOS shell still has your normal user privileges.
+The guest's root account is confined to that app-owned VM, but the external host shell still has your normal user privileges.
 No host directories are mounted into either guest.
 The database uses a retained local PersistentVolume on the worker, which deliberately has node affinity and is not replicated storage.
 The hardened API, queue, worker, and frontend retain the application and access boundaries from the previous phase.

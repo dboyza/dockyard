@@ -1,6 +1,9 @@
 """A guided mission can become independent without losing earlier work or evidence."""
 
 import os
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import pytest
@@ -27,6 +30,19 @@ def test_guided_mission_can_be_independently_retaken(tmp_path):
             ["/bin/sh", "run.sh"], cwd=Path(lab.workspace), env=service.environment(lab), timeout=60
         )
         assert result.ok, result.stderr
+        # docker run returns before Python binds its listener, especially on native Linux.
+        deadline = time.monotonic() + 10
+        while True:
+            try:
+                with urllib.request.urlopen(
+                    f"http://127.0.0.1:{lab.resources['port']}/healthz", timeout=1
+                ) as response:
+                    assert response.status == 200
+                break
+            except (OSError, urllib.error.URLError):
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.1)
         return service.perform(unit_id, "check")
 
     try:

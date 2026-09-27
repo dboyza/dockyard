@@ -25,13 +25,14 @@ Use API discovery and workload/controller inventories alongside release deprecat
 `python -m dockyard.native stage-upgrade` transfers verified Debian archives into each recorded guest.
 It does not execute the upgrade.
 The directory is `/tmp/dockyard-$DOCKYARD_LAB-upgrade` inside each guest.
-Use the actual package names `kubeadm_1.35.8-1.1_arm64.deb`, `kubelet_1.35.8-1.1_arm64.deb`, and `kubectl_1.35.8-1.1_arm64.deb`.
+The lab shell sets `DOCKYARD_ARCH` to `arm64` or `amd64`.
+Use the architecture-specific package names `kubeadm_1.35.8-1.1_${DOCKYARD_ARCH}.deb`, `kubelet_1.35.8-1.1_${DOCKYARD_ARCH}.deb`, and `kubectl_1.35.8-1.1_${DOCKYARD_ARCH}.deb`.
 Temporary unhold/install/hold steps make the version choice explicit:
 
 ```sh
 packages="/tmp/dockyard-$DOCKYARD_LAB-upgrade"
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo apt-mark unhold kubeadm
-limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo dpkg -i "$packages/kubeadm_1.35.8-1.1_arm64.deb"
+limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo dpkg -i "$packages/kubeadm_1.35.8-1.1_${DOCKYARD_ARCH}.deb"
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo apt-mark hold kubeadm
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo kubeadm upgrade plan v1.35.8
 ```

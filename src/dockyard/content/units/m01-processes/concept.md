@@ -6,7 +6,8 @@ It is not a tiny computer that stays alive independently of its programs.
 An **image** supplies the initial filesystem and default launch settings.
 It is reusable: several containers can start from the same image while keeping separate writable layers.
 The Docker daemon manages those containers; the `docker` command sends requests to that daemon.
-On this Mac, Linux containers run inside Docker Desktop's Linux VM, so the kernel they share is that Linux kernel.
+On macOS and Windows, Linux containers share the kernel of Docker's Linux environment.
+On native Linux, they share the Docker Engine host's kernel.
 
 ## Follow one request
 
@@ -18,11 +19,11 @@ Later you will build its image, add durable storage and a worker, and operate th
 For now, there are two distinct port numbers:
 
 - **8080 inside the container** is the port where the Python process listens.
-- **The assigned host port** is where your browser or terminal connects on the Mac.
+- **The assigned host port** is where your browser or terminal connects on the host computer.
 
 Port publication connects those two sides.
 The host port does not need to match the container port.
-Binding it to `127.0.0.1` makes it reachable from this Mac rather than publishing it on every host interface.
+Binding it to `127.0.0.1` makes it reachable from this host computer rather than publishing it on every host interface.
 
 ## Run the supplied API
 

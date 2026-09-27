@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from dockyard import host
 from dockyard.catalog import CONTENT
 from dockyard.models import Lab, Runtime
 from dockyard.process import run
@@ -30,7 +31,7 @@ pytestmark = [
 
 def test_linux_guests_network_resume_and_preserve_identity():
     # Short profile paths are required by the platform's Unix socket length limit.
-    with tempfile.TemporaryDirectory(prefix="dy-vm-", dir="/private/tmp") as temporary:
+    with tempfile.TemporaryDirectory(prefix="dy-vm-", dir=host.temporary_root()) as temporary:
         profile = Path(temporary)
         service = Service(profile)
         with socket.socket() as listener:
@@ -62,7 +63,7 @@ def test_linux_guests_network_resume_and_preserve_identity():
             for entry in entries:
                 assert runtime.verify(entry)["status"] == "Running"
                 observed = runtime.guest(entry["name"], ["uname", "-m"])
-                assert observed.ok and observed.stdout.strip() == "aarch64"
+                assert observed.ok and observed.stdout.strip() == host.guest_architecture()
             server = f"""import http.server,socket,threading
 class IPv6Server(http.server.ThreadingHTTPServer):
     address_family=socket.AF_INET6
@@ -181,7 +182,7 @@ while True:
 
 @pytest.mark.parametrize("version,cri_version", [("1.35.8", "1.35.0"), ("1.34.12", "1.34.0")])
 def test_native_prerequisites_install_with_unusable_package_proxies(version, cri_version):
-    with tempfile.TemporaryDirectory(prefix="dy-offline-", dir="/private/tmp") as temporary:
+    with tempfile.TemporaryDirectory(prefix="dy-offline-", dir=host.temporary_root()) as temporary:
         profile = Path(temporary)
         service = Service(profile)
         lab = Lab(

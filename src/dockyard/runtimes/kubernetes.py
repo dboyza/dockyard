@@ -14,6 +14,7 @@ from typing import Any
 
 import yaml
 
+from dockyard import host
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes import kubeclient
@@ -120,7 +121,7 @@ class KubernetesRuntime:
                     [
                         "image",
                         "save",
-                        "--platform=linux/arm64",
+                        "--platform=linux/" + host.architecture(),
                         "--output",
                         str(archive),
                         local,

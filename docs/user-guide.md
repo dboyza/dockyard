@@ -1,5 +1,7 @@
 # Using Dockyard
 
+See [platform setup](platforms.md) for macOS, Linux, and Windows through WSL 2.
+
 ## Choose your starting point
 
 Launch `./dockyard` from the repository after installation.
@@ -89,12 +91,12 @@ Unrelated Docker resources are not stopped to make room.
 
 Closing a browser does not stop lab resources.
 Stop the environment explicitly when you finish a session.
-An external terminal has your ordinary macOS permissions; do not run commands against unrelated projects or real infrastructure.
+An external terminal has your ordinary host permissions; do not run commands against unrelated projects or real infrastructure.
 
 ## Prepare a cache
 
 Select a module, learning track, individual activity, or the full course in Lab Manager.
-Inspect cache checks pinned tool hashes, native package hashes, and ARM64 image availability.
+Inspect cache checks pinned tool hashes, native package hashes, and native-architecture image availability.
 Prefetch downloads missing declared dependencies and keeps verified downloads when canceled.
 A repeated preparation can resume supported partial downloads.
 The private cache has a 40 GiB soft budget; Docker images and build cache remain in Docker Desktop's shared storage.
@@ -135,7 +137,7 @@ Older curriculum evidence stays historical and remains due for reassessment wher
 Export destinations must not already exist.
 The import command previews by default; `--yes` merges the validated archive.
 Use `--data-dir PATH` before the subcommand for a separate profile.
-Native VM profiles require short paths because macOS Unix socket paths have a fixed length limit.
+Native VM profiles require short paths because Lima Unix socket paths have a fixed length limit.
 The default profile is `~/Library/Application Support/Dockyard`.
 The app uses a private tools directory inside an installed profile, and never edits the default kubeconfig.
 

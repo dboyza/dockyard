@@ -7,7 +7,7 @@ This separation lets infrastructure operators manage shared entry points while a
 It is an ownership model, not a guarantee that an organization has configured RBAC correctly.
 
 The supplied Gateway listens on HTTP port 8080 inside the controller.
-The controller Service maps that listener through node port 30080 to the assigned Mac loopback port.
+The controller Service maps that listener through node port 30080 to the assigned host computer loopback port.
 The HTTPRoute matches `gateway.dispatch.test` and forwards to Service `dispatch` port 8080.
 Backend references use the Service port, not the container port or NodePort.
 

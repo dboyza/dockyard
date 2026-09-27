@@ -9,4 +9,4 @@ Why can a healthy etcd majority coexist with a broken client endpoint, and why w
 
 ## Transfer beyond this lab
 
-This local topology teaches routing and quorum mechanics, but all guests still share one Mac and the endpoint itself has additional failure boundaries.
+This local topology teaches routing and quorum mechanics, but all guests still share one host computer and the endpoint itself has additional failure boundaries.

@@ -9,4 +9,4 @@ What would a successful request with certificate verification disabled fail to d
 
 ## Transfer beyond this lab
 
-Production ingress also requires certificate lifecycle management and an exposure design beyond this Mac-local endpoint.
+Production ingress also requires certificate lifecycle management and an exposure design beyond this local endpoint.

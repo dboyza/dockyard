@@ -1,8 +1,10 @@
 ## The host and container platforms are different facts
 
-This Mac uses an ARM64 processor, while Docker Desktop runs a Linux VM for Linux containers.
-The native application image in this lab should therefore report linux/arm64, not darwin/arm64.
-An amd64 image may require emulation here, which can affect performance and compatibility.
+Docker runs Linux containers on every supported platform.
+On macOS and Windows, Docker runs them in a Linux environment; a native Linux Docker Engine uses its host kernel.
+The image platform combines that Linux operating system with the processor architecture: `linux/arm64` on ARM64, or `linux/amd64` on x86-64.
+Dockyard sets `DOCKER_DEFAULT_PLATFORM` in the lab shell to the native platform.
+An image for another processor may require emulation, which can affect performance and compatibility.
 Inspect the artifact you actually built rather than inferring its architecture from a tag name.
 
 ```sh
@@ -11,7 +13,7 @@ docker image inspect --format '{{.Os}}/{{.Architecture}}' "$DOCKYARD_IMAGE"
 
 A multi-platform image reference can point to an index containing platform-specific manifests.
 The runtime selects a matching platform, and each platform's content can have its own digest.
-Building a tested native image is sufficient for this exercise; it does not certify that an untested amd64 variant works.
+Building a tested native image is sufficient for this exercise; it does not certify that an untested variant for another processor works.
 
 ## Context control is a supply-chain boundary
 

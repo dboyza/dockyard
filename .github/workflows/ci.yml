@@ -1,0 +1,40 @@
+name: Cross-platform contracts
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  posix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: '3.14'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: uv sync --locked
+      - run: uv run ruff check src/dockyard
+      - run: uv run mypy src/dockyard
+      - run: uv run pytest -q -m 'not integration'
+      - run: npm --prefix frontend ci
+      - run: npm --prefix frontend run lint && npm --prefix frontend run format:check && npm --prefix frontend run test
+      - run: npm --prefix frontend run build && uv build
+      - run: uv run dockyard --data-dir .runtime/ci-audit audit
+  windows-bridge:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: PowerShell launcher contracts
+        shell: pwsh
+        run: ./tests/windows-bridge.ps1

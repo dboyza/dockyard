@@ -10,6 +10,7 @@ import threading
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from dockyard import host
 from dockyard.catalog import CONTENT
 from dockyard.locking import operation_lock
 from dockyard.runtimes.docker import RuntimeErrorBase
@@ -23,7 +24,10 @@ if TYPE_CHECKING:
 def manifest(version: str) -> dict[str, Any]:
     if version not in {"1.35.8", "1.34.12"}:
         raise RuntimeErrorBase("The requested Kubernetes prerequisite version is not pinned.")
-    record = dict(json.loads((CONTENT / f"runtime/linux/packages-{version}.json").read_text()))
+    suffix = "-amd64" if host.architecture() == "amd64" else ""
+    record = dict(
+        json.loads((CONTENT / f"runtime/linux/packages-{version}{suffix}.json").read_text())
+    )
     if record.get("base_image_sha256") != MANIFEST["ubuntu-node"]["sha256"]:
         raise RuntimeErrorBase("The native packages do not match the pinned guest image.")
     return record

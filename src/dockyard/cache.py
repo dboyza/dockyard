@@ -9,6 +9,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from dockyard import host
 from dockyard.locking import operation_lock
 from dockyard.models import Runtime, Unit
 from dockyard.process import run
@@ -123,7 +124,15 @@ def inventory(service: Service, scope: str) -> dict[str, Any]:
         reference = COMPATIBILITY["images"][name]
         result = (
             run(
-                ["docker", "image", "inspect", "--format", "{{.Architecture}}", reference],
+                [
+                    "docker",
+                    "image",
+                    "inspect",
+                    "--platform=linux/" + host.architecture(),
+                    "--format",
+                    "{{.Architecture}}",
+                    reference,
+                ],
                 env=env,
                 timeout=10,
             )
@@ -134,7 +143,9 @@ def inventory(service: Service, scope: str) -> dict[str, Any]:
             {
                 "name": name,
                 "reference": reference,
-                "ready": bool(result and result.ok and result.stdout.strip() == "arm64"),
+                "ready": bool(
+                    result and result.ok and result.stdout.strip() == host.architecture()
+                ),
             }
         )
     scanner = (
@@ -230,16 +241,24 @@ def prepare(
                 installer.ensure(name, cancel, report)
             for name in sorted({name for dep in requirements for name in dep["images"]}):
                 reference = COMPATIBILITY["images"][name]
-                report("Checking pinned ARM64 image: " + name)
+                report("Checking pinned native-architecture image: " + name)
                 found = run(
-                    ["docker", "image", "inspect", "--format", "{{.Architecture}}", reference],
+                    [
+                        "docker",
+                        "image",
+                        "inspect",
+                        "--platform=linux/" + host.architecture(),
+                        "--format",
+                        "{{.Architecture}}",
+                        reference,
+                    ],
                     env=env,
                     timeout=10,
                 )
-                if not found.ok or found.stdout.strip() != "arm64":
-                    report("Downloading pinned ARM64 image: " + name)
+                if not found.ok or found.stdout.strip() != host.architecture():
+                    report("Downloading pinned native-architecture image: " + name)
                     result = run(
-                        ["docker", "pull", "--platform=linux/arm64", reference],
+                        ["docker", "pull", "--platform=linux/" + host.architecture(), reference],
                         env=env,
                         timeout=900,
                         cancel=cancel,

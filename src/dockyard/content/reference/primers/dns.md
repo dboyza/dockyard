@@ -10,7 +10,7 @@ In a Compose project, a service name can resolve through that project's containe
 In Kubernetes, a Service named `dispatch` in namespace `dispatch` has the conventional full name `dispatch.dispatch.svc.cluster.local` in this course's cluster domain.
 A short name is expanded using the requesting Pod's DNS search configuration.
 A Pod in another namespace may need a namespace-qualified or fully qualified name.
-Your Mac does not automatically use the cluster's DNS resolver.
+Your host computer does not automatically use the cluster's DNS resolver.
 
 ## Inspect before guessing
 
@@ -40,7 +40,7 @@ A default-deny egress policy may block traffic to DNS as well as to the business
 DNS commonly uses UDP 53 and can also require TCP 53.
 Allowing only an application port will not help a client that cannot resolve the dependency's name.
 Verify both name resolution and the actual intended request from the relevant source workload.
-A request from the Mac or a node can follow a different policy path from a request from a Pod.
+A request from the host computer or a node can follow a different policy path from a request from a Pod.
 
 ## DNS availability has placement requirements
 

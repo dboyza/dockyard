@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from dockyard import host
 from dockyard.catalog import Catalog
 from dockyard.models import Runtime
 from dockyard.process import run
@@ -27,7 +28,7 @@ pytestmark = [
 def test_authored_reference_repairs_its_actual_starter(tmp_path, unit_id):
     if Catalog().get(unit_id).runtime == Runtime.LINUX:
         # Native providers use Unix sockets whose paths must stay below the macOS limit.
-        with tempfile.TemporaryDirectory(prefix="dy-course-", dir="/private/tmp") as temporary:
+        with tempfile.TemporaryDirectory(prefix="dy-course-", dir=host.temporary_root()) as temporary:
             assert_reference(Path(temporary), unit_id)
     else:
         assert_reference(tmp_path, unit_id)

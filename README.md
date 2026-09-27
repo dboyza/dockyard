@@ -3,13 +3,14 @@
 </p>
 <h1 align="center">Dockyard</h1>
 <p align="center"><strong>Learn Docker and Kubernetes by operating a real system.</strong></p>
-<p align="center">A personal learning workbench for Apple Silicon macOS, with browser lessons, external WezTerm sessions, and an evolving Dispatch application.</p>
+<p align="center">A personal learning workbench for macOS, Linux, and Windows through WSL 2, with browser lessons, external WezTerm sessions, and an evolving Dispatch application.</p>
 <p align="center"><a href="#start-learning">Start learning</a> · <a href="docs/user-guide.md">User guide</a> · <a href="docs/curriculum.md">Curriculum</a> · <a href="docs/runtime-evidence.md">Runtime evidence</a></p>
 
 ## Start learning
 
 This checkout includes a local launcher after installation.
-Docker Desktop and WezTerm must be installed for practical labs.
+A local Docker Engine and WezTerm provide the practical lab environment.
+See [platform setup](docs/platforms.md) for macOS, Linux, and Windows/WSL prerequisites.
 The source installer also needs Node/npm and uv; it downloads application dependencies, builds the browser assets, and installs into this repository's private environment.
 It does not alter shell configuration or Docker Desktop settings.
 
@@ -72,7 +73,8 @@ dockyard/
 ```
 
 Use the [maintenance guide](docs/maintenance.md) for source setup, generated contracts, and release checks.
-The [release validation](docs/release-validation.md) summarizes the verified package, checks, and limitations.
+The [platform validation](docs/platform-validation.md) records cross-platform checks and remaining verification limits.
+The [original release validation](docs/release-validation.md) preserves the macOS baseline.
 The [runtime evidence log](docs/runtime-evidence.md) records the underlying staged observations.
 
 For help, include the activity ID, action, relevant diagnostic, app version, and `./dockyard doctor` output.

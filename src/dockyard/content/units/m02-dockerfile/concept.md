@@ -1,6 +1,6 @@
 ## From a mounted directory to an artifact
 
-The first module mounted app.py from your Mac into a reusable Python image.
+The first module mounted app.py from your host computer into a reusable Python image.
 That is convenient for experimentation, but another machine would also need your source directory.
 An application image carries the files and runtime configuration required to start the service.
 Building the image and running a container are separate operations.
@@ -44,6 +44,6 @@ Later you will distinguish that mutable tag from an immutable digest.
 ## Ports are still runtime choices
 
 `EXPOSE 8080` documents an intended container port.
-It does not publish that port on your Mac.
+It does not publish that port on your host computer.
 The container run command still needs a loopback-bound `-p` mapping.
 The application must listen on `0.0.0.0` inside the container to accept forwarded requests.

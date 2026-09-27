@@ -15,6 +15,7 @@ from typing import Any
 from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
+from dockyard import host
 from dockyard.probes.kubernetes import get, kubectl, owned_pods, sql
 from dockyard.probes.security import execute, request
 from dockyard.process import run
@@ -43,13 +44,29 @@ def hardening() -> dict[str, Any]:
         cache = Path(os.environ["TRIVY_CACHE_DIR"])
         image = os.environ["DOCKYARD_IMAGE"]
         identity = run(
-            ["docker", "image", "inspect", "--platform=linux/arm64", "--format", "{{.Id}}", image]
+            [
+                "docker",
+                "image",
+                "inspect",
+                "--platform=linux/" + host.architecture(),
+                "--format",
+                "{{.Id}}",
+                image,
+            ]
         )
         archive = private / "verification-image.tar"
         if archive.is_symlink():
             raise ValueError("Verification archive cannot be a symlink")
         saved = run(
-            ["docker", "image", "save", "--platform=linux/arm64", "-o", str(archive), image],
+            [
+                "docker",
+                "image",
+                "save",
+                "--platform=linux/" + host.architecture(),
+                "-o",
+                str(archive),
+                image,
+            ],
             timeout=120,
         )
         if not saved.ok or not ready(cache):

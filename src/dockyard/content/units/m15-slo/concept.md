@@ -12,7 +12,7 @@ Health probes can remain healthy during that regression because process health a
 Avoid redefining the indicator to hide slow requests or counting only successful responses in its denominator.
 
 The supplied measure-slo.py runs twenty real reads inside the Pod network and records elapsed time, status, payload validity, and request ID for each.
-This separates application/network behavior from Mac-to-VM port-forward overhead.
+This separates application/network behavior from host-to-VM port-forward overhead.
 It writes slo-before.json or slo-after.json and computes the good/total ratio using slo.json.
 
 ```sh

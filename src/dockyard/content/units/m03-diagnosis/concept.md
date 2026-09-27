@@ -1,9 +1,9 @@
 ## The caller decides what localhost means
 
-A request made from your Mac and a request made from inside Dispatch begin in different network namespaces.
+A request made from your host computer and a request made from inside Dispatch begin in different network namespaces.
 The same string, `127.0.0.1`, refers to a different loopback interface in each.
 If the API uses a loopback URL for its dependency, it calls itself or another listener inside its own container.
-It does not call a neighboring container merely because both run on the same Mac.
+It does not call a neighboring container merely because both run on the same host computer.
 
 ## Separate the diagnostic layers
 
@@ -32,5 +32,5 @@ Preserve these distinctions in your diagnosis instead of calling every failure a
 ## Configuration replacement
 
 The dependency URL is an environment variable recorded when the container is created.
-Changing a shell variable on your Mac does not alter an existing container's environment.
+Changing a shell variable on your host computer does not alter an existing container's environment.
 Create a corrected replacement while keeping the assigned label, bridge, and publication contract.

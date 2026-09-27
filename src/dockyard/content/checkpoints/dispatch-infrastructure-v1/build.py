@@ -1,4 +1,4 @@
-"""Build the supplied Dispatch application and transfer its native ARM64 image."""
+"""Build the supplied Dispatch application and transfer its native image."""
 
 import os
 import subprocess

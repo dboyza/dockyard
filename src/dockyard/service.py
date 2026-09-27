@@ -15,6 +15,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from dockyard import host
 from dockyard.catalog import CONTENT, Catalog
 from dockyard.locking import operation_lock
 from dockyard.models import (
@@ -100,6 +101,8 @@ class Service:
         env.pop("WEZTERM_UNIX_SOCKET", None)
         env.pop("KIND_EXPERIMENTAL_DOCKER_NETWORK", None)
         env["KIND_EXPERIMENTAL_PROVIDER"] = "docker"
+        env["DOCKYARD_ARCH"] = host.architecture()
+        env["DOCKER_DEFAULT_PLATFORM"] = "linux/" + host.architecture()
         env["PATH"] = (
             f"{self.tools / 'bin'}:{Path(sys.executable).parent}:{env.get('PATH', '/usr/bin:/bin')}"
         )
@@ -172,6 +175,8 @@ class Service:
             **host_readiness(self.directory),
             "tools": tools,
             "docker_ready": bool(docker and docker.ok),
+            "terminal": host.wezterm(),
+            "docker_tools_error": host.docker_plugin_blocker(env) if tools["docker"] else None,
             "docker_version": docker.stdout.strip() if docker and docker.ok else None,
             "docker_error": docker.stderr.strip() if docker and not docker.ok else None,
             "free_disk_gib": round(shutil.disk_usage(self.directory).free / 1024**3, 1),
@@ -182,7 +187,9 @@ class Service:
         if not endpoint:
             result = run(["docker", "context", "inspect", "--format", "{{.Endpoints.docker.Host}}"])
             if not result.ok:
-                raise LabError("Docker is unavailable. Start Docker Desktop and run doctor again.")
+                raise LabError(
+                    "Docker is unavailable. Start your Docker engine and run doctor again."
+                )
             endpoint = result.stdout.strip()
         if not endpoint.startswith("unix://"):
             raise LabError("Dockyard requires a local Unix-socket Docker endpoint.")
@@ -705,8 +712,43 @@ class Service:
             raise LabError("Prepare this lab first.")
         command = self.shell_command(unit_id)
         env = self.environment(lab)
+        terminal = host.wezterm()
+        if not terminal:
+            raise LabError(
+                "Install WezTerm to open a new terminal, or use the displayed lab shell command."
+            )
+        terminal_cwd = lab.workspace
+        domain: list[str] = []
+        start_domain: list[str] = []
+        if terminal.lower().endswith(".exe") and host.is_wsl():
+            distribution = os.environ.get("WSL_DISTRO_NAME")
+            if not distribution:
+                raise LabError("WSL_DISTRO_NAME is unavailable; open the lab shell inside WSL 2.")
+            command = [
+                "wsl.exe",
+                "--distribution",
+                distribution,
+                "--cd",
+                lab.workspace,
+                "--exec",
+                *command,
+            ]
+            terminal_cwd = "C:\\"
+            domain = ["--domain-name", "local"]
+            start_domain = ["--domain", "local"]
+
         tab = run(
-            ["wezterm", "cli", "--no-auto-start", "spawn", "--cwd", lab.workspace, "--", *command],
+            [
+                terminal,
+                "cli",
+                "--no-auto-start",
+                "spawn",
+                *domain,
+                "--cwd",
+                terminal_cwd,
+                "--",
+                *command,
+            ],
             env=env,
             timeout=8,
         )
@@ -716,11 +758,12 @@ class Service:
 
             subprocess.Popen(
                 [
-                    "wezterm",
+                    terminal,
                     "start",
                     "--always-new-process",
+                    *start_domain,
                     "--cwd",
-                    lab.workspace,
+                    terminal_cwd,
                     "--",
                     *command,
                 ],
@@ -744,4 +787,11 @@ class Service:
             "print 'Run dockyard lab check to inspect your work; exit closes this shell.'\n"
         )
         atomic_write(directory / ".zshrc", rc.encode())
+        bash = (
+            "# Private Dockyard shell; global configuration is not sourced.\n"
+            f"PS1='dockyard {lab.unit_id} {lab.id[:8]} \\W \\$ '\n"
+            "printf '%s\\n' 'Docker and Kubernetes commands here use this lab environment.' "
+            "'Run dockyard lab check to inspect your work; exit closes this shell.'\n"
+        )
+        atomic_write(directory / ".bashrc", bash.encode())
         return directory

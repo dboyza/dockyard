@@ -9,11 +9,13 @@ import shutil
 import threading
 from collections.abc import Callable
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import yaml
 
+from dockyard import host
 from dockyard.catalog import CONTENT
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
@@ -21,6 +23,21 @@ from dockyard.runtimes import kubeclient
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.toolchain import MANIFEST, Toolchain, digest
 from dockyard.workspace import atomic_write
+
+
+def birth_time(path: Path) -> float:
+    observed = path.stat()
+    if hasattr(observed, "st_birthtime"):
+        return float(observed.st_birthtime)
+    result = run(["stat", "--format=%w", str(path)], timeout=5)
+    try:
+        if result.ok:
+            return datetime.fromisoformat(result.stdout.strip()).timestamp()
+    except ValueError:
+        pass
+    raise RuntimeErrorBase(
+        "Native VM ownership requires a filesystem with creation timestamps, such as ext4."
+    )
 
 
 class LinuxRuntime:
@@ -81,9 +98,13 @@ class LinuxRuntime:
         if configuration.is_symlink() or disk.is_symlink():
             raise RuntimeErrorBase("A VM identity file is a symbolic link; preserved.")
         value = yaml.safe_load(configuration.read_text())
-        if value.get("mounts") or value.get("vmType") != "vz" or value.get("arch") != "aarch64":
+        if (
+            value.get("mounts")
+            or value.get("vmType") != host.vm_type()
+            or value.get("arch") != host.guest_architecture()
+        ):
             raise RuntimeErrorBase(
-                "The VM no longer has the approved no-mount ARM64 configuration."
+                "The VM no longer has the approved no-mount host-native configuration."
             )
         stat = disk.stat()
         return {
@@ -92,7 +113,7 @@ class LinuxRuntime:
             "configuration": digest(configuration),
             "disk_device": str(stat.st_dev),
             "disk_inode": str(stat.st_ino),
-            "disk_created": str(stat.st_birthtime),
+            "disk_created": str(birth_time(disk)),
         }
 
     def discover(self) -> list[dict[str, str]]:
@@ -110,7 +131,7 @@ class LinuxRuntime:
             if intent.get("lab") != self.lab.id or name not in intent.get("names", []):
                 raise RuntimeErrorBase("The VM creation record does not match this lab.")
             directory = self.home / name
-            if directory.stat().st_birthtime < intent["created"]:
+            if birth_time(directory) < intent["created"]:
                 raise RuntimeErrorBase("The VM predates its creation intent; preserved.")
             inventory.append(entry)
             names.add(name)
@@ -203,8 +224,8 @@ class LinuxRuntime:
                 continue
             self.report("Creating isolated Linux guest " + name)
             configuration: dict[str, Any] = {
-                "vmType": "vz",
-                "arch": "aarch64",
+                "vmType": host.vm_type(),
+                "arch": host.guest_architecture(),
                 "cpus": 2,
                 "memory": "2GiB" if nodes >= 3 else "3GiB",
                 "disk": "15GiB",
@@ -212,7 +233,7 @@ class LinuxRuntime:
                 "images": [
                     {
                         "location": str(image),
-                        "arch": "aarch64",
+                        "arch": host.guest_architecture(),
                         "digest": "sha256:" + MANIFEST["ubuntu-node"]["sha256"],
                     }
                 ],

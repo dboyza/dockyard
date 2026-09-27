@@ -19,7 +19,7 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A Dockerfile contains EXPOSE 8080. Can you reach it from the Mac without a published port?
+  question: A Dockerfile contains EXPOSE 8080. Can you reach it from the host computer without a published port?
   options:
   - No; EXPOSE does not publish a host port.
   - Yes; Docker automatically selects host port 8080.
@@ -108,8 +108,8 @@ checks:
   expected: '{{port}}'
   diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
 - id: loopback-binding
-  title: Only the local Mac can reach the published port
-  explanation: Only the local Mac can reach the published port
+  title: Only the local host computer can reach the published port
+  explanation: Only the local host computer can reach the published port
   command:
     args:
     - docker

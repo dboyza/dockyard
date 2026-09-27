@@ -2,7 +2,7 @@
 
 ## Product contract
 
-- Build a personal, local-first Docker and Kubernetes learning workbench for this Apple Silicon Mac.
+- Build a personal, local-first Docker and Kubernetes learning workbench for Apple Silicon macOS, ARM64/x86-64 Linux, and Windows through WSL 2.
 - Use browser lessons beside the real external WezTerm terminal.
 - Teach beginners through advanced practice; offer an intermediate placement path.
 - Follow [the implementation plan](docs/implementation-plan.md) and [the curriculum](docs/curriculum.md).
@@ -26,7 +26,7 @@
 ## Engineering and verification
 
 - Prefer simple typed interfaces, one canonical curriculum source, reversible lab operations, and observed runtime evidence.
-- Follow [the maintenance guide](docs/maintenance.md) for installed verification and [release validation](docs/release-validation.md) for the current evidence boundaries.
+- Follow [the maintenance guide](docs/maintenance.md) for installed verification and [platform validation](docs/platform-validation.md) for the current evidence boundaries.
 - Start bug fixes by reproducing through the real learner workflow.
 - Check terminal behavior using real PTYs and terminal tools, never browser-rendered terminal previews.
 - Inspect screenshots with direct image-reading tools; browser automation is for the actual browser interface.

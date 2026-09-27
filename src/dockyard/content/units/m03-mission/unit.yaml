@@ -22,7 +22,7 @@ prediction:
   question: Which endpoint should the API use for its internal peer?
   options:
   - The stable dependency alias and its container port.
-  - A randomly assigned host port on Mac loopback.
+  - A randomly assigned host port on host computer loopback.
   - The current private IP copied into source code.
   correct: 0
   explanation: The service relationship belongs inside the shared bridge and should survive ordinary container replacement.
@@ -107,8 +107,8 @@ checks:
   expected: '{{port}}'
   diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
 - id: loopback-binding
-  title: Only the local Mac can reach the published port
-  explanation: Only the local Mac can reach the published port
+  title: Only the local host computer can reach the published port
+  explanation: Only the local host computer can reach the published port
   command:
     args:
     - docker

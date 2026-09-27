@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dockyard-learn"
-version = "0.1.0"
+version = "0.2.0"
 description = "A local Docker and Kubernetes learning workbench with real terminal labs."
 requires-python = ">=3.12,<3.15"
 dependencies = [
@@ -29,6 +29,14 @@ dev = [
 
 [tool.hatch.build]
 artifacts = ["src/dockyard/static/**"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src/dockyard", "/frontend", "/scripts", "/tests", "/docs",
+  "/AGENTS.md", "/dockyard", "/dockyard.ps1", "/pyproject.toml",
+  "/uv.lock", "/README.md", "/.gitignore", "/.gitattributes",
+]
+exclude = ["/frontend/node_modules", "/frontend/*.tsbuildinfo", "**/__pycache__"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dockyard"]

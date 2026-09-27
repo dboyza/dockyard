@@ -1,4 +1,4 @@
-You ran a real application inside a Linux container and verified it from the Mac.
+You ran a real application inside a Linux container and verified it from the host computer.
 The image supplied the runtime filesystem, the container supplied an instance of that environment, and the main process determined whether it kept running.
 The port mapping connected a host endpoint to the process's listening port.
 

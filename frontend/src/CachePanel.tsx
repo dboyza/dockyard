@@ -154,7 +154,7 @@ export function CachePanel({ model }: { model: Workbench }) {
               </dd>
             </div>
             <div>
-              <dt>ARM64 images cached</dt>
+              <dt>Native images cached</dt>
               <dd>
                 {report.images.filter((image) => image.ready).length} /{" "}
                 {report.images.length}

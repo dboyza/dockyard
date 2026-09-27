@@ -112,7 +112,9 @@ def continue_project(
         for name in merged:
             normalized = unicodedata.normalize("NFD", name).casefold()
             if normalized in folded:
-                raise ValueError("The selected source conflicts with a scaffold filename on macOS.")
+                raise ValueError(
+                    "The selected source conflicts with a scaffold filename (case-insensitive)."
+                )
             folded.add(normalized)
         for name in folded:
             if any(parent.as_posix() in folded for parent in Path(name).parents):

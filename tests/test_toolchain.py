@@ -44,8 +44,6 @@ def download(monkeypatch, tmp_path):
             }
         },
     )
-    monkeypatch.setattr("dockyard.toolchain.platform.system", lambda: "Darwin")
-    monkeypatch.setattr("dockyard.toolchain.platform.machine", lambda: "arm64")
     yield Toolchain(tmp_path), payload, requests
     server.shutdown()
     server.server_close()

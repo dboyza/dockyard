@@ -66,18 +66,18 @@ export function LabsPage({ model }: { model: Workbench }) {
               <div>
                 <Terminal size={16} />
                 <strong>WezTerm</strong>
-                <span>{doctor.tools.wezterm ? "Available" : "Not found"}</span>
+                <span>{doctor.terminal ? "Available" : "Not found"}</span>
               </div>
             </div>
             <p className="small muted">
-              {doctor.system} {doctor.architecture} ·{" "}
+              {doctor.wsl ? "WSL 2" : doctor.system} {doctor.architecture} ·{" "}
               {doctor.host_memory_gib === null
                 ? "Host RAM not reported"
                 : `${doctor.host_memory_gib} GiB host RAM`}{" "}
               ·{" "}
               {doctor.memory_free_percent === null
                 ? "Memory pressure unavailable"
-                : `${doctor.memory_free_percent}% memory available reported by macOS`}
+                : `${doctor.memory_free_percent}% memory available reported by the host`}
             </p>
             <p className="small muted">
               {doctor.cluster_policy} Native profiles reserve up to{" "}
@@ -85,6 +85,12 @@ export function LabsPage({ model }: { model: Workbench }) {
               owned cluster in this profile; another profile must release its
               own cluster first.
             </p>
+            {doctor.docker_tools_error && (
+              <p className="diagnostic">{doctor.docker_tools_error}</p>
+            )}
+            {doctor.native_vm_blocker && (
+              <p className="diagnostic">{doctor.native_vm_blocker}</p>
+            )}
             {doctor.docker_error && (
               <p className="diagnostic">{doctor.docker_error}</p>
             )}

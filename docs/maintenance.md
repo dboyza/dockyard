@@ -7,8 +7,9 @@ The `dockyard` launcher executes that installed package without changing the cal
 Source development uses `.venv`; installed profiles keep their own private runtime tools.
 Application dependencies are recorded in `uv.lock` and `frontend/package-lock.json`.
 Runtime tools and images use the separate pinned manifests in `src/dockyard/content`.
+Source distributions include explicit application directories; private tools, dependency caches, and virtual environments must remain outside the archive.
 
-Learner data lives in the selected profile, normally `~/Library/Application Support/Dockyard`.
+Learner data lives in the selected profile, normally `~/Library/Application Support/Dockyard` on macOS or `~/.local/share/dockyard` on Linux/WSL.
 Keep release verification in explicit disposable profiles.
 Do not run broad Docker prune commands or operate on a resource merely because its name resembles Dockyard.
 The cleanup adapters require recorded ownership and matching identities.
@@ -43,9 +44,9 @@ A restricted execution sandbox may require explicit local-network permission eve
 
 ## Real-runtime verification
 
-Run integration tests serially on this 24 GiB Mac.
+Run integration tests serially within each host environment.
 They create disposable owned environments, and cleanup belongs in the test's `finally` block.
-A native profile uses a short `/private/tmp` path to remain inside macOS's Unix socket length limit.
+Native test profiles use short paths under `/private/tmp` on macOS and `/tmp` on Linux to stay inside Lima's Unix socket length limit.
 
 ```sh
 DOCKYARD_INTEGRATION=1 .venv/bin/pytest -x -q tests/test_curriculum_integration.py
@@ -89,7 +90,11 @@ Update objective mappings when published objectives change, recording the source
 Do not silently treat a newer Kubernetes release as the certification environment.
 
 Pin new downloads to verified upstream identities and test their declared architecture.
-Update both package manifests for adjacent-version native upgrade labs when necessary.
+Update both Kubernetes-version package manifests for both ARM64 and x86-64 when necessary.
+The base toolchain manifest targets macOS; the Linux platform overlays pin native binaries and matching guest images.
+Run `pwsh -NoProfile -File tests/windows-bridge.ps1` to validate the Windows launcher argument contract.
+The CI matrix checks macOS, Linux ARM64, Linux x86-64, and the Windows PowerShell bridge.
+A green contract matrix does not replace actual Docker, VM, or Windows desktop verification.
 A new external build or bootstrap step must appear in cache readiness until its offline dependency closure is verified.
 Never label a lab offline-ready merely because a base image exists.
 

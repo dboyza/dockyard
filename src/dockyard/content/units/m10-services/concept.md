@@ -6,14 +6,14 @@ The Service's `port` is the client-facing port, while `targetPort` identifies th
 A container's declared `containerPort` documents a port; it does not make a process listen there.
 
 NodePort exposes the Service on a node port, usually in the 30000-32767 range.
-This lab maps node port 30080 to the Mac's assigned loopback port, so it can be tested without changing host routes.
+This lab maps node port 30080 to the host computer's assigned loopback port, so it can be tested without changing host routes.
 A LoadBalancer Service asks a load balancer implementation to establish an external destination.
 Without such an implementation, a Service can remain Pending indefinitely even though its YAML was accepted.
 
 The prepared lab uses MetalLB to allocate an address on this cluster's private Docker network and announce it to neighboring clients.
 That is real load balancer traffic, not an external-IP field inserted by the checker.
 The Docker network lives inside Docker's Linux environment on macOS, so a temporary Docker client on that network tests the external address.
-The Mac uses the supplied loopback mapping to test NodePort directly.
+The host computer uses the supplied loopback mapping to test NodePort directly.
 
 ## Worked example
 

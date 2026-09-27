@@ -12,17 +12,19 @@ import threading
 import webbrowser
 from pathlib import Path
 from types import FrameType
+from typing import TYPE_CHECKING
 
 from dockyard.runtimes.docker import RuntimeErrorBase
-from dockyard.service import LabError, Service
+
+if TYPE_CHECKING:
+    from dockyard.service import Service
 from dockyard.store import BusyError
 
 
 def default_directory() -> Path:
-    configured = os.environ.get("DOCKYARD_DATA")
-    if configured:
-        return Path(configured).expanduser()
-    return Path.home() / "Library/Application Support/Dockyard"
+    from dockyard.host import default_directory as directory
+
+    return directory()
 
 
 def parser() -> argparse.ArgumentParser:
@@ -80,6 +82,20 @@ def parser() -> argparse.ArgumentParser:
     return result
 
 
+def open_local_browser(url: str) -> None:
+    import shutil
+
+    from dockyard import host
+    from dockyard.process import run
+
+    if host.is_wsl() and (opener := shutil.which("rundll32.exe")):
+        result = run([opener, "url.dll,FileProtocolHandler", url], timeout=10)
+        if result.ok:
+            return
+    if not webbrowser.open(url):
+        print(f"Open this one-time local sign-in in your browser: {url}", flush=True)
+
+
 def launch(service: Service, port: int, open_browser: bool) -> None:
     import uvicorn
 
@@ -98,7 +114,7 @@ def launch(service: Service, port: int, open_browser: bool) -> None:
     url = f"{origin}/#session={nonce}"
     print(f"Dockyard is starting at {origin}", flush=True)
     if open_browser:
-        timer = threading.Timer(0.8, webbrowser.open, args=(url,))
+        timer = threading.Timer(0.8, open_local_browser, args=(url,))
         timer.daemon = True
         timer.start()
     else:
@@ -124,6 +140,11 @@ def launch(service: Service, port: int, open_browser: bool) -> None:
 
 
 def main() -> None:
+    if os.name == "nt":
+        print("On Windows, run dockyard.ps1 to use Dockyard inside WSL 2.", file=sys.stderr)
+        raise SystemExit(2)
+    from dockyard.service import LabError, Service
+
     arguments = parser().parse_args()
     service = Service(arguments.data_dir)
     try:
@@ -206,9 +227,18 @@ def main() -> None:
                 if not lab or not Path(lab.workspace).is_dir():
                     raise LabError("Prepare the lab before opening its shell.")
                 env = service.environment(lab)
-                env["ZDOTDIR"] = str(service.write_shell_rc(lab))
+                from dockyard import host
+
+                executable = host.shell()
+                rc = service.write_shell_rc(lab)
+                env["ZDOTDIR"] = str(rc)
+                args = (
+                    [executable, "--noprofile", "--rcfile", str(rc / ".bashrc"), "-i"]
+                    if Path(executable).name == "bash"
+                    else [executable, "-i"]
+                )
                 os.chdir(lab.workspace)
-                os.execvpe("/bin/zsh", ["/bin/zsh", "-i"], env)
+                os.execvpe(executable, args, env)
             elif arguments.action == "status":
                 lab = service.store.lab(arguments.unit)
                 print(

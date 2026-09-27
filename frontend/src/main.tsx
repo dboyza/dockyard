@@ -170,7 +170,7 @@ function App() {
           <div className="learner-avatar">D</div>
           <div>
             <strong>Personal workspace</strong>
-            <span className="muted small">Progress stays on this Mac</span>
+            <span className="muted small">Progress stays on this computer</span>
           </div>
         </div>
       </aside>

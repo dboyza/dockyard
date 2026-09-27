@@ -8,7 +8,7 @@ The same application can be healthy at one path and broken at another because th
 
 In `http://127.0.0.1:8080/jobs`, `http` is the scheme, `127.0.0.1` is the host, `8080` is the port, and `/jobs` is the path.
 The loopback address identifies the machine or network namespace making the request.
-Inside a container, `127.0.0.1` refers to that container's network namespace, not automatically to your Mac or another container.
+Inside a container, `127.0.0.1` refers to that container's network namespace, not automatically to your host computer or another container.
 A Pod's containers share a network namespace, which is why sidecars can communicate over localhost.
 
 ## Observe a public example without changing data

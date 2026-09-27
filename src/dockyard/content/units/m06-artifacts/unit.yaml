@@ -1,5 +1,5 @@
 id: m06-artifacts
-revision: 1
+revision: 2
 module: 6
 order: 2
 title: Know the platform and control the build context
@@ -31,7 +31,7 @@ prediction:
 hints:
 - Inspect the COPY scope and whether a .dockerignore exists.
 - Exclude .env before building, or copy only app.py and VERSION.
-- Rebuild for linux/arm64 and recreate the API; deleting the file only from a later layer will still fail the artifact
+- Rebuild for the native platform in DOCKER_DEFAULT_PLATFORM and recreate the API; deleting the file only from a later layer will still fail the artifact
   check.
 sources:
 - https://docs.docker.com/build/building/multi-platform/
@@ -130,8 +130,8 @@ checks:
   expected: '{{port}}'
   diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
 - id: loopback-binding
-  title: Only the local Mac can reach the published port
-  explanation: Only the local Mac can reach the published port
+  title: Only the local host computer can reach the published port
+  explanation: Only the local host computer can reach the published port
   command:
     args:
     - docker
@@ -179,7 +179,7 @@ checks:
   - release
   diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
 - id: artifact-native
-  title: The selected image is native linux/arm64
+  title: The selected image is native to this host processor
   explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
   command:
     args:

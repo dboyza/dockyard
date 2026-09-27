@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from dockyard import host
 from dockyard.locking import operation_lock
 from dockyard.models import Lab, Runtime
 from dockyard.process import run
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 
 
 def registry_directory() -> Path:
-    return Path("/private/tmp") / f"dockyard-capacity-{os.getuid()}"
+    return host.temporary_root() / f"dockyard-capacity-{os.getuid()}"
 
 
 def registry() -> Path:
@@ -39,14 +40,27 @@ def registry() -> Path:
 
 
 def host_readiness(directory: Path) -> dict[str, Any]:
-    pressure = run(["/usr/bin/memory_pressure", "-Q"], timeout=5)
-    available = re.search(r"memory free percentage:\s*(\d+)%", pressure.stdout)
-    total = re.search(r"The system has (\d+)", pressure.stdout)
+    memory_gib: float | None = None
+    free_percent: int | None = None
+    if platform.system() == "Darwin":
+        pressure = run(["/usr/bin/memory_pressure", "-Q"], timeout=5)
+        available = re.search(r"memory free percentage:\s*(\d+)%", pressure.stdout)
+        total = re.search(r"The system has (\d+)", pressure.stdout)
+        memory_gib = round(int(total[1]) / 1024**3, 1) if total else None
+        free_percent = int(available[1]) if available else None
+    elif Path("/proc/meminfo").is_file():
+        memory = dict(re.findall(r"^(\w+):\s+(\d+)", Path("/proc/meminfo").read_text(), re.M))
+        total_kib = int(memory.get("MemTotal", "0"))
+        if total_kib:
+            memory_gib = round(total_kib / 1024**2, 1)
+            free_percent = int(int(memory.get("MemAvailable", "0")) * 100 / total_kib)
     return {
         "architecture": platform.machine(),
         "system": platform.system(),
-        "host_memory_gib": round(int(total[1]) / 1024**3, 1) if total else None,
-        "memory_free_percent": int(available[1]) if available else None,
+        "host_memory_gib": memory_gib,
+        "memory_free_percent": free_percent,
+        "wsl": host.is_wsl(),
+        "native_vm_blocker": host.native_blocker(),
         "free_disk_gib": round(shutil.disk_usage(directory).free / 1024**3, 1),
         "cluster_policy": "One active application cluster or native VM lab "
         "across Dockyard profiles.",
@@ -58,8 +72,11 @@ def host_readiness(directory: Path) -> dict[str, Any]:
 def preflight(service: Service, lab: Lab) -> None:
     unit = service.catalog.get(lab.unit_id)
     observed = host_readiness(service.directory)
-    if observed["system"] != "Darwin" or observed["architecture"] != "arm64":
-        raise ValueError("This release is validated for Apple Silicon macOS.")
+    host.platform_key()
+    if blocker := host.docker_plugin_blocker(service.environment(lab)):
+        raise ValueError(blocker)
+    if lab.runtime == Runtime.LINUX and observed["native_vm_blocker"]:
+        raise ValueError(observed["native_vm_blocker"])
     needed_disk = (
         20 if lab.runtime == Runtime.LINUX else 10 if lab.runtime == Runtime.KUBERNETES else 2
     )

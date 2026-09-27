@@ -100,8 +100,12 @@ export type Doctor = {
   docker_ready: boolean;
   docker_version: string | null;
   docker_error: string | null;
+  docker_tools_error: string | null;
   free_disk_gib: number;
   architecture: string;
+  wsl: boolean;
+  native_vm_blocker: string | null;
+  terminal: string | null;
   system: string;
   host_memory_gib: number | null;
   memory_free_percent: number | null;

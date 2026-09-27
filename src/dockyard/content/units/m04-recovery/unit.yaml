@@ -157,8 +157,8 @@ checks:
   expected: '{{port}}'
   diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
 - id: loopback-binding
-  title: Only the local Mac can reach the published port
-  explanation: Only the local Mac can reach the published port
+  title: Only the local host computer can reach the published port
+  explanation: Only the local host computer can reach the published port
   command:
     args:
     - docker

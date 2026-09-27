@@ -1,4 +1,4 @@
-"""Transfer explicit local ARM64 images into verified native guests without host mounts."""
+"""Transfer native images into verified guests without host mounts."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import hashlib
 import json
 import threading
 
+from dockyard import host
 from dockyard.catalog import CONTENT
 from dockyard.process import run
 from dockyard.runtimes.docker import RuntimeErrorBase
@@ -39,10 +40,18 @@ def load(runtime: LinuxRuntime, image: str, cancel: threading.Event) -> None:
         if existing.ok and existing.stdout.strip() != source.stdout.strip():
             raise RuntimeErrorBase("The local dependency alias has changed identity; preserved.")
         runtime.require(run(["docker", "tag", image, reference], env=runtime.env))
-    runtime.report("Transferring the ARM64 image " + reference)
+    runtime.report("Transferring the native-architecture image " + reference)
     runtime.require(
         run(
-            ["docker", "image", "save", "--platform=linux/arm64", "-o", str(archive), reference],
+            [
+                "docker",
+                "image",
+                "save",
+                "--platform=linux/" + host.architecture(),
+                "-o",
+                str(archive),
+                reference,
+            ],
             env=runtime.env,
             timeout=180,
             cancel=cancel,
@@ -65,7 +74,7 @@ def load(runtime: LinuxRuntime, image: str, cancel: threading.Event) -> None:
                         "images",
                         "import",
                         "--platform",
-                        "linux/arm64",
+                        "linux/" + host.architecture(),
                         target,
                     ],
                     timeout=180,

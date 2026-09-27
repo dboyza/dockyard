@@ -5,7 +5,6 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import platform
 import tarfile
 import threading
 from collections.abc import Callable
@@ -13,11 +12,23 @@ from pathlib import Path
 from typing import Any
 from urllib.request import Request, urlopen
 
+from dockyard import host
 from dockyard.catalog import CONTENT
 from dockyard.locking import operation_lock
 from dockyard.runtimes.docker import RuntimeErrorBase
 
-MANIFEST = json.loads((CONTENT / "toolchain.json").read_text())
+
+def platform_manifest(key: str | None = None) -> dict[str, Any]:
+    selected = key or host.platform_key()
+    if selected not in {"darwin-arm64", "linux-arm64", "linux-amd64"}:
+        raise ValueError("No pinned toolchain for this host platform.")
+    entries: dict[str, Any] = json.loads((CONTENT / "toolchain.json").read_text())
+    if selected != "darwin-arm64":
+        entries.update(json.loads((CONTENT / f"toolchain-{selected}.json").read_text()))
+    return entries
+
+
+MANIFEST = platform_manifest()
 
 
 def digest(path: Path) -> str:
@@ -79,8 +90,7 @@ class Toolchain:
         partial.unlink(missing_ok=True)
 
     def ensure(self, name: str, cancel: threading.Event, report: Callable[[str], None]) -> Path:
-        if platform.system() != "Darwin" or platform.machine() != "arm64":
-            raise RuntimeErrorBase("This toolchain is validated for Apple Silicon macOS.")
+        host.platform_key()
         entry = self.manifest[name]
         destination: Path = self.root / str(entry["path"])
         with operation_lock(self.root / "locks", "tool-" + name):

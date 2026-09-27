@@ -17,7 +17,7 @@ net.bridge.bridge-nf-call-ip6tables = 1
 net.ipv4.ip_forward = 1
 EOF
 sysctl --system >/dev/null
-# Every local .deb is pinned to the signed repository metadata and verified on the host.
+# Every local .deb is pinned to an official repository artifact and hash-verified on the host.
 # dpkg installs this explicit bundle only and has no repository download mechanism.
 dpkg --install "${DOCKYARD_PACKAGE_DIR:?Private package directory required}"/*.deb >&2
 mkdir -p /etc/containerd /etc/apt/keyrings

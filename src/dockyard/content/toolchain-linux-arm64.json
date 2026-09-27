@@ -1,0 +1,73 @@
+{
+  "kind": {
+    "version": "0.33.0",
+    "url": "https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-arm64",
+    "sha256": "20022bee6cfcd5086cb7234d218e3454e6090022f2a8f55d1fa7fcf42c3867a2",
+    "path": "bin/kind"
+  },
+  "kubectl": {
+    "version": "1.35.8",
+    "url": "https://dl.k8s.io/release/v1.35.8/bin/linux/arm64/kubectl",
+    "sha256": "cc749967b62f4422260bc9c0aa7a7c55f45175ae38cb8d95767b5d2b7e04c1fd",
+    "path": "bin/kubectl"
+  },
+  "helm": {
+    "version": "4.3.0",
+    "url": "https://get.helm.sh/helm-v4.3.0-linux-arm64.tar.gz",
+    "sha256": "31c5794dd55c66a51e6b7d2e2ac7a114ae8b1de41ff1d9ba51748ac973b06a08",
+    "archive_member": "linux-arm64/helm",
+    "installed_sha256": "5bbdb28c8ca3f71daab33996a72392ce3135439a040ee63aed406888f82f2228",
+    "path": "bin/helm"
+  },
+  "flux": {
+    "version": "2.9.5",
+    "url": "https://github.com/fluxcd/flux2/releases/download/v2.9.5/flux_2.9.5_linux_arm64.tar.gz",
+    "path": "bin/flux",
+    "sha256": "f3e159af616ec0b9bd0a405c2185cf09d06b74652c1de3c7f377e8166826651a",
+    "archive_member": "flux",
+    "installed_sha256": "c623a03b03a8fbbf1ccda42fa55fad82839751e38d4e128ae72c759ce2064674"
+  },
+  "trivy": {
+    "version": "0.74.0",
+    "url": "https://github.com/aquasecurity/trivy/releases/download/v0.74.0/trivy_0.74.0_Linux-ARM64.tar.gz",
+    "sha256": "b94ce1976bbf3c15b514b605ee88be7c6d94a29be2302847ff01cb794d47aad5",
+    "archive_member": "trivy",
+    "installed_sha256": "fed2c9ca7d27191ada34524b5eaf5216a845c6d6f3246143c3b475552ffe5358",
+    "path": "bin/trivy"
+  },
+  "limactl": {
+    "version": "2.2.0",
+    "url": "https://github.com/lima-vm/lima/releases/download/v2.2.0/lima-2.2.0-Linux-aarch64.tar.gz",
+    "sha256": "7c6a09c6844f55f811e9b7b2b60a6070a512c696c8ec752dfdb3c8ed50ed0364",
+    "archive_member": "./bin/limactl",
+    "installed_sha256": "d8542d11714222bfa84edfbfe4061252441767bf4a729fcb36fdac28ba6aa9fe",
+    "path": "bin/limactl"
+  },
+  "lima-guestagent": {
+    "version": "2.2.0",
+    "url": "https://github.com/lima-vm/lima/releases/download/v2.2.0/lima-2.2.0-Linux-aarch64.tar.gz",
+    "sha256": "7c6a09c6844f55f811e9b7b2b60a6070a512c696c8ec752dfdb3c8ed50ed0364",
+    "archive_member": "./share/lima/lima-guestagent.Linux-aarch64.gz",
+    "installed_sha256": "c0092d50520438d5cbe423bd98e3fc0fd77c9207f1f26a68f22e99943dc8eac6",
+    "path": "share/lima/lima-guestagent.Linux-aarch64.gz"
+  },
+  "ubuntu-node": {
+    "version": "24.04-20260705",
+    "url": "https://cloud-images.ubuntu.com/releases/noble/release-20260705/ubuntu-24.04-server-cloudimg-arm64.img",
+    "sha256": "7df0201546f75b8bcc1044594c806c35749421ad3c9bc1be2a3ab806cfae39cc",
+    "path": "images/ubuntu-24.04-20260705-arm64.img",
+    "max_download_bytes": 1073741824
+  },
+  "git-daemon": {
+    "version": "2.54.0-r0",
+    "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/git-daemon-2.54.0-r0.apk",
+    "sha256": "e34fc8841226216b798b8e1ff20c2ad856d97c2bc2c512f6b7e183d934f3d9b0",
+    "path": "packages/git-daemon.apk"
+  },
+  "busybox-extras": {
+    "version": "1.37.0-r31",
+    "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/aarch64/busybox-extras-1.37.0-r31.apk",
+    "sha256": "64a2c66f44f2218473f56dd63355d988c3da0bdae6384d6d94d32587328ccea3",
+    "path": "packages/busybox-extras.apk"
+  }
+}

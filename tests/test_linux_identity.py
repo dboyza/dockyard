@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from dockyard import host
 from dockyard.models import Lab, Runtime
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.runtimes.linux import LinuxRuntime
@@ -33,7 +34,7 @@ def fixture(tmp_path: Path):
     directory = runtime.home / "owned"
     directory.mkdir(parents=True)
     (directory / "lima.yaml").write_text(
-        yaml.safe_dump({"vmType": "vz", "arch": "aarch64", "mounts": []})
+        yaml.safe_dump({"vmType": host.vm_type(), "arch": host.guest_architecture(), "mounts": []})
     )
     (directory / "disk").write_bytes(b"owned disk")
     entry = runtime.identity("owned")
@@ -57,7 +58,13 @@ def test_vm_identity_preserves_replaced_disk_and_changed_mounts(tmp_path, monkey
         runtime.verify(entry)
     assert (directory / "disk").read_bytes() == b"different VM"
     (directory / "lima.yaml").write_text(
-        yaml.safe_dump({"vmType": "vz", "arch": "aarch64", "mounts": [{"location": "~"}]})
+        yaml.safe_dump(
+            {
+                "vmType": host.vm_type(),
+                "arch": host.guest_architecture(),
+                "mounts": [{"location": "~"}],
+            }
+        )
     )
     with pytest.raises(RuntimeErrorBase, match="no-mount"):
         runtime.identity("owned")

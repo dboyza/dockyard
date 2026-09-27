@@ -1,4 +1,4 @@
-Run the supplied Dispatch API in a container and make it reachable from this Mac.
+Run the supplied Dispatch API in a container and make it reachable from this host computer.
 
 1. Prepare the lab and open its dedicated WezTerm tab.
 2. Inspect `app.py`, then start it using the Python image and the assigned container name, label, and loopback port.

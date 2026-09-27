@@ -18,5 +18,5 @@ kubectl --kubeconfig="$HOME/.kube/operator.conf" config view -o jsonpath='{.clus
 ```
 
 Use the error category and the control-plane evidence to repair the guest client.
-Do not turn off certificate verification, change the Mac's default kubeconfig, or replace healthy static components.
+Do not turn off certificate verification, change the host computer's default kubeconfig, or replace healthy static components.
 Explain why the host could still reach the cluster while the separate guest client failed.

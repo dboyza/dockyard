@@ -32,7 +32,7 @@ Certificate renewal is taught in the maintenance module; this exercise does not 
 
 ## Two intentionally separate clients
 
-The Mac uses Dockyard's managed private kubeconfig through a loopback forwarding endpoint.
+The host computer uses Dockyard's managed private kubeconfig through a loopback forwarding endpoint.
 This lesson also supplies `$HOME/.kube/operator.conf` inside the control-plane guest, which connects directly to the native control-plane endpoint.
 Repair the guest client only.
 The guest's `/etc/kubernetes/admin.conf` is the authoritative working administrative client supplied by kubeadm, and it should remain root-readable.
@@ -42,7 +42,7 @@ A copied operator client should belong to the guest user with mode 600.
 
 Dispatch now runs on two real Ubuntu guests, with containerd and kubeadm rather than kind nodes.
 The host terminal keeps its private Kubernetes client; `limactl` opens a separate Linux guest session.
-The guest's root account is confined to that app-owned VM, but the external macOS shell still has your normal user privileges.
+The guest's root account is confined to that app-owned VM, but the external host shell still has your normal user privileges.
 No host directories are mounted into either guest.
 The database uses a retained local PersistentVolume on the worker, which deliberately has node affinity and is not replicated storage.
 The hardened API, queue, worker, and frontend retain the application and access boundaries from the previous phase.

@@ -46,5 +46,5 @@ Use `sudo tee /etc/haproxy/haproxy.cfg < haproxy.cfg` through `limactl shell` to
 The assessment also creates a uniquely named ConfigMap through the private endpoint, reads its value, and deletes it.
 It checks the surviving etcd endpoints directly through their runtime containers, and completes a new Dispatch job.
 Those observations establish useful control-plane operation during this one-member outage.
-They do not establish whole-system high availability: the worker-hosted load balancer, local database volume, Mac, and VM host are still single failure points.
+They do not establish whole-system high availability: the worker-hosted load balancer, local database volume, host computer, and VM host are still single failure points.
 Production endpoint and storage redundancy require separate designs.

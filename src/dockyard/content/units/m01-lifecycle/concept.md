@@ -37,8 +37,9 @@ Use the sequence on a running practice instance, then compare its ID before and 
 A restart is useful when process state must be replaced without changing the container's configuration.
 To change a port binding or an environment variable, create a replacement container instead.
 
-## Boundaries on this Mac
+## Boundaries on the host
 
-Docker Desktop runs Linux containers inside its Linux VM.
-The process ID reported by inspection belongs to that VM's host namespace, not directly to macOS.
-Use Docker's inspection and exec tools to investigate it; do not send a macOS signal to that numeric PID.
+Docker Desktop runs Linux containers in a Linux environment on macOS and Windows.
+A native Linux Docker Engine runs them on its host kernel.
+The process ID reported by inspection belongs to the Docker daemon's host namespace, which may be inside a VM.
+Use Docker's inspection, exec, and stop tools to investigate and control the assigned container rather than sending a host signal to that numeric PID.

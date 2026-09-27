@@ -23,5 +23,5 @@ A logical dump is not an etcd snapshot and does not back up Kubernetes resources
 A filesystem copy of a running database also needs database-aware consistency guarantees.
 The cluster recovery phase handles control-plane state separately.
 
-The local backup remains on this Mac.
+The local backup remains on this host computer.
 A production recovery plan needs independent storage, access controls, retention, and restore rehearsals, with recovery point and recovery time objectives that match the service's needs.

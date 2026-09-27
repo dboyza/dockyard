@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 from urllib.request import Request, urlopen
 
+from dockyard import host
 from dockyard.process import run
 
 
@@ -315,7 +316,7 @@ def registry() -> dict[str, Any]:
 def artifact() -> dict[str, Any]:
     api = inspect("container", os.environ["DOCKYARD_CONTAINER"])
     image = inspect("image", api["Image"])
-    native = image["Architecture"] == "arm64" and image["Os"] == "linux"
+    native = image["Architecture"] == host.architecture() and image["Os"] == "linux"
     clean = True
     with tempfile.TemporaryDirectory(prefix="dockyard-image-observation-") as temporary:
         archive = Path(temporary) / "image.tar"
