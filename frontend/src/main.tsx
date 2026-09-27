@@ -16,6 +16,7 @@ import {
   FolderArchive,
   Library,
   Activity,
+  RotateCcw,
 } from "lucide-react";
 import { OverviewPage } from "./OverviewPage";
 import { CoursePage } from "./CoursePage";
@@ -25,6 +26,7 @@ import { CheckpointsPage } from "./CheckpointsPage";
 import { ReferencePage } from "./ReferencePage";
 import { ProgressPage } from "./ProgressPage";
 import { IncidentsPage } from "./IncidentsPage";
+import { ReviewPage } from "./ReviewPage";
 import "./style.css";
 function App() {
   const model = useWorkbench();
@@ -103,6 +105,7 @@ function App() {
               { id: "course", label: "Your course", icon: BookOpen },
               { id: "incidents", label: "Incident scenarios", icon: Activity },
               { id: "progress", label: "Skill evidence", icon: ShieldCheck },
+              { id: "review", label: "Spaced review", icon: RotateCcw },
               {
                 id: "checkpoints",
                 label: "Project checkpoints",
@@ -183,13 +186,15 @@ function App() {
                     ? "Your course"
                     : page === "incidents"
                       ? "Incident scenarios"
-                      : page === "labs"
-                        ? "Lab manager"
-                        : page === "checkpoints"
-                          ? "Project checkpoints"
-                          : page === "reference"
-                            ? "Reference desk"
-                            : "Skill evidence"}
+                      : page === "review"
+                        ? "Spaced review"
+                        : page === "labs"
+                          ? "Lab manager"
+                          : page === "checkpoints"
+                            ? "Project checkpoints"
+                            : page === "reference"
+                              ? "Reference desk"
+                              : "Skill evidence"}
             </strong>
           </div>
           <div className="topbar-actions">
@@ -247,6 +252,7 @@ function App() {
           {page === "home" && <OverviewPage model={model} />}
           {page === "course" && <CoursePage model={model} />}
           {page === "incidents" && <IncidentsPage model={model} />}
+          {page === "review" && <ReviewPage model={model} />}
           {page === "lesson" && <LessonPage model={model} />}
           {page === "labs" && <LabsPage model={model} />}
           {page === "progress" && <ProgressPage model={model} />}

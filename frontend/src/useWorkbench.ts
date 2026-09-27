@@ -14,6 +14,7 @@ export type Page =
   | "home"
   | "course"
   | "incidents"
+  | "review"
   | "lesson"
   | "labs"
   | "progress"
@@ -118,6 +119,7 @@ export function useWorkbench() {
     setPage(destination);
     setRailOpen(false);
     setError("");
+    setNotice("");
     window.scrollTo({ top: 0, behavior: "instant" });
     if (destination === "labs")
       api<Doctor>("/doctor")

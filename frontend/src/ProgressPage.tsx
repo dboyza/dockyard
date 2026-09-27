@@ -1,4 +1,4 @@
-import { reviewNeeded } from "./learning";
+import { reviewDue } from "./learning";
 import { UnitRow } from "./UnitRow";
 import type { Workbench } from "./useWorkbench";
 import type { UnitSummary } from "./api";
@@ -37,10 +37,7 @@ export function ProgressPage({ model }: { model: Workbench }) {
             {
               units.filter((unit) => {
                 const item = state.progress[unit.id];
-                return (
-                  reviewNeeded(unit.revision, item) ||
-                  (item?.review_at && new Date(item.review_at) <= new Date())
-                );
+                return reviewDue(unit.revision, item);
               }).length
             }
           </strong>

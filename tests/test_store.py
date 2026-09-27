@@ -59,3 +59,32 @@ def test_notes_and_events_survive_reopening(tmp_path):
     reopened = Store(tmp_path)
     assert reopened.note("m01-processes") == "Readiness is not liveness."
     assert reopened.progress()["m01-processes"]["hints"] == 2
+
+
+def test_review_dates_follow_outcomes_without_recheck_postponement(tmp_path):
+    from datetime import UTC, datetime, timedelta
+
+    store = Store(tmp_path)
+    unit = "m01-processes"
+    store.save_assessment(assessment(independent=False))
+    first = store.progress()[unit]["review_at"]
+    assert datetime.now(UTC) + timedelta(hours=23) < datetime.fromisoformat(first)
+    store.save_assessment(assessment(independent=False))
+    assert store.progress()[unit]["review_at"] == first
+    store.save_assessment(assessment())
+    independent = store.progress()[unit]["review_at"]
+    assert datetime.fromisoformat(independent) > datetime.now(UTC) + timedelta(days=6)
+    store.save_assessment(assessment())
+    assert store.progress()[unit]["review_at"] == independent
+    for status in (CheckStatus.BLOCKED, CheckStatus.STALE):
+        store.save_assessment(assessment(status=status))
+        assert store.progress()[unit]["review_at"] == independent
+    store.save_assessment(assessment(status=CheckStatus.FAIL))
+    assert datetime.fromisoformat(store.progress()[unit]["review_at"]) <= datetime.now(UTC)
+    assert store.progress()[unit]["demonstrated"] == 1
+    store.save_assessment(assessment(independent=False))
+    assert (
+        datetime.now(UTC) + timedelta(hours=23)
+        < datetime.fromisoformat(store.progress()[unit]["review_at"])
+        < datetime.now(UTC) + timedelta(hours=25)
+    )

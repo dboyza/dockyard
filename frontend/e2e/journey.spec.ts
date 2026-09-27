@@ -190,6 +190,22 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await expect(page.locator('.lesson-heading')).toContainText('INCIDENT SCENARIO');
   await page.locator('.lesson-heading').getByRole('button', { name: 'Incident scenarios', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Follow the evidence.' })).toBeVisible();
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: 'Spaced review', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Make the skill available again.' })).toBeVisible();
+  const dueReviews = page.getByRole('region', { name: 'Activities due for review' });
+  await expect(dueReviews.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ })).toBeVisible();
+  await expect(dueReviews.getByText('The lesson revision changed; earlier evidence remains in your record.')).toBeVisible();
+  await page.screenshot({ path: path.join(root, '.artifacts/review-wide.png'), fullPage: true });
+  await page.setViewportSize({ width: 480, height: 1000 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: path.join(root, '.artifacts/review-narrow.png'), fullPage: true });
+  for (const label of await page.locator('.unitmeta > span').all()) {
+    expect(await label.evaluate(element => element.getBoundingClientRect().height <= parseFloat(getComputedStyle(element).lineHeight) + 1)).toBe(true);
+  }
+  await expect(dueReviews.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ }).locator('.unitmeta')).toHaveText('65 min');
+  await dueReviews.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep Dispatch available through worker maintenance');
   expect(failures).toEqual([]);
   // Keep the browser and its SSE connection open while verifying foreground shutdown.
   const stopped = once(server, 'exit');

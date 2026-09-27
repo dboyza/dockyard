@@ -676,7 +676,7 @@ pre {
 }
 .unitrow {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr) 72px;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   gap: 13px;
   align-items: center;
   width: 100%;
@@ -704,6 +704,7 @@ pre {
   font-size: 10px;
   color: var(--muted);
   justify-content: flex-end;
+  white-space: nowrap;
 }
 .unitstatus {
   color: var(--muted);
@@ -1540,12 +1541,14 @@ pre {
     padding: 20px 15px;
   }
   .unitrow {
-    grid-template-columns: 17px minmax(0, 1fr) 48px;
+    grid-template-columns: 17px minmax(0, 1fr);
     gap: 9px;
   }
   .unitmeta {
+    grid-column: 2;
+    justify-content: flex-start;
     font-size: 9px;
-    gap: 3px;
+    gap: 8px;
   }
   .unitmeta svg {
     width: 12px;
@@ -2075,4 +2078,12 @@ pre {
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
   }
+}
+
+.review-policy,
+.review-list {
+  margin-bottom: 24px;
+}
+.review-policy h2 {
+  margin-top: 0;
 }

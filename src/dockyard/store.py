@@ -158,6 +158,9 @@ class Store:
         self, assessment: Assessment, checkpoint: dict[str, Any] | None = None
     ) -> None:
         with self.connection() as connection:
+            previous = connection.execute(
+                "SELECT * FROM progress WHERE unit_id=?", (assessment.unit_id,)
+            ).fetchone()
             connection.execute(
                 "INSERT INTO attempts(id,unit_id,created_at,body) VALUES(?,?,?,?)",
                 (
@@ -182,9 +185,19 @@ class Store:
                     ),
                 )
             if assessment.status == CheckStatus.PASS:
-                due = (
-                    datetime.now(UTC) + timedelta(days=7 if assessment.independent else 1)
-                ).isoformat()
+                now = datetime.now(UTC)
+                due_at = now + timedelta(days=7 if assessment.independent else 1)
+                if (
+                    previous
+                    and previous["review_at"]
+                    and previous["revision"] == assessment.revision
+                    and (not assessment.independent or previous["demonstrated"])
+                ):
+                    scheduled = datetime.fromisoformat(previous["review_at"])
+                    if scheduled > now:
+                        # Rechecking a still-working lab must not postpone retrieval.
+                        due_at = min(due_at, scheduled)
+                due = due_at.isoformat()
                 connection.execute(
                     "UPDATE progress SET practiced=1, demonstrated=CASE WHEN revision=? "
                     "THEN MAX(demonstrated,?) ELSE ? END,"
@@ -198,6 +211,11 @@ class Store:
                         timestamp(),
                         assessment.unit_id,
                     ),
+                )
+            elif assessment.status == CheckStatus.FAIL:
+                connection.execute(
+                    "UPDATE progress SET review_at=?,updated_at=? WHERE unit_id=?",
+                    (timestamp(), timestamp(), assessment.unit_id),
                 )
 
     def checkpoints(self) -> list[dict[str, Any]]:

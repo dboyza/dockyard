@@ -1,6 +1,6 @@
 import { Check, ChevronRight, Circle, RotateCcw } from "lucide-react";
 import type { Progress, UnitSummary } from "./api";
-import { currentPractice, learningStatus, reviewNeeded } from "./learning";
+import { currentPractice, learningStatus, reviewDue } from "./learning";
 
 export function UnitRow({
   unit,
@@ -12,7 +12,7 @@ export function UnitRow({
   onOpen: (id: string) => Promise<void>;
 }) {
   const current = currentPractice(unit.revision, progress);
-  const review = reviewNeeded(unit.revision, progress);
+  const review = reviewDue(unit.revision, progress);
   return (
     <button className="unitrow" onClick={() => void onOpen(unit.id)}>
       <span className={`unitstatus ${current ? "done" : ""}`}>
@@ -29,7 +29,7 @@ export function UnitRow({
         <span className="muted small">{unit.summary}</span>
       </span>
       <span className="unitmeta">
-        {progress?.practiced && (
+        {!!progress?.practiced && (
           <span>{learningStatus(unit.revision, progress)}</span>
         )}
         <span>{unit.minutes} min</span>
