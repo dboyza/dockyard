@@ -1,0 +1,156 @@
+id: m23-mission
+revision: 1
+module: 23
+order: 4
+title: Recover state through a compound control-plane outage
+summary: Restore original API state, reconcile components, and demonstrate application continuity independently.
+kind: mission
+runtime: linux
+nodes: 2
+minutes: 65
+outcomes:
+- Plan a bounded control-plane recovery from host and snapshot evidence.
+- Recover the original missing object while preserving application data.
+- Produce a handoff that separates observation, repair, and remaining recovery risks.
+prerequisites:
+- m23-api
+objectives:
+- cka.components
+- cka.nodes
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which observation distinguishes restored API state from a replacement object?
+  options:
+  - The original UID returns and fresh control-plane work succeeds.
+  - A similarly named object exists.
+  - An old application process is still running.
+  correct: 0
+  explanation: A restored UID establishes original object identity; new work verifies useful control-plane
+    behavior.
+hints:
+- Separate host service state, static manifests, runtime processes, and API observations.
+- Inspect recent CRI logs and each component dependency before changing configuration.
+- Use the preceding worked procedure, restore original configuration and snapshot state where needed,
+  and verify new scheduling and jobs.
+sources:
+- https://etcd.io/docs/v3.6/op-guide/recovery/
+- https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
+- https://v1-35.docs.kubernetes.io/docs/tasks/configure-pod-container/static-pod/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.recovery
+  - mission
+  timeout: 180
+checks:
+- id: recovery-preserved
+  title: Original namespace, nodes, sentinel identity, and database row survive
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.recovery
+    - mission
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved evidence and the relevant host, API, or application boundary.
+- id: recovery-components
+  title: Kubelet and all four control-plane processes run behind a ready API
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.recovery
+    - mission
+    timeout: 240
+  expectation: json
+  json_path:
+  - components
+  expected: 'true'
+  diagnostic: Inspect the components evidence and the relevant host, API, or application boundary.
+- id: recovery-scheduled
+  title: A fresh Pod receives a real scheduler assignment
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.recovery
+    - mission
+    timeout: 240
+  expectation: json
+  json_path:
+  - scheduled
+  expected: 'true'
+  diagnostic: Inspect the scheduled evidence and the relevant host, API, or application boundary.
+- id: recovery-restored
+  title: The original object returns under an advanced etcd revision
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.recovery
+    - mission
+    timeout: 240
+  expectation: json
+  json_path:
+  - restored
+  expected: 'true'
+  diagnostic: Inspect the restored evidence and the relevant host, API, or application boundary.
+- id: recovery-workflow
+  title: A new browser and cross-node Dispatch transaction completes
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.recovery
+    - mission
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow evidence and the relevant host, API, or application boundary.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
+- Runtime outcomes and original identities are assessed, not shell history.
+failure_modes:
+- A replacement object with matching contents has a different identity.
+- Existing running containers do not prove reconciliation or new scheduling.
+- An etcd backup does not contain application persistent-volume contents.
+starter_failure_checks:
+- recovery-components
+- recovery-restored
+- recovery-scheduled

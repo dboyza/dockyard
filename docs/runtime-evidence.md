@@ -457,3 +457,25 @@ Incidents retain separate lab identities and no longer appear as extra lessons i
 The installed browser and real-Docker journey passed in 12.1 seconds, including the incident route, filtering, and a 480-pixel overflow check.
 Direct desktop and narrow screenshots were inspected after making route changes reset scroll position immediately.
 Eight incidents and the four original exams remain to be implemented and audited.
+
+## Module 23: control-plane recovery
+
+All four recovery activities passed real broken-starter and reference-repair audits on disposable two-node native clusters.
+The API lesson repaired a static manifest dependency endpoint; the static-Pod lesson recovered the stopped primary kubelet and missing scheduler manifest.
+The etcd lesson and compound mission restored actual snapshots into a separate data directory, preserved the original object UIDs and stored application row, and demonstrated a revision bump with historical reads marked compacted.
+Fresh scheduler assignments and new Dispatch transactions passed afterward.
+These results bring successful course reference audits to 92.
+
+The first snapshot audit reproduced a transient old-API readiness response before the restored member restarted.
+The reference helper now retries the complete API read, write, and new scheduler-assignment observation within a bounded deadline.
+The successful rerun verified that the helper tolerates that actual recovery transition.
+Final operational-handoff activities remain under audit.
+
+## Transparent spaced review
+
+Supported successful practice schedules a one-day return; independent evidence schedules seven days, and failed behavior checks become due immediately.
+Blocked and stale checks leave the review date unchanged.
+Repeated successful checks before an existing due date do not indefinitely postpone review.
+A focused persistence test covers those transitions, and all 53 backend regression tests passed in 8.21 seconds.
+The installed browser and real-Docker journey passed in 12.0 seconds.
+Direct desktop and narrow screenshots confirmed readable status metadata after fixing wrapping and a numeric-zero rendering bug.
