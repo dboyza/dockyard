@@ -33,6 +33,7 @@ def maintenance_exam() -> dict[str, Any]:
     with suppress(*ERRORS):
 
         def can(verb: str, resource: str) -> bool:
+            resource, _, subresource = resource.partition("/")
             return (
                 r.kubectl(
                     [
@@ -40,6 +41,7 @@ def maintenance_exam() -> dict[str, Any]:
                         "can-i",
                         verb,
                         resource,
+                        *(["--subresource=" + subresource] if subresource else []),
                         "-n",
                         "dispatch",
                         "--as=system:serviceaccount:dispatch:release-operator",
@@ -59,7 +61,13 @@ def maintenance_exam() -> dict[str, Any]:
             ]
         ) and not any(
             can(v, x)
-            for v, x in [("get", "secrets"), ("create", "pods"), ("delete", "deployments.apps")]
+            for v, x in [
+                ("get", "secrets"),
+                ("create", "pods"),
+                ("delete", "deployments.apps"),
+                ("patch", "deployments.apps"),
+                ("update", "deployments.apps"),
+            ]
         )
     with suppress(*ERRORS):
         d, pods = owned_pods("dispatch")

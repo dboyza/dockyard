@@ -1,9 +1,12 @@
-# Explain the lifecycle choices
+# Debrief: Coordinate containers inside a Pod
 
-Trace one submitted job from the API through PostgreSQL and Redis to the worker that completed it.
-Explain which state is durable within the current Pod lifetime and which would be lost after Pod replacement.
-Compare Deployment availability, DaemonSet node coverage, and Job completion as three distinct success conditions.
+The init container establishes shared configuration before the main containers start, and the sidecar observes files in the same Pod volume.
+Sharing that volume connects the containers without making their files durable beyond the volume lifetime.
 
-Identify a failure that the Kubernetes controller can repair and a configuration failure it can only keep retrying.
-For a CronJob, distinguish template correctness, one observed successful run, and reliable operation over many schedules.
-Record the evidence you would collect before increasing replicas in response to slow processing.
+## Explain your result
+
+Identify the order constraint enforced by the init container and explain why an unrelated file in another Pod would not prove this coordination.
+
+## Transfer beyond this lab
+
+Use a separate durable storage design when a process must retain this state after its Pod is replaced.

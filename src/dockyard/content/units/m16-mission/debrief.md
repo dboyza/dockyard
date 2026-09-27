@@ -1,7 +1,12 @@
-# Trace the release before declaring success
+# Debrief: Deliver Dispatch from local Git
 
-Explain what the test process, registry digest, Git commit, source artifact, and running process each establish.
-Identify the identity applying workload changes and what it cannot do.
-Compare a live rollout undo with a Git revert while a reconciliation controller remains active.
-Describe the failed candidate's observed impact and the checks that establish recovery.
-State which local practice conveniences would need a different production design.
+The complete delivery path connects a validated artifact, registry identity, Git declaration, and actual reconciliation.
+Each boundary has its own failure mode, so a successful build or a green repository status cannot stand in for the final client response.
+
+## Explain your result
+
+Reconstruct the artifact and commit identities that led to the running release, then explain how you would recover a failed promotion.
+
+## Transfer beyond this lab
+
+The local registry and Git service teach the mechanism without claiming the availability or trust guarantees of a production delivery system.

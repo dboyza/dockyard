@@ -1,9 +1,12 @@
-# Explain the lifecycle choices
+# Debrief: Mission: process work and prove maintenance
 
-Trace one submitted job from the API through PostgreSQL and Redis to the worker that completed it.
-Explain which state is durable within the current Pod lifetime and which would be lost after Pod replacement.
-Compare Deployment availability, DaemonSet node coverage, and Job completion as three distinct success conditions.
+Worker availability, node-agent coverage, and finite maintenance completion are different contracts even though all involve Pods.
+The fresh Dispatch job ties the API, queue, database, and worker together after those lifecycle choices have been repaired.
 
-Identify a failure that the Kubernetes controller can repair and a configuration failure it can only keep retrying.
-For a CronJob, distinguish template correctness, one observed successful run, and reliable operation over many schedules.
-Record the evidence you would collect before increasing replicas in response to slow processing.
+## Explain your result
+
+Name a fault that a controller can repair automatically and a configuration fault that it will repeatedly recreate.
+
+## Transfer beyond this lab
+
+Your runbook should identify which controller owns each process and which completion or availability signal matters for that role.

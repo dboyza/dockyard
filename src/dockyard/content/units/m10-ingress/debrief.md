@@ -1,9 +1,12 @@
-# Trace the entire request
+# Debrief: Terminate TLS at an ingress controller
 
-Describe the destination used by the client, the controller or proxy that handled it, the selected Service port, the backend endpoint, and the application listener.
-For TLS, distinguish certificate trust, hostname verification, and HTTP routing after the handshake.
-For Gateway API, compare declared intent with Accepted, ResolvedRefs, and Programmed conditions before looking at a real response.
+The ingress controller terminates a certificate-validated TLS connection before forwarding HTTP to the selected Service.
+Hostname verification, certificate trust, and application routing must all succeed for the observed response to establish the intended route.
 
-Explain why a successful request through one exposure method does not establish that the others work.
-Document the macOS boundary: the Docker network is inside Docker's Linux environment, while loopback NodePort mappings are directly reachable from this Mac.
-The private-network client is external to Kubernetes, but it is not a public internet client.
+## Explain your result
+
+What would a successful request with certificate verification disabled fail to demonstrate?
+
+## Transfer beyond this lab
+
+Production ingress also requires certificate lifecycle management and an exposure design beyond this Mac-local endpoint.

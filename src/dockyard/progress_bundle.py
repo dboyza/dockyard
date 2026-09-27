@@ -198,6 +198,42 @@ def export_bundle(service: Service) -> bytes:
         return body
 
 
+def inspect_checkpoint(entry: dict[str, Any], body: bytes) -> dict[str, bytes]:
+    CheckpointRecord.model_validate(entry)
+    nested = read_archive(body)
+    proof = json.loads(nested["manifest.json"])
+    evidence = Assessment.model_validate_json(nested["evidence.json"])
+    if (
+        proof.get("format") != "dockyard-checkpoint"
+        or proof.get("version") != 1
+        or proof["id"] != entry["id"]
+        or proof["unit_id"] != entry["unit_id"]
+        or evidence.unit_id != entry["unit_id"]
+        or evidence.revision != entry["revision"]
+        or evidence.lab_id != entry["lab_id"]
+        or evidence.finished_at != entry["created_at"]
+        or any(
+            proof.get(key) != value
+            for key, value in entry.items()
+            if key not in {"archive", "file_count", "excluded_count"}
+        )
+        or len(proof["files"]) != entry["file_count"]
+        or len(proof["excluded"]) != entry["excluded_count"]
+    ):
+        raise ValueError("Checkpoint provenance does not match its inventory.")
+    if proof["files"] != {
+        k.removeprefix("source/"): hashlib.sha256(v).hexdigest()
+        for k, v in nested.items()
+        if k.startswith("source/")
+    }:
+        raise ValueError("A checkpoint source file failed its integrity check.")
+    if set(nested) != {"manifest.json", "evidence.json", "observations.md"} | {
+        "source/" + member_path(k) for k in proof["files"]
+    }:
+        raise ValueError("A checkpoint contains undeclared files.")
+    return nested
+
+
 def inspect_bundle(service: Service, body: bytes) -> tuple[Records, dict[str, bytes]]:
     files = read_archive(body)
     try:
@@ -262,37 +298,7 @@ def inspect_bundle(service: Service, body: bytes) -> tuple[Records, dict[str, by
             ):
                 raise ValueError("A checkpoint needs a different curriculum version.")
             name = "checkpoints/" + entry["archive"]
-            nested = read_archive(files[name])
-            proof = json.loads(nested["manifest.json"])
-            evidence = Assessment.model_validate_json(nested["evidence.json"])
-            if (
-                proof.get("format") != "dockyard-checkpoint"
-                or proof.get("version") != 1
-                or proof["id"] != identity
-                or proof["unit_id"] != entry["unit_id"]
-                or evidence.unit_id != entry["unit_id"]
-                or evidence.revision != entry["revision"]
-                or evidence.lab_id != entry["lab_id"]
-                or evidence.finished_at != entry["created_at"]
-                or any(
-                    proof.get(key) != value
-                    for key, value in entry.items()
-                    if key not in {"archive", "file_count", "excluded_count"}
-                )
-                or len(proof["files"]) != entry["file_count"]
-                or len(proof["excluded"]) != entry["excluded_count"]
-            ):
-                raise ValueError("Checkpoint provenance does not match its inventory.")
-            if proof["files"] != {
-                k.removeprefix("source/"): hashlib.sha256(v).hexdigest()
-                for k, v in nested.items()
-                if k.startswith("source/")
-            }:
-                raise ValueError("A checkpoint source file failed its integrity check.")
-            if set(nested) != {"manifest.json", "evidence.json", "observations.md"} | {
-                "source/" + member_path(k) for k in proof["files"]
-            }:
-                raise ValueError("A checkpoint contains undeclared files.")
+            inspect_checkpoint(entry, files[name])
             expected.add(name)
         if set(files) != expected:
             raise ValueError("The bundle contains undeclared files.")

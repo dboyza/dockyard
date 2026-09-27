@@ -1,7 +1,12 @@
-# Explain each independent control
+# Debrief: Enforce and observe runtime restrictions
 
-Name the identity or peer, requested operation, and expected result for each boundary.
-Explain how the positive control excludes an unrelated unavailable service as the reason for denial.
-Distinguish namespace policy, actual process state, and business behavior.
-Describe the permissions required by the inventory process and why the other application processes do not need its token.
-Record remaining limitations without presenting this local exercise as a complete production security audit.
+Admission decides whether a proposed Pod configuration is accepted, while process observations show the restrictions that actually reached a running container.
+Non-root identity, dropped capabilities, seccomp filtering, and a read-only root filesystem address different forms of runtime authority.
+
+## Explain your result
+
+Why would an admission label alone be insufficient evidence that an already running workload has the intended restrictions?
+
+## Transfer beyond this lab
+
+Provide explicit writable locations for legitimate application state instead of weakening the entire runtime boundary.

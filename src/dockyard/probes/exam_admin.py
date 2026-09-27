@@ -17,6 +17,7 @@ from dockyard.process import run
 
 def can(verb: str, resource: str) -> bool:
     r = current()
+    resource, _, subresource = resource.partition("/")
     return (
         r.kubectl(
             [
@@ -24,6 +25,7 @@ def can(verb: str, resource: str) -> bool:
                 "can-i",
                 verb,
                 resource,
+                *(["--subresource=" + subresource] if subresource else []),
                 "-n",
                 "dispatch",
                 "--as=system:serviceaccount:dispatch:incident-observer",
@@ -86,6 +88,7 @@ def operations() -> dict[str, Any]:
         )
         result["dns"] = raw == get("service", "dispatch")["spec"]["clusterIP"]
     with suppress(*ERRORS):
+        baseline = json.loads((r.root / "data/exam-backup.json").read_text())
         db = get("statefulset", "db")
         pod = get("pod", "db-0")
         claim = get("pvc", "data-db-0")
@@ -94,6 +97,8 @@ def operations() -> dict[str, Any]:
             db.get("status", {}).get("readyReplicas") == 1
             and pod["spec"]["nodeName"] == "lima-" + worker
             and claim["status"]["phase"] == "Bound"
+            and claim["metadata"]["uid"] == baseline["claim_uid"]
+            and pv["metadata"]["uid"] == baseline["volume_uid"]
             and pv["spec"]["claimRef"]["uid"] == claim["metadata"]["uid"]
             and result["preserved"]
         )

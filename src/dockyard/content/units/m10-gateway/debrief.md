@@ -1,9 +1,12 @@
-# Trace the entire request
+# Debrief: Separate gateways from application routes
 
-Describe the destination used by the client, the controller or proxy that handled it, the selected Service port, the backend endpoint, and the application listener.
-For TLS, distinguish certificate trust, hostname verification, and HTTP routing after the handshake.
-For Gateway API, compare declared intent with Accepted, ResolvedRefs, and Programmed conditions before looking at a real response.
+Gateway infrastructure and application routes have separate configuration and status boundaries.
+Accepted and resolved route conditions are useful observations, but the matching-host response and unmatched-host rejection establish actual routing behavior.
 
-Explain why a successful request through one exposure method does not establish that the others work.
-Document the macOS boundary: the Docker network is inside Docker's Linux environment, while loopback NodePort mappings are directly reachable from this Mac.
-The private-network client is external to Kubernetes, but it is not a public internet client.
+## Explain your result
+
+Trace how a hostname reaches the listener, HTTPRoute, Service port, and application, then identify where an unresolved reference would interrupt that path.
+
+## Transfer beyond this lab
+
+When ownership is split across teams, use Gateway API attachment and reference rules to make those boundaries explicit.

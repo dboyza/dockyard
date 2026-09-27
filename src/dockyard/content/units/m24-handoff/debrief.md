@@ -1,9 +1,12 @@
-## Handoff self-review
+# Debrief: Recover a rollout and write an executable handoff
 
-For each point, identify the evidence in your own handoff rather than treating a passing runtime check as proof of the explanation.
+Desired, updated, available, and total replica counts converge after the rollout is repaired.
+A fresh application result establishes that the converged workload is useful, while the written handoff explains how another operator can reproduce the diagnosis.
 
-- The symptom and each independent cause are distinguished.
-- Every repair has a supporting observation and a bounded target.
-- Verification includes new work and preserved earlier state.
-- Rollback, data backup, access, and availability claims state their limits.
-- Another operator could reproduce the checks without receiving credentials in the document.
+## Explain your result
+
+Can someone identify the original symptom, inspect the affected revision, repeat the validation, and recognize rollback conditions using your document alone?
+
+## Transfer beyond this lab
+
+Keep reproducible commands and observations in the handoff, but exclude credentials and avoid claiming availability guarantees beyond what you measured.

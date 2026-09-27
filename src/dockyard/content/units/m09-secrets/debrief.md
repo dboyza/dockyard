@@ -1,9 +1,12 @@
-# Follow configuration into the process
+# Debrief: Deliver a credential through a Secret
 
-Trace the source object, Pod reference, delivery mechanism, and application read that establish each configured value.
-Explain which changes require a rollout and which require the application to reread a projected file.
-Describe one way a credential could still be exposed despite being stored as a Secret.
+The repaired application reads its projected password file and authenticates against the real database.
+This proves the key reference, mount permissions, and consumer behavior together, while a Secret object by itself would prove none of those connections.
 
-For identity, distinguish a successful administrator request from a successful request carrying the workload's own token.
-Explain why an allowed Pod list and denied Secret list provide different evidence from merely seeing a RoleBinding object.
-Before calling the environments isolated, state exactly which boundary was demonstrated and which boundaries still require network and storage controls.
+## Explain your result
+
+Explain why base64 encoding does not protect a value from someone authorized to read the Secret, and where this credential could leak during troubleshooting.
+
+## Transfer beyond this lab
+
+Coordinate database-side rotation with client refresh, and keep live credentials outside exported source and operational notes.

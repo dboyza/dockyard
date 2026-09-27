@@ -1,9 +1,12 @@
-# Trace the entire request
+# Debrief: Publish Dispatch through verified local routes
 
-Describe the destination used by the client, the controller or proxy that handled it, the selected Service port, the backend endpoint, and the application listener.
-For TLS, distinguish certificate trust, hostname verification, and HTTP routing after the handshake.
-For Gateway API, compare declared intent with Accepted, ResolvedRefs, and Programmed conditions before looking at a real response.
+The combined route exercise demonstrates several distinct exposure mechanisms against the same working application.
+TLS success does not substitute for LoadBalancer reachability, and a programmed Gateway does not substitute for the unmatched-host negative check.
 
-Explain why a successful request through one exposure method does not establish that the others work.
-Document the macOS boundary: the Docker network is inside Docker's Linux environment, while loopback NodePort mappings are directly reachable from this Mac.
-The private-network client is external to Kubernetes, but it is not a public internet client.
+## Explain your result
+
+Write one reproducible request for each exposure path and record the trust or routing property that it demonstrates.
+
+## Transfer beyond this lab
+
+Keep the lab’s private-network and loopback reachability limits visible when translating the runbook to a public deployment.

@@ -1,7 +1,12 @@
-# Trace intent to an observed result
+# Debrief: Package repeatable Dispatch environments
 
-Name the source of truth for the resource you repaired and the component that applies or reconciles it.
-Compare the rendered resources, generation or release revision, and actual application behavior.
-Explain why a valid manifest, a successful command, and a ready business service are different claims.
-Describe the recovery path and the state it intentionally preserves, including data and release history.
-For operator-managed workloads, explain what a direct edit changes temporarily and where a lasting change belongs.
+Reusable configuration, a versioned release, and a reconciled extension provide different forms of packaging and automation.
+The mission requires the resulting workload behavior, so the presence of chart files or custom resource definitions is only an intermediate observation.
+
+## Explain your result
+
+Explain which changes belong in environment values, which belong in shared templates, and which require controller logic.
+
+## Transfer beyond this lab
+
+Keep the source interfaces small enough that another operator can render, inspect, and reproduce the intended deployment.

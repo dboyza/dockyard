@@ -1,3 +1,4 @@
+import { CachePanel } from "./CachePanel";
 import type { Workbench } from "./useWorkbench";
 import {
   ArrowRight,
@@ -68,6 +69,22 @@ export function LabsPage({ model }: { model: Workbench }) {
                 <span>{doctor.tools.wezterm ? "Available" : "Not found"}</span>
               </div>
             </div>
+            <p className="small muted">
+              {doctor.system} {doctor.architecture} ·{" "}
+              {doctor.host_memory_gib === null
+                ? "Host RAM not reported"
+                : `${doctor.host_memory_gib} GiB host RAM`}{" "}
+              ·{" "}
+              {doctor.memory_free_percent === null
+                ? "Memory pressure unavailable"
+                : `${doctor.memory_free_percent}% memory available reported by macOS`}
+            </p>
+            <p className="small muted">
+              {doctor.cluster_policy} Native profiles reserve up to{" "}
+              {doctor.vm_budget_gib} GiB. Switching labs pauses the previous
+              owned cluster in this profile; another profile must release its
+              own cluster first.
+            </p>
             {doctor.docker_error && (
               <p className="diagnostic">{doctor.docker_error}</p>
             )}
@@ -76,6 +93,7 @@ export function LabsPage({ model }: { model: Workbench }) {
           <p className="muted">Checking your local environment…</p>
         )}
       </section>
+      <CachePanel model={model} />
       {state.labs.length ? (
         state.labs.map((item) => (
           <section className="panel resource-card" key={item.id}>
@@ -104,13 +122,21 @@ export function LabsPage({ model }: { model: Workbench }) {
                 disabled={!!busy}
                 onClick={() =>
                   void perform(
-                    item.state === "stopped" ? "resume" : "stop",
+                    item.state === "absent"
+                      ? "prepare"
+                      : item.state === "stopped"
+                        ? "resume"
+                        : "stop",
                     false,
                     item.unit_id,
                   )
                 }
               >
-                {item.state === "stopped" ? "Resume" : "Stop"}
+                {item.state === "absent"
+                  ? "Prepare"
+                  : item.state === "stopped"
+                    ? "Resume"
+                    : "Stop"}
               </button>
               <button
                 disabled={!!busy}

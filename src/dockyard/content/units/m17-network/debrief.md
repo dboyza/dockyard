@@ -1,7 +1,12 @@
-# Explain each independent control
+# Debrief: Enforce network intent across nodes
 
-Name the identity or peer, requested operation, and expected result for each boundary.
-Explain how the positive control excludes an unrelated unavailable service as the reason for denial.
-Distinguish namespace policy, actual process state, and business behavior.
-Describe the permissions required by the inventory process and why the other application processes do not need its token.
-Record remaining limitations without presenting this local exercise as a complete production security audit.
+The cross-node connection matrix demonstrates allowed and denied paths through an enforcing network plugin.
+Testing both TCP and UDP DNS matters because restricting one transport can leave resolution failures that look intermittent.
+
+## Explain your result
+
+Which negative request proves the boundary is enforced, and which positive request proves you did not simply break all connectivity?
+
+## Transfer beyond this lab
+
+NetworkPolicy does not authenticate application users or automatically isolate every host-network path, so describe the tested scope precisely.

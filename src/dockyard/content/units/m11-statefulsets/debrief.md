@@ -1,9 +1,12 @@
-# Separate the lifetimes
+# Debrief: Preserve stateful workload identity
 
-Explain which identities changed when the database Pod was replaced and which remained stable.
-Trace the database data directory to its Pod volume, PersistentVolumeClaim, PersistentVolume, and node-local backing directory.
-Compare StatefulSet claim retention with the PV reclaim policy; they govern different deletion events.
+The StatefulSet retains the stable Pod naming, Service relationship, and claim identity that a stateful workload needs.
+Stable identity and preserved bytes are complementary observations; a familiar Pod name can still point to an empty replacement database.
 
-A successful restore needs readable application records on an independent destination, not merely a backup file or a zero exit status.
-Describe the loss boundary of this local lab: deleting the entire kind cluster removes its node-local storage.
-For production, consider independent failure domains, off-cluster backups, recovery point and recovery time objectives, and regularly rehearsed restores.
+## Explain your result
+
+Explain the separate roles of StatefulSet claim-retention behavior and the PersistentVolume reclaim policy.
+
+## Transfer beyond this lab
+
+Neither policy creates replication or an off-cluster backup, so plan those failure boundaries independently.

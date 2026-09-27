@@ -1,7 +1,12 @@
-# Trace the release before declaring success
+# Debrief: Reconcile a local Git declaration
 
-Explain what the test process, registry digest, Git commit, source artifact, and running process each establish.
-Identify the identity applying workload changes and what it cannot do.
-Compare a live rollout undo with a Git revert while a reconciliation controller remains active.
-Describe the failed candidate's observed impact and the checks that establish recovery.
-State which local practice conveniences would need a different production design.
+The reconciler reads the declared state from the local Git source and applies it to the owned cluster.
+Changing a live object directly can therefore be temporary when the committed declaration still requests something else.
+
+## Explain your result
+
+Trace a commit through source retrieval, reconciliation, and the resulting workload, identifying where each status is observed.
+
+## Transfer beyond this lab
+
+Protect repository write access as deployment authority and keep secrets out of committed application declarations.

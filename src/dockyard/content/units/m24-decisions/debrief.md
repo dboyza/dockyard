@@ -1,9 +1,12 @@
-## Handoff self-review
+# Debrief: Balance capacity, disruption, and access
 
-For each point, identify the evidence in your own handoff rather than treating a passing runtime check as proof of the explanation.
+Resource and disruption budgets constrain the available repair choices, while the inventory account must retain only its intended read authority.
+The application transaction proves those constraints still permit useful work, and the preserved marker proves continuity of earlier data.
 
-- The symptom and each independent cause are distinguished.
-- Every repair has a supporting observation and a bounded target.
-- Verification includes new work and preserved earlier state.
-- Rollback, data backup, access, and availability claims state their limits.
-- Another operator could reproduce the checks without receiving credentials in the document.
+## Explain your result
+
+Explain the tradeoff you made between capacity, disruption, and access without treating a wider permission or removed budget as a harmless shortcut.
+
+## Transfer beyond this lab
+
+Operational decisions should state their assumptions and remaining risk so the next operator can recognize when those assumptions no longer hold.

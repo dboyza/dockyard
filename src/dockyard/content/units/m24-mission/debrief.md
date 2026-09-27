@@ -1,9 +1,12 @@
-## Handoff self-review
+# Debrief: Operate and hand off Dispatch through a control-plane outage
 
-For each point, identify the evidence in your own handoff rather than treating a passing runtime check as proof of the explanation.
+The final capstone keeps the original primary API and etcd member stopped while the surviving quorum accepts new writes and Dispatch completes new persistent work.
+The running API and workers also use the built handoff release, so editing VERSION without deploying the resulting artifact would leave the mission incomplete.
 
-- The symptom and each independent cause are distinguished.
-- Every repair has a supporting observation and a bounded target.
-- Verification includes new work and preserved earlier state.
-- Rollback, data backup, access, and availability claims state their limits.
-- Another operator could reproduce the checks without receiving credentials in the document.
+## Explain your result
+
+Connect the surviving voting members, usable endpoint, narrow inventory authority, resource budgets, and observed release identity in your final operational handoff.
+
+## Transfer beyond this lab
+
+Your portfolio preserves infrastructure and evidence of these mechanisms; it does not remove the shared-host failure domain or replace an independently protected production recovery plan.

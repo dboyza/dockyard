@@ -1,4 +1,12 @@
-The evidence records observations from the actual native runtime, node leases, guest client, or application path relevant to this task.
-Use the evidence details to distinguish an observed state from your hypothesis about its cause.
-Write which layer failed, why a superficially healthy neighboring layer did not disprove that fault, and what check you would repeat after a restart.
-A working reference is one repair, not a required command history.
+# Debrief: Separate client access from control-plane health
+
+The private guest client reaches the intended API endpoint using the cluster’s certificate-backed connection.
+A failed client request can result from endpoint or trust configuration even when the control-plane processes themselves remain healthy.
+
+## Explain your result
+
+What host-side observation would separate an unavailable API process from a client that targets the wrong address?
+
+## Transfer beyond this lab
+
+Keep administrative client configuration scoped to the intended cluster and never repair a trust problem by disabling certificate verification.

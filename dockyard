@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+project_root="$(cd "$(dirname "$0")" && pwd)"
+launcher="$project_root/.runtime/installed/bin/dockyard"
+if [ ! -x "$launcher" ]; then
+  echo 'Run ./scripts/install.sh first to build and install Dockyard locally.' >&2
+  exit 1
+fi
+exec "$launcher" "$@"

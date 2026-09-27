@@ -1,7 +1,12 @@
-# Explain each independent control
+# Debrief: Restrict Dispatch without breaking it
 
-Name the identity or peer, requested operation, and expected result for each boundary.
-Explain how the positive control excludes an unrelated unavailable service as the reason for denial.
-Distinguish namespace policy, actual process state, and business behavior.
-Describe the permissions required by the inventory process and why the other application processes do not need its token.
-Record remaining limitations without presenting this local exercise as a complete production security audit.
+The mission combines narrow API authority, absent unnecessary tokens, enforced network boundaries, and restricted process execution.
+A fresh persistent job demonstrates that those controls preserve the required application path rather than securing the system by making it unusable.
+
+## Explain your result
+
+For each control, name one allowed behavior and one forbidden behavior that the evidence distinguishes.
+
+## Transfer beyond this lab
+
+These local tests cover specific mechanisms and do not constitute an exhaustive production security assessment.

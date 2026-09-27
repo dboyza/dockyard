@@ -1,9 +1,12 @@
-# Trace the entire request
+# Debrief: Trace Services from DNS to real traffic
 
-Describe the destination used by the client, the controller or proxy that handled it, the selected Service port, the backend endpoint, and the application listener.
-For TLS, distinguish certificate trust, hostname verification, and HTTP routing after the handshake.
-For Gateway API, compare declared intent with Accepted, ResolvedRefs, and Programmed conditions before looking at a real response.
+Service DNS, endpoint selection, NodePort exposure, and LoadBalancer addressing each add a different part of the request path.
+The EndpointSlice evidence connects the selected backends to the owned ready API Pods rather than to an unrelated responder.
 
-Explain why a successful request through one exposure method does not establish that the others work.
-Document the macOS boundary: the Docker network is inside Docker's Linux environment, while loopback NodePort mappings are directly reachable from this Mac.
-The private-network client is external to Kubernetes, but it is not a public internet client.
+## Explain your result
+
+Explain why a successful loopback NodePort request does not demonstrate that the private LoadBalancer address works.
+
+## Transfer beyond this lab
+
+The external client in this lab is outside Kubernetes on a private network, not a public internet client or a cloud load balancer.

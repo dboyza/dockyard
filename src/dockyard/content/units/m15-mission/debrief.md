@@ -1,7 +1,12 @@
-# Explain what each observation establishes
+# Debrief: Diagnose and explain a latency regression
 
-Trace a request from its measured response to the serving process log and the relevant metric series.
-Distinguish target reachability, application health, business success, and the chosen latency objective.
-Explain the numerator, denominator, threshold, and time window used by the dashboard and SLO calculation.
-Describe why an alert needs an exercised failure and recovery, and what its for duration changes.
-State the local sample limits and the additional evidence needed before making a production reliability claim.
+The latency regression asks you to connect a user-visible symptom with operational observations and a bounded repair.
+A passing application request after the change is necessary, but the monitoring evidence explains whether the diagnosed condition changed as intended.
+
+## Explain your result
+
+Write the symptom, competing hypotheses, decisive measurement, repair, and post-repair observation as separate parts of the handoff.
+
+## Transfer beyond this lab
+
+Repeat measurements under representative demand before generalizing a local latency improvement into a capacity guarantee.

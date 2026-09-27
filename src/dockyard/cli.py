@@ -15,6 +15,7 @@ from types import FrameType
 
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.service import LabError, Service
+from dockyard.store import BusyError
 
 
 def default_directory() -> Path:
@@ -48,6 +49,15 @@ def parser() -> argparse.ArgumentParser:
     )
     imported.add_argument("source", type=Path)
     imported.add_argument("--yes", action="store_true", help="Merge after validating the preview")
+    cache = commands.add_parser("cache", help="Inspect and prefetch pinned lesson dependencies")
+    caches = cache.add_subparsers(dest="cache_action", required=True)
+    for name in ("status", "prepare"):
+        command = caches.add_parser(name)
+        command.add_argument(
+            "scope", nargs="?", default="all", help="all, unit:ID, module:1..24, or track:1..4"
+        )
+    portfolio = commands.add_parser("portfolio", help="Export a readable mission source portfolio")
+    portfolio.add_argument("destination", type=Path)
     lab = commands.add_parser("lab", help="Manage and check a dedicated practice lab")
     operations = lab.add_subparsers(dest="action", required=True)
     for action in (
@@ -140,6 +150,25 @@ def main() -> None:
                 print(report["evidence_boundary"])
             if report["issues"]:
                 raise SystemExit(1)
+        elif arguments.command == "cache":
+            from dockyard.cache import inventory, prepare
+
+            report = (
+                prepare(
+                    service,
+                    arguments.scope,
+                    lambda message: print(message, file=sys.stderr, flush=True),
+                )
+                if arguments.cache_action == "prepare"
+                else inventory(service, arguments.scope)
+            )
+            print(json.dumps(report, indent=2))
+        elif arguments.command == "portfolio":
+            from dockyard.progress_bundle import save_export
+            from dockyard.projects import export_portfolio
+
+            save_export(export_portfolio(service), arguments.destination)
+            print(f"Saved Dispatch portfolio to {arguments.destination.resolve()}")
         elif arguments.command == "progress":
             from dockyard.archives import MAX_ARCHIVE
             from dockyard.progress_bundle import (
@@ -210,6 +239,6 @@ def main() -> None:
                     raise SystemExit(1)
     except KeyboardInterrupt:
         print("Dockyard stopped. Your work and lab resources are preserved.")
-    except (RuntimeErrorBase, ValueError, FileNotFoundError) as error:
+    except (BusyError, RuntimeErrorBase, ValueError, FileNotFoundError) as error:
         print(f"Dockyard: {error}", file=sys.stderr)
         raise SystemExit(2) from error

@@ -1,7 +1,12 @@
-# Explain what each observation establishes
+# Debrief: Correlate events, logs, and metrics
 
-Trace a request from its measured response to the serving process log and the relevant metric series.
-Distinguish target reachability, application health, business success, and the chosen latency objective.
-Explain the numerator, denominator, threshold, and time window used by the dashboard and SLO calculation.
-Describe why an alert needs an exercised failure and recovery, and what its for duration changes.
-State the local sample limits and the additional evidence needed before making a production reliability claim.
+Events, container logs, and live metrics expose different time scales and layers of the same system.
+Correlating them prevents a healthy current status from erasing evidence of an earlier restart or failed scheduling attempt.
+
+## Explain your result
+
+Name the first observation that narrowed your hypothesis and the second independent observation that supported the repair.
+
+## Transfer beyond this lab
+
+Preserve enough context and timing in an incident record to distinguish symptoms from causes without exporting credentials.

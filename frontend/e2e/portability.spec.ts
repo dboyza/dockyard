@@ -84,5 +84,20 @@ assert not s.store.labs()
 print(s.store.note('m01-processes'))
 `, cliProfile], { encoding: 'utf8' });
   expect(note.trim()).toBe('My portable process observation.');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: 'Lab manager', exact: true }).click();
+  await page.getByRole('button', { name: 'Inspect cache', exact: true }).click();
+  const cache = page.getByRole('region', { name: 'Dependency cache' });
+  await expect(cache).toContainText('5 / 5');
+  await page.getByRole('button', { name: 'Prefetch dependencies', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Inspect cache', exact: true })).toBeEnabled({ timeout: 30000 });
+  await cache.getByText('Readiness for each selected activity').click();
+  await expect(cache.locator('.cache-activities article')).toHaveCount(5);
+  for (const width of [1440, 480]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: path.join(root, `.artifacts/cache-manager-${width}.png`), fullPage: true, animations: 'disabled' });
+  }
   expect(failures).toEqual([]);
 });

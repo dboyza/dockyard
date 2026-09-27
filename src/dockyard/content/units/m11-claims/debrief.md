@@ -1,9 +1,12 @@
-# Separate the lifetimes
+# Debrief: Connect claims to durable database storage
 
-Explain which identities changed when the database Pod was replaced and which remained stable.
-Trace the database data directory to its Pod volume, PersistentVolumeClaim, PersistentVolume, and node-local backing directory.
-Compare StatefulSet claim retention with the PV reclaim policy; they govern different deletion events.
+The database writes through a bound claim into the backing PersistentVolume, and a replacement Pod reads the original marker.
+The marker makes persistence observable across Pod replacement instead of relying on a healthy-looking database process.
 
-A successful restore needs readable application records on an independent destination, not merely a backup file or a zero exit status.
-Describe the loss boundary of this local lab: deleting the entire kind cluster removes its node-local storage.
-For production, consider independent failure domains, off-cluster backups, recovery point and recovery time objectives, and regularly rehearsed restores.
+## Explain your result
+
+Trace the data directory through the mount, claim, volume, and backing storage, naming which identities changed when the Pod was replaced.
+
+## Transfer beyond this lab
+
+This node-local volume survives the tested Pod lifecycle, but deleting the entire kind cluster removes its storage.

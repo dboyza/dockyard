@@ -1,4 +1,12 @@
-Compare each observed boundary with the hypothesis you used while working.
-Explain why successful initialization, Ready nodes, working DNS, and a fresh persisted job answer different questions.
-For HA, distinguish surviving etcd quorum from client endpoint routing, and state the failure points that the exercise does not remove.
-Your reference is one valid workflow; the checks assess live outcomes rather than its command history.
+# Debrief: Keep the API writable through a control-plane outage
+
+The primary API server and etcd member remain stopped while the surviving members retain the original three-member voting configuration.
+A fresh API write demonstrates both usable client routing and surviving quorum, while the application job adds a cross-node data-path observation.
+
+## Explain your result
+
+Why can a healthy etcd majority coexist with a broken client endpoint, and why would deleting the failed member change the scenario you were asked to recover?
+
+## Transfer beyond this lab
+
+This local topology teaches routing and quorum mechanics, but all guests still share one Mac and the endpoint itself has additional failure boundaries.

@@ -1,14 +1,12 @@
-# Explain the evidence
+# Debrief: Apply deliberate changes in the right context
 
-Compare the desired replica count with the ready and available replicas you observed.
-Trace one Pod's owner reference to its ReplicaSet, then to its Deployment.
-Explain how the Service finds backend addresses and why Pod replacement does not require clients to learn a new address.
+A valid apps/v1 declaration expresses the state that a controller should maintain, but API acceptance does not prove application availability.
+The live release, owned replicas, and request through Service DNS connect that declaration to observed behavior.
 
-A passing check establishes the observed state of this practice cluster at one moment.
-It does not prove that arbitrary future failures are harmless or that a two-replica Deployment is highly available across failure domains.
-Both replicas can still share this lab's single node.
+## Explain your result
 
-## Transfer
+Explain why changing a manifest in your workspace without applying it leaves the cluster unchanged, and why applying it to another context would be dangerous.
 
-Describe the first three observations you would collect if apply succeeded but a client could not reach the application.
-Return to this unit later without the reference and repeat the diagnosis from a clean starter.
+## Transfer beyond this lab
+
+For shared environments, review changes and compare intended state with the live object before applying a declaration.

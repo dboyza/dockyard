@@ -12,7 +12,7 @@ from dockyard.fixtures.exam import apply, deployment
 from dockyard.fixtures.maintenance import record
 from dockyard.fixtures.recovery import etcd
 from dockyard.native import current
-from dockyard.probes.kubernetes import kubectl
+from dockyard.probes.kubernetes import get, kubectl
 from dockyard.workspace import atomic_write
 
 
@@ -36,9 +36,17 @@ def prepare() -> None:
             ],
         )
     )[0]["Status"]
+    claim = get("pvc", "data-db-0")
+    volume = get("pv", claim["spec"]["volumeName"])
     atomic_write(
         r.root / "data/exam-backup.json",
-        json.dumps({"revision": status["header"]["revision"]}).encode(),
+        json.dumps(
+            {
+                "revision": status["header"]["revision"],
+                "claim_uid": claim["metadata"]["uid"],
+                "volume_uid": volume["metadata"]["uid"],
+            }
+        ).encode(),
     )
     apply(
         {
@@ -71,6 +79,14 @@ def prepare() -> None:
             "http.server.ThreadingHTTPServer(('0.0.0.0',8080),http.server.SimpleHTTPRequestHandler).serve_forever()",
         ],
     )
+    reporter["spec"]["template"]["spec"]["tolerations"] = [
+        {
+            "key": "dockyard.io/batch",
+            "operator": "Equal",
+            "value": "true",
+            "effect": "NoSchedule",
+        }
+    ]
     container = reporter["spec"]["template"]["spec"]["containers"][0]
     container["image"] = "{{ .Values.image }}"
     container["env"] = [{"name": "REPORT_ENV", "value": "{{ .Values.environment }}"}]

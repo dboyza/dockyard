@@ -1,9 +1,12 @@
-# Separate the lifetimes
+# Debrief: Prove database durability and recovery
 
-Explain which identities changed when the database Pod was replaced and which remained stable.
-Trace the database data directory to its Pod volume, PersistentVolumeClaim, PersistentVolume, and node-local backing directory.
-Compare StatefulSet claim retention with the PV reclaim policy; they govern different deletion events.
+Durable workload identity, replacement-Pod persistence, and independent restoration together establish the mission’s recovery contract.
+Each observation closes a different gap that a Bound claim or a zero-exit backup command would leave open.
 
-A successful restore needs readable application records on an independent destination, not merely a backup file or a zero exit status.
-Describe the loss boundary of this local lab: deleting the entire kind cluster removes its node-local storage.
-For production, consider independent failure domains, off-cluster backups, recovery point and recovery time objectives, and regularly rehearsed restores.
+## Explain your result
+
+Describe a recovery sequence that preserves the original data until the restored database has been verified.
+
+## Transfer beyond this lab
+
+Export the infrastructure and runbook as source, while managing actual database backups through a separately protected recovery process.

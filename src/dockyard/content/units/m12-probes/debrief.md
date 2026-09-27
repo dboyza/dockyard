@@ -1,9 +1,12 @@
-# Define what a safe release proved
+# Debrief: Separate startup, readiness, and liveness
 
-Separate application health, dependency readiness, startup time, and graceful termination.
-Describe the available-replica budget during an update and what observations would make you stop promotion.
-Compare stable and candidate release identities through both shared and preview Services.
+Startup, readiness, and liveness answer different questions and trigger different controller behavior.
+The real endpoint observations and clean SIGTERM exit connect those policies to the supplied process rather than just to fields in a manifest.
 
-Explain why Pod-count proportions are not an exact traffic-weighting mechanism and why an application rollback cannot reverse an incompatible database migration.
-Record a release and rollback runbook with concrete readiness, traffic, data, and recovery checks.
-The local exercise verifies these mechanisms, not production zero-downtime guarantees under arbitrary load.
+## Explain your result
+
+Why can a dependency outage justify withholding traffic while restarting the process repeatedly makes the outage harder to recover from?
+
+## Transfer beyond this lab
+
+Choose probe thresholds from measured startup and failure behavior instead of copying the local lab timings into production.

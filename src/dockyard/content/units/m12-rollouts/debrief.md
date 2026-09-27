@@ -1,9 +1,12 @@
-# Define what a safe release proved
+# Debrief: Recover a failed rolling release
 
-Separate application health, dependency readiness, startup time, and graceful termination.
-Describe the available-replica budget during an update and what observations would make you stop promotion.
-Compare stable and candidate release identities through both shared and preview Services.
+The failed revision remains in rollout history while the running application returns to the stable image.
+Available capacity and actual responses explain whether the rolling-update strategy protected service during the attempted change.
 
-Explain why Pod-count proportions are not an exact traffic-weighting mechanism and why an application rollback cannot reverse an incompatible database migration.
-Record a release and rollback runbook with concrete readiness, traffic, data, and recovery checks.
-The local exercise verifies these mechanisms, not production zero-downtime guarantees under arbitrary load.
+## Explain your result
+
+What observation would tell you to stop promotion even if the new Pods were Running?
+
+## Transfer beyond this lab
+
+An application image rollback cannot undo an incompatible database migration, so design schema changes and rollback conditions together.

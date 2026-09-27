@@ -1,9 +1,12 @@
-# Separate the lifetimes
+# Debrief: Restore a database onto independent storage
 
-Explain which identities changed when the database Pod was replaced and which remained stable.
-Trace the database data directory to its Pod volume, PersistentVolumeClaim, PersistentVolume, and node-local backing directory.
-Compare StatefulSet claim retention with the PV reclaim policy; they govern different deletion events.
+The restored records live on an independent destination claim while the source claim and its marker remain intact.
+This distinguishes a successful restore from restarting the old database or merely producing a dump file.
 
-A successful restore needs readable application records on an independent destination, not merely a backup file or a zero exit status.
-Describe the loss boundary of this local lab: deleting the entire kind cluster removes its node-local storage.
-For production, consider independent failure domains, off-cluster backups, recovery point and recovery time objectives, and regularly rehearsed restores.
+## Explain your result
+
+Which identities and data observations show that the recovered database is independent of the source storage?
+
+## Transfer beyond this lab
+
+A production recovery rehearsal must also measure recoverable data loss and recovery time, and keep a usable backup outside the original failure domain.

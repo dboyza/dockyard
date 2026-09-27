@@ -1,7 +1,12 @@
-# Trace intent to an observed result
+# Debrief: Compose environment overlays
 
-Name the source of truth for the resource you repaired and the component that applies or reconciles it.
-Compare the rendered resources, generation or release revision, and actual application behavior.
-Explain why a valid manifest, a successful command, and a ready business service are different claims.
-Describe the recovery path and the state it intentionally preserves, including data and release history.
-For operator-managed workloads, explain what a direct edit changes temporarily and where a lasting change belongs.
+The overlay changes a reusable base through an explicit rendering step, and the applied application shows whether that rendered configuration is effective.
+Editing a patch file is insufficient when the patch selects the wrong resource or the rendered output is never applied.
+
+## Explain your result
+
+Compare the base, the rendered overlay, and the running consumer, identifying where the intended environment value first differs.
+
+## Transfer beyond this lab
+
+Keep environment-specific changes small and review rendered output as part of a release process.

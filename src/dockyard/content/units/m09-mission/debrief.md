@@ -1,9 +1,12 @@
-# Follow configuration into the process
+# Debrief: Mission: configure two isolated environments
 
-Trace the source object, Pod reference, delivery mechanism, and application read that establish each configured value.
-Explain which changes require a rollout and which require the application to reread a projected file.
-Describe one way a credential could still be exposed despite being stored as a Secret.
+The stable and preview environments consume distinct configuration and still complete real application jobs.
+This establishes the tested configuration and identity boundaries without claiming every possible network or storage boundary is isolated.
 
-For identity, distinguish a successful administrator request from a successful request carrying the workload's own token.
-Explain why an allowed Pod list and denied Secret list provide different evidence from merely seeing a RoleBinding object.
-Before calling the environments isolated, state exactly which boundary was demonstrated and which boundaries still require network and storage controls.
+## Explain your result
+
+Which source object and running-process observation prove that preview is not silently consuming the stable environment configuration?
+
+## Transfer beyond this lab
+
+Document the remaining isolation requirements before adapting this namespace pattern to environments with different trust levels.

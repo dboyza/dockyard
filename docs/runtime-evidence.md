@@ -538,3 +538,62 @@ The second CKAD exam passed its full actual-runtime starter/reference audit afte
 Unrelated periodic maintenance jobs are suspended in both application exam fixtures to keep their lifecycle separate from the timed tasks.
 Both native incidents also passed their actual starter/reference audits, including broken and repaired Stop/Resume for the kubelet incident.
 The two CKA exam audits remain in progress.
+
+## Checkpoint continuation and mission portfolios
+
+The installed browser completed a real two-mission Docker journey in 8.9 seconds.
+The first mission's passing checkpoint supplied a selected authored runbook to the second mission's intact scaffold.
+No files were selected automatically, no prior workspace was overwritten, and continuation created no running environment.
+After running the second mission's reference, its actual checks passed and the downloaded portfolio contained both mission source trees and passing evidence.
+The comparison and resulting portfolio were verified at desktop and narrow widths.
+Three focused continuation/portfolio tests also verify stale previews, unsupported file selections, existing-workspace preservation, support provenance, and archive hashes.
+
+The first CKA exam's fresh starter/reference audit passed after reproducing a pending Helm workload caused by an untolerated worker taint.
+The supplied chart now includes the appropriate toleration, and the storage observer additionally requires the original claim and volume UIDs.
+A retained diagnostic run passed all ten actual criteria before the fresh audit.
+The second CKA exam remains in its fresh audit.
+
+## Cache, capacity, installation, and content review
+
+Full-course prefetch verified the declared dependencies for all 112 activities: 16 pinned tools, 23 ARM64 image references, and 29 native package artifacts, with no missing declared dependency in the development cache.
+The report deliberately distinguishes cached dependencies from remaining Python package-index or native control-plane registry steps.
+Twenty-seven activities have no declared remaining network step; 85 still report one rather than making an unsupported offline claim.
+The installed browser inspected and prefetched the five-activity first-module scope in a 5.4-second portability/cache journey.
+A separate fresh installed profile with external requests blocked reported a recoverable download failure while its lesson catalog remained usable.
+
+Two profile-coordination tests passed, and an actual ready native exam prevented a second profile from creating any kind resources.
+The existing native lab and Docker container inventory remained unchanged during that rejected allocation.
+The CLI renders this capacity conflict as a concise diagnostic with exit code 2.
+Host preflight now checks architecture, free disk, reported memory pressure, and configured allocation headroom before provisioning.
+The current full backend regression run passed 86 tests with 120 integration cases deselected.
+
+The documented source installer completed its locked dependency setup, frontend build, wheel build, private installation, and structural curriculum audit.
+The installed accessibility journey passed in 11.8 seconds across all eleven destinations in both themes, lesson and confirmation states, and 760/480/320-pixel lesson layouts.
+It reported no automated WCAG 2 A/AA or WCAG 2.1 AA findings after theme transitions settled.
+That automated result is not a complete assistive-technology review.
+The README image is a direct capture of the installed lesson screen using a disposable profile.
+
+A semantic content pass replaced 68 repeated module debriefs with activity-specific explanations, reflection questions, and transfer limitations.
+No exact duplicate debriefs remain across the 112 activities.
+The exam references were formatted for readability without changing their task contracts.
+
+The final CKA maintenance reference passed all nine live criteria after a grader correction.
+The incorrect authorization query treated deployments.apps/scale as a named Deployment, while the documented subresource form checks the intended scale authority.
+Both CKA graders now use the explicit subresource flag for scale or Pod logs, consistent with the [official kubectl auth can-i reference](https://kubernetes.io/docs/reference/kubectl/generated/kubectl_auth/kubectl_auth_can-i/) checked on 2026-09-27.
+The retained native run also demonstrated the difference directly: patch and update were denied for the full Deployment while permitted for its scale subresource.
+
+The corrected CKA authorization checks rejected both missing scale permission and excessive full-Deployment write permission in a live native cluster.
+A separate service account with Pod read permission did not receive log-access credit until the explicit Pod-log permission was granted.
+The upgraded native exam then passed immediately after Stop/Resume and its owned resources were cleaned.
+
+The final installed browser regression passed all four selected journeys in 33.6 seconds: accessibility, lessons and Docker lifecycle, reviewed progress transfer, and two-mission continuation with portfolio export.
+The backend regression passed 86 tests in 21.91 seconds, and all four frontend tests passed.
+Ruff lint and formatting, strict mypy, ESLint, Prettier, TypeScript, and generated-contract consistency passed.
+The Docker lifecycle and independent-retake integration suite passed all three tests in 13.97 seconds.
+
+The installed first lesson passed through both a real PTY and a newly opened WezTerm pane.
+Both shells verified their workspace identity and real terminal input before invoking the same CLI check service.
+The PTY harness initially waited for shell exit without draining terminal output; the corrected bounded reader completed normally.
+The test closed only its newly created pane, cleaned its disposable lab, and verified every preexisting terminal pane remained present.
+The README was rendered locally at 1440 and 480 pixels in light and dark themes with loaded assets and no page overflow, then inspected directly.
+This was approximate local Markdown rendering, not a published GitHub-page check.

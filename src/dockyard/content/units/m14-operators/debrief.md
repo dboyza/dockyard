@@ -1,7 +1,12 @@
-# Trace intent to an observed result
+# Debrief: Extend the API with a reconciled WorkerPool
 
-Name the source of truth for the resource you repaired and the component that applies or reconciles it.
-Compare the rendered resources, generation or release revision, and actual application behavior.
-Explain why a valid manifest, a successful command, and a ready business service are different claims.
-Describe the recovery path and the state it intentionally preserves, including data and release history.
-For operator-managed workloads, explain what a direct edit changes temporarily and where a lasting change belongs.
+A custom resource extends the API vocabulary, and a running controller is responsible for reconciling that declared intent.
+The WorkerPool object alone cannot create useful workers without the corresponding controller and its required authority.
+
+## Explain your result
+
+Trace one change from the custom resource to the managed workload and explain how status differs from the requested specification.
+
+## Transfer beyond this lab
+
+Production operators need bounded privileges, repeatable reconciliation, and failure reporting that survives retries.

@@ -1,7 +1,12 @@
-# Explain each independent control
+# Debrief: Limit a workload API identity
 
-Name the identity or peer, requested operation, and expected result for each boundary.
-Explain how the positive control excludes an unrelated unavailable service as the reason for denial.
-Distinguish namespace policy, actual process state, and business behavior.
-Describe the permissions required by the inventory process and why the other application processes do not need its token.
-Record remaining limitations without presenting this local exercise as a complete production security audit.
+The real reader token can perform its required Pod observation while Secret access and cross-namespace access are denied.
+The API and worker have no automatically mounted Kubernetes token because their application work does not need API authority.
+
+## Explain your result
+
+Explain why a successful administrator request would not prove either workload’s effective privileges.
+
+## Transfer beyond this lab
+
+Use separate identities for separate responsibilities and review authorization whenever an application gains a new operational capability.

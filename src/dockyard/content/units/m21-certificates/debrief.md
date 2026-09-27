@@ -1,6 +1,12 @@
-## Explain the observed result
+# Debrief: Renew and verify the certificate clients actually receive
 
-Compare the before-maintenance state with the live result and name each preserved identity.
-Explain which checks establish configuration, process behavior, and a real application transaction.
-Describe one tempting shortcut that would fail to establish this outcome.
-State which interruption or storage constraints would need a different production topology.
+The renewed certificate is checked through the TLS connection that a client actually receives, under the original trusted CA.
+A changed certificate file alone would not prove that the serving API process has loaded it.
+
+## Explain your result
+
+Which observations separate renewed on-disk material, the served leaf certificate, and preserved trust in the original cluster?
+
+## Transfer beyond this lab
+
+Certificate rotation needs a rollout or reload plan for consumers as well as expiry monitoring and recoverable access to the appropriate signing authority.

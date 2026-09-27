@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="88" height="88" viewBox="0 0 88 88" role="img" aria-labelledby="title">
+  <title id="title">Dockyard container workbench</title>
+  <rect x="2" y="2" width="84" height="84" rx="20" fill="#161e29" stroke="#9ac8ff" stroke-width="2"/>
+  <g fill="none" stroke="#9ac8ff" stroke-width="3" stroke-linejoin="round">
+    <path d="M21 34 44 21 67 34 67 59 44 72 21 59Z M21 34 44 47 67 34 M44 47V72 M33 27 56 40V65 M33 41V66"/>
+  </g>
+</svg>

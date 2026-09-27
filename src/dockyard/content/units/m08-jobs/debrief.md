@@ -1,9 +1,12 @@
-# Explain the lifecycle choices
+# Debrief: Run finite and scheduled maintenance
 
-Trace one submitted job from the API through PostgreSQL and Redis to the worker that completed it.
-Explain which state is durable within the current Pod lifetime and which would be lost after Pod replacement.
-Compare Deployment availability, DaemonSet node coverage, and Job completion as three distinct success conditions.
+A CronJob describes scheduling policy, whereas a Job records one finite execution and its completion behavior.
+The proof Job performs a real database observation, so a valid cron expression alone cannot satisfy the task.
 
-Identify a failure that the Kubernetes controller can repair and a configuration failure it can only keep retrying.
-For a CronJob, distinguish template correctness, one observed successful run, and reliable operation over many schedules.
-Record the evidence you would collect before increasing replicas in response to slow processing.
+## Explain your result
+
+Explain what concurrency and retry policy protect against, and what one successful proof run cannot tell you about a month of scheduled executions.
+
+## Transfer beyond this lab
+
+Production maintenance also needs idempotent operations, time-zone awareness, alerting, and a plan for missed schedules.

@@ -1,7 +1,12 @@
-# Trace intent to an observed result
+# Debrief: Operate a versioned Helm release
 
-Name the source of truth for the resource you repaired and the component that applies or reconciles it.
-Compare the rendered resources, generation or release revision, and actual application behavior.
-Explain why a valid manifest, a successful command, and a ready business service are different claims.
-Describe the recovery path and the state it intentionally preserves, including data and release history.
-For operator-managed workloads, explain what a direct edit changes temporarily and where a lasting change belongs.
+A chart turns values and templates into Kubernetes objects, while a Helm release records the deployed instance and its revisions.
+A rendered chart can be valid yet fail rollout because scheduling, admission, or runtime dependencies remain unsatisfied.
+
+## Explain your result
+
+Which observation connects the supplied value to the live process rather than only to template output?
+
+## Transfer beyond this lab
+
+Treat chart upgrades as application changes with reviewed values, readiness evidence, and a compatible rollback path.

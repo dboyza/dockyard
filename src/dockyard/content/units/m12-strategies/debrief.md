@@ -1,9 +1,12 @@
-# Define what a safe release proved
+# Debrief: Compare stable and candidate releases
 
-Separate application health, dependency readiness, startup time, and graceful termination.
-Describe the available-replica budget during an update and what observations would make you stop promotion.
-Compare stable and candidate release identities through both shared and preview Services.
+The shared Service selects both stable and candidate Pods, while the preview Service selects only the candidate release.
+Release responses establish which artifact the client reached rather than relying on desired image fields alone.
 
-Explain why Pod-count proportions are not an exact traffic-weighting mechanism and why an application rollback cannot reverse an incompatible database migration.
-Record a release and rollback runbook with concrete readiness, traffic, data, and recovery checks.
-The local exercise verifies these mechanisms, not production zero-downtime guarantees under arbitrary load.
+## Explain your result
+
+Explain why the ratio of stable to candidate Pods is not an exact traffic-weighting guarantee.
+
+## Transfer beyond this lab
+
+Use a routing system with explicit traffic policy when a production release requires controlled request proportions or consistent user cohorts.

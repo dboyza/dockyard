@@ -1,14 +1,12 @@
-# Explain the evidence
+# Debrief: Mission: reconcile a complete Dispatch deployment
 
-Compare the desired replica count with the ready and available replicas you observed.
-Trace one Pod's owner reference to its ReplicaSet, then to its Deployment.
-Explain how the Service finds backend addresses and why Pod replacement does not require clients to learn a new address.
+This mission combined an image-backed process, controller ownership, labels, and Service routing into one observable application path.
+A correct Deployment with an empty Service backend set would satisfy only part of that path.
 
-A passing check establishes the observed state of this practice cluster at one moment.
-It does not prove that arbitrary future failures are harmless or that a two-replica Deployment is highly available across failure domains.
-Both replicas can still share this lab's single node.
+## Explain your result
 
-## Transfer
+Draw the chain from the client name to the Service, selected ready Pod, and application release, identifying the observation that supports each link.
 
-Describe the first three observations you would collect if apply succeeded but a client could not reach the application.
-Return to this unit later without the reference and repeat the diagnosis from a clean starter.
+## Transfer beyond this lab
+
+Your saved checkpoint preserves this source and evidence, but it does not preserve the running cluster or guarantee future availability.

@@ -48,6 +48,18 @@ class ImportAction(Body):
     confirmed: bool = False
 
 
+class CacheAction(Body):
+    scope: str
+
+
+class ContinuationAction(Body):
+    target_id: str
+    checkpoint_digest: str
+    target_revision: int
+    selected: list[str]
+    confirmed: bool = False
+
+
 class ExamEdit(Body):
     selected_task: str
     flagged: list[str]
@@ -188,6 +200,51 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
         if not body.confirmed:
             raise HTTPException(400, "Review and confirm this progress merge first.")
         return import_staged(service, body.digest)
+
+    @app.get("/api/cache")
+    def cache_status(scope: str = "all") -> dict[str, Any]:
+        from dockyard.cache import inventory
+
+        return inventory(service, scope)
+
+    @app.post("/api/cache/prepare")
+    def cache_prepare(body: CacheAction) -> dict[str, Any]:
+        from dockyard.cache import prepare
+
+        return prepare(service, body.scope)
+
+    @app.get("/api/portfolio/export")
+    def download_portfolio() -> Response:
+        from dockyard.projects import export_portfolio
+
+        return Response(
+            export_portfolio(service),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": 'attachment; filename="dockyard-dispatch-portfolio.zip"',
+            },
+        )
+
+    @app.get("/api/checkpoints/{checkpoint_id}/continue")
+    def preview_continuation(checkpoint_id: str, target_id: str) -> dict[str, Any]:
+        from dockyard.projects import continuation_preview
+
+        return continuation_preview(service, checkpoint_id, target_id)
+
+    @app.post("/api/checkpoints/{checkpoint_id}/continue")
+    def apply_continuation(checkpoint_id: str, body: ContinuationAction) -> dict[str, Any]:
+        from dockyard.projects import continue_project
+
+        if not body.confirmed:
+            raise HTTPException(400, "Review and confirm the selected source files first.")
+        return continue_project(
+            service,
+            checkpoint_id,
+            body.target_id,
+            body.checkpoint_digest,
+            body.target_revision,
+            body.selected,
+        )
 
     @app.get("/api/checkpoints/{checkpoint_id}/download")
     def download_checkpoint(checkpoint_id: str) -> FileResponse:

@@ -1,9 +1,12 @@
-# Define what a safe release proved
+# Debrief: Ship and recover a safe application release
 
-Separate application health, dependency readiness, startup time, and graceful termination.
-Describe the available-replica budget during an update and what observations would make you stop promotion.
-Compare stable and candidate release identities through both shared and preview Services.
+This release combines healthy serving, distinct probe semantics, preserved rollout capacity, and verified release selection.
+The retained failed revision and working stable response provide evidence of recovery rather than a claim that the failure never happened.
 
-Explain why Pod-count proportions are not an exact traffic-weighting mechanism and why an application rollback cannot reverse an incompatible database migration.
-Record a release and rollback runbook with concrete readiness, traffic, data, and recovery checks.
-The local exercise verifies these mechanisms, not production zero-downtime guarantees under arbitrary load.
+## Explain your result
+
+Write promotion and rollback conditions in terms of readiness, actual client traffic, preserved data, and observed release identity.
+
+## Transfer beyond this lab
+
+The local result demonstrates the mechanism, not zero downtime under arbitrary production load.

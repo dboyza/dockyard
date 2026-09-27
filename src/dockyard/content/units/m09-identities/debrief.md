@@ -1,9 +1,12 @@
-# Follow configuration into the process
+# Debrief: Give an application a specific API identity
 
-Trace the source object, Pod reference, delivery mechanism, and application read that establish each configured value.
-Explain which changes require a rollout and which require the application to reread a projected file.
-Describe one way a credential could still be exposed despite being stored as a Secret.
+The workload uses its own ServiceAccount token to make an allowed request and encounter a denied request.
+That result is stronger evidence than an administrator successfully listing Pods or a RoleBinding merely existing.
 
-For identity, distinguish a successful administrator request from a successful request carrying the workload's own token.
-Explain why an allowed Pod list and denied Secret list provide different evidence from merely seeing a RoleBinding object.
-Before calling the environments isolated, state exactly which boundary was demonstrated and which boundaries still require network and storage controls.
+## Explain your result
+
+Trace the subject, binding, role, resource, verb, and namespace that authorize the observed request.
+
+## Transfer beyond this lab
+
+Keep API authorization separate from network reachability: a namespace and a narrow Role do not automatically isolate application traffic.

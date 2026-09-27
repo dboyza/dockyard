@@ -1,6 +1,12 @@
-## Explain the observed result
+# Debrief: Drain a worker without bypassing availability protection
 
-Compare the before-maintenance state with the live result and name each preserved identity.
-Explain which checks establish configuration, process behavior, and a real application transaction.
-Describe one tempting shortcut that would fail to establish this outcome.
-State which interruption or storage constraints would need a different production topology.
+The extra worker is evacuated while the remaining replicas and disruption budget continue to protect the intended availability.
+Drain operates through eviction semantics; bypassing those protections would avoid the operational decision the exercise asks you to make.
+
+## Explain your result
+
+Which observation proved the target was evacuated, and which proved the application still had useful capacity elsewhere?
+
+## Transfer beyond this lab
+
+Before a production drain, identify non-evictable workloads, local data, spare capacity, and the conditions under which the maintenance must stop.

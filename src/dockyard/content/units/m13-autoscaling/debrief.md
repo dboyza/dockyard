@@ -1,9 +1,12 @@
-# Capacity is an observed operating envelope
+# Debrief: Scale from measurements and bound disruption
 
-Explain the difference between scheduling requests, runtime limits, measured usage, and namespace admission budgets.
-Trace why each API Pod can or cannot land on each node, including labels, affinity, taints, tolerations, and topology spread.
-For autoscaling, compare the measured CPU utilization with its request denominator and the desired replica count.
+The autoscaler depends on a functioning metrics path and meaningful workload resource requests.
+A changing replica count is useful evidence only when it corresponds to the observed demand and stays within the declared bounds.
 
-Describe what the disruption budget protected during voluntary eviction and what it cannot guarantee during involuntary failure.
-The drain rehearsal records sampled readiness through the real Service; it does not establish a production SLO or zero lost requests between samples.
-The small local cluster shares one Mac and Docker VM, so its nodes are not independent physical failure domains.
+## Explain your result
+
+Why would adding replicas fail to help a bottleneck in a shared database or a queue consumer with an invalid configuration?
+
+## Transfer beyond this lab
+
+Measure scale-up delay, stabilization, and downstream capacity before relying on autoscaling during production bursts.

@@ -1,9 +1,12 @@
-## Handoff self-review
+# Debrief: Triage with a bounded evidence loop
 
-For each point, identify the evidence in your own handoff rather than treating a passing runtime check as proof of the explanation.
+The incident is resolved when the original identities and pre-incident row remain and a fresh browser-to-worker job completes.
+The handoff should explain why the selected observations supported a particular repair rather than merely listing successful commands.
 
-- The symptom and each independent cause are distinguished.
-- Every repair has a supporting observation and a bounded target.
-- Verification includes new work and preserved earlier state.
-- Rollback, data backup, access, and availability claims state their limits.
-- Another operator could reproduce the checks without receiving credentials in the document.
+## Explain your result
+
+Name a plausible alternative hypothesis, the observation that ruled it out, and the smallest change that addressed the remaining cause.
+
+## Transfer beyond this lab
+
+In a production incident, preserve the same evidence discipline while making urgency, impact, and authority to act explicit.

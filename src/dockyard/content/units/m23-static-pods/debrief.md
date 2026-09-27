@@ -1,6 +1,12 @@
-## Explain your evidence
+# Debrief: Recover the reconciler and its static workload
 
-Which original identities survived, and which observations establish that?
-Why does a new scheduler assignment provide evidence that an old running Pod cannot?
-How did you distinguish control-plane recovery from application-volume recovery?
-Which diagnostic still worked when the API was unavailable?
+The kubelet reconciles the static manifest into a running control-plane process without waiting for a Deployment controller.
+A fresh scheduler assignment shows that scheduling recovered, whereas an old running Pod could survive while the scheduler remained unavailable.
+
+## Explain your result
+
+Which host observation identified the missing static workload, and which new API observation demonstrated that it was useful after restart?
+
+## Transfer beyond this lab
+
+When the API is unhealthy, preserve access to host service logs, runtime inspection, and the authoritative static manifests.

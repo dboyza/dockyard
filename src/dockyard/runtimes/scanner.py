@@ -7,6 +7,7 @@ import os
 import shutil
 import threading
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -42,19 +43,17 @@ def ready(cache: Path) -> bool:
         return False
 
 
-def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
-    def report(message: str) -> None:
-        runtime.lab.resources["stage"] = message
-        runtime.save(runtime.lab)
-
-    tools = Toolchain(runtime.tools)
+def ensure_database(
+    root: Path, env: dict[str, str], cancel: threading.Event, report: Callable[[str], None]
+) -> None:
+    tools = Toolchain(root)
     scanner = tools.ensure("trivy", cancel, report)
-    cache = runtime.tools / "trivy"
-    with operation_lock(runtime.tools / "locks", "scanner-database"):
+    cache = root / "trivy"
+    with operation_lock(root / "locks", "scanner-database"):
         report("Verifying the pinned vulnerability database")
         if not ready(cache):
             report("Downloading the pinned vulnerability database")
-            temporary = runtime.tools / ("trivy-preparing-" + uuid.uuid4().hex)
+            temporary = root / ("trivy-preparing-" + uuid.uuid4().hex)
             temporary.mkdir(mode=0o700)
             try:
                 outcome = run(
@@ -70,11 +69,12 @@ def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
                         "--download-db-only",
                         "--skip-db-update=false",
                     ],
-                    env=runtime.env,
+                    env=env,
                     timeout=600,
                     cancel=cancel,
                 )
-                runtime.docker.require(outcome)
+                if not outcome.ok:
+                    raise RuntimeErrorBase(outcome.stderr or "Scanner database download failed.")
                 if not ready(temporary):
                     raise RuntimeErrorBase(
                         "The scanner database failed its pinned integrity check."
@@ -86,6 +86,15 @@ def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
                 )
             finally:
                 shutil.rmtree(temporary)
+
+
+def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
+    def report(message: str) -> None:
+        runtime.lab.resources["stage"] = message
+        runtime.save(runtime.lab)
+
+    ensure_database(runtime.tools, runtime.env, cancel, report)
+    tools = Toolchain(runtime.tools)
     fixture = tools.ensure(SCANNER["fixture"]["toolchain_key"], cancel, report)
     directory = Path(runtime.env["DOCKYARD_STORAGE"]) / "packages"
     if any(p.is_symlink() for p in (directory.parent, directory, directory / fixture.name)):

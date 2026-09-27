@@ -101,6 +101,13 @@ export type Doctor = {
   docker_version: string | null;
   docker_error: string | null;
   free_disk_gib: number;
+  architecture: string;
+  system: string;
+  host_memory_gib: number | null;
+  memory_free_percent: number | null;
+  cluster_policy: string;
+  vm_budget_gib: number;
+  cache_soft_budget_gib: number;
 };
 
 export async function api<T>(path: string, body?: unknown): Promise<T> {

@@ -1,4 +1,12 @@
-The evidence records observations from the actual native runtime, node leases, guest client, or application path relevant to this task.
-Use the evidence details to distinguish an observed state from your hypothesis about its cause.
-Write which layer failed, why a superficially healthy neighboring layer did not disprove that fault, and what check you would repeat after a restart.
-A working reference is one repair, not a required command history.
+# Debrief: Reconnect node supervision through systemd
+
+An active systemd unit shows that a process is running, while fresh node leases show that the kubelet is communicating with the API.
+Node readiness and a new completed application job then test different parts of the restored supervision chain.
+
+## Explain your result
+
+Explain why an old Ready condition could be misleading immediately after a restart and which timestamp establishes fresh communication.
+
+## Transfer beyond this lab
+
+After changing node configuration, inspect the service journal and validate both node communication and workload behavior before declaring recovery.

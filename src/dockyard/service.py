@@ -156,6 +156,8 @@ class Service:
         return env
 
     def doctor(self) -> dict[str, Any]:
+        from dockyard.capacity import host_readiness
+
         env = self.environment()
         tools = {
             name: shutil.which(name, path=env["PATH"])
@@ -167,6 +169,7 @@ class Service:
             else None
         )
         return {
+            **host_readiness(self.directory),
             "tools": tools,
             "docker_ready": bool(docker and docker.ok),
             "docker_version": docker.stdout.strip() if docker and docker.ok else None,
@@ -233,6 +236,13 @@ class Service:
             existing = self.store.lab(unit_id)
             if existing:
                 self.store.recover_operations(existing.id)
+            if action in {"prepare", "resume", "reset", "retake"}:
+                from dockyard.capacity import cluster_lease, preflight
+
+                lab = self._allocate_lab(unit_id)
+                with cluster_lease(self, lab):
+                    preflight(self, lab)
+                    return self._perform(unit_id, action)
             return self._perform(unit_id, action)
 
     def _perform(self, unit_id: str, action: str) -> dict[str, Any]:
@@ -274,6 +284,8 @@ class Service:
                 if action == "stop":
                     lab.state = "stopping"
                     self._save(lab)
+                if action == "resume" and lab.runtime in {Runtime.KUBERNETES, Runtime.LINUX}:
+                    self._make_cluster_room(lab, cancel)
                 self.runtime(lab).change(action, cancel)
                 lab.state = "stopped" if action == "stop" else "ready"
                 self._save(lab)
@@ -314,6 +326,20 @@ class Service:
                 result.stderr.strip() or result.stdout.strip() or "The tool exited unsuccessfully."
             )
 
+    def _make_cluster_room(self, lab: Lab, cancel: threading.Event) -> None:
+        for other in self.store.labs():
+            if other.id != lab.id and other.runtime in {Runtime.KUBERNETES, Runtime.LINUX}:
+                if other.state in {"failed", "preparing", "checking", "stopping", "cleaning"}:
+                    raise LabError(
+                        f"Inspect and stop or clean {other.unit_id} ({other.state}) "
+                        "before switching the cluster budget."
+                    )
+                if other.state == "ready":
+                    with operation_lock(self.directory / "locks", other.unit_id):
+                        self.runtime(other).change("stop", cancel)
+                        other.state = "stopped"
+                        self._save(other)
+
     def _prepare(self, lab: Lab, cancel: threading.Event) -> None:
         lab.state = "preparing"
         lab.error = None
@@ -346,16 +372,7 @@ class Service:
         runtime = self.runtime(lab)
         if isinstance(runtime, (KubernetesRuntime, LinuxRuntime)):
             with operation_lock(self.directory / "locks", "cluster-capacity"):
-                for other in self.store.labs():
-                    if (
-                        other.id != lab.id
-                        and other.runtime in {Runtime.KUBERNETES, Runtime.LINUX}
-                        and other.state == "ready"
-                    ):
-                        with operation_lock(self.directory / "locks", other.unit_id):
-                            self.runtime(other).change("stop", cancel)
-                            other.state = "stopped"
-                            self._save(other)
+                self._make_cluster_room(lab, cancel)
                 if isinstance(runtime, LinuxRuntime):
                     if "helm" in unit.capabilities:
                         from dockyard.toolchain import Toolchain

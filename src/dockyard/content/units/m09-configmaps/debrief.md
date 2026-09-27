@@ -1,9 +1,12 @@
-# Follow configuration into the process
+# Debrief: Deliver configuration without rebuilding
 
-Trace the source object, Pod reference, delivery mechanism, and application read that establish each configured value.
-Explain which changes require a rollout and which require the application to reread a projected file.
-Describe one way a credential could still be exposed despite being stored as a Secret.
+The configuration object is only the beginning of the delivery path; the Pod reference and the application read determine the effective value.
+Comparing the process setting with the mounted file exposes the difference between startup environment capture and projected file delivery.
 
-For identity, distinguish a successful administrator request from a successful request carrying the workload's own token.
-Explain why an allowed Pod list and denied Secret list provide different evidence from merely seeing a RoleBinding object.
-Before calling the environments isolated, state exactly which boundary was demonstrated and which boundaries still require network and storage controls.
+## Explain your result
+
+After editing a ConfigMap, which consumer needs a rollout, and which needs to reopen its configuration file?
+
+## Transfer beyond this lab
+
+Use application-level observations when planning configuration changes instead of assuming that an updated API object means every process has refreshed.
