@@ -414,6 +414,14 @@ pre {
   color: var(--muted);
   max-width: 460px;
 }
+.placement-invitation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin: 14px 0 0;
+  color: var(--muted);
+}
 .metadata {
   display: flex;
   flex-wrap: wrap;
