@@ -1,12 +1,12 @@
-# Debrief: Let a controller maintain the application
+## Why did the replacement appear?
 
-Changing the desired replica count gave the Deployment controller a target that persists beyond an individual Pod.
-Deleting a managed Pod exercises replacement, while deleting its controller removes the owner responsible for maintaining that target.
+Your Deployment still asked for two copies after you deleted one Pod.
+The ReplicaSet created another Pod to bring the number back to two.
+The new Pod has its own name and UID; the old Pod did not restart.
 
-## Explain your result
+Without looking back, explain what you expect if you delete the Deployment instead.
+Then explain why two Pods on this one node would both be affected if the node stopped.
 
-Explain why two running Pods without the expected owner references would not demonstrate reconciliation of this Deployment.
-
-## Transfer beyond this lab
-
-Both replicas can share one node here, so replica count alone does not establish availability across independent failure domains.
+A passing check confirms two working copies owned by this Deployment and a working Service.
+It does not show whether you watched a replacement happen.
+If you skipped that observation, return to the task and try it before moving on.

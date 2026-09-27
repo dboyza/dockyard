@@ -44,8 +44,9 @@ export function ReferencePage({ model }: { model: Workbench }) {
         <div className="eyebrow">BACKGROUND KNOWLEDGE, WITHIN REACH</div>
         <h1>A reference you can work with.</h1>
         <p className="intro">
-          Short primers for unfamiliar foundations. Clear definitions connected
-          to real practice. Everything here is available locally.
+          Look up an unfamiliar word or work through a short guide. You can
+          return to your lesson when you’re ready. Everything here works
+          offline.
         </p>
       </div>
       <div

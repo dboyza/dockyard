@@ -1,3 +1,4 @@
+import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
@@ -61,7 +62,7 @@ test('a real mission checkpoint continues into an intact later scaffold and expo
   const failures: string[] = [];
   page.on('pageerror', error => failures.push(error.message));
   await page.goto(url);
-  await page.getByRole('button', { name: 'Project checkpoints', exact: true }).click();
+  await navigateTo(page, 'Saved projects');
   await page.getByText('Continue in a later mission', { exact: true }).click();
   await page.getByLabel('Later mission').selectOption('m02-mission');
   await page.getByRole('button', { name: 'Compare source' }).click();
@@ -100,7 +101,7 @@ assert len(s.store.checkpoints())==2
 `, temporary], { timeout: 150000 });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.reload();
-  await page.getByRole('button', { name: 'Project checkpoints', exact: true }).click();
+  await navigateTo(page, 'Saved projects');
   await expect(page.getByRole('link', { name: 'Download checkpoint' })).toHaveCount(2);
   const downloaded = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Export project portfolio' }).click();

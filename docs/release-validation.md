@@ -74,6 +74,6 @@ No global Docker prune, Docker Desktop resource change, shell dotfile change, de
 
 ## Begin learning
 
-Run `./dockyard` from the repository, then choose **Practical placement**.
+Run `./dockyard` from the repository, then choose **Your course → Find your starting point**.
 The benchmarks recommend a starting phase from observed work while keeping the complete course available.
 Use the [user guide](user-guide.md) for daily workflows and the [maintenance guide](maintenance.md) for rebuilding and verification.

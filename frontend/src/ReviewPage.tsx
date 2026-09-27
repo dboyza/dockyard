@@ -23,20 +23,19 @@ export function ReviewPage({ model }: { model: Workbench }) {
     <>
       <div className="page-heading">
         <div className="eyebrow">RETURN WITH FRESH EVIDENCE</div>
-        <h1>Make the skill available again.</h1>
+        <h1>Come back and try it again.</h1>
         <p className="intro">
-          Recall the model before opening the explanation. Revisit your
-          evidence, explain the failure boundary, and use a fresh practical
-          attempt when you want to demonstrate the skill again.
+          Before reopening a lesson, see what you remember. Explain why your
+          last solution worked, then try the task again in a fresh lab.
         </p>
       </div>
       <section className="panel review-policy">
         <h2>A schedule you can inspect</h2>
         <p className="muted">
-          Supported practice returns after one day. An independent demonstration
-          returns after seven days. A failed behavior check or a changed lesson
-          revision brings the activity back now. Blocked environments and checks
-          invalidated by changing work do not count as mistakes.
+          Practice with help comes back after one day. A mission passed without
+          help comes back after seven days. A failed behavior check or a changed
+          lesson revision brings the activity back now. Blocked environments and
+          checks invalidated by changing work do not count as mistakes.
         </p>
         <p className="muted">
           Opening a review does not earn new evidence. Use Check work to record

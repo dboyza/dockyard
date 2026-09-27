@@ -1,32 +1,82 @@
-# The API is a declaration of intent
+## Tell Kubernetes what should keep running
 
-A Docker command asks one daemon to start one container.
-A Kubernetes Deployment records the number of application replicas you want the cluster to maintain.
-The API server stores that declaration; controllers repeatedly compare it with observed state and act to reduce the difference.
-This reconciliation is asynchronous, so a successful `kubectl apply` does not mean the application is ready.
+With Docker, you started a container yourself.
+If you removed it, you had to create another one.
+Kubernetes can keep the application running for you: you tell it how many copies you want, and it works to maintain that number.
+This is called **reconciliation**: comparing what you asked for with what exists, then correcting the difference.
 
-A Deployment owns ReplicaSets, and each ReplicaSet owns Pods.
-A Pod groups containers that share networking and can share volumes; it is the scheduling unit.
-The scheduler selects a node for an unscheduled Pod, and that node's kubelet asks its container runtime to run the containers.
-Replacing a Pod gives it a new identity and usually a new IP.
-A Service supplies a stable destination for a changing set of Pods.
+In this lesson, you’ll ask for two copies of Dispatch, remove one, and watch Kubernetes replace it.
+You’ll use a small private **cluster**, a group of machines that Kubernetes manages.
+Dockyard prepares it for you using one local machine called a **node**.
 
-## Worked example
+## Meet the three objects you’ll inspect
+
+A **Pod** holds one or more containers that run together and share networking.
+Here, each Pod holds one Dispatch container.
+A **ReplicaSet** keeps a specified number of matching Pods running.
+A **Deployment** manages the ReplicaSet and controls updates to the application.
+You edit the Deployment rather than creating each Pod by hand.
+
+A **Service** gives requests a stable destination even when the Pods change.
+Later lessons explain how it finds the right Pods.
+For now, keep the supplied Service settings unchanged.
+
+## Read the starting state
+
+Prepare the lab, then open its lab terminal.
+The command-line tool **kubectl** sends your requests to the Kubernetes API.
+Dockyard has already selected this lab’s cluster and its `dispatch` **namespace**, a named group of resources within the cluster.
+The `-n dispatch` option makes that namespace explicit.
 
 ```sh
 kubectl get deployments,replicasets,pods -n dispatch
-kubectl describe deployment dispatch
-kubectl get pods -l app=dispatch -o wide
-kubectl get events --sort-by=.metadata.creationTimestamp
+kubectl describe deployment dispatch -n dispatch
 ```
 
-The first command shows related objects, not a single flat process list.
-Compare a Deployment's desired replicas with ready and available replicas before claiming that a rollout succeeded.
-`kubectl describe` includes conditions and events that explain why progress stopped.
+The starter Deployment asks for zero copies, so you should see `0/0` ready and no Dispatch Pods.
+That is not a crash: Kubernetes is doing exactly what the file asked it to do.
+`get` gives you a short table; `describe` gives you more detail, including recent events.
 
-## Observe replacement
+## Change the requested number of copies
 
-After repairing the exercise, record one Pod's UID with `kubectl get pod NAME -o jsonpath='{.metadata.uid}'`.
-Delete that single practice Pod and watch `kubectl get pods -w` until a replacement is ready.
-Deleting the Pod leaves the Deployment's desired replica count intact, so its controller creates another Pod.
-Deleting the Deployment would remove that desired state and its dependent ReplicaSets and Pods.
+Open `deployment.yaml` in your editor.
+This is a **manifest**, a text file describing a Kubernetes object in YAML.
+Find `replicas: 0` under `spec` and change the number to `2`.
+Keep the indentation and the other settings unchanged.
+Use the YAML guide above if this file format is unfamiliar.
+
+Run the supplied script, then wait for the Deployment:
+
+```sh
+sh run.sh
+kubectl rollout status deployment/dispatch -n dispatch --timeout=90s
+kubectl get pods -n dispatch -l app=dispatch -o wide
+```
+
+`sh run.sh` runs the script in your workspace.
+It replaces the image placeholder with this lab’s image and sends your files to Kubernetes using `kubectl apply`.
+An `apply` success means the API accepted your request, not that the containers have finished starting.
+`rollout status` waits for the Deployment to become available.
+The final command lists Pods with the label `app=dispatch`; `-o wide` includes their IP addresses and node names.
+Look for two Pods with `1/1` in the READY column.
+
+## Predict what happens when a Pod disappears
+
+Choose one Pod name from that table.
+In the commands below, replace `POD_NAME` with that actual name.
+Write down its UID, the unique identifier for that particular Pod:
+
+```sh
+kubectl get pod POD_NAME -n dispatch -o jsonpath='{.metadata.uid}'
+kubectl delete pod POD_NAME -n dispatch
+kubectl get pods -n dispatch -w
+```
+
+The last command keeps watching for changes.
+Press Control-C once the replacement is ready; that stops the watch, not the Pods.
+The old Pod may disappear before you see it in the list, but the replacement has a new name and UID.
+The Deployment still asks for two copies, so Kubernetes creates another Pod to make up the difference.
+
+Deleting the Deployment would be different: it removes the instruction to keep those copies running, along with its dependent ReplicaSet and Pods.
+Do not delete it for this task.
+Two Pods on this single node also do not protect against losing the node itself; we’ll explore that distinction later.

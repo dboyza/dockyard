@@ -3,14 +3,14 @@ revision: 1
 module: 7
 order: 1
 title: Let a controller maintain the application
-summary: See how the API, Deployment, ReplicaSet, and Pods cooperate.
+summary: Ask Kubernetes for two copies of Dispatch and watch it replace a Pod you remove.
 kind: lesson
 runtime: kubernetes
 minutes: 30
 outcomes:
-- Distinguish desired state from observed state.
-- Trace Pod ownership through a ReplicaSet to a Deployment.
-- Observe a controller replace a deleted Pod.
+- Compare the number of copies you requested with the number actually running.
+- Follow a Pod’s owners back through its ReplicaSet to its Deployment.
+- Watch Kubernetes replace a Pod you delete.
 prerequisites:
 - m06-mission
 objectives:

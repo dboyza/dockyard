@@ -22,7 +22,7 @@ export function reviewDue(
 export function learningStatus(revision: number, progress?: Progress) {
   if (reviewNeeded(revision, progress)) return "Review needed";
   if (reviewDue(revision, progress)) return "Review due";
-  if (progress?.demonstrated) return "Demonstrated";
+  if (progress?.demonstrated) return "Passed without help";
   if (progress?.practiced) return "Practiced";
   return progress?.viewed ? "In progress" : "Not started";
 }

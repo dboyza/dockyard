@@ -1,40 +1,86 @@
 import type { Workbench } from "./useWorkbench";
-import { ArrowRight, Clock3, Container, Terminal } from "lucide-react";
-import { Topology } from "./teaching";
+import { ArrowRight, Clock3, Terminal } from "lucide-react";
+
 export function OverviewPage({ model }: { model: Workbench }) {
-  const {
-    state,
-    busy,
-    navigate,
-    openLesson,
-    completed,
-    demonstrated,
-    continueUnit,
-  } = model;
+  const { state, busy, navigate, openLesson, continueUnit } = model;
   return (
     <>
-      <div className="page-heading">
-        <div className="eyebrow">YOUR ENGINEERING JOURNEY</div>
-        <h1>
-          Build understanding.
-          <br />
-          Then build the system.
-        </h1>
+      <div className="page-heading welcome-heading">
+        <div className="eyebrow">WELCOME TO DOCKYARD</div>
+        <h1>Learn to run a real application.</h1>
         <p className="intro">
-          From your first container to recovering a Kubernetes cluster.
-          <br className="wide-only" /> One application, real infrastructure, and
-          skills you can demonstrate.
+          We’ll start with one Docker container, then build up to running and
+          recovering a Kubernetes cluster. You’ll read a short lesson here and
+          try it in your own terminal.
         </p>
       </div>
+      <section
+        className="dispatch-introduction"
+        aria-labelledby="dispatch-title"
+      >
+        <div>
+          <div className="eyebrow">THE APPLICATION YOU’LL WORK ON</div>
+          <h2 id="dispatch-title">Meet Dispatch.</h2>
+          <p>
+            Dispatch is a small app that accepts jobs and processes them in the
+            background. Think of sending a task to a service, then coming back
+            to see whether it has finished.
+          </p>
+          <p className="muted">
+            We supply the Python code. Your job is to package it, connect its
+            parts, keep it running, and learn how to fix it when something
+            breaks. You don’t need to write Python.
+          </p>
+        </div>
+        <ol className="dispatch-story" aria-label="How Dispatch will work">
+          <li>
+            <span>1</span>
+            <div>
+              <strong>Send a job</strong>
+              <p>
+                The API, the part that receives requests, accepts a short piece
+                of text.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span>2</span>
+            <div>
+              <strong>Do the work</strong>
+              <p>
+                A worker picks up the job, changes the text to uppercase, and
+                records a result.
+              </p>
+            </div>
+          </li>
+          <li>
+            <span>3</span>
+            <div>
+              <strong>Check the result</strong>
+              <p>
+                The app saves the job and its status in a database so you can
+                ask for them later.
+              </p>
+            </div>
+          </li>
+        </ol>
+        <p className="dispatch-start">
+          <strong>We’ll build toward this gradually.</strong> In your first
+          lesson, Dispatch only answers a health request. The database and
+          worker come later.
+        </p>
+      </section>
       <section className="continue-card">
         <div>
           <div className="eyebrow">
-            {state.last_unit
-              ? "CONTINUE LEARNING"
-              : "START WITH A REAL PROCESS"}
+            {state.last_unit ? "PICK UP WHERE YOU LEFT OFF" : "YOUR FIRST STEP"}
           </div>
           <h2>{continueUnit?.title}</h2>
-          <p>{continueUnit?.summary}</p>
+          <p>
+            {state.last_unit
+              ? continueUnit?.summary
+              : "Start Dispatch, send it a request, and see what happens when you stop its container."}
+          </p>
           <div className="metadata">
             <span>
               <Clock3 size={14} />
@@ -42,7 +88,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
             </span>
             <span>
               <Terminal size={14} />
-              Real terminal lab
+              Your terminal
             </span>
           </div>
           <button
@@ -54,101 +100,36 @@ export function OverviewPage({ model }: { model: Workbench }) {
             <ArrowRight size={17} />
           </button>
         </div>
-        <div className="continue-visual">
-          <div className="container-stack">
-            <div className="stack-label">
-              <Container size={20} />
-              DISPATCH / API
-            </div>
-            <div className="stack-layer">Your application</div>
-            <div className="stack-layer">Python runtime</div>
-            <div className="stack-layer base">Linux environment</div>
-          </div>
-          <span className="small muted">
-            A real application. A controlled environment.
-          </span>
+        <div className="lesson-rhythm">
+          <h3>One lesson at a time</h3>
+          <p>
+            <strong>Understand.</strong> Learn the idea and predict what will
+            happen.
+          </p>
+          <p>
+            <strong>Try it.</strong> Prepare a lab and work in your terminal.
+          </p>
+          <p>
+            <strong>Check and explain.</strong> Check the result, then explain
+            why it worked.
+          </p>
         </div>
       </section>
       <p className="placement-invitation">
-        Already comfortable with containers?{" "}
+        Already know the basics?{" "}
         <button className="text-button" onClick={() => navigate("placement")}>
           Find your starting point <ArrowRight size={15} />
         </button>
       </p>
-      <div className="stats-grid">
-        <div className="stat">
-          <span>Practiced</span>
-          <strong>
-            {completed}
-            <small> units</small>
-          </strong>
-        </div>
-        <div className="stat">
-          <span>Independently demonstrated</span>
-          <strong>
-            {demonstrated}
-            <small> skills</small>
-          </strong>
-        </div>
-        <div className="stat">
-          <span>Your environments</span>
-          <strong>
-            {state.labs.filter((item) => item.state === "ready").length}
-            <small> prepared</small>
-          </strong>
-        </div>
-      </div>
-      <section className="project-panel">
-        <div>
-          <span className="eyebrow">MEET YOUR PROJECT</span>
-          <h2>Dispatch grows with you.</h2>
-          <p className="muted">
-            Start with an API. Add persistence, background processing, reliable
-            releases, and the operational practices that keep a system healthy.
-          </p>
-          <button className="text-button" onClick={() => navigate("course")}>
-            Explore the learning path
-            <ArrowRight size={16} />
-          </button>
-        </div>
-        <Topology />
-      </section>
-      <section>
-        <div className="section-heading">
-          <h2>A practical path to depth</h2>
-          <button className="text-button" onClick={() => navigate("course")}>
-            View course
-            <ArrowRight size={16} />
-          </button>
-        </div>
-        <div className="phase-grid">
-          {[
-            "Container engineering",
-            "Application development",
-            "Platform engineering",
-            "Cluster operations",
-          ].map((title, index) => (
-            <button
-              className="phase-card"
-              key={title}
-              onClick={() => navigate("course")}
-            >
-              <span className="phase-number">0{index + 1}</span>
-              <h3>{title}</h3>
-              <p>
-                {
-                  [
-                    "Images, networking, storage, and a complete Compose system.",
-                    "Workloads, configuration, routing, and safe releases.",
-                    "Scheduling, delivery, observability, and least privilege.",
-                    "Build clusters, perform maintenance, and recover from failure.",
-                  ][index]
-                }
-              </p>
-              <ArrowRight size={19} />
-            </button>
-          ))}
-        </div>
+      <section className="course-preview">
+        <h2>Where the course takes you</h2>
+        <p className="muted">
+          Run containers → connect services → deploy to Kubernetes → secure and
+          recover a cluster.
+        </p>
+        <button className="text-button" onClick={() => navigate("course")}>
+          Explore your course <ArrowRight size={16} />
+        </button>
       </section>
     </>
   );

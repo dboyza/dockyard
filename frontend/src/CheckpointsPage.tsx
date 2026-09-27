@@ -7,11 +7,12 @@ export function CheckpointsPage({ model }: { model: Workbench }) {
   return (
     <>
       <div className="page-heading">
-        <div className="eyebrow">YOUR PROJECT, WITH PROVENANCE</div>
-        <h1>Work you can hand off.</h1>
+        <div className="eyebrow">YOUR SAVED WORK</div>
+        <h1>Your saved Dispatch projects.</h1>
         <p className="intro">
-          Each successful mission preserves its source files and observed
-          evidence. Later edits leave that checkpoint intact.
+          When you pass a mission, Dockyard saves a copy of your files and check
+          results. This saved copy is called a checkpoint. You can download it
+          or carry selected files into a later mission.
         </p>
       </div>
       {state.checkpoints.length > 0 && (
@@ -19,9 +20,9 @@ export function CheckpointsPage({ model }: { model: Workbench }) {
           <div>
             <h2>Your Dispatch portfolio</h2>
             <p className="muted">
-              The latest checkpoint for each completed mission, with authored
-              source, observations, provenance, and runtime evidence in a
-              readable handoff archive.
+              Download your latest saved work from each completed mission,
+              including your files, notes, check results, and a record of any
+              hints you used.
             </p>
           </div>
           <a className="button-link" href="/api/portfolio/export" download>
@@ -38,8 +39,8 @@ export function CheckpointsPage({ model }: { model: Workbench }) {
                 <div>
                   <span className="eyebrow">
                     {item.independent
-                      ? "INDEPENDENT DEMONSTRATION"
-                      : "SUPPORTED PRACTICE"}
+                      ? "PASSED WITHOUT IN-APP HELP"
+                      : "PRACTICE WITH HELP"}
                   </span>
                   <h3>{item.title}</h3>
                   <p className="muted small">

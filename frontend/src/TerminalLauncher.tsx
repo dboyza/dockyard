@@ -22,7 +22,11 @@ export function TerminalLauncher({
   const [selected, setSelected] = useState("auto");
   const [error, setError] = useState("");
   const { busy, perform, setNotice, setError: reportError } = model;
+  const lab = model.state.labs.find((item) => item.unit_id === unitId);
+  const labId = lab?.id;
+  const labState = lab?.state;
   useEffect(() => {
+    if (labState === "preparing") return;
     let active = true;
     api<TerminalInfo>(`/units/${unitId}/terminal`)
       .then((result) => {
@@ -38,7 +42,7 @@ export function TerminalLauncher({
     return () => {
       active = false;
     };
-  }, [unitId]);
+  }, [unitId, labId, labState]);
   return (
     <div className="terminal-launcher">
       {info && info.options.length > 0 && (
@@ -74,7 +78,9 @@ export function TerminalLauncher({
       )}
       {!info && !error && (
         <p className="small muted" role="status">
-          Finding terminal applications…
+          {labState === "preparing"
+            ? "Preparing your lab…"
+            : "Finding terminal applications…"}
         </p>
       )}
       {info && (

@@ -619,3 +619,18 @@ The fresh fixture failed its nine intended starter criteria, preserved the expec
 The browser preserved flags and the deadline, produced an actual 100/100 report, then displayed both scored and invalidated history after cleanup.
 All disposable practice workloads were stopped or cleaned; the personal workbench was opened with an empty learner profile and no prepared environments.
 A final direct overview inspection also corrected spacing around the intermediate-placement invitation.
+
+## 2026-09-27: learner experience review
+
+Seven lessons were completed in a disposable installed profile without opening hints or reference solutions: the four module-one activities, m02-dockerfile, m07-reconciliation, and m17-rbac.
+The [teaching review](teaching-review.md) records the observed teaching gaps, repairs, and limits of that evidence.
+It includes a reproduced incorrect Docker filter, a Kubernetes pass before the deletion experiment, and a real RBAC failure followed by a successful repair.
+
+The browser review found and fixed a terminal-discovery race during preparation.
+Verification passed 122 non-integration backend checks, five frontend unit checks, six browser journeys, lint, type checks, formatting, package builds, and the structural curriculum audit.
+Browser coverage includes real Docker lab actions, project continuation, progress portability, recovery, terminal layouts, and accessibility in both themes down to 320 pixels.
+These automated checks do not establish teaching effectiveness.
+
+All seven manual-review lab environments were cleaned through their recorded ownership.
+Twelve dependency and application images used by the walkthrough and browser checks were removed after identity verification.
+The original five unrelated image objects and four containers were preserved.

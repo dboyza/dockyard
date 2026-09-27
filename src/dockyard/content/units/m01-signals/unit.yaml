@@ -3,14 +3,14 @@ revision: 1
 module: 1
 order: 3
 title: Logs, signals, and honest exit codes
-summary: Observe a real request in the logs, then stop Dispatch cleanly and inspect the result.
+summary: Read Dispatch’s logs and give its process time to stop cleanly.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Read application output independently of container state.
-- Explain how Docker delivers termination signals to the main process.
-- Distinguish a successful exit from a service that is still available.
+- Use the logs and current state to answer different questions.
+- Explain how Docker asks the main process to stop.
+- Tell the difference between a clean exit and an available service.
 prerequisites:
 - m01-lifecycle
 objectives:

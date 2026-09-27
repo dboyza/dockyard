@@ -21,7 +21,7 @@ It does not alter shell configuration or Docker Desktop settings.
 ```
 
 The browser opens a local workbench with a one-time sign-in.
-Choose **Practical placement** if you already work with containers, or **Start learning** for the complete sequence.
+Choose **Your course → Find your starting point** if you already work with containers, or **Start learning** for the complete sequence.
 Prepare a lab, choose **Open terminal**, and check the behavior you created.
 Prefer an editor terminal, tmux, or an existing window?
 Copy the lab command into it; see [terminal compatibility](docs/terminals.md) for supported launchers and platform details.

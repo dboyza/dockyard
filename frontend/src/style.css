@@ -281,66 +281,128 @@ pre {
 .sidebar nav button:hover {
   background: var(--surface-alt);
 }
-.sidebar-section {
-  border-top: 1px solid var(--line);
-  margin-top: 26px;
-  padding: 24px 8px;
-}
-.sidebar-section > .eyebrow {
-  display: block;
-  color: var(--muted);
-  font-size: 9px;
-}
-.phase-nav {
-  display: flex;
-  width: 100%;
-  padding: 10px 0;
-  justify-content: flex-start;
-  align-items: flex-start;
-  gap: 10px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 400;
-  color: var(--muted);
-  border: 0;
-  background: none;
-}
-.phase-nav > span {
-  flex-shrink: 0;
-  min-width: 18px;
-  white-space: nowrap;
-  font-family: monospace;
-  color: var(--blue);
-  font-size: 10px;
-}
 .sidebar-footer {
-  display: flex;
-  gap: 11px;
-  align-items: center;
+  display: grid;
+  gap: 18px;
   margin-top: auto;
-  padding: 18px 5px 0;
-  border-top: 1px solid var(--line);
+  padding-top: 24px;
+}
+.sidebar-footer > span {
+  padding: 0 12px;
   font-size: 11px;
 }
-.sidebar-footer strong {
-  font-weight: 550;
+.section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
 }
-.sidebar-footer .small {
-  font-size: 10px;
-  display: block;
+.section-nav button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
 }
-.learner-avatar {
-  width: 31px;
-  height: 31px;
+.section-nav button[aria-current="page"] {
+  color: var(--blue);
+  background: var(--surface-alt);
+}
+.welcome-heading {
+  max-width: 760px;
+}
+.dispatch-introduction {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px 48px;
+  padding: 28px 0;
+  margin-bottom: 26px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.dispatch-introduction h2 {
+  font-size: 30px;
+}
+.dispatch-introduction p {
+  font-size: 14px;
+}
+.dispatch-story {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+.dispatch-story li {
+  display: flex;
+  gap: 14px;
+}
+.dispatch-story li > span {
   display: grid;
   place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  flex: 0 0 28px;
+  height: 28px;
+  border-radius: 50%;
   background: var(--surface-alt);
   color: var(--blue);
+  font-size: 12px;
+}
+.dispatch-story p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+.dispatch-start {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+}
+.dispatch-start strong {
+  color: var(--ink);
+}
+.lesson-rhythm {
+  max-width: 310px;
+  padding-left: 28px;
+  border-left: 1px solid var(--line);
+}
+.lesson-rhythm p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.lesson-rhythm strong {
+  color: var(--ink);
+}
+.course-preview {
+  margin-top: 40px;
+}
+.prerequisite-help {
+  margin-bottom: 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.prerequisite-help p {
+  margin: 8px 0;
+}
+.prerequisite-help .button-row {
+  margin-top: 8px;
+}
+.evidence-card > details {
+  margin-top: 14px;
+}
+.next-lesson {
+  margin: 24px 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.next-lesson > .eyebrow {
+  display: block;
+  margin-bottom: 10px;
+}
+.next-lesson button {
+  max-width: 100%;
+  text-align: left;
 }
 .topbar {
-  height: 65px;
+  min-height: 65px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -348,6 +410,10 @@ pre {
   border-bottom: 1px solid var(--line);
   background: var(--bg);
   gap: 12px;
+}
+.topbar .searchbox {
+  margin: 0 0 0 auto;
+  width: min(260px, 30%);
 }
 .breadcrumb {
   display: flex;
@@ -747,6 +813,9 @@ pre {
 .lesson-heading .metadata {
   margin-bottom: 0;
 }
+.mobile-lab-link {
+  display: none;
+}
 .lesson-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 265px;
@@ -1137,6 +1206,8 @@ pre {
   margin: 0;
 }
 .status-label {
+  flex-shrink: 0;
+  white-space: nowrap;
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1358,12 +1429,14 @@ pre {
   }
 }
 @media (max-width: 1000px) {
+  .mobile-lab-link {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 20px;
+  }
   .app {
     grid-template-columns: 190px minmax(0, 1fr);
-  }
-  .sidebar-section {
-    padding-left: 3px;
-    padding-right: 3px;
   }
   .brand {
     font-size: 13px;
@@ -1385,7 +1458,7 @@ pre {
   }
   .context-panel {
     position: static;
-    grid-row: 1;
+    grid-row: auto;
     grid-template-columns: minmax(0, 1fr);
   }
   .lab-card {
@@ -1459,7 +1532,22 @@ pre {
     padding: 30px 20px;
   }
   .topbar {
-    padding: 0 16px;
+    flex-wrap: wrap;
+    padding: 12px 16px;
+  }
+  .topbar .searchbox {
+    order: 3;
+    width: 100%;
+  }
+  .dispatch-introduction {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .lesson-rhythm {
+    max-width: none;
+    padding: 20px 0 0;
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
   .topbar-actions {
     gap: 7px;
@@ -1560,6 +1648,7 @@ pre {
     font-size: 10px;
   }
   .evidence-title {
+    flex-direction: column;
     align-items: flex-start;
   }
   .evidence-card {

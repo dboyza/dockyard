@@ -30,21 +30,22 @@ export function PlacementPage({ model }: { model: Workbench }) {
     <>
       <div className="page-heading">
         <div className="eyebrow">OPTIONAL PRACTICAL PLACEMENT</div>
-        <h1>Find the gaps worth your time.</h1>
+        <h1>Find a good place to start.</h1>
         <p className="intro">
-          Use real phase missions as benchmarks. Your current independent
-          evidence suggests a starting point; every lesson stays available.
+          Already know some Docker or Kubernetes? Try a mission from a familiar
+          part of the course. Use the result to decide what to practise next;
+          every lesson stays available.
         </p>
       </div>
       <section className="continue-card placement-recommendation">
         <div>
           <div className="eyebrow">
-            {next ? "SUGGESTED STARTING PHASE" : "ALL FOUR BENCHMARKS CURRENT"}
+            {next ? "SUGGESTED STARTING PHASE" : "ALL FOUR MISSIONS UP TO DATE"}
           </div>
-          <h2>{next?.title || "Keep the skills available."}</h2>
+          <h2>{next?.title || "Keep practising."}</h2>
           <p>
             {next
-              ? "This is the first phase without a current independent demonstration. Try its benchmark if the material feels familiar, or begin with its first lesson."
+              ? "You have not yet passed this part’s mission without in-app help, or it is due for review. Try the mission if the topic feels familiar, or start with its first lesson."
               : "Your recorded benchmarks are current. Use incidents, timed practice, and scheduled review to find the next useful challenge."}
           </p>
           <div className="button-row">
@@ -79,8 +80,8 @@ export function PlacementPage({ model }: { model: Workbench }) {
         </p>
         <p className="muted">
           Only an independent pass for the current revision, before its review
-          date, counts toward this recommendation. A recent failed check or
-          changed revision brings the phase back into view. Use Independent
+          date, counts toward this recommendation. A failed check or an updated
+          lesson brings that part of the course back into view. Use Independent
           retake if you previously opened support. The recommendation is
           advisory and does not certify every objective in a phase.
         </p>

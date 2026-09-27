@@ -30,11 +30,11 @@ export function IncidentsPage({ model }: { model: Workbench }) {
       <section className="panel incident-guide">
         <Activity size={24} aria-hidden="true" />
         <div>
-          <h2>Diagnose. Repair. Prove.</h2>
+          <h2>Find the cause, then try a repair.</h2>
           <p className="muted">
-            Start with the symptom and preservation constraints. Use hints when
-            needed, then take an independent retake to demonstrate the repair
-            without them. Your observations remain part of the record.
+            Read what is broken and what needs to stay working. Inspect the lab
+            before changing it. Use a hint if you get stuck, then try a fresh
+            attempt when you’re ready to work without help.
           </p>
         </div>
       </section>

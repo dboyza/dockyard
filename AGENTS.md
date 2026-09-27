@@ -23,6 +23,14 @@
 - Keep progress updates informative; do not request routine input during implementation.
 - A genuine external approval or system credential cannot be assumed; continue independent work and report the exact blocker.
 
+## Teaching and language
+
+- Write as a patient teacher in plain English: explain the purpose, introduce terms before using them, show an action, then explain the expected observation.
+- Introduce Dispatch as the supplied background job application; distinguish its current stage from components added later.
+- Make prerequisites, workspace files, command placeholders, and completion criteria visible where they are needed.
+- Keep learner walkthroughs without hints or reference solutions separate from automated fixture audits.
+- Describe passes as observed task results, not proof of reasoning, retention, or unaided work outside the app.
+
 ## Engineering and verification
 
 - Prefer simple typed interfaces, one canonical curriculum source, reversible lab operations, and observed runtime evidence.

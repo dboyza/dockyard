@@ -1,3 +1,4 @@
+import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -42,7 +43,7 @@ test('active exam terminal controls remain usable in both themes and narrow layo
   } }));
   await page.route('**/api/events', route => route.abort());
   await page.goto(url);
-  await page.getByRole('button', { name: 'Exam practice', exact: true }).click();
+  await navigateTo(page, 'Exam practice');
   await page.getByRole('button', { name: 'Continue timed attempt' }).click();
   const controls = page.getByRole('region', { name: 'Exam controls' });
   await expect(controls.getByRole('button', { name: 'Open terminal' })).toBeEnabled();

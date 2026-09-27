@@ -1,3 +1,4 @@
+import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
@@ -46,7 +47,7 @@ test('installed CLI and browser exchange portable history through a reviewed mer
   const failures: string[] = [];
   page.on('pageerror', error => failures.push(error.message));
   await page.goto(url);
-  await page.getByRole('button', { name: 'Settings and data', exact: true }).click();
+  await navigateTo(page, 'Settings and data');
   await expect(page.getByRole('heading', { name: 'Keep your work yours.' })).toBeVisible();
   await page.getByLabel('Choose a Dockyard progress archive').setInputFiles(archive);
   const preview = page.getByRole('region', { name: 'Progress import preview' });
@@ -85,7 +86,7 @@ print(s.store.note('m01-processes'))
 `, cliProfile], { encoding: 'utf8' });
   expect(note.trim()).toBe('My portable process observation.');
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.getByRole('button', { name: 'Lab manager', exact: true }).click();
+  await navigateTo(page, 'Lab manager');
   await page.getByRole('button', { name: 'Inspect cache', exact: true }).click();
   const cache = page.getByRole('region', { name: 'Dependency cache' });
   await expect(cache).toContainText('5 / 5');

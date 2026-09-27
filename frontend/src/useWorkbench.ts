@@ -122,6 +122,7 @@ export function useWorkbench() {
       opened.current++;
       setBusy("");
     }
+    if (destination === "course") setSearch("");
     setPage(destination);
     setRailOpen(false);
     setError("");

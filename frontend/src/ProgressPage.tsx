@@ -15,11 +15,13 @@ export function ProgressPage({ model }: { model: Workbench }) {
   return (
     <>
       <div className="page-heading">
-        <div className="eyebrow">UNDERSTANDING WITH EVIDENCE</div>
-        <h1>Your skills, honestly measured.</h1>
+        <div className="eyebrow">YOUR LEARNING RECORD</div>
+        <h1>See what you’ve practised.</h1>
         <p className="intro">
-          Practice and independent demonstration are different milestones. Your
-          evidence shows which you have achieved.
+          A passing check means your lab met the task’s requirements. Missions
+          passed without in-app hints are recorded separately. These results do
+          not grade your reasoning or guarantee that you can repeat a task
+          later.
         </p>
       </div>
       <div className="stats-grid">
@@ -28,7 +30,7 @@ export function ProgressPage({ model }: { model: Workbench }) {
           <strong>{completed}</strong>
         </div>
         <div className="stat">
-          <span>Demonstrated independently</span>
+          <span>Passed without in-app help</span>
           <strong>{demonstrated}</strong>
         </div>
         <div className="stat">
@@ -44,7 +46,7 @@ export function ProgressPage({ model }: { model: Workbench }) {
         </div>
       </div>
       <section className="panel">
-        <h2>Learning evidence</h2>
+        <h2>Your activity</h2>
         {units.filter(
           (unit) =>
             state.progress[unit.id]?.viewed ||

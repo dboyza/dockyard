@@ -50,6 +50,15 @@ export function LessonPage({ model }: { model: Workbench }) {
     revealReference,
   } = model;
   if (!lesson) return null;
+  const prerequisites = model.units.filter((unit) =>
+    lesson.prerequisites.includes(unit.id),
+  );
+  const nextLesson = model.units.find(
+    (unit) =>
+      (unit.kind === "lesson" || unit.kind === "mission") &&
+      (unit.module > lesson.module ||
+        (unit.module === lesson.module && unit.order > lesson.order)),
+  );
   return (
     <>
       <div className="lesson-heading">
@@ -87,6 +96,9 @@ export function LessonPage({ model }: { model: Workbench }) {
           </span>
         </div>
       </div>
+      <a className="mobile-lab-link" href="#lab-controls">
+        Open lab controls <ArrowRight size={15} />
+      </a>
       {reviewNeeded(lesson.revision, state.progress[lesson.id]) && (
         <p className="notice" role="status">
           This lesson has changed since your last passing assessment. Your
@@ -146,6 +158,54 @@ export function LessonPage({ model }: { model: Workbench }) {
           >
             {tab === "learn" && (
               <>
+                <aside
+                  className="prerequisite-help"
+                  aria-label="Before you begin"
+                >
+                  <strong>Before you begin</strong>
+                  {prerequisites.length ? (
+                    <>
+                      <p className="small muted">
+                        This lesson builds on the work below. If it feels
+                        unfamiliar, start there. You can still try this lesson
+                        now.
+                      </p>
+                      <div className="button-row">
+                        {prerequisites.map((unit) => (
+                          <button
+                            className="text-button"
+                            key={unit.id}
+                            onClick={() => void model.openLesson(unit.id)}
+                          >
+                            {unit.title}
+                            <ArrowRight size={14} />
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <p className="small muted">
+                      No Docker experience needed. You’ll use a terminal to run
+                      the commands below. Open the short terminal guide if
+                      commands, files, or variables are new to you.
+                    </p>
+                  )}
+                  <button
+                    className="text-button"
+                    onClick={() =>
+                      model.openReference(
+                        `primer/${lesson.runtime === "docker" ? "terminal" : lesson.runtime === "linux" ? "linux" : "yaml"}`,
+                      )
+                    }
+                  >
+                    {lesson.runtime === "docker"
+                      ? "Terminal and file basics"
+                      : lesson.runtime === "linux"
+                        ? "Linux basics"
+                        : "How to read YAML"}
+                    <ArrowRight size={14} />
+                  </button>
+                </aside>
                 <div className="outcomes">
                   <h2>By the end of this lab</h2>
                   <ul>
@@ -159,9 +219,10 @@ export function LessonPage({ model }: { model: Workbench }) {
                 </div>
                 <Markdown>{lesson.concept}</Markdown>
                 <aside className="reference-links" aria-label="Background help">
-                  <strong>Keep the foundations close.</strong>
+                  <strong>Need a term explained?</strong>
                   <p className="muted small">
-                    Definitions and short primers stay available as you work.
+                    These short guides can help if something in the lesson is
+                    unfamiliar.
                   </p>
                   <div className="button-row">
                     {model.library?.glossary
@@ -208,7 +269,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                       <strong>
                         {prediction === lesson.prediction.correct
                           ? "Exactly."
-                          : "A useful distinction."}
+                          : "Not quite. Let’s work through it."}
                       </strong>
                       <p>{lesson.prediction.explanation}</p>
                       <button
@@ -241,18 +302,23 @@ export function LessonPage({ model }: { model: Workbench }) {
                 <div className="eyebrow">WORK IN YOUR REAL TERMINAL</div>
                 <Markdown>{lesson.brief}</Markdown>
                 <div className="task-checklist">
-                  <h3>Keep these observations separate</h3>
+                  <h3>Before you check your work</h3>
                   <p>
-                    A process can be running while its application is
-                    unreachable. Use inspection, logs, and a real request to
-                    establish what is happening.
+                    Predict the result, try the task, then compare what happened
+                    with your prediction. If they differ, choose one observation
+                    that could explain why.
+                  </p>
+                  <p className="small muted">
+                    Check work tests the lab’s current behavior. Your notes and
+                    predictions are for your own reflection; they are not
+                    automatically graded.
                   </p>
                 </div>
                 <div className="hint-area">
                   <h3>Need a nudge?</h3>
                   <p className="muted small">
-                    Hints reveal one step at a time. Using them records
-                    supported practice.
+                    Try one hint at a time, then return to the task. Using a
+                    hint marks this attempt as practice with help.
                   </p>
                   {hints.map((hint, index) => (
                     <div className="hint" key={index}>
@@ -292,11 +358,6 @@ export function LessonPage({ model }: { model: Workbench }) {
             )}
             {tab === "evidence" && (
               <>
-                <LiveLabMap
-                  key={lesson.id}
-                  unitId={lesson.id}
-                  labState={lab?.state}
-                />
                 {assessment ? (
                   <>
                     <div className={`assessment-summary ${assessment.status}`}>
@@ -315,51 +376,93 @@ export function LessonPage({ model }: { model: Workbench }) {
                         </h2>
                         <p>
                           {assessment.independent
-                            ? "Independent assessment"
-                            : "Supported practice"}{" "}
+                            ? "Attempt without in-app hints or reference"
+                            : lesson.kind === "lesson"
+                              ? "Guided practice"
+                              : "Practice with help"}{" "}
                           · {new Date(assessment.finished_at).toLocaleString()}{" "}
                           · Revision {assessment.revision} · Attempt{" "}
                           {assessment.attempt}
                         </p>
                         <p className="small">
-                          Evidence records this check. Run Check work again
-                          after changing files or runtime resources.
+                          This records what worked at the time of the check. It
+                          does not grade your explanation or prove that you can
+                          repeat the task. Check again after making changes.
                         </p>
                       </div>
                     </div>
-                    {assessment.evidence.map((item) => (
-                      <article className="evidence-card" key={item.criterion}>
-                        <div className="evidence-title">
-                          <span className={`status-label ${item.status}`}>
-                            {item.status}
-                          </span>
-                          <h3>{item.title}</h3>
-                        </div>
-                        <dl>
-                          <dt>Expected</dt>
-                          <dd>{item.expected}</dd>
-                          <dt>Observed</dt>
-                          <dd>
-                            <pre>
-                              {item.observed || "No output was returned."}
-                            </pre>
-                          </dd>
-                        </dl>
-                        {item.details && (
+                    {assessment.status === "fail" && (
+                      <p className="notice">
+                        Start with the first item that needs attention below.
+                        Try its suggested check, make one change, then check
+                        your work again.
+                      </p>
+                    )}
+                    {[...assessment.evidence]
+                      .sort(
+                        (a, b) =>
+                          Number(a.status === "pass") -
+                          Number(b.status === "pass"),
+                      )
+                      .map((item) => (
+                        <article className="evidence-card" key={item.criterion}>
+                          <div className="evidence-title">
+                            <span className={`status-label ${item.status}`}>
+                              {item.status === "pass"
+                                ? "Passed"
+                                : item.status === "fail"
+                                  ? "Needs attention"
+                                  : "Could not check"}
+                            </span>
+                            <h3>{item.title}</h3>
+                          </div>
+                          {item.status !== "pass" && (
+                            <p className="diagnostic">{item.diagnostic}</p>
+                          )}
                           <details>
-                            <summary>Measured state</summary>
-                            <pre>{item.details}</pre>
+                            <summary>Check details</summary>
+                            <dl>
+                              <dt>Expected</dt>
+                              <dd>{item.expected}</dd>
+                              <dt>Observed</dt>
+                              <dd>
+                                <pre>
+                                  {item.observed || "No output was returned."}
+                                </pre>
+                              </dd>
+                            </dl>
                           </details>
-                        )}
-                        {item.status !== "pass" && (
-                          <p className="diagnostic">{item.diagnostic}</p>
-                        )}
-                      </article>
-                    ))}
+                          {item.details && (
+                            <details>
+                              <summary>Measured state</summary>
+                              <pre>{item.details}</pre>
+                            </details>
+                          )}
+                        </article>
+                      ))}
                     {assessment.status === "pass" && (
                       <section className="debrief">
                         <h3>Connect what you observed</h3>
                         <Markdown>{lesson.debrief}</Markdown>
+                        <p className="small muted">
+                          Try answering without looking back at the lesson. If
+                          you can’t explain a result yet, revisit that part
+                          before moving on.
+                        </p>
+                        {nextLesson && lesson.kind !== "incident" && (
+                          <div className="next-lesson">
+                            <span className="eyebrow">UP NEXT</span>
+                            <button
+                              className="primary"
+                              onClick={() =>
+                                void model.openLesson(nextLesson.id)
+                              }
+                            >
+                              {nextLesson.title}
+                              <ArrowRight size={16} />
+                            </button>
+                          </div>
+                        )}
                       </section>
                     )}
                   </>
@@ -369,8 +472,8 @@ export function LessonPage({ model }: { model: Workbench }) {
                     <h2>Evidence comes from your lab.</h2>
                     <p>
                       Prepare the environment, work in your terminal, then check
-                      the actual result. Reading the instructions alone does not
-                      mark the skill as demonstrated.
+                      the actual result. A passing result records what your lab
+                      did. You’ll also be asked to explain what happened.
                     </p>
                     <button
                       className="primary"
@@ -381,13 +484,18 @@ export function LessonPage({ model }: { model: Workbench }) {
                     </button>
                   </div>
                 )}
+                <LiveLabMap
+                  key={lesson.id}
+                  unitId={lesson.id}
+                  labState={lab?.state}
+                />
               </>
             )}
           </div>
         </section>
         <aside className="context-panel">
-          <section className="lab-card">
-            <div className="eyebrow">YOUR PRACTICE ENVIRONMENT</div>
+          <section className="lab-card" id="lab-controls">
+            <div className="eyebrow">YOUR LAB</div>
             <h3>
               <Terminal size={18} />{" "}
               {lesson.runtime === "docker"
@@ -417,8 +525,8 @@ export function LessonPage({ model }: { model: Workbench }) {
             )}
             <p className="small muted">
               {lab
-                ? "Commands run in a dedicated terminal session with this lab’s environment."
-                : "Prepare the application files and runtime, then do the work in your terminal."}
+                ? "Open the lab terminal before running commands. It starts in the right folder with this lesson’s settings."
+                : "First, prepare the lab. Dockyard creates the files and resources you’ll need for this task."}
             </p>
             {!lab || lab.state === "absent" || lab.state === "failed" ? (
               <button

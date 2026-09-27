@@ -1,3 +1,4 @@
+import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
@@ -28,7 +29,7 @@ test('installed timed practice persists flags and deadline and reports actual ru
   const failures: string[] = [];
   page.on('pageerror', error => failures.push(error.message));
   await page.goto(url);
-  await page.getByRole('button', { name: 'Exam practice', exact: true }).click();
+  await navigateTo(page, 'Exam practice');
   await expect(page.getByRole('heading', { name: 'Work against a clear deadline.' })).toBeVisible();
   await expect(page.getByRole('button', { name: /^(Open practice|Continue timed attempt)$/ })).toHaveCount(4);
   await page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Dispatch release assessment', exact: true }) }).getByRole('button', { name: /^(Open practice|Continue timed attempt)$/ }).click();
@@ -45,7 +46,7 @@ test('installed timed practice persists flags and deadline and reports actual ru
   const blocked = await page.request.post(new URL('/api/units/exam-ckad-a/reference', page.url()).toString(), { headers: { 'X-Dockyard': '1', Origin: new URL(page.url()).origin }, data: { action: 'reference', confirmed: true } });
   expect(blocked.status()).toBe(409);
   await page.reload();
-  await page.getByRole('button', { name: 'Exam practice', exact: true }).click();
+  await navigateTo(page, 'Exam practice');
   await page.getByRole('button', { name: 'Continue timed attempt' }).click();
   await expect(page.getByRole('button', { name: 'Flagged for review' })).toHaveAttribute('aria-pressed','true');
   const after = await page.request.get(new URL('/api/state', page.url()).toString()).then(r => r.json());
@@ -76,7 +77,7 @@ test('installed timed practice persists flags and deadline and reports actual ru
 test('saved exam reports remain readable after environment cleanup', async ({ page }) => {
   execFileSync(path.join(root, '.runtime/installed/bin/dockyard'), ['--data-dir', process.env.DOCKYARD_EXAM_PROFILE!, 'lab', 'clean', 'exam-ckad-a', '--yes']);
   await page.goto(url);
-  await page.getByRole('button', { name: 'Exam practice', exact: true }).click();
+  await navigateTo(page, 'Exam practice');
   await page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Dispatch release assessment', exact: true }) }).getByRole('button', { name: 'Open practice' }).click();
   const report = page.getByRole('region', { name: 'Exam report' });
   await expect(report.getByRole('heading', { name: '100 / 100', exact: true })).toBeVisible();

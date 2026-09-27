@@ -1,3 +1,4 @@
+import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { spawn, type ChildProcess } from 'node:child_process';
@@ -42,12 +43,12 @@ test('all workbench destinations and lesson interactions meet automated accessib
   };
   for (const theme of ['dark', 'light']) {
     if (theme === 'light') await page.getByRole('button', { name: 'Use light theme' }).click();
-    for (const destination of ['Overview', 'Your course', 'Practical placement', 'Incident scenarios', 'Exam practice', 'Skill evidence', 'Spaced review', 'Project checkpoints', 'Lab manager', 'Reference desk', 'Settings and data']) {
-      await page.getByRole('button', { name: destination, exact: true }).click();
+    for (const destination of ['Overview', 'Your course', 'Find your starting point', 'Troubleshooting', 'Exam practice', 'Your progress', 'Review practice', 'Saved projects', 'Lab manager', 'Reference desk', 'Settings and data']) {
+      await navigateTo(page, destination);
       await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
       await scan(`${theme}/${destination}`);
     }
-    await page.getByRole('button', { name: 'Your course', exact: true }).click();
+    await navigateTo(page, 'Your course');
     await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-processes');
     await page.getByRole('button', { name: /A container is a running process/ }).click();
     await scan(`${theme}/lesson`);

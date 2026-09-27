@@ -19,6 +19,26 @@ A relative path such as `Dockerfile` is resolved from that directory; `/tmp/exam
 Double quotes preserve that expanded value as one argument even when it contains spaces.
 Single quotes preserve literal text, including dollar signs.
 
+## Create and edit a file
+
+A file such as `Dockerfile` is plain text.
+Use your preferred editor in the lab folder, save, then run `cat Dockerfile` to check what was written.
+If you do not have an editor set up, this command creates a small practice file:
+
+```sh
+cat > practice.txt <<'EOF'
+This is the first line.
+This is the second line.
+EOF
+cat practice.txt
+```
+
+The shell writes the lines between the two `EOF` markers into `practice.txt`.
+Put the closing `EOF` on its own line with no spaces before it.
+The quotes in `<<'EOF'` keep dollar signs and other shell characters as literal text.
+Be careful: `>` replaces an existing file with the same name.
+Use this only for the file you intend to write.
+
 ## Separate the command from its arguments
 
 In `kubectl get pods -n dispatch`, the program is `kubectl`; the remaining words are arguments.

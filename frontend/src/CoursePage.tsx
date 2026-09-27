@@ -18,7 +18,9 @@ export function CoursePage({ model }: { model: Workbench }) {
         <div className="eyebrow">THE COMPLETE LEARNING PATH</div>
         <h1>Your course</h1>
         <p className="intro">
-          Build the model, apply it to Dispatch, and prove it independently.
+          Start with the first lesson, or choose a topic you want to practise.
+          Each module ends with a mission where you try the skills without
+          step-by-step instructions.
         </p>
       </div>
       {search ? (
@@ -51,7 +53,7 @@ export function CoursePage({ model }: { model: Workbench }) {
                 <details
                   className="module"
                   key={module.id}
-                  open={module.id === lesson?.module || module.id === 1}
+                  open={module.id === (lesson?.module ?? 1)}
                 >
                   <summary>
                     <span className="module-id">

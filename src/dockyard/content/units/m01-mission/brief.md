@@ -1,6 +1,6 @@
-## Service recovery contract
+## Get Dispatch running again
 
-Prepare creates an exited container with a misleading successful exit code.
+Prepare lab gives you a container whose program has already finished with exit code zero.
 The supplied app.py is correct and does not need editing.
 
 Restore a long-running Dispatch API using the assigned container name, lab label, and host port.
@@ -8,5 +8,8 @@ The endpoint must bind only to 127.0.0.1 and respond on `/healthz` with service 
 Preserve other containers and the supplied image.
 Leave the corrected instance running.
 
-Record the original configured command, the observed failure mechanism, and the two independent observations that prove recovery in your notes.
+In your notes, answer three questions: What command did the broken container run?
+Why did it finish instead of serving requests?
+Which two observations show that your replacement works?
+These answers are for self-review; the checker tests the repaired service, not your explanation.
 Use only commands and concepts already introduced in this module.

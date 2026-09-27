@@ -1,7 +1,8 @@
-## Output is a stream, status is a fact
+## What can the logs tell you?
 
-A detached container still writes standard output and standard error.
-Docker's logging driver collects those streams; `docker logs` reads the captured output.
+A container running in the background can still write messages.
+Programs write ordinary output to **standard output** and often send errors or diagnostic messages to **standard error**.
+Docker collects those messages, and `docker logs` lets you read them.
 A message saying "listening" records an earlier event, so it cannot prove the service is still available now.
 Combine logs with process inspection and a current request.
 
@@ -10,11 +11,11 @@ docker logs --tail 20 --timestamps "$DOCKYARD_CONTAINER"
 docker inspect --format '{{json .State}}' "$DOCKYARD_CONTAINER"
 ```
 
-`--tail` bounds a diagnostic read.
+`--tail 20` shows only the last 20 lines, and `--timestamps` adds a time to each line.
 `--follow` stays attached to new output; press Control-C to leave the log viewer without stopping the application.
 The viewer and the container process are different processes.
 
-## Termination has a protocol
+## Give the program time to stop
 
 A normal `docker stop` sends the configured stop signal, usually SIGTERM, to the container's main process.
 Docker waits for its grace period before forcefully killing an unresponsive process.
@@ -25,7 +26,7 @@ Dispatch installs a SIGTERM handler and exits with code zero.
 That exit reports successful shutdown, not continuous service availability.
 A one-shot migration job can also finish successfully, while an API that exits immediately is unavailable even with exit code zero.
 
-## Worked example: correlate a request with output
+## Match a request to its log message
 
 ```sh
 curl --fail "http://127.0.0.1:$DOCKYARD_PORT/healthz"
@@ -36,7 +37,7 @@ Find the GET request line and its HTTP status.
 An application may write startup output to stdout and request diagnostics to stderr; Docker captures both.
 When redirecting logs in your shell, use `2>&1` if you intend to capture both streams.
 
-## PID 1 and process wrappers
+## A detail you’ll use when writing Dockerfiles
 
 In a Linux container's PID namespace, the main process is PID 1.
 Signal forwarding matters when a shell wrapper launches the real server as a child.

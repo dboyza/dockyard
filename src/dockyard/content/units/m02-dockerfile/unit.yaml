@@ -3,14 +3,14 @@ revision: 1
 module: 2
 order: 1
 title: Build an image that carries its application
-summary: Turn supplied source files into a runnable artifact that no longer depends on a host bind mount.
+summary: Put Dispatch’s files into an image so it can run without your source folder.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Explain the build context and distinguish build-time from runtime instructions.
-- Write a Dockerfile with an explicit working directory and foreground command.
-- Run the built artifact without mounting the source workspace.
+- Explain which files a build can use and which instructions run later.
+- Write a Dockerfile that selects a working directory and starts the application.
+- Run your image without mounting the source folder from your computer.
 prerequisites:
 - m01-mission
 objectives:
@@ -124,7 +124,9 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: Inspect the port mapping with docker port "$DOCKYARD_CONTAINER". It should start with 127.0.0.1,
+    not 0.0.0.0. If the binding is wrong, recreate only this lab's container using
+    -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: self-contained
   title: The application runs without workspace mounts
   explanation: The application runs without workspace mounts
@@ -138,7 +140,8 @@ checks:
   json_path:
   - '0'
   - Mounts
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The application must be copied into the image. Remove the -v or --mount option from your
+    run command, build your image with COPY instructions for app.py and VERSION, then recreate this lab's container.
 - id: release
   title: The image serves the expected application release
   explanation: The image serves the expected application release
@@ -155,7 +158,8 @@ checks:
   expected: dispatch-1
   json_path:
   - release
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: Read VERSION in your workspace; it should contain dispatch-1. Make sure your Dockerfile
+    copies it into /app, rebuild the image, and recreate the container from that new image.
 capabilities:
 - docker
 - python-image

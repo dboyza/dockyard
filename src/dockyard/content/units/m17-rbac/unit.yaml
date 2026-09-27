@@ -3,14 +3,14 @@ revision: 1
 module: 17
 order: 1
 title: Limit a workload API identity
-summary: Prove permitted and forbidden Kubernetes API access.
+summary: Let a practice workload read Pods while keeping Secrets and other namespaces out of reach.
 kind: lesson
 runtime: kubernetes
 nodes: 2
 minutes: 45
 outcomes:
-- Restrict a reader to required namespaced operations.
-- Distinguish authorization denial from transport failure.
+- Give the reader only the operations it needs in the intended namespace.
+- Tell a permission refusal apart from a failed network connection.
 prerequisites:
 - m16-mission
 objectives:
@@ -79,7 +79,9 @@ checks:
   json_path:
   - rbac
   expected: 'true'
-  diagnostic: Compare actual token HTTP status codes and remove Secret or write permissions from the reader.
+  diagnostic: In Measured state, look for pods 200, secrets 403, and other_namespace 403. If Secrets
+    return 200, remove secrets from the Role in identity.yaml and apply it with python render.py identity.yaml
+    piped to kubectl apply -f -. Keep Pod reads and the existing RoleBinding.
 - id: security-tokens
   title: API and worker have no automatically mounted Kubernetes token
   explanation: Observe the actual allowed and denied operation, admission decision, or process state.

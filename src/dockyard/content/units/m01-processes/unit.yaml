@@ -3,14 +3,14 @@ revision: 2
 module: 1
 order: 1
 title: A container is a running process
-summary: Start the Dispatch API and connect the image, container, process, and published port to observable behavior.
+summary: Start Dispatch in a container, send it a request, and see what changes when you stop it.
 kind: lesson
 runtime: docker
 minutes: 25
 outcomes:
-- Explain why an image remains available after its container stops.
-- Run a supplied application as a foreground process inside a detached container.
-- Publish an application port on loopback and verify a real HTTP response.
+- Explain why stopping a container does not remove its image.
+- Run Dispatch in a container while keeping your terminal free for other commands.
+- Connect a local port to Dispatch and check its HTTP response.
 prerequisites: []
 objectives:
 - docker.lifecycle
@@ -130,7 +130,9 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: Inspect the port mapping with docker port "$DOCKYARD_CONTAINER". It should start with 127.0.0.1,
+    not 0.0.0.0. If the binding is wrong, recreate only this lab's container using
+    -p "127.0.0.1:$DOCKYARD_PORT:8080".
 checkpoint: dispatch-process-v1
 alternatives:
 - docker run or docker create followed by docker start are both accepted.

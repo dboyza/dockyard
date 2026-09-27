@@ -13,12 +13,8 @@ import {
   ShieldCheck,
   X,
   Menu,
-  FolderArchive,
   Library,
   Activity,
-  RotateCcw,
-  Compass,
-  Timer,
   Settings,
 } from "lucide-react";
 import { OverviewPage } from "./OverviewPage";
@@ -33,11 +29,11 @@ import { ReviewPage } from "./ReviewPage";
 import { PlacementPage } from "./PlacementPage";
 import { SettingsPage } from "./SettingsPage";
 import { ExamsPage } from "./ExamsPage";
+import { navigationSection, pageLabels, sectionPages } from "./navigation";
 import "./style.css";
 function App() {
   const model = useWorkbench();
   const {
-    catalog,
     page,
     setPage,
     lesson,
@@ -58,6 +54,7 @@ function App() {
     dialogRef,
     navigate,
   } = model;
+  const section = navigationSection(page, lesson?.kind === "incident");
   if (!connected)
     return (
       <main className="connection">
@@ -84,7 +81,7 @@ function App() {
       <a className="skip" href="#main">
         Skip to content
       </a>
-      <aside className={`sidebar ${railOpen ? "open" : ""}`}>
+      <aside id="sidebar" className={`sidebar ${railOpen ? "open" : ""}`}>
         <button className="brand" onClick={() => navigate("home")}>
           <Container size={24} />
           <span>DOCKYARD</span>
@@ -92,48 +89,20 @@ function App() {
         <div className="localtag">
           <span /> LOCAL WORKBENCH
         </div>
-        <label className="searchbox">
-          <Search size={16} />
-          <input
-            aria-label="Search lessons"
-            placeholder="Find a lesson…"
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage("course");
-            }}
-          />
-        </label>
         <nav aria-label="Main navigation">
           {(
             [
               { id: "home", label: "Overview", icon: LayoutDashboard },
               { id: "course", label: "Your course", icon: BookOpen },
-              { id: "placement", label: "Practical placement", icon: Compass },
-              { id: "incidents", label: "Incident scenarios", icon: Activity },
-              { id: "exams", label: "Exam practice", icon: Timer },
-              { id: "progress", label: "Skill evidence", icon: ShieldCheck },
-              { id: "review", label: "Spaced review", icon: RotateCcw },
-              {
-                id: "checkpoints",
-                label: "Project checkpoints",
-                icon: FolderArchive,
-              },
+              { id: "incidents", label: "Practice", icon: Activity },
+              { id: "progress", label: "Your progress", icon: ShieldCheck },
               { id: "labs", label: "Lab manager", icon: FlaskConical },
-              { id: "reference", label: "Reference desk", icon: Library },
-              { id: "settings", label: "Settings and data", icon: Settings },
             ] as const
           ).map((item) => (
             <button
               key={item.id}
-              className={
-                page === item.id ||
-                (page === "lesson" &&
-                  item.id ===
-                    (lesson?.kind === "incident" ? "incidents" : "course"))
-                  ? "selected"
-                  : ""
-              }
+              className={section === item.id ? "selected" : ""}
+              aria-current={section === item.id ? "page" : undefined}
               onClick={() => navigate(item.id)}
             >
               <item.icon size={18} />
@@ -141,37 +110,26 @@ function App() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-section">
-          <span className="eyebrow">LEARNING PATH</span>
-          {[...new Set(catalog?.modules.map((item) => item.phase_title))].map(
-            (phase, index) => (
-              <button
-                className="phase-nav"
-                key={phase}
-                onClick={() => {
-                  setSearch("");
-                  navigate("course");
-                  setTimeout(
-                    () =>
-                      document
-                        .getElementById(`phase-${index + 1}`)
-                        ?.scrollIntoView({ behavior: "smooth" }),
-                    0,
-                  );
-                }}
-              >
-                <span>0{index + 1}</span>
-                {phase}
-              </button>
-            ),
-          )}
-        </div>
         <div className="sidebar-footer">
-          <div className="learner-avatar">D</div>
-          <div>
-            <strong>Personal workspace</strong>
-            <span className="muted small">Progress stays on this computer</span>
-          </div>
+          <nav aria-label="Workspace tools">
+            {(
+              [
+                { id: "reference", icon: Library },
+                { id: "settings", icon: Settings },
+              ] as const
+            ).map((item) => (
+              <button
+                key={item.id}
+                className={page === item.id ? "selected" : ""}
+                aria-current={page === item.id ? "page" : undefined}
+                onClick={() => navigate(item.id)}
+              >
+                <item.icon size={17} />
+                {pageLabels[item.id]}
+              </button>
+            ))}
+          </nav>
+          <span className="small muted">Your work stays on this computer.</span>
         </div>
       </aside>
       <div className="main-shell">
@@ -180,38 +138,33 @@ function App() {
             <button
               className="icon mobile-menu"
               aria-label="Toggle navigation"
+              aria-expanded={railOpen}
+              aria-controls="sidebar"
               onClick={() => setRailOpen(!railOpen)}
             >
               <Menu size={20} />
             </button>
-            <span>Workspace</span>
-            <ChevronRight size={14} />
+            <span className="wide-only">Workspace</span>
+            <ChevronRight className="wide-only" size={14} />
             <strong>
               {page === "lesson"
                 ? `Module ${String(lesson?.module).padStart(2, "0")}`
-                : page === "home"
-                  ? "Overview"
-                  : page === "course"
-                    ? "Your course"
-                    : page === "placement"
-                      ? "Practical placement"
-                      : page === "settings"
-                        ? "Settings and data"
-                        : page === "exams"
-                          ? "Exam practice"
-                          : page === "incidents"
-                            ? "Incident scenarios"
-                            : page === "review"
-                              ? "Spaced review"
-                              : page === "labs"
-                                ? "Lab manager"
-                                : page === "checkpoints"
-                                  ? "Project checkpoints"
-                                  : page === "reference"
-                                    ? "Reference desk"
-                                    : "Skill evidence"}
+                : pageLabels[page]}
             </strong>
           </div>
+          <label className="searchbox">
+            <Search size={16} />
+            <input
+              aria-label="Search lessons"
+              placeholder="Find a lesson…"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage("course");
+                setRailOpen(false);
+              }}
+            />
+          </label>
           <div className="topbar-actions">
             <span
               className={`connection-indicator ${offline ? "offline" : ""}`}
@@ -263,6 +216,22 @@ function App() {
                 <X size={17} />
               </button>
             </div>
+          )}
+          {page !== "lesson" && sectionPages[section] && (
+            <nav
+              className="section-nav"
+              aria-label={`${section === "incidents" ? "Practice" : pageLabels[section]} sections`}
+            >
+              {sectionPages[section]?.map((destination) => (
+                <button
+                  key={destination}
+                  aria-current={page === destination ? "page" : undefined}
+                  onClick={() => navigate(destination)}
+                >
+                  {pageLabels[destination]}
+                </button>
+              ))}
+            </nav>
           )}
           {page === "home" && <OverviewPage model={model} />}
           {page === "course" && <CoursePage model={model} />}

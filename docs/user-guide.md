@@ -9,10 +9,23 @@ The workbench listens on loopback and opens a browser with a short-lived, single
 The address fragment disappears after authentication.
 An unrelated browser cannot operate the lab API without its session cookie.
 
-Start with Practical placement if you have intermediate experience.
-Its benchmarks use real lab outcomes to recommend a starting point; a self-rating alone does not mark skills demonstrated.
+If you already know some Docker or Kubernetes, open **Your course → Find your starting point**.
+Try a mission to see which topics need practice; every lesson remains available.
 Your course remains freely browsable, with searchable explanations and supplied checkpoints for later modules.
 Reference desk contains supporting primers and a searchable glossary.
+
+## Meet Dispatch
+
+Dispatch is the supplied application you will learn to run.
+It grows from an API that answers health requests into a background job service with a queue, worker, and database.
+The worker changes submitted text to uppercase and records a result; it is deliberately small so you can focus on operating the system.
+You do not need to write its Python code.
+The Overview page explains the project before you start.
+
+The sidebar has five main destinations: Overview, Your course, Practice, Your progress, and Lab manager.
+Placement lives within Your course; troubleshooting and exams live within Practice; reviews and saved projects live within Your progress.
+Reference desk and Settings and data stay at the bottom of the sidebar.
+Find a lesson using the search field at the top of the page.
 
 ## Complete a lab
 
@@ -20,7 +33,8 @@ Reference desk contains supporting primers and a searchable glossary.
 2. Read **Your task** and prepare the owned environment.
 3. Select **Open terminal** to open an ordinary terminal in that activity's workspace.
 4. Edit files and run commands using your preferred terminal tools.
-5. Select **Check work** and read both passing observations and failed boundaries.
+5. Select **Check work** and start with any item marked Needs attention.
+   Open Check details to see the expected and observed values.
 6. Save observations and use the debrief to explain why the repair worked.
 
 A terminal retains its original lab identity when the browser switches lessons.
@@ -31,13 +45,15 @@ A stopped or unavailable environment is reported as blocked rather than as a lea
 Hints reveal progressively.
 Reference solutions require an explicit reveal and mark the current attempt as supported.
 Independent retake backs up the workspace, restores the starter, and begins a new support record while retaining earlier evidence.
-A passing practice attempt and an independent demonstration are distinct in Skill evidence.
+Your progress separates guided practice from missions passed without in-app hints or references.
+A pass records the lab’s behavior at the time of the check.
+It does not grade your explanation, prove retention, or detect help used outside Dockyard.
 
 ## Grow the Dispatch project
 
 Passing a mission stores a source checkpoint with its revision, evidence, observations, and support provenance.
 Subsequent edits do not modify that archive.
-Project checkpoints can download an individual checkpoint or a combined portfolio containing the latest checkpoint from each completed mission.
+Open **Your progress → Saved projects** to download a checkpoint or a portfolio containing the latest checkpoint from each completed mission.
 
 To continue earlier work, expand **Continue in a later mission**, select an unstarted mission, and compare files.
 Nothing is selected automatically.
@@ -53,11 +69,11 @@ Recovery labs teach database backup and restore separately.
 
 ## Practice incidents and timed exams
 
-Incident scenarios use separate workspaces and environments with original faults.
+Open **Practice → Troubleshooting** to investigate a broken application in a separate lab.
 They preserve the main project's source checkpoints.
 Each scenario asks for diagnostic evidence and a repair with a verifiable result.
 
-Exam practice contains two CKAD-oriented and two CKA-oriented original task sets.
+Open **Practice → Exam practice** for two CKAD-oriented and two CKA-oriented original task sets.
 Prepare the environment before starting its 120-minute timer.
 The interface shows task weights, allowed-reference policy, flags, remaining time, and a saved report with remediation links.
 Task weights total 100 and permit partial credit where an assessed task has multiple criteria.

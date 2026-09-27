@@ -1,13 +1,15 @@
-## An operational brief
+## The start command says it worked. The app is missing.
 
-You have inherited a container whose deployment command was changed during a handoff.
+Someone changed the command used to start Dispatch.
 The deployment reported success, but the API never became available.
-Use the process, lifecycle, logging, and networking distinctions from this module to establish what happened.
+Use what you learned about processes, logs, and ports to find out why.
 
-Start with evidence before replacing the resource.
-A status of Exited (0) narrows the question to what command completed, but does not establish that the deployment was useful.
+Before replacing the container, find out what it actually ran.
+`Exited (0)` means its program finished without reporting an error.
+It does not mean the API is available.
 This mission does not prescribe a command sequence.
-The task contract describes the required final behavior, and the evidence view checks that behavior.
+Your task describes how the repaired service should behave.
+Check work will test that result.
 
 ## Independent work
 

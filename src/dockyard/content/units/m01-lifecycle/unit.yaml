@@ -3,14 +3,14 @@ revision: 1
 module: 1
 order: 2
 title: Create, start, stop, inspect
-summary: Separate container identity from process lifetime and bring a prepared Dispatch container online.
+summary: Stop and start the same container, then check which parts of it stay the same.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Distinguish created, running, and exited states.
-- Use inspection to find image identity, command, and port mappings.
-- Start an existing container without confusing it with a new instance.
+- Tell whether a container is created, running, or stopped.
+- Find the image, command, and ports in Docker’s inspection output.
+- Start an existing container and confirm that its ID stays the same.
 prerequisites:
 - m01-processes
 objectives:
@@ -139,7 +139,9 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: Inspect the port mapping with docker port "$DOCKYARD_CONTAINER". It should start with 127.0.0.1,
+    not 0.0.0.0. If the binding is wrong, recreate only this lab's container using
+    -p "127.0.0.1:$DOCKYARD_PORT:8080".
 capabilities:
 - docker
 - python-image
