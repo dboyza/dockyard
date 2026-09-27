@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { spawn, type ChildProcess } from 'node:child_process';
+import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
 import path from 'node:path';
 
@@ -7,7 +7,7 @@ const root = path.resolve(import.meta.dirname, '../..');
 let server: ChildProcess;
 let url: string;
 test.skip(!process.env.DOCKYARD_EXAM_PROFILE, 'Requires an explicitly prepared disposable exam profile.');
-test.beforeAll(async () => {
+test.beforeEach(async () => {
   server = spawn(path.join(root, '.runtime/installed/bin/dockyard'), ['--data-dir', process.env.DOCKYARD_EXAM_PROFILE!, 'launch', '--port', '0', '--no-open'], { cwd: root });
   url = await new Promise<string>((resolve, reject) => {
     let output = '';
@@ -20,7 +20,7 @@ test.beforeAll(async () => {
     server.on('error', reject);
   });
 });
-test.afterAll(async () => {
+test.afterEach(async () => {
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
 });
 test('installed timed practice persists flags and deadline and reports actual runtime evidence', async ({ page }) => {
@@ -74,6 +74,7 @@ test('installed timed practice persists flags and deadline and reports actual ru
 });
 
 test('saved exam reports remain readable after environment cleanup', async ({ page }) => {
+  execFileSync(path.join(root, '.runtime/installed/bin/dockyard'), ['--data-dir', process.env.DOCKYARD_EXAM_PROFILE!, 'lab', 'clean', 'exam-ckad-a', '--yes']);
   await page.goto(url);
   await page.getByRole('button', { name: 'Exam practice', exact: true }).click();
   await page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Dispatch release assessment', exact: true }) }).getByRole('button', { name: 'Open practice' }).click();
@@ -81,7 +82,9 @@ test('saved exam reports remain readable after environment cleanup', async ({ pa
   await expect(report.getByRole('heading', { name: '100 / 100', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start 120-minute attempt' })).toBeDisabled();
   const history = page.getByRole('combobox', { name: 'Saved exam attempt' });
-  await history.selectOption({ index: 1 });
+  const invalidated = await history.locator('option').filter({ hasText: 'invalidated' }).first().getAttribute('value');
+  expect(invalidated).toBeTruthy();
+  await history.selectOption(invalidated!);
   await expect(report.getByRole('heading', { name: 'No score assigned', exact: true })).toBeVisible();
   await history.selectOption({ index: 0 });
   await expect(report.getByRole('heading', { name: '100 / 100', exact: true })).toBeVisible();

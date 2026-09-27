@@ -239,6 +239,7 @@ def main() -> None:
                     raise SystemExit(1)
     except KeyboardInterrupt:
         print("Dockyard stopped. Your work and lab resources are preserved.")
+        raise SystemExit(130) from None
     except (BusyError, RuntimeErrorBase, ValueError, FileNotFoundError) as error:
         print(f"Dockyard: {error}", file=sys.stderr)
         raise SystemExit(2) from error

@@ -123,3 +123,70 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
         if outsider_id:
             # This fixture created and recorded this ID itself; no broad cleanup.
             runtime.require(runtime.command(["container", "rm", "--force", outsider_id]))
+
+
+def test_interrupted_cli_reports_interruption_and_recovers_on_retry():
+    import signal
+    import socket
+    import subprocess
+    import sys
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="dy-interrupt-", dir="/private/tmp") as temporary:
+        profile = Path(temporary)
+        service = Service(profile)
+        endpoint = service._docker_endpoint()
+        proxy = profile / "docker.sock"
+        proxy.symlink_to(endpoint.removeprefix("unix://"))
+        env = dict(os.environ, DOCKER_HOST="unix://" + str(proxy))
+        base = [sys.executable, "-m", "dockyard", "--data-dir", str(profile), "lab"]
+
+        def execute(action):
+            args = [*base, action, "m01-processes"]
+            if action == "clean":
+                args.append("--yes")
+            return subprocess.run(args, env=env, capture_output=True, text=True, timeout=30)
+
+        child = None
+        try:
+            result = execute("prepare")
+            assert result.returncode == 0, result.stderr
+            draft = Path(service.store.lab("m01-processes").workspace) / "my-runbook.md"
+            draft.write_text("Preserve this diagnosis.\n")
+            assert execute("clean").returncode == 0
+            proxy.unlink()
+            with socket.socket(socket.AF_UNIX) as listener:
+                listener.bind(str(proxy))
+                listener.listen()
+                listener.settimeout(15)
+                child = subprocess.Popen(
+                    [*base, "prepare", "m01-processes"],
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                )
+                connection, _ = listener.accept()
+                with connection:
+                    child.send_signal(signal.SIGINT)
+                    output, _ = child.communicate(timeout=15)
+                assert child.returncode == 130
+                assert b"preserved" in output
+            assert any(item["state"] == "running" for item in service.store.operations())
+            proxy.unlink()
+            proxy.symlink_to(endpoint.removeprefix("unix://"))
+            result = execute("prepare")
+            assert result.returncode == 0, result.stderr
+            assert draft.read_text() == "Preserve this diagnosis.\n"
+            operations = service.store.operations()
+            assert not any(
+                item["state"] in {"running", "queued", "canceling"} for item in operations
+            )
+            assert any(item["state"] == "failed" for item in operations)
+        finally:
+            if child and child.poll() is None:
+                child.send_signal(signal.SIGINT)
+                child.communicate(timeout=15)
+            proxy.unlink(missing_ok=True)
+            proxy.symlink_to(endpoint.removeprefix("unix://"))
+            result = execute("clean")
+            assert result.returncode == 0, result.stderr
