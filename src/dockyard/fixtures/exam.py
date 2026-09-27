@@ -23,7 +23,7 @@ def apply(*documents: dict[str, Any]) -> None:
 
 
 def deployment(
-    name: str, command: list[str], *, labels: dict[str, str] | None = None
+    name: str, command: list[str], *, labels: dict[str, str] | None = None, image: str | None = None
 ) -> dict[str, Any]:
     return {
         "apiVersion": "apps/v1",
@@ -42,7 +42,7 @@ def deployment(
                     "containers": [
                         {
                             "name": name,
-                            "image": os.environ["DOCKYARD_IMAGE"],
+                            "image": image or os.environ["DOCKYARD_IMAGE"],
                             "imagePullPolicy": "Never",
                             "command": command,
                             "securityContext": {
@@ -62,6 +62,14 @@ def deployment(
 
 
 def ckad_a() -> None:
+    kubectl(
+        "patch",
+        "cronjob",
+        "dispatch-maintenance",
+        "--type=merge",
+        "-p",
+        json.dumps({"spec": {"suspend": True}}),
+    )
     prepare("baseline")
     # Every task has its own specific outcome; no course mission is renamed as an exam.
     Path("VERSION").write_text("dispatch-exam-a\n")

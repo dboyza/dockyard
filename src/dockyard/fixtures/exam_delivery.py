@@ -18,7 +18,37 @@ from dockyard.workspace import atomic_write
 
 
 def prepare() -> None:
+    kubectl(
+        "patch",
+        "cronjob",
+        "dispatch-maintenance",
+        "--type=merge",
+        "-p",
+        json.dumps({"spec": {"suspend": True}}),
+    )
     install(broken=False)
+    support = os.environ["DOCKYARD_IMAGE"] + "-support"
+    built = run(
+        ["docker", "build", "-t", support, "-f", "-", "."],
+        input_text="FROM "
+        + os.environ["DOCKYARD_IMAGE"]
+        + "\n"
+        + "LABEL io.dockyard.fixture=delivery-support\n"
+        + 'LABEL io.dockyard.lab="'
+        + os.environ["DOCKYARD_LAB"]
+        + '"\n',
+        timeout=120,
+    )
+    if not built.ok:
+        raise RuntimeError(built.stderr)
+    loaded = run(
+        ["kind", "load", "docker-image", support, "--name", os.environ["DOCKYARD_CLUSTER"]],
+        timeout=120,
+    )
+    if not loaded.ok:
+        raise RuntimeError(loaded.stderr)
+    kubectl("set", "image", "deployment/worker", "worker=" + support)
+
     version = Path("VERSION").read_text()
     try:
         Path("VERSION").write_text("dispatch-preview-b\n")
@@ -119,6 +149,7 @@ def prepare() -> None:
             "http.server.SimpleHTTPRequestHandler).serve_forever()",
         ],
     )
+    listener["spec"]["template"]["spec"]["containers"][0]["image"] = support
     listener["spec"]["template"]["spec"]["containers"][0]["env"] = [
         {"name": "PORT", "value": "eight"}
     ]
@@ -138,6 +169,7 @@ def prepare() -> None:
         "metadata-reader", ["python", "-m", "http.server", "8080", "--directory", "/metadata"]
     )
     spec = metadata["spec"]["template"]["spec"]
+    spec["containers"][0]["image"] = support
     spec["containers"][0]["volumeMounts"] = [{"name": "metadata", "mountPath": "/metadata"}]
     spec["volumes"] = [{"name": "metadata", "configMap": {"name": "release-metadata"}}]
     base = Path("release/base")
@@ -150,6 +182,7 @@ def prepare() -> None:
             {
                 "apiVersion": "kustomize.config.k8s.io/v1beta1",
                 "kind": "Kustomization",
+                "namespace": "dispatch",
                 "resources": ["reader.yaml"],
                 "configMapGenerator": [
                     {
@@ -170,7 +203,9 @@ def prepare() -> None:
         )
     )
     kubectl("apply", "-k", str(overlay))
-    archive = deployment("report-cache", ["python", "-c", "import time; time.sleep(86400)"])
+    archive = deployment(
+        "report-cache", ["python", "-c", "import time; time.sleep(86400)"], image=support
+    )
     spec = archive["spec"]["template"]["spec"]
     spec["securityContext"] = {"fsGroup": 10001}
     spec["containers"][0]["volumeMounts"] = [{"name": "archive", "mountPath": "/archive"}]
