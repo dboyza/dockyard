@@ -109,15 +109,10 @@ def portable_yaml(text: str) -> tuple[str, list[str]]:
     return ("---\n".join(kept) if removed else text), removed
 
 
-def checkpoint(
-    directory: Path, lab: Lab, unit: Unit, assessment: Assessment, note: str
-) -> dict[str, Any]:
-    digest, files = snapshot(Path(lab.workspace))
-    if digest != assessment.file_digest:
-        raise ValueError("The workspace changed before its checkpoint could be recorded.")
-    secrets = [
-        value for key, value in lab.resources.items() if key in {"db_password", "bootstrap_token"}
-    ]
+def portable_sources(
+    files: dict[str, bytes], secrets: list[str]
+) -> tuple[dict[str, bytes], dict[str, str], dict[str, list[str]]]:
+    """Apply the same source and credential exclusions to checkpoints and portable drafts."""
     included: dict[str, bytes] = {}
     excluded: dict[str, str] = {}
     transformed: dict[str, list[str]] = {}
@@ -159,9 +154,32 @@ def checkpoint(
             excluded[name] = "Contains a known lab credential."
             continue
         included[name] = text.encode()
+    return included, excluded, transformed
+
+
+def redact_observations(text: str, secrets: list[str]) -> str:
     for secret in secrets:
         if secret:
-            note = note.replace(secret, "[redacted lab credential]")
+            text = text.replace(secret, "[redacted lab credential]")
+    return re.sub(
+        r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----",
+        "[private key excluded]",
+        text,
+        flags=re.S,
+    )
+
+
+def checkpoint(
+    directory: Path, lab: Lab, unit: Unit, assessment: Assessment, note: str
+) -> dict[str, Any]:
+    digest, files = snapshot(Path(lab.workspace))
+    if digest != assessment.file_digest:
+        raise ValueError("The workspace changed before its checkpoint could be recorded.")
+    secrets = [
+        value for key, value in lab.resources.items() if key in {"db_password", "bootstrap_token"}
+    ]
+    included, excluded, transformed = portable_sources(files, secrets)
+    note = redact_observations(note, secrets)
     identity = uuid.uuid4().hex
     manifest = {
         "format": "dockyard-checkpoint",

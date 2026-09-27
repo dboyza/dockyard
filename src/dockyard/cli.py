@@ -35,6 +35,19 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("catalog", help="List the authored curriculum")
     audit = commands.add_parser("audit", help="Check curriculum structure and release coverage")
     audit.add_argument("--json", action="store_true")
+    progress = commands.add_parser(
+        "progress", help="Export or safely merge personal learning history"
+    )
+    transfers = progress.add_subparsers(dest="transfer", required=True)
+    exported = transfers.add_parser(
+        "export", help="Save progress, evidence, checkpoints, and portable drafts"
+    )
+    exported.add_argument("destination", type=Path)
+    imported = transfers.add_parser(
+        "import", help="Preview a portable progress bundle before merging"
+    )
+    imported.add_argument("source", type=Path)
+    imported.add_argument("--yes", action="store_true", help="Merge after validating the preview")
     lab = commands.add_parser("lab", help="Manage and check a dedicated practice lab")
     operations = lab.add_subparsers(dest="action", required=True)
     for action in (
@@ -127,6 +140,28 @@ def main() -> None:
                 print(report["evidence_boundary"])
             if report["issues"]:
                 raise SystemExit(1)
+        elif arguments.command == "progress":
+            from dockyard.archives import MAX_ARCHIVE
+            from dockyard.progress_bundle import (
+                export_bundle,
+                import_bundle,
+                preview_import,
+                save_export,
+            )
+
+            if arguments.transfer == "export":
+                save_export(export_bundle(service), arguments.destination)
+                print(f"Saved portable progress to {arguments.destination.resolve()}")
+            else:
+                if not arguments.source.is_file() or arguments.source.stat().st_size > MAX_ARCHIVE:
+                    raise ValueError("Choose a progress archive no larger than 64 MiB.")
+                body = arguments.source.read_bytes()
+                preview = preview_import(service, body)
+                if arguments.yes:
+                    print(json.dumps(import_bundle(service, body, preview["digest"]), indent=2))
+                else:
+                    print(json.dumps(preview, indent=2))
+                    print("Review this merge, then repeat with --yes to import.")
         elif arguments.command == "catalog":
             for unit in service.catalog.units.values():
                 print(f"{unit.id:28} {unit.title}")

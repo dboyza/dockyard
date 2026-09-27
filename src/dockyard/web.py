@@ -43,6 +43,11 @@ class Note(Body):
     body: str
 
 
+class ImportAction(Body):
+    digest: str
+    confirmed: bool = False
+
+
 class ExamEdit(Body):
     selected_task: str
     flagged: list[str]
@@ -151,6 +156,38 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
             "exams": [attempt.model_dump(mode="json") for attempt in service.exams.all()],
             "exam_readiness": {key: service.exams.readiness(key) for key in service.catalog.exams},
         }
+
+    @app.get("/api/progress/export")
+    def export_progress() -> Response:
+        from dockyard.progress_bundle import export_bundle
+
+        return Response(
+            export_bundle(service),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": 'attachment; filename="dockyard-progress.zip"',
+            },
+        )
+
+    @app.post("/api/progress/preview")
+    async def preview_progress(request: Request) -> dict[str, Any]:
+        from dockyard.archives import MAX_ARCHIVE
+        from dockyard.progress_bundle import stage_import
+
+        body = bytearray()
+        async for chunk in request.stream():
+            body.extend(chunk)
+            if len(body) > MAX_ARCHIVE:
+                raise HTTPException(413, "Choose a progress archive no larger than 64 MiB.")
+        return await asyncio.to_thread(stage_import, service, bytes(body))
+
+    @app.post("/api/progress/import")
+    def import_progress(body: ImportAction) -> dict[str, Any]:
+        from dockyard.progress_bundle import import_staged
+
+        if not body.confirmed:
+            raise HTTPException(400, "Review and confirm this progress merge first.")
+        return import_staged(service, body.digest)
 
     @app.get("/api/checkpoints/{checkpoint_id}/download")
     def download_checkpoint(checkpoint_id: str) -> FileResponse:

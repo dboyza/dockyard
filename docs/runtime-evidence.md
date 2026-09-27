@@ -524,3 +524,17 @@ The package source archive contains no runtime profiles, private artifacts, tool
 Exam practice policy links were checked against the Linux Foundation's allowed-resources page on 2026-09-27.
 Gateway API documentation is listed for CKA-oriented practice only; task-specific linked official references are explicit.
 These are original local practice tasks, not copied certification questions or a reproduction of proctoring.
+
+## Portable progress and reviewed imports
+
+The installed CLI exported a disposable learning profile, the installed browser previewed and merged it, and a second CLI profile imported the browser's downloaded archive.
+That round trip preserved the note and progress without creating any lab ownership records.
+The browser journey passed in 5.8 seconds, including confirmation, database backup reporting, light theme, and 1440/480-pixel layouts inspected directly.
+Twenty-eight focused backend checks passed for archives, provenance, source exclusions, checkpoints, and API behavior.
+They cover traversal, macOS path collisions, symbolic links, bounded expansion, changed payloads, unavailable revisions, invalid checkpoint/exam provenance, changed previews, and preservation of existing files and notes.
+Imports are idempotent, keep source drafts in a separate folder, and invalidate unfinished historical exam timers without assigning scores.
+
+The second CKAD exam passed its full actual-runtime starter/reference audit after two fixture corrections: support workloads receive a distinct image identity, and the Kustomize base declares its namespace explicitly.
+Unrelated periodic maintenance jobs are suspended in both application exam fixtures to keep their lifecycle separate from the timed tasks.
+Both native incidents also passed their actual starter/reference audits, including broken and repaired Stop/Resume for the kubelet incident.
+The two CKA exam audits remain in progress.

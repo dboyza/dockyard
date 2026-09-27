@@ -19,6 +19,7 @@ import {
   RotateCcw,
   Compass,
   Timer,
+  Settings,
 } from "lucide-react";
 import { OverviewPage } from "./OverviewPage";
 import { CoursePage } from "./CoursePage";
@@ -30,6 +31,7 @@ import { ProgressPage } from "./ProgressPage";
 import { IncidentsPage } from "./IncidentsPage";
 import { ReviewPage } from "./ReviewPage";
 import { PlacementPage } from "./PlacementPage";
+import { SettingsPage } from "./SettingsPage";
 import { ExamsPage } from "./ExamsPage";
 import "./style.css";
 function App() {
@@ -119,6 +121,7 @@ function App() {
               },
               { id: "labs", label: "Lab manager", icon: FlaskConical },
               { id: "reference", label: "Reference desk", icon: Library },
+              { id: "settings", label: "Settings and data", icon: Settings },
             ] as const
           ).map((item) => (
             <button
@@ -192,19 +195,21 @@ function App() {
                     ? "Your course"
                     : page === "placement"
                       ? "Practical placement"
-                      : page === "exams"
-                        ? "Exam practice"
-                        : page === "incidents"
-                          ? "Incident scenarios"
-                          : page === "review"
-                            ? "Spaced review"
-                            : page === "labs"
-                              ? "Lab manager"
-                              : page === "checkpoints"
-                                ? "Project checkpoints"
-                                : page === "reference"
-                                  ? "Reference desk"
-                                  : "Skill evidence"}
+                      : page === "settings"
+                        ? "Settings and data"
+                        : page === "exams"
+                          ? "Exam practice"
+                          : page === "incidents"
+                            ? "Incident scenarios"
+                            : page === "review"
+                              ? "Spaced review"
+                              : page === "labs"
+                                ? "Lab manager"
+                                : page === "checkpoints"
+                                  ? "Project checkpoints"
+                                  : page === "reference"
+                                    ? "Reference desk"
+                                    : "Skill evidence"}
             </strong>
           </div>
           <div className="topbar-actions">
@@ -262,6 +267,7 @@ function App() {
           {page === "home" && <OverviewPage model={model} />}
           {page === "course" && <CoursePage model={model} />}
           {page === "placement" && <PlacementPage model={model} />}
+          {page === "settings" && <SettingsPage model={model} />}
           {page === "exams" && (
             <ExamsPage key={model.examId || "exam-index"} model={model} />
           )}

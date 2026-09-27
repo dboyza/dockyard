@@ -20,6 +20,7 @@ export type Page =
   | "lesson"
   | "labs"
   | "progress"
+  | "settings"
   | "checkpoints"
   | "reference";
 type Dialog = { title: string; body: string; action: () => void } | null;
