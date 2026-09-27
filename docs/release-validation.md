@@ -1,7 +1,7 @@
 # Dockyard 0.1.0 release validation
 
 Validation date: 2026-09-27 UTC, on the intended Apple Silicon Mac.
-The application candidate is local commit `1b920bd`; subsequent handoff commits update verification harnesses and documentation without changing the application source.
+The application candidate is local commit `c4f1d0c`; subsequent handoff commits update verification harnesses and documentation without changing the application source.
 Nothing was pushed or published.
 
 ## Delivered scope
@@ -45,8 +45,8 @@ The deadline engine separately verifies automatic submission without an open bro
 
 ## Package and environment
 
-The wheel is `dist/dockyard_learn-0.1.0-py3-none-any.whl`, containing 1,490,379 bytes.
-Its SHA-256 is `c3d5a4f4fb44c43988478fa13b29a43c94b72888f47bc6675a287f4aca33cc32`.
+The wheel is `dist/dockyard_learn-0.1.0-py3-none-any.whl`, containing 1,490,361 bytes.
+Its SHA-256 is `d7a751b4b0476566d3f03a539e178838ff75627dc8cc5d9bcdc9485fab40cb2b`.
 The installed launcher is `./dockyard`; ordinary use does not need Node.
 Source installation uses `./scripts/install.sh` and the documented local prerequisites.
 
