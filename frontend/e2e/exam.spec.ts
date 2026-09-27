@@ -53,7 +53,7 @@ test('installed timed practice persists flags and deadline and reports actual ru
   for (const width of [1440, 760, 480]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: path.join(root, `.artifacts/exam-active-${width}.png`), fullPage: true });
+    await page.screenshot({ path: path.join(root, `.artifacts/exam-active-${width}.png`), fullPage: true, animations: 'disabled' });
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole('button', { name: 'Submit attempt' }).click();
@@ -66,9 +66,30 @@ test('installed timed practice persists flags and deadline and reports actual ru
   await page.locator('.exam-evidence summary').click();
   await expect(page.locator('.exam-evidence[open]')).toContainText('true');
   await page.getByRole('button', { name: 'Use light theme' }).click();
-  await page.screenshot({ path: path.join(root, '.artifacts/exam-report-light.png'), fullPage: true });
+  await page.screenshot({ path: path.join(root, '.artifacts/exam-report-light.png'), fullPage: true, animations: 'disabled' });
   await page.getByRole('button', { name: 'Review reference solution' }).click();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Reference solution', exact: true })).toBeVisible();
   expect(failures).toEqual([]);
+});
+
+test('saved exam reports remain readable after environment cleanup', async ({ page }) => {
+  await page.goto(url);
+  await page.getByRole('button', { name: 'Exam practice', exact: true }).click();
+  await page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Dispatch release assessment', exact: true }) }).getByRole('button', { name: 'Open practice' }).click();
+  const report = page.getByRole('region', { name: 'Exam report' });
+  await expect(report.getByRole('heading', { name: '100 / 100', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start 120-minute attempt' })).toBeDisabled();
+  const history = page.getByRole('combobox', { name: 'Saved exam attempt' });
+  await history.selectOption({ index: 1 });
+  await expect(report.getByRole('heading', { name: 'No score assigned', exact: true })).toBeVisible();
+  await history.selectOption({ index: 0 });
+  await expect(report.getByRole('heading', { name: '100 / 100', exact: true })).toBeVisible();
+  if (await page.getByRole('button', { name: 'Use light theme' }).isVisible()) await page.getByRole('button', { name: 'Use light theme' }).click();
+  await expect.poll(() => page.getByRole('button', { name: 'Review reference solution' }).evaluate(element => getComputedStyle(element).backgroundColor)).toBe('rgb(234, 240, 247)');
+  for (const width of [1440, 480]) {
+    await page.setViewportSize({ width, height: 1000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: path.join(root, `.artifacts/exam-saved-report-${width}.png`), fullPage: true, animations: 'disabled' });
+  }
 });

@@ -514,8 +514,11 @@ The remaining three exam environments still require their actual starter/referen
 
 Five timed-engine tests verify weighted partial credit, saved deadlines and flags, idempotent submission, automatic deadline submission without a browser, and explicit invalidation without a zero score on technical failure.
 The installed browser verified an unavailable private kubectl produces an invalidated attempt without a score.
-The full successful installed exam journey is still under verification.
-Desktop and narrow active-exam screenshots were directly inspected.
+The full successful installed exam journey passed in 11.0 seconds against a freshly prepared fixture, preserving flags and the exact deadline across reload, rejecting support during the active attempt, and producing a real 100/100 report.
+The installed fixture separately failed all nine intended starter criteria and then passed all ten reference criteria.
+A further 3.5-second browser journey verified saved scored and invalidated attempts remain readable after environment cleanup.
+Desktop and narrow active-exam and saved-report screenshots were directly inspected.
+The saved-attempt selector uses the shared theme, and narrow task navigation scrolls within a bounded panel.
 The package source archive contains no runtime profiles, private artifacts, tool caches, or node_modules.
 
 Exam practice policy links were checked against the Linux Foundation's allowed-resources page on 2026-09-27.

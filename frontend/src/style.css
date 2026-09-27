@@ -2250,3 +2250,25 @@ pre {
     gap: 10px;
   }
 }
+
+.exam-history {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+  margin-bottom: 22px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.exam-history select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink);
+  background: var(--surface);
+  font: inherit;
+}
+.exam-result > button {
+  margin-bottom: 18px;
+}

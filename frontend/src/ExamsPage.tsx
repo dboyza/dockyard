@@ -282,7 +282,7 @@ export function ExamsPage({ model }: { model: Workbench }) {
         <p className="muted small">{state.exam_readiness[exam.id]}</p>
       )}
       {!active && attempts.length > 1 && (
-        <label className="field-label">
+        <label className="exam-history">
           Saved attempt
           <select
             aria-label="Saved exam attempt"
