@@ -27,8 +27,9 @@ from dockyard.workspace import atomic_write
 
 def birth_time(path: Path) -> float:
     observed = path.stat()
-    if hasattr(observed, "st_birthtime"):
-        return float(observed.st_birthtime)
+    native_birth_time = getattr(observed, "st_birthtime", None)
+    if native_birth_time is not None:
+        return float(native_birth_time)
     result = run(["stat", "--format=%w", str(path)], timeout=5)
     try:
         if result.ok:

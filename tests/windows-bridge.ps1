@@ -35,3 +35,5 @@ Remove-Variable DockyardTestExitCode -Scope Global
 Remove-Item Function:\wsl.exe
 Remove-Variable DockyardTestCalls -Scope Global
 Write-Output 'Windows bridge contracts passed: distribution, spaces, literal arguments, installer, mount rejection, and exit status.'
+# The expected failure above must not become the CI wrapper's process exit status.
+exit 0
