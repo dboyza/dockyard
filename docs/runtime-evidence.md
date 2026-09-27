@@ -479,3 +479,16 @@ Repeated successful checks before an existing due date do not indefinitely postp
 A focused persistence test covers those transitions, and all 53 backend regression tests passed in 8.21 seconds.
 The installed browser and real-Docker journey passed in 12.0 seconds.
 Direct desktop and narrow screenshots confirmed readable status metadata after fixing wrapping and a numeric-zero rendering bug.
+
+## Module 24: operational decisions and final handoff
+
+All four final-phase activities passed real broken-starter and reference-repair audits.
+The decision activity enforced bounded resource requests, redundant API replicas, a disruption budget, and actual least-privilege authorization decisions.
+The handoff activity recovered a stalled release while preserving original database state and checking a fresh completed job.
+The final four-VM capstone retained three etcd voters with the primary unavailable, repaired the endpoint and application paths, restored capacity and authorization boundaries, and built and ran the new handoff release.
+The triage activity recovered a selector and stopped-worker compound fault through actual request and database observations.
+
+The final recovery/handoff audit completed seven activities in 1275.86 seconds; the separate API recovery activity had already passed.
+All 96 course units now have successful actual-runtime starter/reference audits.
+That evidence establishes the tested functional contracts, not learner effectiveness or certification readiness.
+The remaining incident audits, exam system, export/import, cache readiness, and final release gates are still in progress.

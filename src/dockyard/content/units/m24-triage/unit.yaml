@@ -1,0 +1,114 @@
+id: m24-triage
+revision: 1
+module: 24
+order: 1
+title: Triage with a bounded evidence loop
+summary: Separate reachability, application readiness, and background processing during a compound incident.
+kind: lesson
+runtime: linux
+nodes: 2
+minutes: 40
+outcomes:
+- Prioritize observable failure boundaries before changing configuration.
+- Recover independent routing and worker failures without resetting the environment.
+- Verify a complete fresh transaction and distinguish mitigation from a durable fix.
+prerequisites:
+- m23-mission
+objectives:
+- cka.service-diagnosis
+- ckad.debugging
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Old API Pods still answer health checks while the new revision cannot start. Which claim
+    is supported?
+  options:
+  - Some availability remains; release convergence needs separate evidence.
+  - The requested release completed.
+  - Database recovery is therefore verified.
+  correct: 0
+  explanation: Availability, release convergence, authorization, and data recovery require different
+    observations.
+hints:
+- Trace the exact requested outcome through independent host, API, routing, identity, and workload boundaries.
+- Compare actual selectors, replicas, rollout revisions, and permission outcomes with the stated operating
+  constraints.
+- Use the preceding scoped repairs and observe fresh work; preserve original data and document what
+  the evidence does not establish.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/tasks/debug/debug-application/
+- https://v1-35.docs.kubernetes.io/docs/tasks/run-application/configure-pdb/
+- https://v1-35.docs.kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+- https://v1-35.docs.kubernetes.io/docs/reference/access-authn-authz/rbac/
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.handoff
+  - triage
+  timeout: 240
+checks:
+- id: handoff-preserved
+  title: Original cluster identities and pre-incident database row survive
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - triage
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved boundary and its actual observations before changing another layer.
+- id: handoff-workflow
+  title: A fresh browser and cross-node job completes and persists
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - triage
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow boundary and its actual observations before changing another layer.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent scoped repairs, valid images, resource quantities, and least-privilege rules are accepted.
+- Handoff reasoning uses an explicit self-review rubric; shell history and prose are not automatically
+  graded.
+failure_modes:
+- Existing availability can conceal a stalled rollout.
+- An API voting majority does not provide application-worker or storage redundancy.
+- Broad permissions can keep a workload functional while violating its access boundary.
+starter_failure_checks:
+- handoff-workflow

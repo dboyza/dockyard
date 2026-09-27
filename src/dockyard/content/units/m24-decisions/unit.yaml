@@ -1,0 +1,145 @@
+id: m24-decisions
+revision: 1
+module: 24
+order: 2
+title: Balance capacity, disruption, and access
+summary: Turn explicit operating constraints into measurable resource and permission boundaries.
+kind: lesson
+runtime: linux
+nodes: 2
+minutes: 40
+outcomes:
+- Choose requests and limits that fit a declared application budget.
+- Maintain useful API replicas and an eviction budget without claiming node-level redundancy.
+- Prove that the inventory identity can read Pods while privileged access is denied.
+prerequisites:
+- m24-triage
+objectives:
+- cka.resource-usage
+- cka.rbac
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Old API Pods still answer health checks while the new revision cannot start. Which claim
+    is supported?
+  options:
+  - Some availability remains; release convergence needs separate evidence.
+  - The requested release completed.
+  - Database recovery is therefore verified.
+  correct: 0
+  explanation: Availability, release convergence, authorization, and data recovery require different
+    observations.
+hints:
+- Trace the exact requested outcome through independent host, API, routing, identity, and workload boundaries.
+- Compare actual selectors, replicas, rollout revisions, and permission outcomes with the stated operating
+  constraints.
+- Use the preceding scoped repairs and observe fresh work; preserve original data and document what
+  the evidence does not establish.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/tasks/debug/debug-application/
+- https://v1-35.docs.kubernetes.io/docs/tasks/run-application/configure-pdb/
+- https://v1-35.docs.kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+- https://v1-35.docs.kubernetes.io/docs/reference/access-authn-authz/rbac/
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.handoff
+  - decisions
+  timeout: 240
+checks:
+- id: handoff-preserved
+  title: Original cluster identities and pre-incident database row survive
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - decisions
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved boundary and its actual observations before changing another layer.
+- id: handoff-capacity
+  title: Healthy API replicas fit declared resource and disruption budgets
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - decisions
+    timeout: 300
+  expectation: json
+  json_path:
+  - capacity
+  expected: 'true'
+  diagnostic: Inspect the capacity boundary and its actual observations before changing another layer.
+- id: handoff-identity
+  title: The real inventory identity reads only the intended Pods and cannot mutate workloads
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - decisions
+    timeout: 300
+  expectation: json
+  json_path:
+  - identity
+  expected: 'true'
+  diagnostic: Inspect the identity boundary and its actual observations before changing another layer.
+- id: handoff-workflow
+  title: A fresh browser and cross-node job completes and persists
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - decisions
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow boundary and its actual observations before changing another layer.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent scoped repairs, valid images, resource quantities, and least-privilege rules are accepted.
+- Handoff reasoning uses an explicit self-review rubric; shell history and prose are not automatically
+  graded.
+failure_modes:
+- Existing availability can conceal a stalled rollout.
+- An API voting majority does not provide application-worker or storage redundancy.
+- Broad permissions can keep a workload functional while violating its access boundary.
+starter_failure_checks:
+- handoff-capacity
+- handoff-identity

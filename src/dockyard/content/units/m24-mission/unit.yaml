@@ -1,0 +1,215 @@
+id: m24-mission
+revision: 1
+module: 24
+order: 4
+title: Operate and hand off Dispatch through a control-plane outage
+summary: Combine HA routing, application repair, operating budgets, and least privilege in an independent
+  capstone.
+kind: mission
+runtime: linux
+nodes: 4
+minutes: 90
+outcomes:
+- Recover useful application work while a real primary API and etcd member remain unavailable.
+- Retain quorum, preserve original state, and meet explicit workload and permission constraints.
+- Produce an evidence-backed operational handoff with clear remaining failure boundaries.
+prerequisites:
+- m24-handoff
+objectives:
+- cka.ha
+- cka.rbac
+- cka.resource-usage
+- cka.service-diagnosis
+- ckad.images
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Old API Pods still answer health checks while the new revision cannot start. Which claim
+    is supported?
+  options:
+  - Some availability remains; release convergence needs separate evidence.
+  - The requested release completed.
+  - Database recovery is therefore verified.
+  correct: 0
+  explanation: Availability, release convergence, authorization, and data recovery require different
+    observations.
+hints:
+- Trace the exact requested outcome through independent host, API, routing, identity, and workload boundaries.
+- Compare actual selectors, replicas, rollout revisions, and permission outcomes with the stated operating
+  constraints.
+- Use the preceding scoped repairs and observe fresh work; preserve original data and document what
+  the evidence does not establish.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/tasks/debug/debug-application/
+- https://v1-35.docs.kubernetes.io/docs/tasks/run-application/configure-pdb/
+- https://v1-35.docs.kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+- https://v1-35.docs.kubernetes.io/docs/reference/access-authn-authz/rbac/
+- https://v1-35.docs.kubernetes.io/docs/setup/production-environment/tools/kubeadm/high-availability/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - ha-layout.py
+  timeout: 30
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.handoff
+  - mission
+  timeout: 240
+- args:
+  - python
+  - ha-outage.py
+  timeout: 150
+checks:
+- id: handoff-preserved
+  title: Original cluster identities and pre-incident database row survive
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved boundary and its actual observations before changing another layer.
+- id: handoff-outage
+  title: The original primary API and etcd member remain stopped
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - outage
+  expected: 'true'
+  diagnostic: Inspect the outage boundary and its actual observations before changing another layer.
+- id: handoff-quorum
+  title: Both surviving voting endpoints remain healthy with three memberships
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - quorum
+  expected: 'true'
+  diagnostic: Inspect the quorum boundary and its actual observations before changing another layer.
+- id: handoff-endpoint
+  title: The private endpoint accepts a fresh API write, read, and delete
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - endpoint
+  expected: 'true'
+  diagnostic: Inspect the endpoint boundary and its actual observations before changing another layer.
+- id: handoff-capacity
+  title: Healthy API replicas fit declared resource and disruption budgets
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - capacity
+  expected: 'true'
+  diagnostic: Inspect the capacity boundary and its actual observations before changing another layer.
+- id: handoff-identity
+  title: The real inventory identity reads only the intended Pods and cannot mutate workloads
+  explanation: Verify the stated operational outcome from live evidence.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - identity
+  expected: 'true'
+  diagnostic: Inspect the identity boundary and its actual observations before changing another layer.
+- id: handoff-workflow
+  title: A fresh browser and cross-node job completes and persists
+  explanation: Verify the stated operational outcome from live evidence.
+  command: &id001
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow boundary and its actual observations before changing another layer.
+- id: handoff-release
+  title: Every running API and worker uses the built handoff release
+  explanation: Verify the stated operational outcome from live evidence.
+  command: *id001
+  expectation: json
+  json_path:
+  - release
+  expected: 'true'
+  diagnostic: Build Dispatch with VERSION dispatch-handoff-v1, transfer the image, and replace API and
+    worker Pods.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent scoped repairs, valid images, resource quantities, and least-privilege rules are accepted.
+- Handoff reasoning uses an explicit self-review rubric; shell history and prose are not automatically
+  graded.
+failure_modes:
+- Existing availability can conceal a stalled rollout.
+- An API voting majority does not provide application-worker or storage redundancy.
+- Broad permissions can keep a workload functional while violating its access boundary.
+starter_failure_checks:
+- handoff-endpoint
+- handoff-capacity
+- handoff-identity
+- handoff-workflow
+- handoff-release
