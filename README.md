@@ -72,7 +72,8 @@ dockyard/
 ```
 
 Use the [maintenance guide](docs/maintenance.md) for source setup, generated contracts, and release checks.
-The [runtime evidence log](docs/runtime-evidence.md) records observed outcomes and their limits.
+The [release validation](docs/release-validation.md) summarizes the verified package, checks, and limitations.
+The [runtime evidence log](docs/runtime-evidence.md) records the underlying staged observations.
 
 For help, include the activity ID, action, relevant diagnostic, app version, and `./dockyard doctor` output.
 Exclude kubeconfigs, credentials, private keys, and raw lab databases.

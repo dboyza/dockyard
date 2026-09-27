@@ -1,7 +1,8 @@
 # Runtime feasibility evidence
 
-This records development probes from 2026-09-26, not a release certification of the finished product.
-The full approved curriculum and application remain under implementation.
+This is a chronological record of development probes and corrections from 2026-09-26 through 2026-09-27 UTC.
+Earlier statements about work still in progress describe those historical stages.
+See [release validation](release-validation.md) for the final candidate and its evidence boundaries.
 
 ## Verified behavior
 
@@ -597,3 +598,24 @@ The PTY harness initially waited for shell exit without draining terminal output
 The test closed only its newly created pane, cleaned its disposable lab, and verified every preexisting terminal pane remained present.
 The README was rendered locally at 1440 and 480 pixels in light and dark themes with loaded assets and no page overflow, then inspected directly.
 This was approximate local Markdown rendering, not a published GitHub-page check.
+
+## Release-candidate validation
+
+The fresh shared kind lifecycle test and both CKA starter/reference audits passed together: three tests in 862.25 seconds.
+This run exercised the corrected scale and Pod-log authorization checks on new fixtures, including native upgrade and certificate renewal.
+The Docker lifecycle suite passed four tests in 17.16 seconds after adding an actual interrupted-CLI regression.
+The interrupted command now exits with status 130, while a foreground launcher stopped normally with Ctrl-C retains a successful exit status.
+The installed interruption/retry probe preserved an authored runbook and recovered the stale operation record.
+
+The installed browser recovery journey passed occupied-port fallback, cancellation against an unresponsive private Docker endpoint, a concurrent second-client rejection, and failed connectivity followed by successful reconnection.
+The final backend candidate passed 86 tests with 121 integration cases deselected in 20.47 seconds.
+Its installed lesson journey passed again in 12.6 seconds after the foreground-shutdown distinction was verified.
+Accessibility, portability/cache, project continuation, and recovery also passed against the same browser asset build.
+The fresh wheel was installed in a separate environment and its contents, hash, bundled frontend, and 112 activities were checked.
+The final package identity and limitations are recorded in [release validation](release-validation.md).
+
+The final installed timed CKAD journey and saved-report journey passed together in 13.7 seconds.
+The fresh fixture failed its nine intended starter criteria, preserved the expected baseline criterion, and passed all ten reference criteria before the timed submission.
+The browser preserved flags and the deadline, produced an actual 100/100 report, then displayed both scored and invalidated history after cleanup.
+All disposable practice workloads were stopped or cleaned; the personal workbench was opened with an empty learner profile and no prepared environments.
+A final direct overview inspection also corrected spacing around the intermediate-placement invitation.
