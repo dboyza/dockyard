@@ -24,6 +24,7 @@ class UnitKind(StrEnum):
     LESSON = "lesson"
     MISSION = "mission"
     INCIDENT = "incident"
+    EXAM = "exam"
 
 
 class CheckStatus(StrEnum):
@@ -152,17 +153,48 @@ class Lab(Contract):
 
 
 class ExamTask(Contract):
-    unit_id: str
-    weight: int = Field(ge=1)
+    id: Identifier
+    title: str
+    brief: str
+    weight: int = Field(ge=1, le=100)
+    criteria: list[Identifier] = Field(min_length=1)
+    remediation: list[Identifier] = Field(min_length=1)
 
 
 class Exam(Contract):
     id: Identifier
+    unit_id: Identifier
     title: str
     track: Literal["CKA", "CKAD"]
     minutes: int = 120
     tasks: list[ExamTask] = Field(min_length=1)
     reference_policy: str
+
+    @model_validator(mode="after")
+    def complete_weights(self) -> Exam:
+        if sum(task.weight for task in self.tasks) != 100:
+            raise ValueError("Exam task weights must sum to 100.")
+        if len({task.id for task in self.tasks}) != len(self.tasks):
+            raise ValueError("Exam task identifiers must be unique.")
+        return self
+
+
+class ExamAttempt(Contract):
+    id: str
+    exam_id: Identifier
+    unit_id: Identifier
+    lab_id: str
+    revision: int
+    state: Literal["active", "grading", "finished", "invalidated"]
+    started_at: str
+    deadline: str
+    finished_at: str | None = None
+    selected_task: str
+    flagged: list[str] = Field(default_factory=list)
+    reason: str = ""
+    assessment_id: str | None = None
+    score: float | None = None
+    task_scores: dict[str, float] = Field(default_factory=dict)
 
 
 class ObservedResource(Contract):

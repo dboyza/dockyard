@@ -7,6 +7,8 @@ import json
 import secrets
 import threading
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -41,8 +43,24 @@ class Note(Body):
     body: str
 
 
+class ExamEdit(Body):
+    selected_task: str
+    flagged: list[str]
+
+
 def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
-    app = FastAPI(title="Dockyard", docs_url=None, redoc_url=None, openapi_url=None)
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        monitor = service.exams.start_monitor()
+        try:
+            yield
+        finally:
+            service.shutdown()
+            await asyncio.to_thread(monitor.join, 5)
+
+    app = FastAPI(
+        title="Dockyard", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
+    )
     nonce = secrets.token_urlsafe(32)
     cookie = secrets.token_urlsafe(32)
     cookie_name = "dockyard_" + secrets.token_hex(5)
@@ -130,6 +148,8 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
             "theme": service.store.setting("theme", "dark"),
             "last_unit": service.store.setting("last_unit"),
             "checkpoints": service.store.checkpoints(),
+            "exams": [attempt.model_dump(mode="json") for attempt in service.exams.all()],
+            "exam_readiness": {key: service.exams.readiness(key) for key in service.catalog.exams},
         }
 
     @app.get("/api/checkpoints/{checkpoint_id}/download")
@@ -152,6 +172,40 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
             filename=f"dockyard-{item['unit_id']}-{checkpoint_id[:8]}.zip",
             media_type="application/zip",
         )
+
+    @app.post("/api/exams/{exam_id}/start")
+    def start_exam(exam_id: str) -> dict[str, Any]:
+        return service.exams.start(exam_id).model_dump(mode="json")
+
+    @app.get("/api/exam-attempts/{identity}/evidence")
+    def exam_evidence(identity: str) -> dict[str, Any]:
+        attempt = service.exams.get(identity)
+        with service.store.connection() as connection:
+            row = connection.execute(
+                "SELECT body FROM attempts WHERE id=? AND unit_id=?",
+                (attempt.assessment_id, attempt.unit_id),
+            ).fetchone()
+        if not row:
+            raise HTTPException(404, "This attempt has no recorded final assessment.")
+        return dict(json.loads(row[0]))
+
+    @app.post("/api/exam-attempts/{identity}/tasks")
+    def edit_exam(identity: str, body: ExamEdit) -> dict[str, Any]:
+        return service.exams.edit(identity, body.selected_task, body.flagged).model_dump(
+            mode="json"
+        )
+
+    @app.post("/api/exam-attempts/{identity}/finish")
+    def finish_exam(identity: str) -> dict[str, Any]:
+        return service.exams.finish(identity).model_dump(mode="json")
+
+    @app.post("/api/exam-attempts/{identity}/abandon")
+    def abandon_exam(identity: str, body: Action) -> dict[str, Any]:
+        if not body.confirmed:
+            raise HTTPException(400, "Confirm that you want to abandon this timed attempt.")
+        return service.exams.invalidate(
+            identity, "The learner abandoned this attempt. No score was assigned."
+        ).model_dump(mode="json")
 
     @app.get("/api/doctor")
     def doctor() -> dict[str, Any]:
@@ -184,6 +238,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
 
     @app.post("/api/units/{unit_id}/hints/{index}")
     def hint(unit_id: str, index: int) -> dict[str, str]:
+        service.exams.guard(unit_id, "hint")
         item = service.catalog.get(unit_id)
         if not 0 <= index < len(item.hints):
             raise HTTPException(404, "That hint does not exist.")
@@ -192,6 +247,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
 
     @app.post("/api/units/{unit_id}/reference")
     def reference(unit_id: str, body: Action) -> dict[str, str]:
+        service.exams.guard(unit_id, "reference")
         item = service.catalog.get(unit_id)
         if not body.confirmed:
             raise HTTPException(400, "Confirm that you want to reveal the reference.")

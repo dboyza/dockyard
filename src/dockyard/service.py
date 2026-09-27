@@ -52,6 +52,9 @@ class Service:
         self._cancels: dict[str, threading.Event] = {}
         self._lock = threading.Lock()
         self.closing = threading.Event()
+        from dockyard.exams import Exams
+
+        self.exams = Exams(self)
 
     def shutdown(self) -> None:
         self.closing.set()
@@ -123,6 +126,7 @@ class Service:
                 DOCKYARD_IMAGE=f"dockyard-{lab.id[:12]}:practice",
                 DOCKYARD_STORAGE=str(Path(lab.workspace).parent / "data"),
                 DOCKYARD_DB_PASSWORD=lab.resources.get("db_password", "practice-only"),
+                DOCKYARD_REGISTRY_PASSWORD=lab.resources.get("db_password", "practice-only"),
                 DOCKYARD_REGISTRY_PORT=lab.resources.get("registry_port", ""),
                 DOCKYARD_CLUSTER=f"dockyard-{lab.id[:12]}",
                 DOCKYARD_NAMESPACE="dispatch",
@@ -220,7 +224,10 @@ class Service:
         lab.updated_at = timestamp()
         self.store.save_lab(lab)
 
-    def perform(self, unit_id: str, action: str) -> dict[str, Any]:
+    def perform(
+        self, unit_id: str, action: str, *, exam_submission: bool = False
+    ) -> dict[str, Any]:
+        self.exams.guard(unit_id, action, exam_submission=exam_submission)
         self.catalog.get(unit_id)
         with operation_lock(self.directory / "locks", unit_id):
             existing = self.store.lab(unit_id)
@@ -350,6 +357,10 @@ class Service:
                             other.state = "stopped"
                             self._save(other)
                 if isinstance(runtime, LinuxRuntime):
+                    if "helm" in unit.capabilities:
+                        from dockyard.toolchain import Toolchain
+
+                        Toolchain(self.tools).ensure("helm", cancel, runtime.report)
                     runtime.prepare(unit.nodes, cancel)
                     runtime.install_node_packages(cancel, unit.native_version)
                     if lab.resources.get("prepared_revision") != str(unit.revision):

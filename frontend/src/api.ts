@@ -1,4 +1,4 @@
-import type { Assessment, Lab, Unit } from "./contracts.gen";
+import type { Assessment, Exam, ExamAttempt, Lab, Unit } from "./contracts.gen";
 
 export type Primer = {
   id: string;
@@ -72,6 +72,8 @@ export type Checkpoint = {
   archive: string;
 };
 export type State = {
+  exams: ExamAttempt[];
+  exam_readiness: Record<string, string | null>;
   checkpoints: Checkpoint[];
   progress: Record<string, Progress>;
   labs: Lab[];
@@ -91,6 +93,7 @@ export type Catalog = {
   modules: Module[];
   units: UnitSummary[];
   placement: PlacementBenchmark[];
+  exams: Exam[];
 };
 export type Doctor = {
   tools: Record<string, string | null>;

@@ -49,6 +49,43 @@ export type Evidence = {
   "points": number;
 };
 
+export type Exam = {
+  "id": string;
+  "unit_id": string;
+  "title": string;
+  "track": "CKA" | "CKAD";
+  "minutes": number;
+  "tasks": Array<ExamTask>;
+  "reference_policy": string;
+};
+
+export type ExamAttempt = {
+  "id": string;
+  "exam_id": string;
+  "unit_id": string;
+  "lab_id": string;
+  "revision": number;
+  "state": "active" | "grading" | "finished" | "invalidated";
+  "started_at": string;
+  "deadline": string;
+  "finished_at": string | null;
+  "selected_task": string;
+  "flagged": Array<string>;
+  "reason": string;
+  "assessment_id": string | null;
+  "score": number | null;
+  "task_scores": Record<string, number>;
+};
+
+export type ExamTask = {
+  "id": string;
+  "title": string;
+  "brief": string;
+  "weight": number;
+  "criteria": Array<string>;
+  "remediation": Array<string>;
+};
+
 export type Lab = {
   "id": string;
   "unit_id": string;
@@ -129,4 +166,4 @@ export type Unit = {
   "starter_failure_checks": Array<string>;
 };
 
-export type UnitKind = "lesson" | "mission" | "incident";
+export type UnitKind = "lesson" | "mission" | "incident" | "exam";

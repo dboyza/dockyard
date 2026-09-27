@@ -1,0 +1,166 @@
+id: i06-service-selector
+revision: 1
+module: 10
+order: 90
+title: Every API Pod is ready but the Service has no endpoints
+summary: A release-label change leaves two ready replicas and working Pod addresses, while requests to
+  the stable Service stop connecting.
+kind: incident
+runtime: kubernetes
+minutes: 35
+outcomes:
+- Diagnose the reported boundary from live evidence.
+- Restore useful behavior while preserving the original state and operating constraints.
+prerequisites:
+- m10-mission
+objectives:
+- ckad.debugging
+- cka.service-diagnosis
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which observation would establish recovery?
+  options:
+  - A fresh end-to-end request succeeds and the original data remains.
+  - The latest command exited zero.
+  - A replacement Pod exists.
+  correct: 0
+  explanation: Recovery requires useful behavior and the stated preservation constraints.
+hints:
+- Compare the Service selector with every label on the ready Pods.
+- 'A Service selector is a conjunction: each listed key must match.'
+- Remove the stale release-channel requirement or align the workload labels while retaining the stable
+  app boundary, then test a fresh job through the Service.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
+- https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - prepare.sh
+  timeout: 360
+checks:
+- id: incident-preserved
+  title: The original namespace, database claim, and stored job remain
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - selector
+    timeout: 120
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-available
+  title: Two API replicas are available
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - selector
+    timeout: 120
+  expectation: json
+  json_path:
+  - available
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-route
+  title: The Service reaches exactly the two ready API backends
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - selector
+    timeout: 120
+  expectation: json
+  json_path:
+  - route
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-workflow
+  title: A fresh job completes and PostgreSQL contains its result
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - selector
+    timeout: 120
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-contract
+  title: The repaired workload retains its probe or memory contract
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - selector
+    timeout: 120
+  expectation: json
+  json_path:
+  - contract
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-release-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent scoped repairs are accepted when the observed outcomes and explicit budgets hold.
+failure_modes:
+- Healthy process state alone does not demonstrate a working request path or completed background job.
+starter_failure_checks:
+- incident-route
+- incident-workflow

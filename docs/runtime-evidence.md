@@ -492,3 +492,32 @@ The final recovery/handoff audit completed seven activities in 1275.86 seconds; 
 All 96 course units now have successful actual-runtime starter/reference audits.
 That evidence establishes the tested functional contracts, not learner effectiveness or certification readiness.
 The remaining incident audits, exam system, export/import, cache readiness, and final release gates are still in progress.
+
+## Incident expansion, lifecycle recovery, and original timed practice
+
+The next six incidents passed actual starter/reference audits: a wrong named readiness port, an extra Service selector, failed private-registry pull authentication, an unschedulable delayed-binding claim, regressed dependency egress, and real worker memory exhaustion.
+The registry check publishes an actual ARM64 image through the Registry V2 API, verifies anonymous denial and the recorded manifest digest, and runs a fresh authenticated pull.
+The storage check writes through the original claim and reads the fresh marker from a second consumer.
+The memory incident observes a real OOM termination and requires bounded resources, actual resident memory, stable restarts, and a completed job after repair.
+Its deliberate restart behavior is excluded from the generic container-restart fingerprint and assessed explicitly by that incident's observer.
+
+A native Stop/Resume reproduction exposed Node Ready appearing before application containers finished restarting.
+Resume now waits for fresh node-agent leases, a new scheduler assignment where scheduling previously worked, and any previously healthy application readiness.
+The retained repaired incident passed all criteria immediately after Stop and Resume.
+The final two native incidents remain in the full starter/reference audit queue.
+
+All four original eight-task exam sets are authored, with two CKAD application environments and two CKA native administration environments.
+The structural audit passes for 96 course units, 12 incidents, four exams, and 51 objective records.
+The first CKAD reference passed every actual criterion in the retained disposable cluster, including a completed audit Job after an initial failed Pod.
+The grader selects a successful Pod owned by that Job instead of relying on kubectl's arbitrary choice when requesting Job logs.
+The remaining three exam environments still require their actual starter/reference audits.
+
+Five timed-engine tests verify weighted partial credit, saved deadlines and flags, idempotent submission, automatic deadline submission without a browser, and explicit invalidation without a zero score on technical failure.
+The installed browser verified an unavailable private kubectl produces an invalidated attempt without a score.
+The full successful installed exam journey is still under verification.
+Desktop and narrow active-exam screenshots were directly inspected.
+The package source archive contains no runtime profiles, private artifacts, tool caches, or node_modules.
+
+Exam practice policy links were checked against the Linux Foundation's allowed-resources page on 2026-09-27.
+Gateway API documentation is listed for CKA-oriented practice only; task-specific linked official references are explicit.
+These are original local practice tasks, not copied certification questions or a reproduction of proctoring.

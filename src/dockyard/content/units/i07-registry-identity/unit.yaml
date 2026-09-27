@@ -1,0 +1,166 @@
+id: i07-registry-identity
+revision: 1
+module: 16
+order: 90
+title: The release exists but new Pods cannot pull it
+summary: The local registry contains the release, while replacement API Pods remain in image-pull backoff
+  after a credential rotation.
+kind: incident
+runtime: kubernetes
+minutes: 40
+outcomes:
+- Diagnose the reported boundary from live evidence.
+- Restore useful behavior while preserving the original state and operating constraints.
+prerequisites:
+- m16-mission
+objectives:
+- ckad.images
+- ckad.secrets
+- ckad.debugging
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which observation would establish recovery?
+  options:
+  - A fresh end-to-end request succeeds and the original data remains.
+  - The latest command exited zero.
+  - A replacement Pod exists.
+  correct: 0
+  explanation: Recovery requires useful behavior and the stated preservation constraints.
+hints:
+- Compare the exact registry authority, image reference, Pod events, and imagePullSecrets namespace.
+- The registry is reachable and the image exists. The workload Secret contains an expired practice identity.
+- Create a kubernetes.io/dockerconfigjson Secret for the exact authority in registry.txt using learner
+  and DOCKYARD_REGISTRY_PASSWORD, then retry the rollout with Always pull policy.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
+- https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - prepare.sh
+  timeout: 360
+checks:
+- id: incident-preserved
+  title: The original namespace, database claim, and stored job remain
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.registry_incident
+    timeout: 120
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-available
+  title: Two API replicas are available
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.registry_incident
+    timeout: 120
+  expectation: json
+  json_path:
+  - available
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-route
+  title: The Service reaches exactly the two ready API backends
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.registry_incident
+    timeout: 120
+  expectation: json
+  json_path:
+  - route
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-workflow
+  title: A fresh job completes and PostgreSQL contains its result
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.registry_incident
+    timeout: 120
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-contract
+  title: A fresh Pod authenticates and executes the private registry release
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.registry_incident
+    timeout: 120
+  expectation: json
+  json_path:
+  - contract
+  expected: 'true'
+  diagnostic: Keep registry authentication and Always pull policy; repair the workload identity for the
+    exact registry authority.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+- registry-auth
+checkpoint: dispatch-release-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- registry
+alternatives:
+- Equivalent scoped repairs are accepted when the observed outcomes and explicit budgets hold.
+failure_modes:
+- Healthy process state alone does not demonstrate a working request path or completed background job.
+starter_failure_checks:
+- incident-available
+- incident-route
+- incident-contract
+- incident-workflow

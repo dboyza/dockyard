@@ -1,0 +1,154 @@
+id: i11-kubelet-config
+revision: 1
+module: 23
+order: 90
+title: A worker becomes NotReady after a node configuration edit
+summary: The control-plane API remains available, but a worker stops reporting readiness after a kubelet
+  configuration change.
+kind: incident
+runtime: linux
+nodes: 2
+minutes: 50
+outcomes:
+- Distinguish a failed node agent from a healthy control plane.
+- Repair a kubelet parsing failure using its service journal.
+- Preserve node identity and verify readiness, fresh scheduling, and recovered application work.
+prerequisites:
+- m23-mission
+objectives:
+- cka.nodes
+- cka.components
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The API works and old containers run, but the worker is NotReady. What should be inspected
+    first?
+  options:
+  - The worker kubelet service journal and configuration.
+  - The image registry password.
+  - A replacement cluster installation.
+  correct: 0
+  explanation: Node readiness depends on kubelet reports; existing containers can outlive a node-agent
+    failure.
+hints:
+- Compare the worker Node conditions with control-plane API health.
+- Inspect systemctl status kubelet and journalctl -u kubelet on the recorded worker, then locate its configuration.
+- Repair shutdownGracePeriod as a valid duration, restart kubelet, and wait for the node and application
+  workloads to recover.
+sources:
+- https://kubernetes.io/docs/tasks/administer-cluster/kubelet-config-file/
+- https://kubernetes.io/docs/tasks/debug/debug-cluster/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.native_incident
+  - kubelet
+  timeout: 240
+checks:
+- id: recovery-preserved
+  title: Original namespace, nodes, sentinel identity, and database row survive
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - kubelet
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved evidence and the relevant host, API, or application boundary.
+- id: recovery-components
+  title: Kubelet and all four control-plane processes run behind a ready API
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - kubelet
+    timeout: 240
+  expectation: json
+  json_path:
+  - components
+  expected: 'true'
+  diagnostic: Inspect the components evidence and the relevant host, API, or application boundary.
+- id: recovery-scheduled
+  title: A fresh Pod receives a real scheduler assignment
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - kubelet
+    timeout: 240
+  expectation: json
+  json_path:
+  - scheduled
+  expected: 'true'
+  diagnostic: Inspect the scheduled evidence and the relevant host, API, or application boundary.
+- id: recovery-workflow
+  title: A new browser and cross-node Dispatch transaction completes
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - kubelet
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow evidence and the relevant host, API, or application boundary.
+- id: incident-recovered
+  title: The original worker reports Ready with an active kubelet
+  explanation: Use current host and API evidence, not a similarly named replacement.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - kubelet
+    timeout: 240
+  expectation: json
+  json_path:
+  - incident
+  expected: 'true'
+  diagnostic: Recheck the original node agent or original API object identity after the targeted recovery.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
+- Runtime outcomes and original identities are assessed, not shell history.
+failure_modes:
+- Node Ready can precede application restart completion after a VM resume.
+- Resetting or rejoining can discard identity without repairing invalid configuration.
+starter_failure_checks:
+- incident-recovered

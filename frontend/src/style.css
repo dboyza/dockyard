@@ -2130,3 +2130,123 @@ pre {
     display: none;
   }
 }
+
+.exam-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.exam-toolbar > div {
+  min-width: 0;
+}
+.exam-toolbar p {
+  overflow-wrap: anywhere;
+}
+.exam-clock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.exam-clock strong {
+  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+}
+.exam-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+.exam-tasks {
+  padding: 8px;
+}
+.exam-tasks button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 10px;
+  background: none;
+  border: 0;
+  text-align: left;
+}
+.exam-tasks button.selected {
+  background: var(--surface-alt);
+  color: var(--blue);
+}
+.exam-tasks button > span:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+.exam-tasks strong {
+  display: block;
+  font-weight: 500;
+  font-size: 12px;
+}
+.exam-tasks small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 5px;
+}
+.exam-task-number {
+  color: var(--muted);
+  font-size: 10px;
+}
+.exam-task {
+  min-width: 0;
+}
+.exam-policy summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.exam-result h2 {
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+}
+.exam-remediation {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  margin-top: 26px;
+}
+.exam-evidence {
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+.exam-evidence summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.exam-evidence pre {
+  overflow: auto;
+  max-height: 300px;
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1000px) {
+  .exam-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .exam-tasks {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .exam-tasks {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .exam-task .section-heading {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

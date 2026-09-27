@@ -15,6 +15,7 @@ export type Page =
   | "course"
   | "incidents"
   | "placement"
+  | "exams"
   | "review"
   | "lesson"
   | "labs"
@@ -23,6 +24,8 @@ export type Page =
   | "reference";
 type Dialog = { title: string; body: string; action: () => void } | null;
 const emptyState: State = {
+  exams: [],
+  exam_readiness: {},
   checkpoints: [],
   progress: {},
   labs: [],
@@ -37,6 +40,7 @@ export function useWorkbench() {
   const [referenceFocus, setReferenceFocus] = useState("primer/terminal");
   const [state, setState] = useState<State>(emptyState);
   const [page, setPage] = useState<Page>("home");
+  const [examId, setExamId] = useState<string | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [tab, setTab] = useState<"learn" | "mission" | "evidence">("learn");
   const [search, setSearch] = useState("");
@@ -131,7 +135,16 @@ export function useWorkbench() {
     setReferenceFocus(focus);
     navigate("reference");
   };
+  const openExam = (id: string | null) => {
+    setExamId(id);
+    navigate("exams");
+  };
   const openLesson = async (id: string) => {
+    const exam = catalog?.exams.find((item) => item.unit_id === id);
+    if (exam) {
+      openExam(exam.id);
+      return;
+    }
     const sequence = ++opened.current;
     setBusy("Opening lesson");
     setError("");
@@ -272,7 +285,7 @@ export function useWorkbench() {
     units.find((unit) => unit.id === state.last_unit) ||
     units.find(
       (unit) =>
-        unit.kind !== "incident" &&
+        (unit.kind === "lesson" || unit.kind === "mission") &&
         !currentPractice(unit.revision, state.progress[unit.id]),
     ) ||
     units[0];
@@ -283,6 +296,8 @@ export function useWorkbench() {
   );
 
   return {
+    examId,
+    openExam,
     library,
     referenceFocus,
     setReferenceFocus,

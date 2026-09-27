@@ -1,0 +1,222 @@
+id: exam-cka-b
+revision: 1
+module: 24
+order: 101
+title: Native cluster maintenance assessment
+summary: Eight original tasks combine real adjacent-version maintenance, static-component recovery, certificate
+  renewal, and application continuity.
+kind: exam
+runtime: linux
+nodes: 2
+minutes: 120
+outcomes:
+- Upgrade the existing cluster in place
+- Renew the served API certificate
+- Recover the missing static scheduler
+- Grant release automation a narrow scale capability
+- Repair the stable release selector
+- Repair dependency egress without widening trust
+- Protect one available API during voluntary disruption
+- Prove operational continuity after maintenance
+prerequisites:
+- m24-mission
+objectives:
+- cka.lifecycle
+- cka.components
+- cka.rbac
+- cka.service-diagnosis
+- cka.network-policy
+- cka.scheduling
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: What makes a completed practice score useful for review?
+  options:
+  - Recorded runtime outcomes tied to task requirements.
+  - The number of commands typed.
+  - A claim that the score guarantees certification.
+  correct: 0
+  explanation: The score reports observed outcomes and directs review; it is not an official certification
+    result.
+hints:
+- Separate a healthy API from the failing node agent or missing API objects.
+- Read the worker service journal and its configuration, or inspect the supplied snapshot and original
+  recovery contract.
+- Repair the invalid kubelet duration without resetting the node; for state loss, restore the verified
+  snapshot with revision bump and compaction, then verify original identities and fresh work.
+sources:
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
+- https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.exam_maintenance
+  timeout: 180
+checks:
+- id: exam-upgrade
+  title: Upgrade the existing cluster in place
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - upgrade
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+- id: exam-renewed
+  title: Renew the served API certificate
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - renewed
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+- id: exam-scheduler
+  title: Recover the missing static scheduler
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - scheduler
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+- id: exam-rbac
+  title: Grant release automation a narrow scale capability
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - rbac
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+- id: exam-service
+  title: Repair the stable release selector
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - service
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+- id: exam-network
+  title: Repair dependency egress without widening trust
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - network
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+- id: exam-budget
+  title: Protect one available API during voluntary disruption
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - budget
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+- id: exam-preserved
+  title: Prove operational continuity after maintenance
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+- id: exam-workflow
+  title: Prove operational continuity after maintenance
+  explanation: Observe actual maintenance outcomes and preserved identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_maintenance
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+- helm
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
+- Runtime outcomes and original identities are assessed, not shell history.
+failure_modes:
+- A replacement object with matching contents has a different identity.
+- Existing running containers do not prove reconciliation or new scheduling.
+- An etcd backup does not contain application persistent-volume contents.
+starter_failure_checks:
+- exam-upgrade
+- exam-renewed
+- exam-scheduler
+- exam-rbac
+- exam-service
+- exam-network
+- exam-budget
+native_version: 1.34.12

@@ -1,0 +1,435 @@
+[
+  {
+    "id": "ckad-release",
+    "unit_id": "exam-ckad-a",
+    "title": "Dispatch release assessment",
+    "track": "CKAD",
+    "minutes": 120,
+    "tasks": [
+      {
+        "id": "release",
+        "title": "Build the release artifact",
+        "weight": 20,
+        "criteria": [
+          "exam-image"
+        ],
+        "remediation": [
+          "m02-multistage",
+          "m16-pipeline"
+        ],
+        "brief": "Build the supplied application as release `dispatch-exam-a` using the workspace VERSION file.\nRepair its Dockerfile so the ordinary image entry point runs the API as a nonroot user.\nLoad the resulting image into this owned kind cluster and run two Dispatch API replicas from it.\nPreserve the supplied API and worker application behavior.\nYou may use a new local image tag or replace the existing practice tag and deliberately restart the workload."
+      },
+      {
+        "id": "configuration",
+        "title": "Consume the accepted configuration",
+        "weight": 10,
+        "criteria": [
+          "exam-configuration"
+        ],
+        "remediation": [
+          "m09-configmaps"
+        ],
+        "brief": "Make both API replicas report environment `assessment` and banner `Dispatch release accepted` through their actual `/config` endpoint.\nUse the existing `dispatch-settings` ConfigMap as the environment and mounted-file source.\nDo not change the supplied application code to hard-code these values."
+      },
+      {
+        "id": "health",
+        "title": "Separate health signals",
+        "weight": 15,
+        "criteria": [
+          "exam-probes"
+        ],
+        "remediation": [
+          "m12-probes"
+        ],
+        "brief": "Keep a startup probe on `/startupz` with at least a 30-second failure budget, liveness on `/healthz`, and dependency-aware readiness on `/readyz`.\nUse the actual API listener on 8080.\nThe released replicas must finish startup and report their database and queue ready."
+      },
+      {
+        "id": "schedule",
+        "title": "Schedule a release audit",
+        "weight": 10,
+        "criteria": [
+          "exam-schedule"
+        ],
+        "remediation": [
+          "m08-jobs"
+        ],
+        "brief": "Configure CronJob `release-audit` for 02:17 every day in UTC, prevent overlapping executions, and leave it unsuspended.\nIts supplied command requests the live Service health endpoint.\nCreate Job `release-audit-proof` from this CronJob and demonstrate successful completion with the `dispatch-exam-a` release in its output."
+      },
+      {
+        "id": "service",
+        "title": "Recover the stable request path",
+        "weight": 15,
+        "criteria": [
+          "exam-route",
+          "exam-workflow"
+        ],
+        "remediation": [
+          "m10-services"
+        ],
+        "brief": "Retain Service `dispatch` on port 8080 and restore its route to exactly the two ready API backends.\nA fresh submitted job must complete in a worker and have the same result stored in PostgreSQL.\nDo not bypass the Service with a Pod address or publish unready backends."
+      },
+      {
+        "id": "storage",
+        "title": "Persist the report workspace",
+        "weight": 10,
+        "criteria": [
+          "exam-storage",
+          "exam-preserved"
+        ],
+        "remediation": [
+          "m11-claims"
+        ],
+        "brief": "Mount the original `reports` ReadWriteOnce claim at `/archive` in Deployment `reporter`.\nThe existing emptyDir mount does not meet the persistence requirement.\nKeep one running reporter and the original claim identity.\nA fresh file written through that mount must be readable from a second consumer of the same claim.\nAlso preserve the original Dispatch namespace, database claim, and seeded job."
+      },
+      {
+        "id": "sidecar",
+        "title": "Connect initialization and log observation",
+        "weight": 10,
+        "criteria": [
+          "exam-sidecar"
+        ],
+        "remediation": [
+          "m08-patterns"
+        ],
+        "brief": "Create Pod `audit-tail` with init container `seed` and ordinary containers `producer` and `tailer`.\nAll three must share an emptyDir mounted at `/shared`.\nThe init container writes `release audit ready` into `/shared/events` before completing successfully.\nThe producer appends `dispatch-exam-a` and remains running.\nThe tailer emits the file's existing and newly appended lines to its own container log.\nUse the supplied Python image and keep both ordinary containers running.\nThe observer will append a fresh marker from the producer and require it to appear in the tailer's log."
+      },
+      {
+        "id": "network",
+        "title": "Constrain an audit endpoint",
+        "weight": 10,
+        "criteria": [
+          "exam-network"
+        ],
+        "remediation": [
+          "m17-network"
+        ],
+        "brief": "Restrict ingress to the `audit-target` Pods on TCP 8080 to Pods in the same namespace with `role: audit-reader`.\nThe supplied `audit-reader` must connect and `audit-outsider` must be denied.\nKeep the target and both clients running; a stopped client does not establish a denied connection.\nDo not change the clients' labels or replace their processes with a fabricated success response."
+      }
+    ],
+    "reference_policy": "Work independently using local command help, installed manuals, Kubernetes documentation and blog, and Helm documentation.\nTask-specific official documentation linked in the supplied task materials is permitted.\nUse the recorded isolated kubeconfig and ordinary external terminal.\nDo not use Dockyard hints or reference solutions during the timed attempt.\nThe timer starts only after environment preparation and lasts 120 minutes.\nClosing the browser does not pause the persisted deadline.\nKeep the foreground Dockyard launcher running so it can capture the final state at expiry.\nUnavailable or changing environments produce an invalidated attempt without a score.\n\nThese are original practice tasks with a deliberately limited local resource budget.\nThey do not reproduce exam proctoring, and the weighted score is not a certification result or a pass prediction.\nOfficial policies can change; consult the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and [CKA/CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad) before an official exam.\nPolicy links checked on 2026-09-27."
+  },
+  {
+    "id": "ckad-delivery",
+    "unit_id": "exam-ckad-b",
+    "title": "Dispatch delivery assessment",
+    "track": "CKAD",
+    "minutes": 120,
+    "tasks": [
+      {
+        "id": "digest",
+        "title": "Pin the accepted private artifact",
+        "weight": 15,
+        "criteria": [
+          "exam-digest"
+        ],
+        "remediation": [
+          "m16-pipeline"
+        ],
+        "brief": "The private registry and its pull credential are healthy.\nResolve the tested `dispatch:incident` image in the registry named in `registry.txt` and pin both stable API replicas to its immutable manifest digest.\nKeep authenticated pull resolution with imagePullPolicy Always.\nThe actual running release must remain the supplied stable application.\nUse the lab's DOCKYARD_REGISTRY_PASSWORD only for this owned registry; do not publish credentials."
+      },
+      {
+        "id": "credential",
+        "title": "Restore dependency access and remove the API token",
+        "weight": 15,
+        "criteria": [
+          "exam-credential",
+          "exam-workflow"
+        ],
+        "remediation": [
+          "m09-secrets",
+          "m17-rbac"
+        ],
+        "brief": "Repair the stable API's projected database credential path so its dependency-aware readiness succeeds.\nThe correct existing Secret is mounted at `/var/run/dispatch` with a `password` key.\nDisable automatic service-account token mounting for these application Pods, which do not call the Kubernetes API.\nA fresh Dispatch job must complete through the stable Service and persist its result."
+      },
+      {
+        "id": "resources",
+        "title": "Fit the workers into a deliberate resource budget",
+        "weight": 10,
+        "criteria": [
+          "exam-resources"
+        ],
+        "remediation": [
+          "m13-resources"
+        ],
+        "brief": "Run two available workers with positive CPU requests no larger than their limits, and CPU limits of at most 500m per worker.\nUse memory requests of at least 32Mi, requests no larger than limits, and memory limits of at most 256Mi.\nThe running containers must have the effective cgroup memory limit.\nDo not replace the supplied worker process or scale it away."
+      },
+      {
+        "id": "overlay",
+        "title": "Apply production metadata through Kustomize",
+        "weight": 10,
+        "criteria": [
+          "exam-overlay"
+        ],
+        "remediation": [
+          "m14-kustomize"
+        ],
+        "brief": "Complete `release/overlays/production` so the rendered configuration and live `metadata-reader` consume environment `production` and release `dispatch-approved-b`.\nKeep the base reusable and use an overlay ConfigMap generator merge for the production values.\nApply the overlay, preserving its generated ConfigMap reference in the workload.\nThe reader must serve both values from its mounted files."
+      },
+      {
+        "id": "preview",
+        "title": "Recover a controlled preview rollout",
+        "weight": 15,
+        "criteria": [
+          "exam-preview"
+        ],
+        "remediation": [
+          "m12-rollouts"
+        ],
+        "brief": "Repair Deployment `preview-api` using the supplied local image `$DOCKYARD_IMAGE-preview`.\nRun two ready API replicas serving release `dispatch-preview-b`.\nConfigure a rolling update with zero unavailable replicas and one surge replica, preserving the stable Deployment separately.\nBoth replicas must run the supplied API and become dependency-ready."
+      },
+      {
+        "id": "listener",
+        "title": "Recover the report listener",
+        "weight": 10,
+        "criteria": [
+          "exam-listener"
+        ],
+        "remediation": [
+          "m15-observation"
+        ],
+        "brief": "Diagnose the `report-listener` process from its logs and environment.\nConfigure its PORT as 8090 and retain its supplied Python HTTP server.\nKeep Service `reports` on port 8080, routing to the actual 8090 listener.\nAn ordinary HTTP request through the Service must succeed."
+      },
+      {
+        "id": "archive",
+        "title": "Restore the accepted report into its existing claim",
+        "weight": 10,
+        "criteria": [
+          "exam-archive",
+          "exam-preserved"
+        ],
+        "remediation": [
+          "m11-statefulsets"
+        ],
+        "brief": "Restore the exact bytes of `report-backup.json` as `/archive/report.json` in Deployment `report-cache`.\nPreserve and use its original `report-cache` claim at `/archive`.\nKeep the backup unchanged, and preserve the original Dispatch namespace, database claim, and seeded application row.\nThe recovered report is separate from the application's database recovery contract."
+      },
+      {
+        "id": "routing",
+        "title": "Separate stable and preview traffic",
+        "weight": 15,
+        "criteria": [
+          "exam-routing"
+        ],
+        "remediation": [
+          "m12-strategies"
+        ],
+        "brief": "Repair Service `preview` to select exactly the ready preview API replicas.\nKeep Service `dispatch` selecting exactly the ready stable API replicas.\nActual requests through the two Services must return their respective stable and preview release identities.\nRetain both Services on port 8080."
+      }
+    ],
+    "reference_policy": "Work independently using local command help, installed manuals, Kubernetes documentation and blog, and Helm documentation.\nTask-specific official documentation linked in the supplied task materials is permitted.\nUse the recorded isolated kubeconfig and ordinary external terminal.\nDo not use Dockyard hints or reference solutions during the timed attempt.\nThe timer starts only after environment preparation and lasts 120 minutes.\nClosing the browser does not pause the persisted deadline.\nKeep the foreground Dockyard launcher running so it can capture the final state at expiry.\nUnavailable or changing environments produce an invalidated attempt without a score.\n\nThese are original practice tasks with a deliberately limited local resource budget.\nThey do not reproduce exam proctoring, and the weighted score is not a certification result or a pass prediction.\nOfficial policies can change; consult the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and [CKA/CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad) before an official exam.\nPolicy links checked on 2026-09-27."
+  },
+  {
+    "id": "cka-operations",
+    "unit_id": "exam-cka-a",
+    "title": "Native cluster operations assessment",
+    "track": "CKA",
+    "minutes": 120,
+    "tasks": [
+      {
+        "id": "backup",
+        "title": "Capture and inspect a live etcd backup",
+        "weight": 15,
+        "criteria": [
+          "exam-backup"
+        ],
+        "remediation": [
+          "m23-etcd"
+        ],
+        "brief": "Save a new snapshot of the running primary etcd member as `/var/lib/etcd/operations-a.db` inside its mounted data directory.\nUse authenticated TLS and verify the snapshot using etcdutl.\nIts revision must include the current exam baseline and its key count and integrity hash must be valid.\nDo not stop or replace the cluster to satisfy a backup task."
+      },
+      {
+        "id": "rbac",
+        "title": "Provide a limited incident observer",
+        "weight": 10,
+        "criteria": [
+          "exam-rbac"
+        ],
+        "remediation": [
+          "m17-rbac"
+        ],
+        "brief": "Grant existing ServiceAccount `incident-observer` in namespace `dispatch` get, list, and watch for Pods and get for Pod logs in that namespace.\nIt must not read Secrets, create or delete Pods, or update Deployments.\nVerify effective authorization, including the denied operations."
+      },
+      {
+        "id": "dns",
+        "title": "Recover cluster-name resolution for the client",
+        "weight": 10,
+        "criteria": [
+          "exam-dns"
+        ],
+        "remediation": [
+          "m22-dns"
+        ],
+        "brief": "Restore resolution of `dispatch.dispatch.svc.cluster.local` from Deployment `trusted-client` in namespace `frontend`.\nIts DNS policy changed during a maintenance edit.\nUse the cluster DNS configuration and retain the original client process."
+      },
+      {
+        "id": "storage",
+        "title": "Recover the existing database volume placement",
+        "weight": 15,
+        "criteria": [
+          "exam-storage",
+          "exam-preserved"
+        ],
+        "remediation": [
+          "m22-storage"
+        ],
+        "brief": "Recover database StatefulSet `db` using its existing claim and the worker-local volume.\nIts current node selector names an unavailable node.\nThe original worker is identified by DOCKYARD_WORKER and has a `dockyard.io/batch=true:NoSchedule` taint that must remain.\nSelect that worker and add the necessary toleration for the database.\nPreserve the original namespace, both Node identities, maintenance sentinel, database claim, and seeded row."
+      },
+      {
+        "id": "agents",
+        "title": "Run one observation agent on every native node",
+        "weight": 10,
+        "criteria": [
+          "exam-agents"
+        ],
+        "remediation": [
+          "m08-patterns"
+        ],
+        "brief": "Create DaemonSet `node-observer` in namespace `dispatch` with one ready Python process on each of the two native nodes.\nUse the supplied application image and a long-running Python process; no privileged host mounts are needed.\nAccount for node taints through appropriate tolerations.\nDo not remove the worker's dedicated taint or change the DaemonSet into a Deployment."
+      },
+      {
+        "id": "placement",
+        "title": "Place the batch audit on its dedicated worker",
+        "weight": 10,
+        "criteria": [
+          "exam-placement"
+        ],
+        "remediation": [
+          "m13-placement"
+        ],
+        "brief": "Repair Deployment `batch-audit` so one available replica runs on the original worker.\nUse its `dockyard.io/pool=batch` node label and tolerate `dockyard.io/batch=true:NoSchedule`.\nRetain that label and taint, and use a node selector rather than hard-coding a Pod nodeName."
+      },
+      {
+        "id": "chart",
+        "title": "Install the operations report with a Helm override",
+        "weight": 10,
+        "criteria": [
+          "exam-chart"
+        ],
+        "remediation": [
+          "m14-helm"
+        ],
+        "brief": "Install the supplied `ops-chart` as Helm release `operations-report` in namespace `dispatch`.\nOverride its environment to `production` while retaining its supplied running HTTP consumer.\nVerify the Helm release is deployed and the actual process serves production from `/environment`."
+      },
+      {
+        "id": "transport",
+        "title": "Recover useful cross-node application traffic",
+        "weight": 20,
+        "criteria": [
+          "exam-transport",
+          "exam-workflow"
+        ],
+        "remediation": [
+          "m22-packets"
+        ],
+        "brief": "Repair the worker's disabled IPv4 forwarding without replacing the node or disabling the CNI.\nThe trusted frontend on the control-plane node must reach the API Service on the worker.\nThe browser-ready endpoint and a fresh Dispatch job must succeed, including the independently stored worker result.\nKeep the existing network policies and original application components."
+      }
+    ],
+    "reference_policy": "Work independently using local command help, installed manuals, Kubernetes documentation and blog, and Helm documentation.\nGateway API documentation is also permitted for CKA-oriented practice.\nTask-specific official documentation linked in the supplied task materials is permitted.\nUse the recorded isolated kubeconfig and ordinary external terminal.\nDo not use Dockyard hints or reference solutions during the timed attempt.\nThe timer starts only after environment preparation and lasts 120 minutes.\nClosing the browser does not pause the persisted deadline.\nKeep the foreground Dockyard launcher running so it can capture the final state at expiry.\nUnavailable or changing environments produce an invalidated attempt without a score.\n\nThese are original practice tasks with a deliberately limited local resource budget.\nThey do not reproduce exam proctoring, and the weighted score is not a certification result or a pass prediction.\nOfficial policies can change; consult the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and [CKA/CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad) before an official exam.\nPolicy links checked on 2026-09-27."
+  },
+  {
+    "id": "cka-maintenance",
+    "unit_id": "exam-cka-b",
+    "title": "Native cluster maintenance assessment",
+    "track": "CKA",
+    "minutes": 120,
+    "tasks": [
+      {
+        "id": "upgrade",
+        "title": "Upgrade the existing cluster in place",
+        "weight": 25,
+        "criteria": [
+          "exam-upgrade"
+        ],
+        "remediation": [
+          "m21-upgrade"
+        ],
+        "brief": "Upgrade the existing kubeadm cluster from 1.34.12 to 1.35.8, including the API server, control-plane components, kubeadm, and both kubelets.\nThe verified target packages can be staged with `python -m dockyard.native stage-upgrade`.\nRetain both original Node objects and the existing namespace and data.\nDrain and maintain nodes in a safe order, return both to Ready and schedulable, and preserve package holds.\nRecover the scheduler before starting this maintenance."
+      },
+      {
+        "id": "certificates",
+        "title": "Renew the served API certificate",
+        "weight": 10,
+        "criteria": [
+          "exam-renewed"
+        ],
+        "remediation": [
+          "m21-certificates"
+        ],
+        "brief": "Renew the primary API serving certificate under the existing cluster CA and make the API actually serve the renewed certificate.\nA changed certificate file alone is insufficient.\nDo not replace the cluster CA, disable TLS verification, or rebuild the cluster."
+      },
+      {
+        "id": "scheduler",
+        "title": "Recover the missing static scheduler",
+        "weight": 10,
+        "criteria": [
+          "exam-scheduler"
+        ],
+        "remediation": [
+          "m23-static-pods"
+        ],
+        "brief": "The kube-scheduler manifest was moved out of the kubelet manifest directory to `/var/lib/dockyard/maintenance-exam/kube-scheduler.yaml` on the primary guest.\nRestore the intended static component and establish a fresh scheduler assignment.\nKeep the API, controller manager, etcd, and primary kubelet running.\nComplete this recovery before draining or upgrading nodes."
+      },
+      {
+        "id": "authorization",
+        "title": "Grant release automation a narrow scale capability",
+        "weight": 10,
+        "criteria": [
+          "exam-rbac"
+        ],
+        "remediation": [
+          "m17-rbac"
+        ],
+        "brief": "Grant ServiceAccount `release-operator` in namespace `dispatch` get and list on Deployments, and get, patch, and update on the deployments/scale subresource in that namespace.\nIt must not read Secrets, create Pods, or delete Deployments.\nVerify effective authorization for allowed and denied operations."
+      },
+      {
+        "id": "service",
+        "title": "Repair the stable release selector",
+        "weight": 10,
+        "criteria": [
+          "exam-service"
+        ],
+        "remediation": [
+          "m10-services"
+        ],
+        "brief": "Remove the erroneous retired-release selector from Service `dispatch` while preserving its API selector and port 8080.\nThe Service must have exactly the two ready API backends and serve the real application health response to the trusted frontend.\nDo not enable publishNotReadyAddresses or bypass the Service."
+      },
+      {
+        "id": "network",
+        "title": "Repair dependency egress without widening trust",
+        "weight": 15,
+        "criteria": [
+          "exam-network"
+        ],
+        "remediation": [
+          "m17-network"
+        ],
+        "brief": "Restore the API's TCP connection to the existing Redis queue on 6379.\nKeep trusted frontend access, deny the untrusted frontend and outside namespace, and retain denial of unrelated API egress.\nPreserve database and worker paths and both TCP and UDP DNS.\nDo not disable policy enforcement or replace the network policies with an allow-all rule."
+      },
+      {
+        "id": "disruptions",
+        "title": "Protect one available API during voluntary disruption",
+        "weight": 10,
+        "criteria": [
+          "exam-budget"
+        ],
+        "remediation": [
+          "m21-drain"
+        ],
+        "brief": "Create PodDisruptionBudget `dispatch-maintenance` in namespace `dispatch` selecting both stable API replicas.\nWith two healthy replicas, permit exactly one voluntary disruption and preserve at least one available API replica.\nKeep both replicas deployed and available for the final observation."
+      },
+      {
+        "id": "continuity",
+        "title": "Prove operational continuity after maintenance",
+        "weight": 10,
+        "criteria": [
+          "exam-preserved",
+          "exam-workflow"
+        ],
+        "remediation": [
+          "m24-handoff"
+        ],
+        "brief": "Keep the original namespace, both Node UIDs, maintenance sentinel UID and value, and seeded database row.\nDemonstrate a fresh browser-ready response and a new cross-node Dispatch job that completes with the expected result in PostgreSQL.\nExisting old application responses alone do not establish the final recovery contract."
+      }
+    ],
+    "reference_policy": "Work independently using local command help, installed manuals, Kubernetes documentation and blog, and Helm documentation.\nGateway API documentation is also permitted for CKA-oriented practice.\nTask-specific official documentation linked in the supplied task materials is permitted.\nUse the recorded isolated kubeconfig and ordinary external terminal.\nDo not use Dockyard hints or reference solutions during the timed attempt.\nThe timer starts only after environment preparation and lasts 120 minutes.\nClosing the browser does not pause the persisted deadline.\nKeep the foreground Dockyard launcher running so it can capture the final state at expiry.\nUnavailable or changing environments produce an invalidated attempt without a score.\n\nThese are original practice tasks with a deliberately limited local resource budget.\nThey do not reproduce exam proctoring, and the weighted score is not a certification result or a pass prediction.\nOfficial policies can change; consult the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and [CKA/CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad) before an official exam.\nPolicy links checked on 2026-09-27."
+  }
+]

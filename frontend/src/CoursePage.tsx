@@ -69,7 +69,8 @@ export function CoursePage({ model }: { model: Workbench }) {
                     {units
                       .filter(
                         (unit) =>
-                          unit.module === module.id && unit.kind !== "incident",
+                          unit.module === module.id &&
+                          (unit.kind === "lesson" || unit.kind === "mission"),
                       )
                       .map(unitRow)}
                     {!units.some((unit) => unit.module === module.id) && (

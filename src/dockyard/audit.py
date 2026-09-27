@@ -7,14 +7,14 @@ from collections import Counter
 from typing import Any
 
 from dockyard.catalog import Catalog
-from dockyard.models import Exam, UnitKind
+from dockyard.models import UnitKind
 from dockyard.reference import library
 
 
 def curriculum(catalog: Catalog) -> dict[str, Any]:
     issues: list[str] = []
     units = catalog.units
-    course = [unit for unit in units.values() if unit.kind != UnitKind.INCIDENT]
+    course = [unit for unit in units.values() if unit.kind in {UnitKind.LESSON, UnitKind.MISSION}]
     incidents = [unit for unit in units.values() if unit.kind == UnitKind.INCIDENT]
     for module in range(1, 25):
         members = [unit for unit in course if unit.module == module]
@@ -73,12 +73,7 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
                     issues.append(
                         f"{objective['id']}: {identity} is guided rather than independent."
                     )
-    exams_path = catalog.root / "exams.json"
-    exams = (
-        [Exam.model_validate(item) for item in json.loads(exams_path.read_text())]
-        if exams_path.exists()
-        else []
-    )
+    exams = list(catalog.exams.values())
     if Counter(exam.track for exam in exams) != {"CKA": 2, "CKAD": 2}:
         issues.append("Exam inventory: two original CKA and two original CKAD exams are required.")
     if len({exam.id for exam in exams}) != len(exams):
@@ -86,9 +81,16 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
     for exam in exams:
         if exam.minutes != 120:
             issues.append(f"{exam.id}: the release default must be 120 minutes.")
+        exam_unit = units.get(exam.unit_id)
+        if exam_unit is None or exam_unit.kind != UnitKind.EXAM:
+            issues.append(f"{exam.id}: requires its own original exam environment.")
+            continue
+        assigned = [criterion for task in exam.tasks for criterion in task.criteria]
+        if len(set(assigned)) != len(assigned) or set(assigned) != {c.id for c in exam_unit.checks}:
+            issues.append(f"{exam.id}: tasks must assign every assessment criterion exactly once.")
         for task in exam.tasks:
-            if task.unit_id not in units:
-                issues.append(f"{exam.id}: unknown task {task.unit_id}.")
+            if any(identity not in units for identity in task.remediation):
+                issues.append(f"{exam.id}/{task.id}: unknown remediation unit.")
     library(catalog)
     return {
         "status": "pass" if not issues else "incomplete",

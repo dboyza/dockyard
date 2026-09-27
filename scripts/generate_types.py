@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from dockyard.models import Assessment, Lab, LabObservation, Unit
+from dockyard.models import Assessment, Exam, ExamAttempt, Lab, LabObservation, Unit
 
 
 def render(schema: dict) -> str:
@@ -37,7 +37,7 @@ def render(schema: dict) -> str:
 
 
 definitions = {}
-for model in (Unit, Assessment, Lab, LabObservation):
+for model in (Unit, Assessment, Lab, LabObservation, Exam, ExamAttempt):
     schema = model.model_json_schema(mode="serialization")
     definitions.update(schema.pop("$defs", {}))
     definitions[model.__name__] = schema

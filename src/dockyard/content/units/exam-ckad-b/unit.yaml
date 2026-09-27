@@ -1,0 +1,241 @@
+id: exam-ckad-b
+revision: 1
+module: 18
+order: 101
+title: Dispatch delivery assessment
+summary: Eight original delivery tasks covering immutable artifacts, process configuration, controlled
+  releases, and durable data.
+kind: exam
+runtime: kubernetes
+minutes: 120
+outcomes:
+- Pin the accepted private artifact
+- Restore dependency access and remove the API token
+- Fit the workers into a deliberate resource budget
+- Apply production metadata through Kustomize
+- Recover a controlled preview rollout
+- Recover the report listener
+- Restore the accepted report into its existing claim
+- Separate stable and preview traffic
+prerequisites:
+- m18-mission
+objectives:
+- ckad.images
+- ckad.secrets
+- ckad.application-security
+- ckad.limits-quotas
+- ckad.configmaps
+- ckad.strategies
+- ckad.debugging
+- ckad.volumes
+- ckad.services
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: What makes a completed practice score useful for review?
+  options:
+  - Recorded runtime outcomes tied to task requirements.
+  - The number of commands typed.
+  - A claim that the score guarantees certification.
+  correct: 0
+  explanation: The score reports observed outcomes and directs review; it is not an official certification
+    result.
+hints:
+- Review the task outcomes and inspect the affected controller, process, and request path.
+- Compare effective runtime state with the named object and persistence constraints.
+- After submission, use the task report and reference to plan a fresh independent attempt.
+sources:
+- https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
+- https://kubernetes.io/docs/concepts/containers/images/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - prepare.sh
+  timeout: 420
+checks:
+- id: exam-digest
+  title: Pin the accepted private artifact
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - digest
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-credential
+  title: Restore dependency access and remove the API token
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - credential
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-workflow
+  title: Restore dependency access and remove the API token
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-resources
+  title: Fit the workers into a deliberate resource budget
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - resources
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-overlay
+  title: Apply production metadata through Kustomize
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - overlay
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-preview
+  title: Recover a controlled preview rollout
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - preview
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-listener
+  title: Recover the report listener
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - listener
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-archive
+  title: Restore the accepted report into its existing claim
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - archive
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-preserved
+  title: Restore the accepted report into its existing claim
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+- id: exam-routing
+  title: Separate stable and preview traffic
+  explanation: Verify actual delivery behavior and the original task identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_delivery
+    timeout: 240
+  expectation: json
+  json_path:
+  - routing
+  expected: 'true'
+  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-release-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- registry
+alternatives:
+- Equivalent scoped repairs are accepted when the observed outcomes and explicit budgets hold.
+failure_modes:
+- Healthy process state alone does not demonstrate a working request path or completed background job.
+starter_failure_checks:
+- exam-digest
+- exam-credential
+- exam-resources
+- exam-overlay
+- exam-preview
+- exam-listener
+- exam-archive
+- exam-routing

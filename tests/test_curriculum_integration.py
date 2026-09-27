@@ -1,6 +1,7 @@
 """Authoring gate: fail the intended starter, run the reference, observe actual behavior."""
 
 import os
+import json
 import tempfile
 import time
 from pathlib import Path
@@ -37,6 +38,10 @@ def assert_reference(tmp_path, unit_id):
     unit = service.catalog.get(unit_id)
     try:
         service.perform(unit_id, "prepare")
+        if unit_id == "i11-kubelet-config":
+            # Suspending a diagnostic environment must preserve its intended fault.
+            service.perform(unit_id, "stop")
+            service.perform(unit_id, "resume")
         deadline = time.monotonic() + 30
         while True:
             starter = service.perform(unit_id, "check")
@@ -66,13 +71,19 @@ def assert_reference(tmp_path, unit_id):
             if observed["status"] == "pass" or time.monotonic() > deadline:
                 break
             time.sleep(0.25)
-        assert observed["status"] == "pass", observed
+        assert observed["status"] == "pass", json.dumps(observed, indent=2)
         assert observed["independent"] == (unit.kind != "lesson")
         assert service.store.progress()[unit_id]["practiced"] == 1
         if unit_id == "m20-ha":
             assert_ha_alternative_and_shortcut(service, unit_id)
         if unit_id == "m21-drain":
             assert_drain_alternative_and_shortcut(service, unit_id)
+        if unit_id == "i11-kubelet-config":
+            service.perform(unit_id, "stop")
+            service.perform(unit_id, "resume")
+            # Resume must finish before reporting a healthy lab ready for assessment.
+            resumed = service.perform(unit_id, "check")
+            assert resumed["status"] == "pass", resumed
     finally:
         service.perform(unit_id, "clean")
 

@@ -8,7 +8,7 @@ from typing import Any
 
 import yaml
 
-from dockyard.models import Unit
+from dockyard.models import Exam, Unit
 from dockyard.workspace import safe_relative
 
 CONTENT = Path(__file__).parent / "content"
@@ -50,6 +50,14 @@ class Catalog:
             for file_name in [*unit.starter, *unit.reference]:
                 safe_relative(file_name)
             self.units[unit.id] = unit
+        exam_path = root / "exams.json"
+        self.exams: dict[str, Exam] = {}
+        if exam_path.exists():
+            for item in json.loads(exam_path.read_text()):
+                exam = Exam.model_validate(item)
+                if exam.id in self.exams:
+                    raise ValueError("Duplicate exam identity.")
+                self.exams[exam.id] = exam
         placement = root / "placement.json"
         self.placement: list[dict[str, str]] = (
             json.loads(placement.read_text()) if placement.exists() else []
@@ -73,6 +81,7 @@ class Catalog:
         return {
             "modules": self.modules,
             "placement": self.placement,
+            "exams": [exam.model_dump(mode="json") for exam in self.exams.values()],
             "units": [
                 {
                     **unit.model_dump(

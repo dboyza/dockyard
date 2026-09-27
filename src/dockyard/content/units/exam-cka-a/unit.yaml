@@ -1,0 +1,237 @@
+id: exam-cka-a
+revision: 1
+module: 24
+order: 100
+title: Native cluster operations assessment
+summary: Eight native kubeadm operations tasks spanning backup, authorization, DNS, local storage, scheduling,
+  Helm, and host networking.
+kind: exam
+runtime: linux
+nodes: 2
+minutes: 120
+outcomes:
+- Capture and inspect a live etcd backup
+- Provide a limited incident observer
+- Recover cluster-name resolution for the client
+- Recover the existing database volume placement
+- Run one observation agent on every native node
+- Place the batch audit on its dedicated worker
+- Install the operations report with a Helm override
+- Recover useful cross-node application traffic
+prerequisites:
+- m24-mission
+objectives:
+- cka.lifecycle
+- cka.rbac
+- cka.coredns
+- cka.pv-pvc
+- cka.scheduling
+- cka.packaging
+- cka.pod-connectivity
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: What makes a completed practice score useful for review?
+  options:
+  - Recorded runtime outcomes tied to task requirements.
+  - The number of commands typed.
+  - A claim that the score guarantees certification.
+  correct: 0
+  explanation: The score reports observed outcomes and directs review; it is not an official certification
+    result.
+hints:
+- Separate a healthy API from the failing node agent or missing API objects.
+- Read the worker service journal and its configuration, or inspect the supplied snapshot and original
+  recovery contract.
+- Repair the invalid kubelet duration without resetting the node; for state loss, restore the verified
+  snapshot with revision bump and compaction, then verify original identities and fresh work.
+sources:
+- https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
+- https://etcd.io/docs/v3.6/op-guide/recovery/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.exam_admin
+  timeout: 180
+checks:
+- id: exam-backup
+  title: Capture and inspect a live etcd backup
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - backup
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-rbac
+  title: Provide a limited incident observer
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - rbac
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-dns
+  title: Recover cluster-name resolution for the client
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - dns
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-storage
+  title: Recover the existing database volume placement
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - storage
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-preserved
+  title: Recover the existing database volume placement
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-agents
+  title: Run one observation agent on every native node
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - agents
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-placement
+  title: Place the batch audit on its dedicated worker
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - placement
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-chart
+  title: Install the operations report with a Helm override
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - chart
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-transport
+  title: Recover useful cross-node application traffic
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - transport
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+- id: exam-workflow
+  title: Recover useful cross-node application traffic
+  explanation: Observe the real native cluster outcome against original identities.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.exam_admin
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+- helm
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
+- Runtime outcomes and original identities are assessed, not shell history.
+failure_modes:
+- A replacement object with matching contents has a different identity.
+- Existing running containers do not prove reconciliation or new scheduling.
+- An etcd backup does not contain application persistent-volume contents.
+starter_failure_checks:
+- exam-backup
+- exam-rbac
+- exam-dns
+- exam-storage
+- exam-agents
+- exam-placement
+- exam-chart
+- exam-transport

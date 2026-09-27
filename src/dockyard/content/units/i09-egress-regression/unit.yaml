@@ -1,0 +1,151 @@
+id: i09-egress-regression
+revision: 1
+module: 17
+order: 90
+title: A policy cleanup stalls requests and worker retries
+summary: After an egress-policy edit, the trusted frontend can still reach the API address, but requests
+  fail and worker dependency retries accumulate.
+kind: incident
+runtime: kubernetes
+nodes: 2
+minutes: 40
+outcomes:
+- Express namespace and Pod selectors with the intended logic.
+- Preserve DNS and dependency traffic under default deny.
+prerequisites:
+- m17-mission
+objectives:
+- cka.network-policy
+- ckad.network-policy
+- ckad.debugging
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A namespaceSelector and podSelector are separate peer list items. How are they combined?
+  options:
+  - Either matching peer can allow traffic.
+  - Both must match the same source Pod.
+  - All traffic is denied until both selectors are empty.
+  correct: 0
+  explanation: Separate peers are alternatives; put both selectors in one peer when an intersection is
+    intended.
+hints:
+- Separate numeric-address connections from DNS queries and trace API and worker egress independently.
+- Check both DNS transports, then compare each allowed dependency port with its Service and actual listener.
+- Allow UDP and TCP 53 to CoreDNS and worker TCP 6379 to the queue while preserving the existing default-deny
+  and peer boundaries.
+sources:
+- https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+- https://kubernetes.io/docs/concepts/services-networking/network-policies/
+- https://kubernetes.io/docs/concepts/security/pod-security-standards/
+- https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - prepare.sh
+  timeout: 420
+checks:
+- id: security-network
+  title: Cross-node allowed and denied connections match the intended boundary
+  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - security
+    timeout: 120
+  expectation: json
+  json_path:
+  - network
+  expected: 'true'
+  diagnostic: Keep both peer selectors in one rule and inspect the cross-node connection matrix.
+- id: security-dns
+  title: Real UDP and TCP DNS queries both resolve the database
+  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - security
+    timeout: 120
+  expectation: json
+  json_path:
+  - dns
+  expected: 'true'
+  diagnostic: Allow both UDP and TCP port 53 to the actual CoreDNS namespace and Pod labels.
+- id: security-workflow
+  title: An allowed frontend completes a real persistent job
+  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - security
+    timeout: 120
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Preserve trusted frontend access and API/worker connectivity to PostgreSQL and Redis.
+- id: incident-preserved
+  title: The original namespace, database claim, and job survive
+  explanation: Compare actual original identities and a persisted row.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - network
+    timeout: 90
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Repair egress without rebuilding the namespace or deleting its database claim.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-security-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent additive policy organization and YAML formatting are accepted when the actual allowed and
+  denied paths agree.
+- A different non-root API UID is accepted when process restrictions and application behavior remain correct.
+failure_modes:
+- Separate peer items broaden selectors from an intersection to alternatives.
+- UDP-only DNS can fail when a TCP query is needed.
+- Changing admission policy does not repair existing Pods.
+starter_failure_checks:
+- security-network
+- security-dns
+- security-workflow

@@ -1,0 +1,166 @@
+id: i08-pending-claim
+revision: 1
+module: 11
+order: 90
+title: The archive claim stays Pending beside an unscheduled consumer
+summary: A new archiver never starts and its claim stays Pending, although the storage provisioner is
+  running and the main Dispatch database works.
+kind: incident
+runtime: kubernetes
+minutes: 35
+outcomes:
+- Diagnose the reported boundary from live evidence.
+- Restore useful behavior while preserving the original state and operating constraints.
+prerequisites:
+- m11-mission
+objectives:
+- cka.provisioning
+- cka.volume-policies
+- ckad.volumes
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which observation would establish recovery?
+  options:
+  - A fresh end-to-end request succeeds and the original data remains.
+  - The latest command exited zero.
+  - A replacement Pod exists.
+  correct: 0
+  explanation: Recovery requires useful behavior and the stated preservation constraints.
+hints:
+- Read the claim events, StorageClass binding mode, and consumer scheduling events together.
+- WaitForFirstConsumer needs an eligible consumer node. Compare the archiver node selector with actual
+  node labels.
+- Place the archiver on the existing warm storage tier or make an equivalent legitimate placement repair,
+  then verify the original claim binds and retains a fresh file.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
+- https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - prepare.sh
+  timeout: 360
+checks:
+- id: incident-preserved
+  title: The original namespace, database claim, and stored job remain
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - claim
+    timeout: 120
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-available
+  title: Two API replicas are available
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - claim
+    timeout: 120
+  expectation: json
+  json_path:
+  - available
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-route
+  title: The Service reaches exactly the two ready API backends
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - claim
+    timeout: 120
+  expectation: json
+  json_path:
+  - route
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-workflow
+  title: A fresh job completes and PostgreSQL contains its result
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - claim
+    timeout: 120
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
+    path against the incident contract.
+- id: incident-contract
+  title: The original archive claim binds and a second consumer reads a fresh mounted file
+  explanation: Observe actual resource identities, controller state, application traffic, and retained
+    data.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.incident
+    - claim
+    timeout: 120
+  expectation: json
+  json_path:
+  - contract
+  expected: 'true'
+  diagnostic: Resolve consumer placement without recreating the claim or changing its binding mode.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-release-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent scoped repairs are accepted when the observed outcomes and explicit budgets hold.
+failure_modes:
+- Healthy process state alone does not demonstrate a working request path or completed background job.
+starter_failure_checks:
+- incident-contract

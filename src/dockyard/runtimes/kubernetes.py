@@ -526,7 +526,9 @@ class KubernetesRuntime:
                         [
                             [container.get("containerID"), container.get("restartCount")]
                             for container in item.get("status", {}).get("containerStatuses", [])
-                        ],
+                        ]
+                        if "observe-container-restarts" not in capabilities
+                        else [],
                     ]
                 )
         else:

@@ -341,6 +341,10 @@ class LinuxRuntime:
         install(self, cancel, version)
 
     def change(self, action: str, cancel: threading.Event) -> None:
+        from dockyard.runtimes import native_resume
+
+        if action == "stop":
+            native_resume.record(self, cancel)
         for entry in self.discover():
             if cancel.is_set():
                 raise RuntimeErrorBase("Guest operation canceled; remaining VMs preserved.")
@@ -360,7 +364,10 @@ class LinuxRuntime:
             else:
                 raise ValueError("Unknown Linux lifecycle operation")
             self.require(self.command(args, timeout=330, cancel=cancel))
+        if action == "resume":
+            native_resume.wait(self, cancel)
         if action == "clean":
+            self.lab.resources.pop("resume_contract", None)
             self.lab.resources["vm_inventory"] = "[]"
             self.lab.resources["vm_intent"] = "[]"
             self.lab.resources.pop("vm_ready", None)

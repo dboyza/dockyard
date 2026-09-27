@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: audit-tail
+  namespace: dispatch
+spec:
+  securityContext:
+    fsGroup: 10001
+  initContainers:
+  - name: seed
+    image: ${DOCKYARD_IMAGE}
+    imagePullPolicy: Never
+    command:
+    - python
+    - -c
+    - from pathlib import Path; Path('/shared/events').write_text('release audit ready\n')
+    volumeMounts:
+    - name: events
+      mountPath: /shared
+  containers:
+  - name: producer
+    image: ${DOCKYARD_IMAGE}
+    imagePullPolicy: Never
+    command:
+    - python
+    - -u
+    - -c
+    - from pathlib import Path; import time; p=Path('/shared/events'); p.write_text(p.read_text()+'dispatch-exam-a\n');
+      time.sleep(86400)
+    volumeMounts:
+    - name: events
+      mountPath: /shared
+  - name: tailer
+    image: ${DOCKYARD_IMAGE}
+    imagePullPolicy: Never
+    command:
+    - python
+    - -u
+    - -c
+    - "import time\nwith open('/shared/events') as source:\n while True:\n  line=source.readline()\n \
+      \ if line: print(line,end='',flush=True)\n  else: time.sleep(0.2)"
+    volumeMounts:
+    - name: events
+      mountPath: /shared
+  volumes:
+  - name: events
+    emptyDir: {}

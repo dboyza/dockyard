@@ -24,7 +24,7 @@ def endpoints(name: str) -> set[str]:
         endpoint.get("targetRef", {}).get("uid", "")
         for item in get("endpointslices")["items"]
         if item["metadata"].get("labels", {}).get("kubernetes.io/service-name") == name
-        for endpoint in item.get("endpoints", [])
+        for endpoint in (item.get("endpoints") or [])
         if endpoint.get("conditions", {}).get("ready") is True
     }
 

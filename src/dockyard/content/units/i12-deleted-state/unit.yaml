@@ -1,0 +1,173 @@
+id: i12-deleted-state
+revision: 1
+module: 23
+order: 90
+title: A broad cleanup removes original API objects
+summary: The database remains intact, but an accidental API cleanup removes the trusted frontend and its
+  recovery sentinel. A verified pre-incident snapshot is available.
+kind: incident
+runtime: linux
+nodes: 2
+minutes: 50
+outcomes:
+- Plan a bounded control-plane recovery from host and snapshot evidence.
+- Recover the original missing object while preserving application data.
+- Produce a handoff that separates observation, repair, and remaining recovery risks.
+prerequisites:
+- m23-mission
+objectives:
+- cka.lifecycle
+- cka.components
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Which observation distinguishes restored API state from a replacement object?
+  options:
+  - The original UID returns and fresh control-plane work succeeds.
+  - A similarly named object exists.
+  - An old application process is still running.
+  correct: 0
+  explanation: A restored UID establishes original object identity; new work verifies useful control-plane
+    behavior.
+hints:
+- Separate surviving persistent-volume data from missing API objects.
+- Inspect the verified snapshot and original object-identity requirements before choosing a restore procedure.
+- Restore into a separate data directory with revision bump and compaction, switch the etcd static manifest,
+  and verify original identities plus fresh work.
+sources:
+- https://etcd.io/docs/v3.6/op-guide/recovery/
+- https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
+- https://v1-35.docs.kubernetes.io/docs/tasks/configure-pod-container/static-pod/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.native_incident
+  - deleted-state
+  timeout: 240
+checks:
+- id: recovery-preserved
+  title: Original namespace, nodes, sentinel identity, and database row survive
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - deleted-state
+    timeout: 240
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Inspect the preserved evidence and the relevant host, API, or application boundary.
+- id: recovery-components
+  title: Kubelet and all four control-plane processes run behind a ready API
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - deleted-state
+    timeout: 240
+  expectation: json
+  json_path:
+  - components
+  expected: 'true'
+  diagnostic: Inspect the components evidence and the relevant host, API, or application boundary.
+- id: recovery-scheduled
+  title: A fresh Pod receives a real scheduler assignment
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - deleted-state
+    timeout: 240
+  expectation: json
+  json_path:
+  - scheduled
+  expected: 'true'
+  diagnostic: Inspect the scheduled evidence and the relevant host, API, or application boundary.
+- id: recovery-restored
+  title: The original object returns under an advanced etcd revision
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - deleted-state
+    timeout: 240
+  expectation: json
+  json_path:
+  - restored
+  expected: 'true'
+  diagnostic: Inspect the restored evidence and the relevant host, API, or application boundary.
+- id: recovery-workflow
+  title: A new browser and cross-node Dispatch transaction completes
+  explanation: Observe actual recovery outcomes against the original private state record.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - deleted-state
+    timeout: 240
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: Inspect the workflow evidence and the relevant host, API, or application boundary.
+- id: incident-recovered
+  title: The deleted frontend returns with its original Deployment UID and available replica
+  explanation: Use current host and API evidence, not a similarly named replacement.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.native_incident
+    - deleted-state
+    timeout: 240
+  expectation: json
+  json_path:
+  - incident
+  expected: 'true'
+  diagnostic: Recheck the original node agent or original API object identity after the targeted recovery.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
+- Runtime outcomes and original identities are assessed, not shell history.
+failure_modes:
+- A replacement object with matching contents has a different identity.
+- Existing running containers do not prove reconciliation or new scheduling.
+- An etcd backup does not contain application persistent-volume contents.
+starter_failure_checks:
+- incident-recovered
+- recovery-preserved
+- recovery-restored
+- recovery-workflow
