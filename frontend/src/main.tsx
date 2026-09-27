@@ -17,6 +17,7 @@ import {
   Library,
   Activity,
   RotateCcw,
+  Compass,
 } from "lucide-react";
 import { OverviewPage } from "./OverviewPage";
 import { CoursePage } from "./CoursePage";
@@ -27,6 +28,7 @@ import { ReferencePage } from "./ReferencePage";
 import { ProgressPage } from "./ProgressPage";
 import { IncidentsPage } from "./IncidentsPage";
 import { ReviewPage } from "./ReviewPage";
+import { PlacementPage } from "./PlacementPage";
 import "./style.css";
 function App() {
   const model = useWorkbench();
@@ -103,6 +105,7 @@ function App() {
             [
               { id: "home", label: "Overview", icon: LayoutDashboard },
               { id: "course", label: "Your course", icon: BookOpen },
+              { id: "placement", label: "Practical placement", icon: Compass },
               { id: "incidents", label: "Incident scenarios", icon: Activity },
               { id: "progress", label: "Skill evidence", icon: ShieldCheck },
               { id: "review", label: "Spaced review", icon: RotateCcw },
@@ -184,17 +187,19 @@ function App() {
                   ? "Overview"
                   : page === "course"
                     ? "Your course"
-                    : page === "incidents"
-                      ? "Incident scenarios"
-                      : page === "review"
-                        ? "Spaced review"
-                        : page === "labs"
-                          ? "Lab manager"
-                          : page === "checkpoints"
-                            ? "Project checkpoints"
-                            : page === "reference"
-                              ? "Reference desk"
-                              : "Skill evidence"}
+                    : page === "placement"
+                      ? "Practical placement"
+                      : page === "incidents"
+                        ? "Incident scenarios"
+                        : page === "review"
+                          ? "Spaced review"
+                          : page === "labs"
+                            ? "Lab manager"
+                            : page === "checkpoints"
+                              ? "Project checkpoints"
+                              : page === "reference"
+                                ? "Reference desk"
+                                : "Skill evidence"}
             </strong>
           </div>
           <div className="topbar-actions">
@@ -251,6 +256,7 @@ function App() {
           )}
           {page === "home" && <OverviewPage model={model} />}
           {page === "course" && <CoursePage model={model} />}
+          {page === "placement" && <PlacementPage model={model} />}
           {page === "incidents" && <IncidentsPage model={model} />}
           {page === "review" && <ReviewPage model={model} />}
           {page === "lesson" && <LessonPage model={model} />}

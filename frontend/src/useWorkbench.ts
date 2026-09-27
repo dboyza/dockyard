@@ -14,6 +14,7 @@ export type Page =
   | "home"
   | "course"
   | "incidents"
+  | "placement"
   | "review"
   | "lesson"
   | "labs"

@@ -79,7 +79,19 @@ export type State = {
   theme: string;
   last_unit: string | null;
 };
-export type Catalog = { modules: Module[]; units: UnitSummary[] };
+export type PlacementBenchmark = {
+  id: string;
+  title: string;
+  unit_id: string;
+  start_unit: string;
+  summary: string;
+  reason: string;
+};
+export type Catalog = {
+  modules: Module[];
+  units: UnitSummary[];
+  placement: PlacementBenchmark[];
+};
 export type Doctor = {
   tools: Record<string, string | null>;
   docker_ready: boolean;

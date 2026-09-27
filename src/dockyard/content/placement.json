@@ -1,0 +1,34 @@
+[
+  {
+    "id": "containers",
+    "title": "Container engineering",
+    "unit_id": "m06-mission",
+    "start_unit": "m01-processes",
+    "summary": "Diagnose and deliver the containerized Dispatch system with persistent data, networking, and a hardened image.",
+    "reason": "This benchmark exercises a complete Docker system rather than a command-recognition quiz."
+  },
+  {
+    "id": "applications",
+    "title": "Kubernetes application development",
+    "unit_id": "m12-mission",
+    "start_unit": "m07-reconciliation",
+    "summary": "Operate the application through configuration, storage, routing, safe rollouts, and distinct health probes.",
+    "reason": "Successful container work does not by itself establish Kubernetes application skills."
+  },
+  {
+    "id": "platform",
+    "title": "Platform engineering and security",
+    "unit_id": "m18-mission",
+    "start_unit": "m13-resources",
+    "summary": "Integrate delivery, observability, capacity, and least-privilege security around the evolving application.",
+    "reason": "The benchmark requires useful application behavior while preserving the intended operational boundaries."
+  },
+  {
+    "id": "operations",
+    "title": "Cluster administration",
+    "unit_id": "m24-mission",
+    "start_unit": "m19-runtime",
+    "summary": "Recover and hand off the native cluster with retained state, a controlled release, and explicit operating decisions.",
+    "reason": "This is an advanced four-VM benchmark. Start it only when you want to assess the administration phase."
+  }
+]

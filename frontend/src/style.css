@@ -2087,3 +2087,46 @@ pre {
 .review-policy h2 {
   margin-top: 0;
 }
+
+.placement-recommendation {
+  align-items: center;
+  margin-bottom: 24px;
+}
+.placement-compass {
+  color: var(--blue);
+  flex-shrink: 0;
+  margin: 12px 35px;
+}
+.placement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.placement-grid .panel {
+  min-width: 0;
+  margin: 0;
+}
+.placement-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--green);
+  font-size: 11px;
+}
+.placement-invitation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  margin: -8px 0 24px;
+}
+@media (max-width: 760px) {
+  .placement-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .placement-compass {
+    display: none;
+  }
+}

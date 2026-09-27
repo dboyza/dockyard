@@ -69,6 +69,12 @@ export function OverviewPage({ model }: { model: Workbench }) {
           </span>
         </div>
       </section>
+      <p className="placement-invitation">
+        Already comfortable with containers?{" "}
+        <button className="text-button" onClick={() => navigate("placement")}>
+          Find your starting point <ArrowRight size={15} />
+        </button>
+      </p>
       <div className="stats-grid">
         <div className="stat">
           <span>Practiced</span>

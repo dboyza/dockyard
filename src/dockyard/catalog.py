@@ -50,6 +50,14 @@ class Catalog:
             for file_name in [*unit.starter, *unit.reference]:
                 safe_relative(file_name)
             self.units[unit.id] = unit
+        placement = root / "placement.json"
+        self.placement: list[dict[str, str]] = (
+            json.loads(placement.read_text()) if placement.exists() else []
+        )
+        for benchmark in self.placement:
+            for key in ("unit_id", "start_unit"):
+                if benchmark[key] not in self.units:
+                    raise ValueError("Placement points to an unknown unit.")
         for unit in self.units.values():
             for prerequisite in unit.prerequisites:
                 if prerequisite not in self.units:
@@ -64,6 +72,7 @@ class Catalog:
     def index(self) -> dict[str, Any]:
         return {
             "modules": self.modules,
+            "placement": self.placement,
             "units": [
                 {
                     **unit.model_dump(

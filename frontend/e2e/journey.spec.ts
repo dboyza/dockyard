@@ -206,6 +206,18 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await expect(dueReviews.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ }).locator('.unitmeta')).toHaveText('65 min');
   await dueReviews.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep Dispatch available through worker maintenance');
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.getByRole('button', { name: 'Practical placement', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Find the gaps worth your time.' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Placement benchmarks' }).locator('article')).toHaveCount(4);
+  await expect(page.locator('.placement-recommendation')).toContainText('Container engineering');
+  await expect(page.locator('.topbar')).toContainText('Practical placement');
+  await page.screenshot({ path: path.join(root, '.artifacts/placement-wide.png'), fullPage: true });
+  await page.setViewportSize({ width: 480, height: 1000 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: path.join(root, '.artifacts/placement-narrow.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Try the benchmark' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Capstone: deliver and recover Dispatch');
   expect(failures).toEqual([]);
   // Keep the browser and its SSE connection open while verifying foreground shutdown.
   const stopped = once(server, 'exit');
