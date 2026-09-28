@@ -1,11 +1,12 @@
-# Recover the service and its observation path
+## Recover the service and the ability to see it
 
-Capture a before window using measure-slo.py before repairing the slow configuration.
-Restore per-Pod scraping, the dashboard latency query, and the sustained latency alert.
-Restore the fast 20ms business-read configuration and wait for the actual API rollout.
-Run the controlled alert rehearsal, which must fire under induced latency and clear after recovery.
-Capture the final after window and keep the original 95 percent / 250ms policy.
+1. Run `python measure-slo.py before` before changing anything.
+2. Fix per-Pod scraping in `prometheus.yaml`, the latency query in `dashboard.json`, and the alert in `rules.yaml`, then run `sh monitoring.sh`.
+3. Set `delay_ms` back to `20`, apply it, restart the API, and wait for the rollout.
+4. Run `python alert-proof.py`; it must see the alert fire under induced slowness and clear afterwards.
+5. Run `python measure-slo.py after`, keeping the 95% / 250 ms objective.
+6. Choose **Check work**.
 
-Inspect the actual dashboard, target identities, request logs, alert evidence, and both SLO records.
-Write a short incident note distinguishing the application regression from the monitoring faults, identifying the observation limits, and naming a prevention step for each.
-Preserve the data claim and the normal background workers.
+Look at the dashboard, the Prometheus targets, the request logs, `alert-evidence.json`, and both SLO records.
+Write a short incident note that separates the application slowdown from the monitoring faults, states what your measurements can and cannot show, and names a prevention step for each fault.
+Keep the database storage and the normal workers running.

@@ -1,12 +1,8 @@
-# Debrief: Build useful dashboards and prove an alert
+## An alert you have seen fire
 
-A useful alert connects a measured condition, an evaluation interval, and an actionable response.
-A dashboard graph or a stored rule does not demonstrate that the relevant target is scraped and the rule actually evaluates as intended.
+Your dashboard and alert now measure the same thing: the share of reads slower than 250 ms.
+The rehearsal showed the alert firing when Dispatch was slow and clearing when it recovered.
 
-## Explain your result
-
-What evidence separates a quiet healthy service from a broken monitoring path that produces no usable samples?
-
-## Transfer beyond this lab
-
-Production alerts need ownership, a response procedure, and thresholds that account for noise and the cost of false positives.
+Check your understanding:
+Why would an alert on average latency miss a problem affecting one request in ten?
+What would you see on the dashboard if Prometheus stopped scraping Dispatch, and how is that different from a quiet, healthy service?

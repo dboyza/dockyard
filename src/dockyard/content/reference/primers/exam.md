@@ -54,6 +54,8 @@ Many tasks can be finished entirely with imperative commands:
 | Scale | `kubectl scale deployment/NAME --replicas=N` |
 | Add a label | `kubectl label pod NAME KEY=VALUE` |
 | One-off test Pod | `kubectl run tmp --rm -it --image=busybox --restart=Never -- sh` |
+| Debug a running Pod | `kubectl debug -it POD --image=busybox --target=CONTAINER -- sh` |
+| Logs from before a restart | `kubectl logs POD --previous` |
 
 `kubectl create --help` lists every type that `create` can make; `kubectl create deployment --help` shows its examples.
 

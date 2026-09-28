@@ -29,3 +29,8 @@ good = sum(s['valid'] and s['status'] == 200 and s['seconds'] <= policy['latency
 record = {'lab': os.environ['DOCKYARD_LAB'], 'started_at': started, 'finished_at': datetime.now(timezone.utc).isoformat(), 'samples': samples, 'good': good, 'total': len(samples), 'ratio': good/len(samples), 'objective': policy['objective'], 'latency_seconds': policy['latency_seconds']}
 Path('slo-'+name+'.json').write_text(json.dumps(record, indent=2)+'\n')
 print(json.dumps({key:value for key,value in record.items() if key != 'samples'}))
+unanswered = sum(s['status'] == 0 for s in samples)
+if unanswered:
+    print(f'{unanswered} of {len(samples)} reads got no response, so this window measured an outage rather than '
+          'normal service. Wait for kubectl rollout status deployment/dispatch to finish, then measure again.',
+          file=sys.stderr)

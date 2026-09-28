@@ -2,15 +2,15 @@ id: m15-observation
 revision: 1
 module: 15
 order: 1
-title: Correlate events, logs, and metrics
-summary: Restore discovery and follow a real request across operational signals.
+title: Events, logs, and metrics
+summary: Use kubectl’s observation tools, then get Prometheus scraping each API Pod again.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Distinguish events, process logs, and time-series metrics.
-- Keep per-Pod counter identity during scraping.
-- Correlate measured requests with structured application logs.
+- Choose between events, logs, and metrics for a question.
+- Use kubectl logs, events, top, and debug quickly.
+- Scrape each Pod separately and follow one request through the logs.
 prerequisites:
 - m14-mission
 objectives:
@@ -20,19 +20,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What does up=1 establish for a Prometheus scrape target?
+  question: What does up = 1 tell you about a Prometheus target?
   options:
-  - The scrape succeeded; business behavior still needs its own indicators.
-  - Every user request met its latency objective.
+  - The last scrape worked; nothing more.
+  - Every user request was fast.
   - The target can never restart.
   correct: 0
-  explanation: Scrape health and application service quality are different observations.
+  explanation: up only records whether Prometheus could collect numbers. User experience needs its own
+    measurements.
 hints:
-- Separate service behavior from the health of its monitoring path.
-- Compare the supplied field or query with the real Pod port, histogram buckets, and recorded request
-  timings.
-- Apply the repaired configuration, wait for fresh observations, and run the bounded rehearsal named in
-  the task.
+- kubectl get deployment dispatch -o yaml shows the name of the api container’s port.
+- The keep rule on __meta_kubernetes_pod_container_port_name must use that name, http.
+- Change the regex to http, run sh monitoring.sh, and check both targets are up.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/
 - https://prometheus.io/docs/concepts/metric_types/
@@ -65,8 +64,9 @@ prepare:
   timeout: 360
 checks:
 - id: visibility-signals
-  title: A real business request has a matching structured log event
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: A real request has a matching log line
+  explanation: Dockyard sends a GET /jobs with its own request ID and finds exactly one http_request log
+    line for it, with status 200.
   command:
     args:
     - python
@@ -78,10 +78,12 @@ checks:
   json_path:
   - signals
   expected: 'true'
-  diagnostic: Inspect the real /jobs response and matching http_request log from the serving API Pod.
+  diagnostic: No matching http_request log line was found for Dockyard’s request. Check the API Pods are
+    ready with kubectl get pods -l app=dispatch, and read kubectl logs -l app=dispatch -c api --tail=20.
 - id: visibility-scraping
-  title: Prometheus scrapes both actual API Pods and records business traffic
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: Prometheus scrapes both API Pods
+  explanation: Every API Pod must be an up target in the dispatch job, with its own pod label on the request
+    counters.
   command:
     args:
     - python
@@ -93,7 +95,9 @@ checks:
   json_path:
   - scraping
   expected: 'true'
-  diagnostic: Compare Pod port names, discovery relabel rules, active targets, and live counter series.
+  diagnostic: 'Prometheus is not scraping every API Pod. Open the targets page or check the relabel rules
+    in prometheus.yaml: the container port name rule must match the Deployment’s port name, http. Run
+    sh monitoring.sh after each change so Prometheus reloads it.'
 capabilities:
 - docker
 - kind

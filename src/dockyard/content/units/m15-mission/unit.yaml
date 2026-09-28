@@ -2,15 +2,15 @@ id: m15-mission
 revision: 1
 module: 15
 order: 4
-title: Diagnose and explain a latency regression
-summary: Recover service behavior and the evidence needed to trust it.
+title: 'Mission: explain a latency regression'
+summary: Measure a slowdown, fix the service and its monitoring, and prove both with evidence.
 kind: mission
 runtime: kubernetes
 minutes: 65
 outcomes:
-- Triangulate logs, metrics, configuration, and request timings.
-- Repair monitoring without hiding service failure.
-- Produce an explicit before/after incident evidence set.
+- Combine logs, metrics, configuration, and request timings.
+- Repair monitoring without hiding the service’s problem.
+- Produce before-and-after evidence for an incident.
 prerequisites:
 - m15-slo
 objectives:
@@ -20,19 +20,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Readiness is healthy while business reads take 600ms against a 250ms objective. What follows?
+  question: Readiness is healthy while reads take 600 ms against a 250 ms objective. What follows?
   options:
-  - The latency objective can fail despite healthy readiness.
-  - The objective must automatically be considered healthy.
-  - The observations are logically impossible.
+  - The objective is failing even though readiness is healthy.
+  - The objective must be healthy.
+  - That combination is impossible.
   correct: 0
-  explanation: Readiness and the user-facing latency indicator answer different questions.
+  explanation: Readiness and the latency SLI answer different questions, so one can pass while the other
+    fails.
 hints:
-- Separate service behavior from the health of its monitoring path.
-- Compare the supplied field or query with the real Pod port, histogram buckets, and recorded request
-  timings.
-- Apply the repaired configuration, wait for fresh observations, and run the bounded rehearsal named in
-  the task.
+- Measure first with python measure-slo.py before, then work on the monitoring and the service separately.
+- Prometheus needs the http port name, the dashboard and alert need the slow-fraction query, and delay_ms
+  needs to be 20.
+- After sh monitoring.sh and the API restart, run python alert-proof.py and then python measure-slo.py
+  after.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/
 - https://prometheus.io/docs/concepts/metric_types/
@@ -65,8 +66,9 @@ prepare:
   timeout: 360
 checks:
 - id: visibility-signals
-  title: A real business request has a matching structured log event
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: A real request has a matching log line
+  explanation: Dockyard sends a GET /jobs with its own request ID and finds exactly one http_request log
+    line for it, with status 200.
   command:
     args:
     - python
@@ -78,10 +80,12 @@ checks:
   json_path:
   - signals
   expected: 'true'
-  diagnostic: Inspect the real /jobs response and matching http_request log from the serving API Pod.
+  diagnostic: No matching http_request log line was found for Dockyard’s request. Check the API Pods are
+    ready with kubectl get pods -l app=dispatch, and read kubectl logs -l app=dispatch -c api --tail=20.
 - id: visibility-scraping
-  title: Prometheus scrapes both actual API Pods and records business traffic
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: Prometheus scrapes both API Pods
+  explanation: Every API Pod must be an up target in the dispatch job, with its own pod label on the request
+    counters.
   command:
     args:
     - python
@@ -93,10 +97,13 @@ checks:
   json_path:
   - scraping
   expected: 'true'
-  diagnostic: Compare Pod port names, discovery relabel rules, active targets, and live counter series.
+  diagnostic: 'Prometheus is not scraping every API Pod. Open the targets page or check the relabel rules
+    in prometheus.yaml: the container port name rule must match the Deployment’s port name, http. Run
+    sh monitoring.sh after each change so Prometheus reloads it.'
 - id: visibility-dashboard
-  title: The live dashboard returns finite service-level measurements
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: The dashboard shows real measurements
+  explanation: The request rate, slow-read fraction, and 95th percentile panels must all return current
+    numbers.
   command:
     args:
     - python
@@ -108,10 +115,14 @@ checks:
   json_path:
   - dashboard
   expected: 'true'
-  diagnostic: Inspect the latency panel query and its actual /data result; missing series are not zero.
+  diagnostic: At least one dashboard panel returns no data or an impossible value. Check each query in
+    dashboard.json against the real metric names, such as dispatch_http_request_duration_seconds_bucket
+    and _count, and run sh monitoring.sh after editing.
 - id: visibility-alert
-  title: The latency alert fired under impact and cleared after recovery
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: The latency alert fired under impact and then cleared
+  explanation: alert-evidence.json must show the alert firing during the slowdown and clearing afterwards,
+    for the current rules.yaml and dashboard.json, with a 15-second for, warning severity, annotations,
+    and delay_ms back at 20.
   command:
     args:
     - python
@@ -123,11 +134,13 @@ checks:
   json_path:
   - alert
   expected: 'true'
-  diagnostic: Apply the intended rule and run alert-proof.py through firing and recovery without changing
-    the threshold.
+  diagnostic: 'The alert evidence is missing, out of date, or shows the wrong behaviour. Make sure rules.yaml
+    measures the slow fraction above 0.1 with for: 15s, run sh monitoring.sh, then run python alert-proof.py
+    again. Editing rules.yaml or dashboard.json after the rehearsal makes its evidence out of date.'
 - id: visibility-slo
-  title: Before and after windows prove the repaired latency objective
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: Before and after measurements show the fix
+  explanation: slo-before.json must be below 95% good and slo-after.json at or above it, measured in that
+    order, with the 95% / 250 ms policy unchanged, delay_ms at 20, and a fresh read fast enough now.
   command:
     args:
     - python
@@ -139,8 +152,9 @@ checks:
   json_path:
   - slo
   expected: 'true'
-  diagnostic: Capture the slow before window, restore 20ms delay, and collect a passing after window with
-    the original policy.
+  diagnostic: The SLO evidence does not show the fix yet. Run python measure-slo.py before while the service
+    is still slow, fix delay_ms, restart the API and wait for the rollout, then run python measure-slo.py
+    after. Keep slo.json at objective 0.95 and latency_seconds 0.25.
 capabilities:
 - docker
 - kind

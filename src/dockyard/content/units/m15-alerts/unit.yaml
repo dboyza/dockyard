@@ -2,15 +2,15 @@ id: m15-alerts
 revision: 1
 module: 15
 order: 2
-title: Build useful dashboards and prove an alert
-summary: Repair a query and exercise pending, firing, and recovered behavior.
+title: Dashboards and alerts
+summary: Fix a latency dashboard and alert, then prove the alert fires and clears.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Read rates and histogram-derived latency indicators.
-- Distinguish missing data from a healthy zero.
-- Validate alert firing and recovery under controlled service impact.
+- Read rates and latency from a histogram.
+- Tell missing data apart from a healthy zero.
+- Write an alert with a for duration and prove it with a controlled slowdown.
 prerequisites:
 - m15-observation
 objectives:
@@ -20,19 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: An alert has never fired. What is still needed before trusting it?
+  question: An alert has never fired. What do you need before trusting it?
   options:
-  - A controlled failure and recovery that exercise the actual rule.
-  - A dashboard screenshot with no data.
-  - A constant expression that is always zero.
+  - A controlled failure that makes it fire, and a recovery that clears it.
+  - A dashboard with no data.
+  - An expression that is always zero.
   correct: 0
-  explanation: Both detection and recovery behavior need observation.
+  explanation: Only watching it fire and clear shows the rule measures what you think it does.
 hints:
-- Separate service behavior from the health of its monitoring path.
-- Compare the supplied field or query with the real Pod port, histogram buckets, and recorded request
-  timings.
-- Apply the repaired configuration, wait for fresh observations, and run the bounded rehearsal named in
-  the task.
+- The fraction of fast reads is the le="0.25" bucket rate divided by the _count rate; slow is one minus
+  that.
+- 'Use that slow-fraction expression in both the dashboard panel and the alert, with > 0.1 and for: 15s
+  in the alert.'
+- Run sh monitoring.sh, then python alert-proof.py, and read alert-evidence.json.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/
 - https://prometheus.io/docs/concepts/metric_types/
@@ -65,8 +65,9 @@ prepare:
   timeout: 360
 checks:
 - id: visibility-signals
-  title: A real business request has a matching structured log event
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: A real request has a matching log line
+  explanation: Dockyard sends a GET /jobs with its own request ID and finds exactly one http_request log
+    line for it, with status 200.
   command:
     args:
     - python
@@ -78,10 +79,12 @@ checks:
   json_path:
   - signals
   expected: 'true'
-  diagnostic: Inspect the real /jobs response and matching http_request log from the serving API Pod.
+  diagnostic: No matching http_request log line was found for Dockyard’s request. Check the API Pods are
+    ready with kubectl get pods -l app=dispatch, and read kubectl logs -l app=dispatch -c api --tail=20.
 - id: visibility-scraping
-  title: Prometheus scrapes both actual API Pods and records business traffic
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: Prometheus scrapes both API Pods
+  explanation: Every API Pod must be an up target in the dispatch job, with its own pod label on the request
+    counters.
   command:
     args:
     - python
@@ -93,10 +96,13 @@ checks:
   json_path:
   - scraping
   expected: 'true'
-  diagnostic: Compare Pod port names, discovery relabel rules, active targets, and live counter series.
+  diagnostic: 'Prometheus is not scraping every API Pod. Open the targets page or check the relabel rules
+    in prometheus.yaml: the container port name rule must match the Deployment’s port name, http. Run
+    sh monitoring.sh after each change so Prometheus reloads it.'
 - id: visibility-dashboard
-  title: The live dashboard returns finite service-level measurements
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: The dashboard shows real measurements
+  explanation: The request rate, slow-read fraction, and 95th percentile panels must all return current
+    numbers.
   command:
     args:
     - python
@@ -108,10 +114,14 @@ checks:
   json_path:
   - dashboard
   expected: 'true'
-  diagnostic: Inspect the latency panel query and its actual /data result; missing series are not zero.
+  diagnostic: At least one dashboard panel returns no data or an impossible value. Check each query in
+    dashboard.json against the real metric names, such as dispatch_http_request_duration_seconds_bucket
+    and _count, and run sh monitoring.sh after editing.
 - id: visibility-alert
-  title: The latency alert fired under impact and cleared after recovery
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: The latency alert fired under impact and then cleared
+  explanation: alert-evidence.json must show the alert firing during the slowdown and clearing afterwards,
+    for the current rules.yaml and dashboard.json, with a 15-second for, warning severity, annotations,
+    and delay_ms back at 20.
   command:
     args:
     - python
@@ -123,8 +133,9 @@ checks:
   json_path:
   - alert
   expected: 'true'
-  diagnostic: Apply the intended rule and run alert-proof.py through firing and recovery without changing
-    the threshold.
+  diagnostic: 'The alert evidence is missing, out of date, or shows the wrong behaviour. Make sure rules.yaml
+    measures the slow fraction above 0.1 with for: 15s, run sh monitoring.sh, then run python alert-proof.py
+    again. Editing rules.yaml or dashboard.json after the rehearsal makes its evidence out of date.'
 capabilities:
 - docker
 - kind

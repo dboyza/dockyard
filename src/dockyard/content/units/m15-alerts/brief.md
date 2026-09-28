@@ -1,10 +1,9 @@
-# Make the observation actionable
+## Make the latency signal useful and prove the alert
 
-Repair the latency panel in dashboard.json to show the fraction of GET /jobs reads slower than 250ms.
-The current query refers to a nonexistent metric.
-Repair the alert rule in rules.yaml so that the same slow fraction above 10 percent remains true for fifteen seconds before firing.
-Keep the warning severity and useful summary/runbook annotations.
-Apply both configurations with `sh monitoring.sh`, then run `python alert-proof.py`.
-The rehearsal must observe real firing and subsequent recovery while restoring the fast delay.
-Inspect the dashboard at the assigned loopback address and the contents of alert-evidence.json.
-Do not lower the SLO, remove the alert, or treat missing data as zero.
+1. In `dashboard.json`, fix the latency panel so it shows the fraction of `/jobs` reads slower than 250 ms. It currently uses a metric that does not exist.
+2. In `rules.yaml`, fix the alert so it fires when that same fraction is above 10% for fifteen seconds. Keep its `warning` severity and its summary and runbook annotations.
+3. Run `sh monitoring.sh`, then `python alert-proof.py`.
+4. Open the dashboard and read `alert-evidence.json`.
+5. Choose **Check work**.
+
+Do not raise the threshold, remove the alert, or treat missing data as zero.

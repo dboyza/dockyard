@@ -1,12 +1,8 @@
-# Debrief: Correlate events, logs, and metrics
+## The right evidence for the question
 
-Events, container logs, and live metrics expose different time scales and layers of the same system.
-Correlating them prevents a healthy current status from erasing evidence of an earlier restart or failed scheduling attempt.
+Events, logs, and metrics each told you something the others could not.
+Once Prometheus could find the `http` port again, each Pod’s numbers arrived under its own name.
 
-## Explain your result
-
-Name the first observation that narrowed your hypothesis and the second independent observation that supported the repair.
-
-## Transfer beyond this lab
-
-Preserve enough context and timing in an incident record to distinguish symptoms from causes without exporting credentials.
+Check your understanding:
+A container restarted an hour ago and is fine now. Which command shows why it restarted?
+Why is `up = 1` not evidence that users are getting fast responses?

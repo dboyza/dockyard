@@ -70,10 +70,10 @@ A runtime pass alone is not a teaching-quality result.
 | m14-helm | Completed without solutions | Revised | Replaced placeholder hints; added the full Helm command set including repositories. helm get values printed the practice password, so the lesson now warns about it and explains keeping secrets out of values. Rollback created revision 3; passed. |
 | m14-operators | Completed without solutions | Revised | Replaced placeholder hints; explained CRDs, custom resources, controllers, generations, and ownership. The brief wrongly assumed dispatch-workers existed before the controller ran; corrected. Drift repaired in 3.4 seconds; passed. |
 | m14-mission | Completed without solutions | Revised | Fixed overlay, Helm release, and controller independently; both environments reported the right environment; passed. |
-| m15-observation | Pending | Pending |  |
-| m15-alerts | Pending | Pending |  |
-| m15-slo | Pending | Pending |  |
-| m15-mission | Pending | Pending |  |
+| m15-observation | Completed without solutions | Revised | Replaced placeholder hints; added the kubectl logs, events, top, and debug options the exams expect. The lab has no Metrics Server, so the kubectl top claim was corrected; kubectl debug was verified with a Pod name and --profile=general. Passed. |
+| m15-alerts | Completed without solutions | Revised | Explained buckets, the fast-read fraction, and pending versus firing, leaving the slow-fraction step to the learner. Alert fired at 72% good and cleared at 95%; passed. |
+| m15-slo | Completed without solutions | Revised | Measuring right after a resume recorded connection failures instead of slow reads and failed the check silently; measure-slo.py now warns and the lesson waits for the rollout first. Passed with 0/20 before and 20/20 after. |
+| m15-mission | Completed without solutions | Revised | Measured first, fixed scraping, dashboard, alert, and delay independently; alert rehearsal and after window passed. |
 | m16-pipeline | Pending | Pending |  |
 | m16-gitops | Pending | Pending |  |
 | m16-promotion | Pending | Pending |  |

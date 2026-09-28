@@ -2,15 +2,15 @@ id: m15-slo
 revision: 1
 module: 15
 order: 3
-title: Measure a service-level objective honestly
-summary: Define good events, preserve the denominator, and compare real windows.
+title: Service level objectives
+summary: Define what a good read is, measure it honestly, fix a slowdown, and measure again.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Separate an SLI, SLO, and error budget.
-- Measure successful low-latency business reads.
-- State the limits of a bounded local sample.
+- Explain SLIs, SLOs, and error budgets.
+- Measure the fraction of good reads without hiding bad ones.
+- Say what a small measured sample can and cannot show.
 prerequisites:
 - m15-alerts
 objectives:
@@ -20,20 +20,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Out of 200 eligible reads, 190 meet the success and latency condition. What is the good-event
-    ratio?
+  question: 190 of 200 eligible reads were fast and correct. What is the good fraction?
   options:
-  - 95 percent, with ten bad events in this sample.
-  - 100 percent because every response returned.
-  - 5 percent because the budget is five percent.
+  - 95%, with ten bad reads.
+  - 100%, because every read got a response.
+  - 5%, because the budget is 5%.
   correct: 0
-  explanation: The numerator is good events and the denominator includes all eligible reads.
+  explanation: 'Good events divided by all eligible events: 190 / 200 = 95%.'
 hints:
-- Separate service behavior from the health of its monitoring path.
-- Compare the supplied field or query with the real Pod port, histogram buckets, and recorded request
-  timings.
-- Apply the repaired configuration, wait for fresh observations, and run the bounded rehearsal named in
-  the task.
+- Run python measure-slo.py before and look at each read’s elapsed time.
+- The delay comes from delay_ms in settings.yaml.
+- Set delay_ms to 20, apply settings.yaml, restart the API, wait for the rollout, then run python measure-slo.py
+  after.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/
 - https://prometheus.io/docs/concepts/metric_types/
@@ -66,8 +64,9 @@ prepare:
   timeout: 360
 checks:
 - id: visibility-signals
-  title: A real business request has a matching structured log event
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: A real request has a matching log line
+  explanation: Dockyard sends a GET /jobs with its own request ID and finds exactly one http_request log
+    line for it, with status 200.
   command:
     args:
     - python
@@ -79,10 +78,12 @@ checks:
   json_path:
   - signals
   expected: 'true'
-  diagnostic: Inspect the real /jobs response and matching http_request log from the serving API Pod.
+  diagnostic: No matching http_request log line was found for Dockyard’s request. Check the API Pods are
+    ready with kubectl get pods -l app=dispatch, and read kubectl logs -l app=dispatch -c api --tail=20.
 - id: visibility-scraping
-  title: Prometheus scrapes both actual API Pods and records business traffic
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: Prometheus scrapes both API Pods
+  explanation: Every API Pod must be an up target in the dispatch job, with its own pod label on the request
+    counters.
   command:
     args:
     - python
@@ -94,10 +95,13 @@ checks:
   json_path:
   - scraping
   expected: 'true'
-  diagnostic: Compare Pod port names, discovery relabel rules, active targets, and live counter series.
+  diagnostic: 'Prometheus is not scraping every API Pod. Open the targets page or check the relabel rules
+    in prometheus.yaml: the container port name rule must match the Deployment’s port name, http. Run
+    sh monitoring.sh after each change so Prometheus reloads it.'
 - id: visibility-slo
-  title: Before and after windows prove the repaired latency objective
-  explanation: Observe actual request, Pod, scrape, and controlled recovery evidence.
+  title: Before and after measurements show the fix
+  explanation: slo-before.json must be below 95% good and slo-after.json at or above it, measured in that
+    order, with the 95% / 250 ms policy unchanged, delay_ms at 20, and a fresh read fast enough now.
   command:
     args:
     - python
@@ -109,8 +113,9 @@ checks:
   json_path:
   - slo
   expected: 'true'
-  diagnostic: Capture the slow before window, restore 20ms delay, and collect a passing after window with
-    the original policy.
+  diagnostic: The SLO evidence does not show the fix yet. Run python measure-slo.py before while the service
+    is still slow, fix delay_ms, restart the API and wait for the rollout, then run python measure-slo.py
+    after. Keep slo.json at objective 0.95 and latency_seconds 0.25.
 capabilities:
 - docker
 - kind
