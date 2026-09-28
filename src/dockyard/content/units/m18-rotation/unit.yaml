@@ -2,15 +2,16 @@ id: m18-rotation
 revision: 1
 module: 18
 order: 2
-title: Revoke a database credential
-summary: Prove old credentials fail while refreshed consumers remain healthy.
+title: Rotate a database password
+summary: Change the database password everywhere it is used, and prove the old one no longer works.
 kind: lesson
 runtime: kubernetes
 nodes: 2
 minutes: 45
 outcomes:
-- Revoke a database credential.
-- Prove old credentials fail while refreshed consumers remain healthy.
+- Explain why rotation changes the server and every consumer separately.
+- Rotate a credential without exposing it.
+- Prove the new password works and the old one is rejected.
 prerequisites:
 - m18-images
 objectives:
@@ -29,9 +30,9 @@ prediction:
   correct: 0
   explanation: A negative authentication observation needs a successful control against the same server.
 hints:
-- Separate artifact identity, database availability, credentials, and network policy observations.
-- Inspect the current Service selector, retained claims, before/after reports, and allowed frontend peer.
-- Use the supplied focused helpers in a deliberate order; do not reapply the bootstrap Secret after rotation.
+- Read rotate.py to see the order it changes PostgreSQL, the Secret, and the consumers in.
+- Run python rotate.py.
+- Wait for both the dispatch and worker rollouts, and do not re-apply the original Secret.
 sources:
 - https://trivy.dev/latest/docs/target/container_image/
 - https://trivy.dev/latest/docs/supply-chain/sbom/
@@ -51,8 +52,9 @@ prepare:
   timeout: 420
 checks:
 - id: hardening-rotation
-  title: The old database password fails while the current Secret authenticates
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: The old password fails and the new one works
+  explanation: Against the same running database, the current Secret’s password must log in and the original
+    password must be rejected.
   command:
     args:
     - python
@@ -64,11 +66,13 @@ checks:
   json_path:
   - rotation
   expected: 'true'
-  diagnostic: Rotate the database credential, update the Secret, refresh consumers, and test actual TCP
-    authentication.
+  diagnostic: The rotation is incomplete. If the old password still works, run python rotate.py. If the
+    new one fails too, check the database Pod is running first; a stopped database rejects everything
+    and proves nothing. Do not re-apply the original Secret.
 - id: hardening-workflow
-  title: The repaired frontend completes a persistent worker job
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: A job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in the database.
   command:
     args:
     - python
@@ -80,7 +84,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Restore the trusted frontend path and working database/queue consumers.
+  diagnostic: A job from the frontend did not complete. Check the database Pod is running and selected
+    by the db Service, that the API and worker have the current password, and that the frontend network
+    policy names the current client label.
 capabilities:
 - docker
 - kind

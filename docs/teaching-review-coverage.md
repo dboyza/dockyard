@@ -84,10 +84,10 @@ A runtime pass alone is not a teaching-quality result.
 | m17-contexts | Completed without solutions | Revised | Explained Pod Security Standards, namespace labels, and each security context field. Quoted the real warning about existing violating Pods; server dry run rejected escalation; passed. |
 | m17-mission | Completed without solutions | Revised | Fixed RBAC, network, admission, and runtime independently; all seven checks passed. |
 | i09-egress-regression | Completed without solutions | Revised | Replaced outcomes and prediction copied from the network lesson. Evidence showed TCP-only DNS and a Redis rule on 6380 instead of 6379; patched both; passed. |
-| m18-images | Pending | Pending |  |
-| m18-rotation | Pending | Pending |  |
-| m18-recovery | Pending | Pending |  |
-| m18-mission | Pending | Pending |  |
+| m18-images | Completed without solutions | Revised | Replaced templated briefs, outcomes, debriefs, and hints with concrete steps. CVE-2022-29217 and PyJWT disappeared after rebuild; the database date lives in scan-evidence files, which the lesson now names. Passed. |
+| m18-rotation | Completed without solutions | Revised | Explained server and consumer rotation separately; rotate.py recorded old rejected and new accepted; passed. |
+| m18-recovery | Completed without solutions | Revised | Explained authenticated encryption, key custody, and restoring to separate storage; db-recovery with its own claim served the marker; passed. |
+| m18-mission | Completed without solutions | Revised | The draft said to fix network.yaml, but the fault is a live edit (retired-client label) while the file is correct; corrected the brief and hints. Completed all four repairs; passed. |
 | exam-ckad-b | Pending | Pending |  |
 | m19-runtime | Pending | Pending |  |
 | m19-kubelet | Pending | Pending |  |

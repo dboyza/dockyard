@@ -2,15 +2,16 @@ id: m18-images
 revision: 1
 module: 18
 order: 1
-title: Remove and verify an unused vulnerable dependency
-summary: Compare a real scan and SBOM before and after rebuilding.
+title: Scan an image and remove a vulnerable library
+summary: Scan Dispatch’s image, remove an unused vulnerable library, and prove it is gone.
 kind: lesson
 runtime: kubernetes
 nodes: 2
 minutes: 45
 outcomes:
-- Remove and verify an unused vulnerable dependency.
-- Compare a real scan and SBOM before and after rebuilding.
+- Read a vulnerability scan and an SBOM.
+- Remove an unused dependency and roll out the new image.
+- Explain what a scan does and does not prove.
 prerequisites:
 - m17-mission
 objectives:
@@ -29,9 +30,9 @@ prediction:
   correct: 0
   explanation: A scoped fix and a complete risk decision are different claims.
 hints:
-- Separate artifact identity, database availability, credentials, and network policy observations.
-- Inspect the current Service selector, retained claims, before/after reports, and allowed frontend peer.
-- Use the supplied focused helpers in a deliberate order; do not reapply the bootstrap Secret after rotation.
+- Search scan-before.json for CVE-2022-29217 and note which package it is in.
+- That package is only installed when include_legacy_dependency is true in build.json.
+- Set it to false and run sh repair-image.sh, which rebuilds, restarts, and scans again.
 sources:
 - https://trivy.dev/latest/docs/target/container_image/
 - https://trivy.dev/latest/docs/supply-chain/sbom/
@@ -56,8 +57,9 @@ prepare:
   timeout: 240
 checks:
 - id: hardening-images
-  title: The current artifact and running consumers omit the vulnerable teaching dependency
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: The vulnerable library is gone from the image and running Pods
+  explanation: A fresh scan of the current image must not find CVE-2022-29217, the after reports must
+    agree, and the running API and worker must not have PyJWT installed.
   command:
     args:
     - python
@@ -69,11 +71,13 @@ checks:
   json_path:
   - images
   expected: 'true'
-  diagnostic: Rebuild without unused PyJWT, replace API/worker Pods, and produce matching offline scan
-    and SBOM reports.
+  diagnostic: The library is still present somewhere. Check include_legacy_dependency is false in build.json,
+    then run sh repair-image.sh, which rebuilds, restarts the API and worker, and scans again. A rebuilt
+    image changes nothing until the Pods restart.
 - id: hardening-workflow
-  title: The repaired frontend completes a persistent worker job
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: A job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in the database.
   command:
     args:
     - python
@@ -85,7 +89,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Restore the trusted frontend path and working database/queue consumers.
+  diagnostic: A job from the frontend did not complete. Check the database Pod is running and selected
+    by the db Service, that the API and worker have the current password, and that the frontend network
+    policy names the current client label.
 capabilities:
 - docker
 - kind

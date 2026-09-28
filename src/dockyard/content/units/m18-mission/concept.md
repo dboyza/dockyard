@@ -1,18 +1,27 @@
-# Harden and recover Dispatch
+## The security capstone
 
-This capstone joins artifact evidence, service credentials, enforced connectivity, and independent data recovery.
-The starting environment contains an unused vulnerable dependency, an original database password, a stopped primary database, and a frontend policy aimed at a retired client label.
-An authenticated backup was taken before the compound failure.
+Several problems have happened at once, and each needs a different fix:
 
-Use observations to choose the order of work.
-An unavailable database and blocked frontend can both cause an application symptom, but they require different repairs.
-Inspect Pods, Service selectors, policy peers, and backup metadata before assuming a single root cause.
-Keep the original volume available while validating the recovered database.
+- the image still contains the unused vulnerable library;
+- the database is still on its original password;
+- the primary database has stopped (an encrypted backup was taken beforehand);
+- someone edited the frontend’s network policy directly in the cluster, and it now names a client label that has been retired. The file in your workspace was not changed.
 
-The release is complete when the unused vulnerable component is absent from the current image and actual consumers, the old credential is rejected while the current one succeeds, the authenticated backup is served from separate storage, and a new frontend job finishes correctly.
-Retain the before and after reports as evidence with their database date.
-A passing exercise does not dismiss remaining image findings or substitute for a production security review.
+Some of these produce the same symptom, such as “the dashboard does not work”.
+Look at the evidence (Pods, the Service’s selector, the policy’s peers, the backup’s details) before deciding which to fix first, and in what order.
+Keep the original database storage until the restored one is verified.
 
-Prepare a short operator handoff describing the failure chain, remediation order, verified observations, remaining risks, and next recovery drill.
-Include the original and restored volume identities and explain how you would reverse the traffic switch without overwriting either copy.
-Your work should make the next operator's decisions clear without exposing credentials.
+You are done when:
+
+- the library is gone from the image and the running processes;
+- the new password works and the old one is rejected;
+- the restored database, on separate storage, is serving;
+- a new job from the frontend completes.
+
+Keep your before and after scan reports; they record the database date.
+Passing this mission does not make the remaining image findings safe or replace a real security review.
+
+## Working on your own
+
+Try it without hints first.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.

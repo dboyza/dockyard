@@ -1,7 +1,8 @@
-# Harden and recover a compound failure
+## Recover and harden Dispatch
 
-Restore Dispatch, rotate its credential, and verify the remediated artifact.
-Read the concept and supplied helpers, then repair the source and actual environment in the external terminal.
-Keep credentials and backup keys out of the workspace.
-Run Check after the relevant positive and negative observations succeed.
-Write an operator handoff in handoff.md with the failure chain, verified recovery, remaining risks, and rollback conditions.
+Using the helpers from this module (`scan.py`, `build.json` with `repair-image.sh`, `rotate.py`, and `restore.py`), bring Dispatch back and harden it as described in Understand.
+The network fault was made directly in the cluster: compare the live policies with `network.yaml` and put the intended policy back.
+Decide the order yourself, and check each step before the next.
+
+Write `handoff.md` for the next operator covering: what failed and why, the order you fixed things in, what you checked, the remaining risks, the original and restored volume names, and how you would switch the database Service back without overwriting either copy.
+Keep passwords and keys out of it.

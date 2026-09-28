@@ -2,15 +2,16 @@ id: m18-recovery
 revision: 1
 module: 18
 order: 3
-title: Recover an authenticated backup into separate storage
-summary: Preserve the original volume and verify actual recovered application data.
+title: Restore an encrypted backup
+summary: Restore an encrypted backup onto separate storage and switch traffic to it after checking.
 kind: lesson
 runtime: kubernetes
 nodes: 2
 minutes: 45
 outcomes:
-- Recover an authenticated backup into separate storage.
-- Preserve the original volume and verify actual recovered application data.
+- Explain what authenticated encryption and key custody add to backups.
+- Restore onto separate storage and verify before switching traffic.
+- Keep the original storage as a fallback.
 prerequisites:
 - m18-rotation
 objectives:
@@ -30,9 +31,9 @@ prediction:
   explanation: An independent restore uses the backup and validates its recovered contents on separate
     storage.
 hints:
-- Separate artifact identity, database availability, credentials, and network policy observations.
-- Inspect the current Service selector, retained claims, before/after reports, and allowed frontend peer.
-- Use the supplied focused helpers in a deliberate order; do not reapply the bootstrap Secret after rotation.
+- Read restore.py to see where it restores to and when it switches the Service.
+- Run python restore.py.
+- Check kubectl get statefulsets,pvc and the db Service’s selector afterwards.
 sources:
 - https://trivy.dev/latest/docs/target/container_image/
 - https://trivy.dev/latest/docs/supply-chain/sbom/
@@ -56,8 +57,10 @@ prepare:
   timeout: 180
 checks:
 - id: hardening-recovery
-  title: An authenticated backup serves its marker from distinct storage
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: The restored backup is serving from separate storage
+  explanation: The encrypted backup must decrypt and reject tampering, the db Service must point at the
+    restored database on a different volume, the original claim must be intact, and the known record must
+    be readable through the frontend.
   command:
     args:
     - python
@@ -69,11 +72,13 @@ checks:
   json_path:
   - recovery
   expected: 'true'
-  diagnostic: Restore into db-recovery, preserve the original claim, and switch the database Service after
-    verification.
+  diagnostic: 'The restore is not complete. Run python restore.py and read its output, then check kubectl
+    get statefulsets,pvc and kubectl get service db -o yaml: the Service should select the restored database,
+    and the original claim should still exist.'
 - id: hardening-workflow
-  title: The repaired frontend completes a persistent worker job
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: A job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in the database.
   command:
     args:
     - python
@@ -85,7 +90,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Restore the trusted frontend path and working database/queue consumers.
+  diagnostic: A job from the frontend did not complete. Check the database Pod is running and selected
+    by the db Service, that the API and worker have the current password, and that the frontend network
+    policy names the current client label.
 capabilities:
 - docker
 - kind

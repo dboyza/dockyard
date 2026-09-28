@@ -1,4 +1,7 @@
-# Explain the evidence
+## New password in, old password out
 
-Explain why both a successful new credential and a rejected old credential are needed.
-Record the most useful diagnostic observation in your notes.
+PostgreSQL now rejects the old password, and the API and worker are using the new one.
+
+Check your understanding:
+Why do you need both a successful new login and a rejected old one?
+If both passwords failed, what would you check before concluding anything?

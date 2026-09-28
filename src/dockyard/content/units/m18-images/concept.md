@@ -1,39 +1,45 @@
-# Interpret an image scan as evidence
+## What is inside your image?
 
-An SBOM inventories the components present in an artifact.
-A vulnerability report joins that inventory to a dated advisory database.
-Neither proves that an application is exploitable, nor that an image with no listed findings is safe.
-Reachability, privileges, exposure, mitigations, and the age and coverage of the database matter.
+An image contains far more than your own code: an operating system’s packages, a language runtime, and libraries.
+Any of them can have known security flaws.
+Two tools help you see them:
 
-This checkpoint intentionally installs unused PyJWT 1.7.1 as a known vulnerable teaching dependency.
-Dispatch does not import it or accept JWTs.
-The pinned Trivy database identifies CVE-2022-29217 in that component.
-Removing an unused component reduces the exposed dependency set without replacing the supplied application.
-Other base-image findings remain visible and require separate triage; this exercise does not claim a fully clean image.
+- A **software bill of materials (SBOM)** lists the components in an image.
+- A **vulnerability scanner** compares that list with a database of published problems, identified by **CVE** numbers, and reports matches.
 
-The scanner uses a verified local executable and fixed database snapshot.
-Preparation downloads them once; the scan itself disables updates and network lookups.
-The database date is part of the evidence because a later advisory snapshot can produce different results for identical bytes.
-A pinned snapshot makes the lesson repeatable, but production scanning should use a deliberate update policy.
+Treat the results as evidence, not a verdict.
+A reported flaw only matters if the vulnerable code can actually be reached and exploited in how you run it.
+And an image with no findings is not proven safe: the database only knows about problems published so far.
+That is why the database’s date belongs in every report: the same image scanned against a newer database can show new findings.
 
-For an unrelated service, a typical inspection might be:
+## This lab
+
+This version of Dispatch deliberately installs an old library it never uses, PyJWT 1.7.1, which has a known flaw, CVE-2022-29217.
+Dispatch does not import it, so the flaw is not reachable, but an unused component is still something that could be misused, and it adds noise to every scan.
+Removing what you do not need is one of the simplest ways to reduce risk.
+
+The lab uses the **Trivy** scanner with a fixed, downloaded database so results are repeatable.
+For a different service, typical commands look like this:
 
 ```sh
 trivy image --scanners vuln --format json --output findings.json report-service:5
 trivy image --format cyclonedx --output inventory.json report-service:5
 ```
 
-Our scan.py helper adds offline flags, saves a platform-specific image archive, and records its configuration digest alongside the reports.
-The archive stays in the lab's private data directory, outside the editable workspace.
-A registry manifest, an OCI index, and an image configuration are different objects with different digests.
-Comparing hashes from different objects is not an integrity check.
+The supplied helpers wrap these for the lab, working offline:
 
-Read scan-before.json and sbom-before.json before editing build.json.
-The fixture is supplied through a named build context, so the main .dockerignore cannot accidentally include private lab data.
-Set include_legacy_dependency to false, build and load the image, and replace the running API and worker Pods.
-A new tag value alone does not replace existing containers.
-Then record the after reports with the same database.
+- `python scan.py before` or `after` scans the current image and writes `scan-PHASE.json` (the findings), `sbom-PHASE.json` (the inventory), and `scan-evidence-PHASE.json`, which records the image’s identity and the vulnerability database’s date under `database.updated_at`.
+- `build.json` has one setting, `include_legacy_dependency`, which controls whether the old library is installed.
+- `sh repair-image.sh` rebuilds the image, restarts the API and worker so they run the new image, and scans again as `after`.
 
-The checker independently scans the current image and inspects the running Python processes.
-It accepts other valid ways to remove this unused dependency when the resulting artifact, reports, and actual workload agree.
-Review the remaining findings instead of treating the exercise's passing result as a blanket security certification.
+Restarting matters: building a new image changes nothing that is already running.
+
+## Reading the results
+
+Look in `scan-before.json` for CVE-2022-29217 and the package it belongs to, and find PyJWT in `sbom-before.json`.
+After the rebuild, it should be gone from both.
+Other findings in the base image will remain.
+They are real and deserve review, but they are not this lesson’s task, so a pass here is not a clean bill of health for the whole image.
+
+Also note that an image has several different fingerprints: the registry manifest, a multi-platform index, and the image configuration each have their own digest.
+Comparing digests of different kinds of object tells you nothing.

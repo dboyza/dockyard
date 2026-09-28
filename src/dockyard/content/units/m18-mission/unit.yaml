@@ -2,15 +2,16 @@ id: m18-mission
 revision: 1
 module: 18
 order: 4
-title: Harden and recover a compound failure
-summary: Restore Dispatch, rotate its credential, and verify the remediated artifact.
+title: 'Capstone: recover and harden Dispatch'
+summary: Fix a failed database, an old password, a vulnerable image, and a stale network rule together.
 kind: mission
 runtime: kubernetes
 nodes: 2
 minutes: 90
 outcomes:
-- Harden and recover a compound failure.
-- Restore Dispatch, rotate its credential, and verify the remediated artifact.
+- Plan the order of several repairs from the evidence.
+- Prove each security and recovery property separately.
+- Write a handoff without exposing secrets.
 prerequisites:
 - m18-recovery
 objectives:
@@ -30,9 +31,12 @@ prediction:
   correct: 0
   explanation: Availability, data recovery, artifact hygiene, and credential revocation are separate properties.
 hints:
-- Separate artifact identity, database availability, credentials, and network policy observations.
-- Inspect the current Service selector, retained claims, before/after reports, and allowed frontend peer.
-- Use the supplied focused helpers in a deliberate order; do not reapply the bootstrap Secret after rotation.
+- Look at the Pods, the db Service selector, the frontend network policy, and the scan before changing
+  anything.
+- The live allow-business-reads policy differs from network.yaml, and the database must be restored before
+  its password is rotated.
+- Re-apply network.yaml through render.py, then run python restore.py, python rotate.py, and, after setting
+  build.json, sh repair-image.sh.
 sources:
 - https://trivy.dev/latest/docs/target/container_image/
 - https://trivy.dev/latest/docs/supply-chain/sbom/
@@ -65,8 +69,9 @@ prepare:
   timeout: 30
 checks:
 - id: hardening-images
-  title: The current artifact and running consumers omit the vulnerable teaching dependency
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: The vulnerable library is gone from the image and running Pods
+  explanation: A fresh scan of the current image must not find CVE-2022-29217, the after reports must
+    agree, and the running API and worker must not have PyJWT installed.
   command:
     args:
     - python
@@ -78,11 +83,13 @@ checks:
   json_path:
   - images
   expected: 'true'
-  diagnostic: Rebuild without unused PyJWT, replace API/worker Pods, and produce matching offline scan
-    and SBOM reports.
+  diagnostic: The library is still present somewhere. Check include_legacy_dependency is false in build.json,
+    then run sh repair-image.sh, which rebuilds, restarts the API and worker, and scans again. A rebuilt
+    image changes nothing until the Pods restart.
 - id: hardening-rotation
-  title: The old database password fails while the current Secret authenticates
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: The old password fails and the new one works
+  explanation: Against the same running database, the current Secret’s password must log in and the original
+    password must be rejected.
   command:
     args:
     - python
@@ -94,11 +101,14 @@ checks:
   json_path:
   - rotation
   expected: 'true'
-  diagnostic: Rotate the database credential, update the Secret, refresh consumers, and test actual TCP
-    authentication.
+  diagnostic: The rotation is incomplete. If the old password still works, run python rotate.py. If the
+    new one fails too, check the database Pod is running first; a stopped database rejects everything
+    and proves nothing. Do not re-apply the original Secret.
 - id: hardening-recovery
-  title: An authenticated backup serves its marker from distinct storage
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: The restored backup is serving from separate storage
+  explanation: The encrypted backup must decrypt and reject tampering, the db Service must point at the
+    restored database on a different volume, the original claim must be intact, and the known record must
+    be readable through the frontend.
   command:
     args:
     - python
@@ -110,11 +120,13 @@ checks:
   json_path:
   - recovery
   expected: 'true'
-  diagnostic: Restore into db-recovery, preserve the original claim, and switch the database Service after
-    verification.
+  diagnostic: 'The restore is not complete. Run python restore.py and read its output, then check kubectl
+    get statefulsets,pvc and kubectl get service db -o yaml: the Service should select the restored database,
+    and the original claim should still exist.'
 - id: hardening-workflow
-  title: The repaired frontend completes a persistent worker job
-  explanation: Compare current runtime behavior with the artifact and recovery evidence.
+  title: A job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in the database.
   command:
     args:
     - python
@@ -126,7 +138,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Restore the trusted frontend path and working database/queue consumers.
+  diagnostic: A job from the frontend did not complete. Check the database Pod is running and selected
+    by the db Service, that the API and worker have the current password, and that the frontend network
+    policy names the current client label.
 capabilities:
 - docker
 - kind

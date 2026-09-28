@@ -1,31 +1,34 @@
-# Restore data into independent storage
+## Restoring an encrypted backup onto new storage
 
-A backup is useful only when its contents can be restored and checked.
-A successful file copy or snapshot command says little about consistency, key custody, storage isolation, or application behavior after recovery.
-This rehearsal uses a logical PostgreSQL dump and proves a previously completed job survives on a different persistent volume.
+The storage module restored a plain backup.
+Real backups are usually encrypted, and restoring one safely involves a few more decisions.
 
-Before the fault, backup.py submits a unique job, waits for its real worker result, and creates a consistent pg_dump.
-It encrypts the dump with AES-256-GCM using a random nonce and a private key outside the workspace.
-Authenticated additional data binds the ciphertext to this lab and backup schema.
-Changing ciphertext or its authentication tag must fail decryption.
-The helper performs that negative test as part of the rehearsal.
+## What happened before this lesson
 
-Encryption does not make a backup self-sufficient.
-Losing the key loses the ability to restore; keeping the key beside exported ciphertext defeats many storage-separation goals.
-This exercise keeps the key in private lab data and excludes it from ordinary workspace exports.
-A production recovery design needs an independently protected, recoverable key-management process.
+`backup.py` has already:
 
-For an unrelated audit database, a logical restore could use:
+1. submitted a unique job and waited for a worker to finish it, so there is a known record to look for;
+2. made a consistent backup with `pg_dump`;
+3. encrypted it with **AES-256-GCM**, using a random key stored in private lab data outside your workspace;
+4. checked that a tampered copy fails to decrypt;
+5. stopped the original database, keeping its storage, to simulate losing it.
 
-```sh
-pg_dump --clean --if-exists --no-owner --no-acl audit > audit.sql
-psql -v ON_ERROR_STOP=1 restored_audit < audit.sql
-```
+GCM encryption also *authenticates* the data: if anyone changes a byte, decryption fails instead of producing corrupted data.
 
-Our helper keeps the plaintext in memory and passes it directly to psql after authentication.
-The original StatefulSet is scaled to zero, and its claim remains intact.
-Restoration creates db-recovery with a separate claim, verifies the marker in that database, and then changes the db Service selector.
-It does not overwrite the original claim or pretend that restarting the original Pod is a restore.
+Encryption creates a new responsibility: **the key**.
+Lose the key and the backup is useless; store the key right next to the backup and anyone who steals one has both.
+Real systems keep keys in a separate, protected, recoverable key-management service.
+
+## Restoring
+
+`restore.py`:
+
+1. decrypts the backup in memory;
+2. creates a **new** database, `db-recovery`, with its own separate claim;
+3. loads the backup into it and checks the known record is there;
+4. only then changes the `db` Service’s selector so traffic goes to the new database.
+
+The original database’s claim is left untouched, so if the restore turns out to be wrong you can switch back.
 
 ```sh
 python restore.py
@@ -33,10 +36,17 @@ kubectl get statefulsets,pvc
 kubectl get service db -o yaml
 ```
 
-Both original and recovered database Pods carry app: db, so the previously taught API/worker network rules cover that role.
-The Service adds recovery: restored to choose only the new instance.
-The independently created StatefulSet and claim names keep their controller and storage identities distinct.
+Both databases carry the label `app: db`, so the existing network rules already allow the API and workers to reach either.
+The Service additionally selects `recovery: restored` to choose only the new one.
 
-Write a recovery runbook with the symptom, authority to act, backup and key location, restore target, validation, traffic switch, and rollback conditions.
-Measure the amount of data that can be lost and the time to recover rather than promising recovery from an untested procedure.
-The checker decrypts the actual ciphertext, rejects an altered tag, compares distinct volume backing paths, verifies the preserved source claim, and reads the marker through the frontend.
+For a plain, unencrypted database, the equivalent commands would be:
+
+```sh
+pg_dump --clean --if-exists --no-owner --no-acl audit > audit.sql
+psql -v ON_ERROR_STOP=1 restored_audit < audit.sql
+```
+
+## Recording what you did
+
+A recovery runbook should cover: the symptom, who may authorise the restore, where the backup and its key are, where you restored to, how you checked it, how traffic was switched, and when you would switch back.
+Measure how much data could be lost and how long recovery took, rather than assuming.

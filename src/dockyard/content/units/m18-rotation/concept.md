@@ -1,23 +1,32 @@
-# Rotate credentials across their consumers
+## Changing a password everywhere it is used
 
-A Kubernetes Secret represents sensitive configuration, but its base64 encoding provides no confidentiality.
-Transport TLS protects an API connection; storage encryption protects stored data under a key management policy.
-The credentials and the access rules still need to be scoped and rotated.
-A Secret in a manifest can leak through source history, terminal output, exported diagnostics, or a misplaced backup.
+Passwords and keys should be replaced regularly, and immediately if one may have leaked.
+This is **credential rotation**, and it involves more than editing a Secret:
 
-Changing the Secret does not necessarily change the password accepted by the database.
-Changing the database does not guarantee that every consumer has read the new value.
-Environment variables are fixed at process creation; mounted Secret files update eventually, and an application may still cache them.
-Plan the server transition and consumer refresh as separate operations.
+1. The **server**, here PostgreSQL, must accept the new password and stop accepting the old one.
+2. Every **consumer**, here the API and the worker, must start using the new password.
 
-For a different reporting service, the sequence is to provision a replacement credential, update the server's accepted identity, update the workload's Secret, refresh consumers, and test both the permitted and revoked credentials.
-Systems that support overlapping credentials can reduce interruption by accepting both during a bounded migration window.
-This practice database uses one password, so the rehearsal includes a brief interruption and explicit restart.
+Changing the Secret alone does not change what PostgreSQL accepts.
+Changing PostgreSQL alone breaks every consumer still holding the old password.
+And consumers do not always notice a changed Secret: environment variables are fixed when a container starts, and even mounted files may be cached by the application.
+So rotation is planned as separate steps, with a restart of the consumers.
 
-The supplied rotate.py helper uses PostgreSQL ALTER ROLE over standard input, applies the new Secret over standard input, and rolls the API and worker.
-It stores the generated credential in a private file outside the workspace with mode 0600.
-It never places the password in a command argument, Git file, or displayed report.
-Inspect the helper to understand the sequence rather than memorizing its filename.
+Some systems accept two passwords for a while, so consumers can switch over with no interruption.
+This practice database only has one, so rotating it causes a short interruption.
+
+Remember from the Secrets lesson that a Secret is only base64 encoded, and it can leak through Git history, terminal output, logs, or backups.
+
+## This lab’s helper
+
+`rotate.py` does the whole sequence without ever putting the password in a command line, a file in your workspace, or its output:
+
+1. generates a new password;
+2. changes it in PostgreSQL, sending the SQL through standard input;
+3. updates the Kubernetes Secret, also through standard input;
+4. restarts the API and worker.
+
+It keeps a private copy of the new password outside your workspace, readable only by you.
+Read it to see the order of operations.
 
 ```sh
 python rotate.py
@@ -25,15 +34,17 @@ kubectl rollout status deployment/dispatch
 kubectl rollout status deployment/worker
 ```
 
-The supplied database role is an administrator for this disposable teaching environment.
-A production design should separate application permissions, migration permissions, and credential administration.
-The credential protection demonstrated here does not add database transport TLS or enable etcd encryption at rest.
-Those are distinct controls.
+## Proving the rotation worked
 
-A successful rotation needs positive and negative evidence.
-The new password must complete a real TCP authentication, the original password must be rejected, and both consumers must use the live Secret.
-An error caused by a dead database is not evidence that the old credential was revoked.
-The checker performs both attempts against the same reachable server and then completes an application job.
+You need two results against the **same, reachable** database:
 
-Keep a recovery route available before beginning rotation.
-If the server changed but rollout failed, repair the consumers using the intended new credential; do not print passwords to compare them.
+- the **new** password logs in successfully;
+- the **old** password is rejected.
+
+If the database were down, both would fail, and that would prove nothing about the old password.
+Check work does both attempts and then runs a real job.
+
+The database account here is an administrator, which is fine for a disposable practice lab.
+Real systems separate the application’s account from the one used to change schemas and manage credentials, and add encrypted connections and storage encryption, which are separate protections.
+
+If PostgreSQL has the new password but a consumer did not restart properly, fix the consumer so it uses the new password; do not print passwords to compare them.

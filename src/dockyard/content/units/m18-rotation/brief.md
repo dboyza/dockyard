@@ -1,6 +1,8 @@
-# Revoke a database credential
+## Rotate the database password
 
-Prove old credentials fail while refreshed consumers remain healthy.
-Read the concept and supplied helpers, then repair the source and actual environment in the external terminal.
-Keep credentials and backup keys out of the workspace.
-Run Check after the relevant positive and negative observations succeed.
+1. Read `rotate.py` to see the order it changes things in.
+2. Run `python rotate.py`, then wait for the `dispatch` and `worker` rollouts.
+3. Choose **Check work**.
+
+Check work logs in with the new password, confirms the old one is rejected by the same running database, and completes a job.
+Do not re-apply the original bootstrap Secret afterwards; that would put the old password back in the cluster.
