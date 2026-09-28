@@ -1,60 +1,84 @@
-# Trace an HTTP request through its boundaries
+# HTTP requests
 
-An HTTP request names a method, a target path, headers, and sometimes a body.
-A response has a status, headers, and a body.
-The same application can be healthy at one path and broken at another because the paths exercise different dependencies.
+**HTTP** is the language browsers and programs use to talk to web services.
+Dispatch is a web service, so almost every lab involves sending it HTTP requests with `curl`.
 
-## Read the URL
+## Requests and responses
 
-In `http://127.0.0.1:8080/jobs`, `http` is the scheme, `127.0.0.1` is the host, `8080` is the port, and `/jobs` is the path.
-The loopback address identifies the machine or network namespace making the request.
-Inside a container, `127.0.0.1` refers to that container's network namespace, not automatically to your host computer or another container.
-A Pod's containers share a network namespace, which is why sidecars can communicate over localhost.
+A **request** says what you want:
 
-## Observe a public example without changing data
+- a **method**, such as `GET` to read something or `POST` to send something new;
+- a **path**, such as `/jobs`;
+- optional **headers**, extra details such as the format of the data;
+- an optional **body**, the data itself.
+
+The server replies with a **response**: a **status code** saying how it went, headers, and a body.
+
+## Reading a URL
+
+In `http://127.0.0.1:8080/jobs`:
+
+- `http` is the protocol;
+- `127.0.0.1` is the address of the machine to contact;
+- `8080` is the **port**, which service on that machine to talk to;
+- `/jobs` is the path within that service.
+
+`127.0.0.1`, also called **localhost**, always means “the machine making this request”.
+Inside a container, that is the container itself, not your computer or a neighbouring container.
+Containers in the same Kubernetes Pod share one network, so for them localhost does reach each other.
+
+## curl
 
 ```sh
-curl --include --max-time 5 https://example.com/
+curl http://127.0.0.1:8080/healthz
+curl --include http://127.0.0.1:8080/healthz
+curl -H 'Content-Type: application/json' -d '{"title":"hello"}' http://127.0.0.1:8080/jobs
 ```
 
-`--include` shows response headers, and `--max-time` bounds how long the request can take.
-This example needs an internet connection; Dockyard's prepared lab requests use local endpoints.
-A GET conventionally reads a representation.
-A POST submits a body for the server to process, such as creating a Dispatch job.
-A DELETE requests removal of the named resource.
-The application's actual API defines the behavior; the method name alone does not prove that a request is harmless or idempotent.
+The first line sends a GET and prints the body.
+`--include` also prints the status and headers.
+The third sends a POST: `-d` supplies the body, and `-H` adds a header saying the body is JSON.
 
-## Classify the failure before choosing a repair
+By default curl reports success whenever any response arrives, even an error page.
+Add `--fail` to make it treat error statuses as failures, or `--fail-with-body` to also see the error message.
+`--max-time 5` stops waiting after five seconds.
 
-A DNS error means the name was not resolved as needed.
-A connection refusal means no accepting TCP path was available at the chosen address and port.
-A timeout means the operation did not finish before its deadline; it does not uniquely identify the failed layer.
-A TLS validation error means the expected secure identity or trust could not be established.
-An HTTP response proves that an HTTP-speaking peer answered, but the status and body determine what it reported.
+## Status codes
 
-| Status | Useful interpretation |
+| Status | Meaning |
 | --- | --- |
-| 200 | The request succeeded according to this endpoint. |
-| 400 | The server rejected the request as invalid. |
-| 401 | Authentication was required or failed. |
-| 403 | The request was forbidden by the server's policy. |
-| 404 | The requested resource or route was not found. |
-| 500 | The server encountered an internal failure. |
-| 503 | The service could not handle the request at that time. |
+| 200 | Success. |
+| 400 | The server thinks the request itself is wrong. |
+| 401 | You need to log in, or your login was not accepted. |
+| 403 | You are identified, but not allowed to do this. |
+| 404 | There is nothing at that path. |
+| 500 | The server hit an error while handling the request. |
+| 503 | The server cannot handle requests right now, often because something it depends on is unavailable. |
 
-`curl` can exit successfully after receiving an HTTP error response unless you ask it to treat that status as a failure.
-Use `--fail-with-body` when you want a failing exit status while retaining the diagnostic response body.
-Do not equate a shell exit code with an application result without checking those semantics.
+Codes starting with 2 mean success, 4 means a problem with the request, and 5 means a problem on the server.
 
-## Understand Dispatch's probes
+## When a request fails
 
-`/healthz` answers whether the application process can respond.
-`/readyz` additionally checks dependencies needed to serve work.
-`/startupz` represents completion of startup.
-Submitting a new job and verifying its completed database result exercises more of the system than any one probe.
-These checks complement one another; they are not interchangeable definitions of success.
+The error message tells you how far the request got:
+
+- **Could not resolve host**: the name could not be turned into an address. See the DNS primer.
+- **Connection refused**: the address was reached, but nothing is listening on that port.
+- **Timed out**: no answer came back in time. Something along the way is dropping or blocking traffic, or the service is stuck.
+- **Certificate or TLS error**: a secure connection could not be verified.
+- **An HTTP status**: the service answered. Read the status and body to see what it said.
+
+Work out which of these you have before changing anything.
+
+## Dispatch’s check addresses
+
+- `/healthz` answers if the Dispatch process is up and responding.
+- `/readyz` also checks that Dispatch can reach its database and queue.
+- `/startupz` answers once Dispatch has finished starting.
+
+Submitting a job and watching it finish tests far more than any of these on its own.
+`/healthz` can succeed while `/jobs` fails, for example when the database is down.
 
 ## Check your understanding
 
-Explain how `/healthz` can succeed while `/jobs` fails.
-For a failed request, record the first boundary that did not work and one observation that would challenge your hypothesis.
+How can `/healthz` succeed while submitting a job fails?
+If a request fails, what is the first thing you would look at to decide whether the problem is the name, the port, or the application?

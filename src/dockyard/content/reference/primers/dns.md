@@ -1,55 +1,66 @@
-# Separate names, addresses, and working services
+# Names and DNS
 
-DNS resolves names into records such as IP addresses.
-A successful lookup does not prove that a process is listening, that a route is allowed, or that an application is ready.
-A name can remain stable while its backing endpoints change.
+Computers find each other by numeric addresses such as `10.96.0.10`.
+People and programs prefer names such as `dispatch`.
+**DNS**, the Domain Name System, is the service that turns names into addresses.
+This is called **resolving** a name.
 
-## The same short name can mean different things
+## A name is not a working service
 
-In a Compose project, a service name can resolve through that project's container network.
-In Kubernetes, a Service named `dispatch` in namespace `dispatch` has the conventional full name `dispatch.dispatch.svc.cluster.local` in this course's cluster domain.
-A short name is expanded using the requesting Pod's DNS search configuration.
-A Pod in another namespace may need a namespace-qualified or fully qualified name.
-Your host computer does not automatically use the cluster's DNS resolver.
+Resolving a name only gives you an address.
+It does not tell you whether anything is listening there, whether traffic is allowed through, or whether the application works.
+When a request fails, check the name first, then the connection, then the application, one step at a time.
 
-## Inspect before guessing
+## Short names depend on where you ask from
 
-Inside an appropriate Linux guest or Pod, `/etc/resolv.conf` shows resolver addresses and search domains.
-When the image includes the tool, use a lookup such as:
+In Docker Compose, each service name, such as `db`, works as a name for containers on the same project network.
+
+In Kubernetes, a Service named `dispatch` in the `dispatch` namespace has a full name of `dispatch.dispatch.svc.cluster.local`.
+Programs usually use the short name `dispatch`, and the Pod’s DNS settings fill in the rest.
+That shortcut assumes the same namespace.
+From a Pod in a different namespace, use at least `dispatch.dispatch`.
+
+Your own computer does not use the cluster’s DNS, so these names only work from inside the cluster.
+
+## Looking a name up
+
+From inside a Pod, you can check what a name resolves to:
 
 ```sh
 nslookup kubernetes.default.svc.cluster.local
+cat /etc/resolv.conf
 ```
 
-Run it from a Pod in a prepared Kubernetes lab, where cluster DNS is meaningful.
-An image lacking `nslookup` has a missing diagnostic tool; that error is not evidence that DNS itself is broken.
-The exact lookup tool matters less than observing the requested name, the resolver used, and the returned answer or error.
+`nslookup` asks DNS for a name and prints the answer.
+`/etc/resolv.conf` shows which DNS server the Pod uses and which search suffixes it adds to short names.
 
-## Follow a Service request
+Some images do not include `nslookup`.
+“Command not found” means the tool is missing, not that DNS is broken; try a different image or a small Python one-liner instead.
 
-The client first resolves a Service name.
-For an ordinary ClusterIP Service, DNS normally returns the Service's virtual IP.
-The Service proxy then directs eligible traffic to ready endpoints selected from matching Pods.
-A Service can therefore resolve correctly while having no usable endpoints.
-A headless Service deliberately omits that virtual IP and exposes endpoint addresses through DNS, subject to its configuration.
-Neither type guarantees that the application responds correctly.
+## How a request reaches a Service
 
-## Policies can block the lookup itself
+1. The program resolves the Service’s name. For a normal Service, DNS returns one stable virtual address, the **ClusterIP**.
+2. Kubernetes forwards traffic sent to that address to one of the ready Pods the Service has selected, called its **endpoints**.
+3. That Pod’s application handles the request.
 
-A default-deny egress policy may block traffic to DNS as well as to the business dependency.
-DNS commonly uses UDP 53 and can also require TCP 53.
-Allowing only an application port will not help a client that cannot resolve the dependency's name.
-Verify both name resolution and the actual intended request from the relevant source workload.
-A request from the host computer or a node can follow a different policy path from a request from a Pod.
+So a Service name can resolve perfectly while the Service has no ready endpoints behind it, and every request still fails.
 
-## DNS availability has placement requirements
+A **headless** Service has no ClusterIP; DNS returns the Pods’ own addresses instead.
+StatefulSets use this so each Pod has its own name.
 
-Multiple CoreDNS replicas on one failed node do not provide independent availability.
-Inspect which nodes run the replicas, whether they are Ready, and whether the DNS Service has usable endpoints.
-The HA lesson spreads DNS across control-plane nodes so its deliberate primary outage leaves surviving resolvers.
-This is separate from etcd quorum and API load-balancer routing.
+## Network policies can block DNS too
+
+A network policy that blocks all outgoing traffic also blocks DNS lookups.
+DNS uses port 53 over UDP, and sometimes TCP.
+If you allow a Pod to reach its database port but not DNS, it still cannot find the database by name.
+
+## DNS needs to stay available
+
+DNS in a cluster is provided by Pods, usually CoreDNS.
+Several CoreDNS copies all on one node stop together if that node fails, so spreading them across nodes matters.
+The high-availability lesson explores this.
 
 ## Check your understanding
 
-A Service name resolves, but the client gets a connection error.
-Explain why changing the DNS name is not yet a justified repair, and identify the next endpoint and traffic observations you would gather.
+A Service name resolves, but connecting to it fails.
+Why is changing the name not yet the right fix, and what would you check next?

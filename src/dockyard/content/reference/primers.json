@@ -1,32 +1,32 @@
 [
   {
     "id": "terminal",
-    "title": "Terminal foundations",
+    "title": "Terminal basics",
     "minutes": 8,
-    "summary": "Read commands, paths, streams, and the machine boundary before changing a lab."
+    "summary": "Folders, files, variables, and how to read a command before you run it."
   },
   {
     "id": "yaml",
-    "title": "YAML and manifests",
+    "title": "Reading YAML",
     "minutes": 8,
-    "summary": "Distinguish valid data, valid API objects, and a system that actually works."
+    "summary": "Mappings, lists, indentation, and how Kubernetes files are laid out."
   },
   {
     "id": "http",
-    "title": "HTTP and request diagnosis",
+    "title": "HTTP requests",
     "minutes": 8,
-    "summary": "Use the request path and failure category to choose your next observation."
+    "summary": "Requests, responses, status codes, and what a failed request is telling you."
   },
   {
     "id": "dns",
-    "title": "DNS and service discovery",
+    "title": "Names and DNS",
     "minutes": 8,
-    "summary": "Follow a name through resolution, virtual addressing, and ready endpoints."
+    "summary": "How names become addresses, and why a name that resolves is not a working service."
   },
   {
     "id": "linux",
-    "title": "Linux administration essentials",
+    "title": "Linux essentials",
     "minutes": 10,
-    "summary": "Connect permissions, processes, sockets, systemd, namespaces, and cgroups."
+    "summary": "Users, file permissions, processes, services, and what makes a container."
   }
 ]

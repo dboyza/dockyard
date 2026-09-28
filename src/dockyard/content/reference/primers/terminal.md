@@ -1,29 +1,34 @@
-# Read a terminal command before running it
+# Terminal basics
 
-A terminal is a window connected to a shell.
-The shell parses your text, expands variables and patterns, and starts programs with arguments.
-Docker and kubectl are programs you run through that shell; they do not replace it.
-Dockyard opens a real shell in the current lab workspace with explicit lab identity and tool paths.
+A **terminal** is a window where you type commands instead of clicking.
+The program that reads what you type and runs it is called the **shell**.
+Docker and kubectl are ordinary programs that you start from the shell.
 
-## Establish where you are
+When Dockyard opens a lab terminal, it starts you in the lab’s own folder with some helpful values already set.
+
+## Where am I?
 
 ```sh
 pwd
 ls -la
-printf '%s\n' "$DOCKYARD_UNIT" "$DOCKYARD_WORKSPACE"
 ```
 
-`pwd` prints the working directory.
-A relative path such as `Dockerfile` is resolved from that directory; `/tmp/example` is an absolute path.
-`$DOCKYARD_UNIT` expands to an environment variable's value.
-Double quotes preserve that expanded value as one argument even when it contains spaces.
-Single quotes preserve literal text, including dollar signs.
+`pwd` prints the folder you are in, called the **working directory**.
+`ls` lists the files there; `-la` adds hidden files, whose names start with a dot, and details such as sizes and permissions.
 
-## Create and edit a file
+A **path** is a file’s location.
+`Dockerfile` on its own means “the file called Dockerfile in the current folder”; this is a **relative path**.
+A path starting with `/`, such as `/tmp/example`, is an **absolute path**: it means the same place wherever you are.
+`cd folder` moves into a folder, and `cd ..` moves up one level.
 
-A file such as `Dockerfile` is plain text.
-Use your preferred editor in the lab folder, save, then run `cat Dockerfile` to check what was written.
-If you do not have an editor set up, this command creates a small practice file:
+## Reading and writing files
+
+`cat file` prints a file’s contents.
+
+To change a file, open it in any text editor, save it, then check it with `cat`.
+If you prefer to stay in the terminal, `nano file` opens a simple editor: Control-O then Enter saves, and Control-X exits.
+
+You can also write a short file directly from the shell:
 
 ```sh
 cat > practice.txt <<'EOF'
@@ -33,51 +38,78 @@ EOF
 cat practice.txt
 ```
 
-The shell writes the lines between the two `EOF` markers into `practice.txt`.
-Put the closing `EOF` on its own line with no spaces before it.
-The quotes in `<<'EOF'` keep dollar signs and other shell characters as literal text.
-Be careful: `>` replaces an existing file with the same name.
-Use this only for the file you intend to write.
+Everything between the two `EOF` lines is written into `practice.txt`.
+The closing `EOF` must be on its own line with nothing before it.
+Be careful: `>` replaces a file that already exists, so check the name first.
 
-## Separate the command from its arguments
+## Variables
 
-In `kubectl get pods -n dispatch`, the program is `kubectl`; the remaining words are arguments.
-`-n dispatch` selects a Kubernetes namespace, not a directory on your host computer.
-In `docker logs CONTAINER`, replace `CONTAINER` with an actual identifier you observed.
-Do not type angle-bracket placeholders literally: the shell gives `<` and `>` special meanings.
-
-## Understand input, output, and failure
-
-A program receives standard input and produces standard output and standard error.
-`>` replaces a file with standard output; `>>` appends; `2>` redirects standard error.
-A pipe passes one program's standard output into another program's standard input.
+The shell can store named values called **variables**.
+Values the shell passes on to every program it starts are called **environment variables**.
+Writing `$NAME` inserts a variable’s value into a command:
 
 ```sh
-printf 'api\nworker\n' | sort
+echo "$DOCKYARD_WORKSPACE"
 ```
 
-This sorts two supplied lines without modifying a lab resource.
-An exit status of zero conventionally means success; a nonzero status means the program reported failure.
-`command-a && command-b` runs the second command only after the first succeeds.
-A pipeline's default status may reflect only its last command, so a quiet pipe is not sufficient verification that every stage worked.
-Check the resulting files or live resources as well.
+Dockyard sets variables such as `$DOCKYARD_CONTAINER` and `$DOCKYARD_PORT` in every lab terminal.
+Type them exactly as shown in the lessons; the shell fills in the real values for you.
 
-## Know which machine receives the command
+Put variables inside double quotes, as in `"$DOCKYARD_PORT"`.
+Double quotes keep the value together as one piece even if it contains spaces.
+Single quotes, as in `'$HOME'`, stop the shell replacing anything, so the text is used exactly as typed.
 
-`limactl shell --workdir=/tmp "$DOCKYARD_WORKER"` enters the owned Linux guest.
-Commands entered there run inside that VM until you type `exit`.
-`sudo` inside the guest grants guest-root privileges; `sudo` in your host computer shell is a different boundary.
-The lab shell retains your ordinary host permissions, so its identifying variables are helpful scoping, not an operating-system sandbox.
-Use the lab's supplied private kubeconfig and guest names.
+## The parts of a command
 
-## Recover your bearings
+In `kubectl get pods -n dispatch`:
 
-Control-C asks the foreground program to interrupt its current operation.
-It does not undo resources the program already created.
-After interruption, inspect actual lab state before retrying or cleaning up.
-If you opened a terminal for another lesson, return to the browser and open a new terminal for the intended lab rather than silently retargeting the old one.
+- `kubectl` is the program.
+- `get` and `pods` are **arguments**: words passed to the program.
+- `-n dispatch` is an **option**, a setting that starts with a dash. Here it means “in the dispatch namespace”, which is a Kubernetes idea, not a folder on your computer.
+
+When a lesson shows a placeholder such as `<the digest you found>`, replace the whole thing, including the angle brackets.
+The shell treats `<` and `>` specially, so never type them literally.
+
+A long command can be split over several lines by ending each line with a backslash, `\`.
+You can paste such a block all at once.
+
+## Output, errors, and chaining commands
+
+Programs print normal output and error messages on two separate channels, called **standard output** and **standard error**.
+
+- `command > file` saves the output to a file, replacing it.
+- `command >> file` adds the output to the end of a file.
+- `command 2>&1` sends error messages to the same place as normal output.
+- `first | second` passes the output of the first command into the second. This is called a **pipe**.
+
+```sh
+printf 'worker\napi\n' | sort
+```
+
+Every command finishes with an **exit status**, a number the shell keeps.
+Zero means success; anything else means the program reported a problem.
+`echo $?` shows the status of the command you just ran.
+`first && second` runs the second command only if the first succeeded.
+
+A command reporting success does not always mean the result is what you wanted.
+Check the file, container, or response you care about.
+
+## Stopping a command
+
+Control-C stops the command running in the foreground.
+It does not undo anything the command already created, so check the lab’s state before trying again.
+
+## Which computer am I on?
+
+Some later labs use Linux virtual machines.
+A command such as `limactl shell --workdir=/tmp "$DOCKYARD_WORKER"` takes you inside one of them, and everything you type runs there until you type `exit`.
+`sudo` runs a single command with administrator rights.
+Inside a lab machine that affects only the lab machine; on your own computer it affects your computer, so use it only where a lesson asks.
+
+The lab terminal runs with your normal user permissions.
+Its variables point commands at the lab’s resources, but it is not a security sandbox.
 
 ## Check your understanding
 
-Explain why `kubectl get pods -n dispatch` and `ls dispatch` inspect different things.
-Before running a mutation, identify its program, target environment, arguments, and expected observable result.
+`kubectl get pods -n dispatch` and `ls dispatch` both mention “dispatch”. What is each one looking at?
+Before running a command that changes something, can you say which program it runs, what it changes, and what you expect to see afterwards?
