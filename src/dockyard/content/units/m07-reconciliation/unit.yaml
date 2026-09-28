@@ -2,7 +2,7 @@ id: m07-reconciliation
 revision: 1
 module: 7
 order: 1
-title: Let a controller maintain the application
+title: Let Kubernetes keep Dispatch running
 summary: Ask Kubernetes for two copies of Dispatch and watch it replace a Pod you remove.
 kind: lesson
 runtime: kubernetes
@@ -29,9 +29,9 @@ prediction:
   explanation: Controllers reconcile desired state; a replacement is a new object, even when it runs the
     same image.
 hints:
-- Compare spec.replicas and status.availableReplicas.
-- The starter requests zero replicas; edit the desired state rather than creating a standalone Pod.
-- Set spec.replicas to 2, apply the manifests, and wait for rollout status before checking.
+- 'Compare how many copies the Deployment asks for with how many are ready: kubectl get deployment dispatch.'
+- The starter asks for zero copies. Change the Deployment rather than creating Pods yourself.
+- 'Set replicas: 2 in deployment.yaml, run sh run.sh, and wait with kubectl rollout status deployment/dispatch.'
 sources:
 - https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 - https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
@@ -62,8 +62,9 @@ prepare:
   timeout: 60
 checks:
 - id: kube-replicas
-  title: Two desired replicas are available
-  explanation: Observe the real API object and the running Dispatch application.
+  title: The Deployment has two ready copies
+  explanation: The Deployment must ask for two copies, and Kubernetes must have both of them running and
+    available.
   command:
     args:
     - python
@@ -75,10 +76,14 @@ checks:
   json_path:
   - replicas
   expected: 'true'
-  diagnostic: Compare spec.replicas with readyReplicas, then inspect Pods and events.
+  diagnostic: 'The Deployment does not have exactly two available copies. Run kubectl get deployment dispatch
+    and compare READY with what you asked for. If it shows 0/0, check replicas: in deployment.yaml and
+    apply it. If Pods are not becoming ready, run kubectl describe pods -l app=dispatch and read the Events
+    at the bottom.'
 - id: kube-owned-pods
-  title: Both Pods belong to the Dispatch Deployment
-  explanation: Observe the real API object and the running Dispatch application.
+  title: Both Pods were created by the Dispatch Deployment
+  explanation: The running Pods must come from the Deployment, so Kubernetes will replace them if they
+    fail.
   command:
     args:
     - python
@@ -90,11 +95,12 @@ checks:
   json_path:
   - owned_pods
   expected: 'true'
-  diagnostic: Inspect the actual Deployment, Pods, and Service. Apply your corrected manifest and wait
-    for the rollout.
+  diagnostic: Kubernetes did not find exactly two running Pods created by the dispatch Deployment. Run
+    kubectl get pods and check how many there are. A Pod created by hand with kubectl run is not managed
+    by the Deployment and does not count.
 - id: kube-response
-  title: Every replica serves the supplied Dispatch release
-  explanation: Observe the real API object and the running Dispatch application.
+  title: Each copy answers as Dispatch
+  explanation: Dockyard asks each Pod’s /healthz directly, to confirm every copy is really running Dispatch.
   command:
     args:
     - python
@@ -106,10 +112,12 @@ checks:
   json_path:
   - response
   expected: 'true'
-  diagnostic: Use kubectl logs and describe pod to locate the failing layer.
+  diagnostic: At least one Pod did not answer correctly on port 8080. Run kubectl get pods to find it,
+    then kubectl logs POD_NAME and kubectl describe pod POD_NAME to see why. Check the Deployment still
+    uses the supplied image.
 - id: kube-labels
-  title: Pod labels satisfy the application selector
-  explanation: Observe the real API object and the running Dispatch application.
+  title: The Pods carry the label app=dispatch
+  explanation: The Service finds Pods by this label, so every Dispatch Pod must have it.
   command:
     args:
     - python
@@ -121,10 +129,13 @@ checks:
   json_path:
   - labels
   expected: 'true'
-  diagnostic: The Deployment selector and Pod labels must match app=dispatch.
+  diagnostic: The Pods do not all have the label app=dispatch. Run kubectl get pods --show-labels. The
+    Pod labels come from spec.template.metadata.labels in the Deployment, and spec.selector.matchLabels
+    must match them.
 - id: kube-service
-  title: Service DNS routes a real request to Dispatch
-  explanation: Observe the real API object and the running Dispatch application.
+  title: A request to the Service reaches Dispatch
+  explanation: Dockyard sends a real request to http://dispatch:8080 from inside the cluster and checks
+    a Dispatch Pod answers.
   command:
     args:
     - python
@@ -136,7 +147,10 @@ checks:
   json_path:
   - service
   expected: 'true'
-  diagnostic: The Service must select the Dispatch Pods and target their listening port.
+  diagnostic: A request to the dispatch Service did not reach a Dispatch Pod. Compare the Service’s selector
+    (kubectl get service dispatch -o yaml) with the Pod labels (kubectl get pods --show-labels), and check
+    kubectl get endpointslices -l kubernetes.io/service-name=dispatch lists ready addresses. The Service’s
+    targetPort must be 8080.
 capabilities:
 - docker
 - kind

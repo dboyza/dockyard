@@ -1,14 +1,13 @@
-# Deliver the first Kubernetes checkpoint
+## Deliver Dispatch on Kubernetes
 
-The starter has a Deployment scaled to zero and a Service selecting an obsolete label.
-Deliver a two-replica Dispatch application in namespace `dispatch` using the supplied image.
+The starter Deployment asks for zero copies, and the Service selects an old label.
+Deliver a working two-copy Dispatch in the `dispatch` namespace using the supplied image.
 
-- Keep a Deployment named `dispatch` with two available replicas and Pod label `app=dispatch`.
-- Keep a Service named `dispatch` that reaches those replicas on port 8080.
-- Keep manifests in the workspace so another operator can reproduce the state.
-- Write `OPERATIONS.md` explaining the current context, how to inspect ownership and endpoints, and how to observe a Pod replacement.
-- Demonstrate a healthy response through the Service before checking.
+- Keep the Deployment named `dispatch`, with two available copies and the Pod label `app=dispatch`.
+- Keep the Service named `dispatch`, reaching those copies on port 8080.
+- Keep your fixed manifests in the workspace.
+- Write `OPERATIONS.md` explaining how to check the current context, how to see which Pods the Service reaches, and how to watch a Pod being replaced.
+- Show a successful request through the Service before checking.
 
-Equivalent declarative or imperative repair steps are accepted when the final live state and maintained source satisfy the contract.
-Do not create a standalone lookalike Pod as a substitute for the required Deployment.
-The runbook receives self-review; runtime criteria determine the automated result.
+Any approach that leaves the live cluster and your files in that state is accepted.
+Do not create a standalone Pod instead of fixing the Deployment.

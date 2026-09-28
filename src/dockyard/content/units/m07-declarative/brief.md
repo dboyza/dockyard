@@ -1,13 +1,13 @@
-# Migrate and apply the manifest
+## Update an old manifest and apply it
 
-The cluster currently runs one Dispatch replica.
-Your workspace contains a desired two-replica Deployment written with the removed `extensions/v1beta1` API version.
+The cluster runs one Dispatch replica.
+Your workspace has a `deployment.yaml` that asks for two replicas, but it was written for the retired `extensions/v1beta1` API.
 
-1. Confirm the private context and namespace.
-2. Attempt a server dry run and explain the unsupported API error.
-3. Migrate the manifest to the supported Deployment API and keep its explicit selector matching the Pod labels.
-4. Inspect the diff, apply, and wait for the two-replica rollout.
-5. Add a `CHANGE.md` note describing why changing only the namespace would not repair this error.
+1. Confirm which context and namespace you are using.
+2. Try a server dry run of the file and read the error.
+3. Update the file to the current Deployment API, keeping its selector matching the Pod labels.
+4. Look at the diff, apply it with `sh run.sh`, and wait for both replicas to be ready.
+5. Write a short `CHANGE.md` explaining why switching namespace or context would not have fixed the original error.
+6. Choose **Check work**.
 
-The automated check validates the live result and the source manifest's supported API version.
-Your explanation is a self-review artifact, not automatically scored prose.
+Check work tests the running Deployment and that the file in your workspace uses a supported API version.

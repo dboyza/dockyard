@@ -1,12 +1,9 @@
-# Debrief: Read labels, namespaces, and ownership
+## Selectors connect, names don’t
 
-A label groups objects by convention, while an owner reference identifies the controller responsible for a particular object.
-Tracing Pod to ReplicaSet to Deployment explains both where a rollout came from and which object should receive a lasting change.
+The Service was looking for Pods labelled `app=dispatch-old`.
+No Pod had that label, so its endpoint list stayed empty and requests had nowhere to go.
+Changing the selector to match the Pods’ real label fixed it without touching the Pods.
 
-## Explain your result
-
-Which observation would distinguish a correct-looking but unrelated Pod from a ready backend owned by Dispatch?
-
-## Transfer beyond this lab
-
-In a larger cluster, combine explicit namespace and context checks with ownership inspection before changing a similarly named workload.
+Check your understanding:
+Which single command would have shown you the problem fastest?
+If a stray Pod from another app also had the label `app=dispatch`, what would happen to Dispatch’s traffic?

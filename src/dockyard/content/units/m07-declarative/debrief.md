@@ -1,12 +1,9 @@
-# Debrief: Apply deliberate changes in the right context
+## Declared, accepted, and running
 
-A valid apps/v1 declaration expresses the state that a controller should maintain, but API acceptance does not prove application availability.
-The live release, owned replicas, and request through Service DNS connect that declaration to observed behavior.
+Your updated file described what you wanted, the cluster accepted it, and the Deployment controller made it true.
+Those are three separate steps, and each can fail on its own.
 
-## Explain your result
-
-Explain why changing a manifest in your workspace without applying it leaves the cluster unchanged, and why applying it to another context would be dangerous.
-
-## Transfer beyond this lab
-
-For shared environments, review changes and compare intended state with the live object before applying a declaration.
+Check your understanding:
+What happens to the cluster if you edit `deployment.yaml` but never apply it?
+Why is it dangerous to apply a file without first checking your current context?
+Try generating a Deployment with `kubectl create deployment ... --dry-run=client -o yaml` and compare it with `deployment.yaml`.

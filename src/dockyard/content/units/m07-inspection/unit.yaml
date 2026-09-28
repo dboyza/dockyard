@@ -2,15 +2,16 @@ id: m07-inspection
 revision: 1
 module: 7
 order: 2
-title: Read labels, namespaces, and ownership
-summary: Repair a selector boundary using observations from the API.
+title: Labels, selectors, and namespaces
+summary: Find out why a Service reaches none of Dispatch’s healthy Pods, and learn the core inspection
+  commands.
 kind: lesson
 runtime: kubernetes
 minutes: 30
 outcomes:
-- Use namespaces to scope names and queries.
-- Distinguish labels, selectors, names, and ownership references.
-- Trace a Service with no endpoints to the selected Pods.
+- Look for objects in the right namespace, or across all namespaces.
+- Explain how a Service uses labels, not names, to choose its Pods.
+- Use endpoints to find out why a Service sends traffic nowhere.
 prerequisites:
 - m07-reconciliation
 objectives:
@@ -20,18 +21,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A Service name matches a Deployment name, but its selector matches no Pod labels. Where does
-    traffic go?
+  question: A Service is named dispatch, but its selector matches no Pod labels. Where does its traffic
+    go?
   options:
-  - There are no usable backend endpoints.
-  - Kubernetes selects the similarly named Deployment.
-  - It reaches any Pod in the namespace.
+  - Nowhere. The Service has no endpoints.
+  - To the Deployment with the same name.
+  - To any Pod in the namespace.
   correct: 0
-  explanation: Services select labels, not Deployment names.
+  explanation: Services choose Pods by label only. A matching name means nothing to them.
 hints:
-- List Pod labels and compare them with the Service selector.
-- Inspect EndpointSlices with the kubernetes.io/service-name label.
-- Change service.yaml spec.selector.app to dispatch, then kubectl apply -f service.yaml.
+- Compare kubectl get pods --show-labels with the selector in kubectl get service dispatch -o yaml.
+- kubectl get endpointslices -l kubernetes.io/service-name=dispatch shows the Service has no addresses.
+- Change spec.selector.app in service.yaml to dispatch, then kubectl apply -f service.yaml.
 sources:
 - https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 - https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
@@ -62,8 +63,9 @@ prepare:
   timeout: 60
 checks:
 - id: kube-replicas
-  title: Two desired replicas are available
-  explanation: Observe the real API object and the running Dispatch application.
+  title: The Deployment has two ready copies
+  explanation: The Deployment must ask for two copies, and Kubernetes must have both of them running and
+    available.
   command:
     args:
     - python
@@ -75,10 +77,14 @@ checks:
   json_path:
   - replicas
   expected: 'true'
-  diagnostic: Compare spec.replicas with readyReplicas, then inspect Pods and events.
+  diagnostic: 'The Deployment does not have exactly two available copies. Run kubectl get deployment dispatch
+    and compare READY with what you asked for. If it shows 0/0, check replicas: in deployment.yaml and
+    apply it. If Pods are not becoming ready, run kubectl describe pods -l app=dispatch and read the Events
+    at the bottom.'
 - id: kube-owned-pods
-  title: Both Pods belong to the Dispatch Deployment
-  explanation: Observe the real API object and the running Dispatch application.
+  title: Both Pods were created by the Dispatch Deployment
+  explanation: The running Pods must come from the Deployment, so Kubernetes will replace them if they
+    fail.
   command:
     args:
     - python
@@ -90,11 +96,12 @@ checks:
   json_path:
   - owned_pods
   expected: 'true'
-  diagnostic: Inspect the actual Deployment, Pods, and Service. Apply your corrected manifest and wait
-    for the rollout.
+  diagnostic: Kubernetes did not find exactly two running Pods created by the dispatch Deployment. Run
+    kubectl get pods and check how many there are. A Pod created by hand with kubectl run is not managed
+    by the Deployment and does not count.
 - id: kube-response
-  title: Every replica serves the supplied Dispatch release
-  explanation: Observe the real API object and the running Dispatch application.
+  title: Each copy answers as Dispatch
+  explanation: Dockyard asks each Pod’s /healthz directly, to confirm every copy is really running Dispatch.
   command:
     args:
     - python
@@ -106,10 +113,12 @@ checks:
   json_path:
   - response
   expected: 'true'
-  diagnostic: Use kubectl logs and describe pod to locate the failing layer.
+  diagnostic: At least one Pod did not answer correctly on port 8080. Run kubectl get pods to find it,
+    then kubectl logs POD_NAME and kubectl describe pod POD_NAME to see why. Check the Deployment still
+    uses the supplied image.
 - id: kube-labels
-  title: Pod labels satisfy the application selector
-  explanation: Observe the real API object and the running Dispatch application.
+  title: The Pods carry the label app=dispatch
+  explanation: The Service finds Pods by this label, so every Dispatch Pod must have it.
   command:
     args:
     - python
@@ -121,10 +130,13 @@ checks:
   json_path:
   - labels
   expected: 'true'
-  diagnostic: The Deployment selector and Pod labels must match app=dispatch.
+  diagnostic: The Pods do not all have the label app=dispatch. Run kubectl get pods --show-labels. The
+    Pod labels come from spec.template.metadata.labels in the Deployment, and spec.selector.matchLabels
+    must match them.
 - id: kube-service
-  title: Service DNS routes a real request to Dispatch
-  explanation: Observe the real API object and the running Dispatch application.
+  title: A request to the Service reaches Dispatch
+  explanation: Dockyard sends a real request to http://dispatch:8080 from inside the cluster and checks
+    a Dispatch Pod answers.
   command:
     args:
     - python
@@ -136,7 +148,10 @@ checks:
   json_path:
   - service
   expected: 'true'
-  diagnostic: The Service must select the Dispatch Pods and target their listening port.
+  diagnostic: A request to the dispatch Service did not reach a Dispatch Pod. Compare the Service’s selector
+    (kubectl get service dispatch -o yaml) with the Pod labels (kubectl get pods --show-labels), and check
+    kubectl get endpointslices -l kubernetes.io/service-name=dispatch lists ready addresses. The Service’s
+    targetPort must be 8080.
 capabilities:
 - docker
 - kind

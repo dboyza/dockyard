@@ -1,12 +1,11 @@
-# Find the empty selector
+## Reconnect the Service to its Pods
 
-The Deployment requests two Pods with label `app=dispatch`.
-The Service incorrectly selects `app=dispatch-old`, leaving the application unreachable through its Service even when individual Pods are healthy.
+Dispatch’s two Pods are running and healthy, but its Service reaches none of them.
 
-1. Inspect Pod labels, the Service selector, and EndpointSlices.
-2. Correct the Service selector in `service.yaml` without renaming resources or moving them to another namespace.
-3. Apply the file and confirm that EndpointSlices contain ready addresses.
-4. From a Dispatch Pod, make a real request to `http://dispatch.dispatch.svc.cluster.local:8080/healthz` using Python's `urllib.request`.
-5. Check the lab once both replicas and the Service work.
+1. Compare the Pods’ labels with the Service’s selector, and look at the Service’s EndpointSlices.
+2. Fix the selector in `service.yaml`. Do not rename anything or change namespaces.
+3. Apply it with `kubectl apply -f service.yaml` and check that the EndpointSlices now list two ready addresses.
+4. Use the `kubectl exec` command from Understand to request `http://dispatch:8080/healthz` from inside the cluster.
+5. Choose **Check work**.
 
-Use `kubectl exec deployment/dispatch -- python -c 'import urllib.request; print(urllib.request.urlopen("http://dispatch:8080/healthz").read().decode())'` for the request.
+In your notes, explain why the Service found no Pods even though its name matched the Deployment’s.

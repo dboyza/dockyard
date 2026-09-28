@@ -33,10 +33,10 @@ A runtime pass alone is not a teaching-quality result.
 | m06-artifacts | Completed without solutions | Revised | Platform and layer-secret explanations rewritten for beginners; passed with .dockerignore. |
 | m06-limits | Completed without solutions | Revised | Capabilities and cgroups explained plainly; cgroup values match the lesson; passed. Compose equivalents added because the capstone needs them. |
 | m06-mission | Completed without solutions | Revised | Capstone required Compose restriction keys never taught; now taught in m06-limits. Completed with plain SQL backup method from m05; all checks passed. |
-| m07-reconciliation | Completed in initial review | Revised in initial review | See teaching-review.md. |
-| m07-inspection | Pending | Pending |  |
-| m07-declarative | Pending | Pending |  |
-| m07-mission | Pending | Pending |  |
+| m07-reconciliation | Completed without solutions | Revised | Output matched the lesson: 0/0, rollout, and a replacement Pod with a new UID; passed. Walkthrough exposed a resume bug where a resumed cluster reported ready while every Pod was Unknown; fixed in the runtime. |
+| m07-inspection | Completed without solutions | Revised | Rewritten from expert shorthand; now teaches -A, --show-labels, -o yaml, custom-columns, explain, and EndpointSlices. Empty EndpointSlice filled after the selector fix; passed. |
+| m07-declarative | Completed without solutions | Revised | Now teaches context switching, server dry runs, diff, and generating YAML with --dry-run=client. Every shown command produced the described output; passed. |
+| m07-mission | Completed without solutions | Revised | Fixed replicas and selector independently; passed after waiting for the rollout. |
 | m08-workloads | Pending | Pending |  |
 | m08-patterns | Pending | Pending |  |
 | m08-jobs | Pending | Pending |  |

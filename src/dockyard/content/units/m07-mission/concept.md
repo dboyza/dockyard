@@ -1,11 +1,20 @@
-# Independent application deployment
+## Your first Kubernetes mission
 
-Combine API inspection, reconciliation, and selector reasoning to establish the first Kubernetes checkpoint.
-The supplied source and image are the same Dispatch API used in container engineering.
-The application now runs under a controller instead of directly under Docker.
+This mission brings together the three lessons in this module.
+Dispatch should run as two copies behind its Service, but right now it doesn’t.
+There are no step-by-step commands; use what you have learned to find each problem and fix it.
 
-An independent completion requires passing without opening hints or the worked reference in this attempt.
-A guided pass still records useful practice.
-The mission export includes your manifests, notes, and observed check results, while excluding runtime credentials.
+A good way to work:
 
-Design your evidence around distinct claims: the API accepted your desired state, the controller created the intended Pods, each Pod serves Dispatch, and the Service actually connects a client to a backend.
+1. Check your context and namespace.
+2. Look at the Deployment: how many copies does it ask for, and how many are running?
+3. Look at the Service: which labels does it select, and does it have endpoints?
+4. Fix the files, apply them, and confirm with a real request through the Service.
+
+Keep your fixes in the workspace files, not just in the live cluster, so someone else could apply them again.
+
+## Working on your own
+
+Try it without hints first.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.
+When you pass, Dockyard saves your manifests and notes as a portfolio checkpoint, leaving out credentials.
