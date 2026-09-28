@@ -28,10 +28,12 @@ prediction:
   explanation: A successful exit only describes that process. Inspect what it was asked to do before choosing
     a repair.
 hints:
-- Inspect the actual command rather than assuming app.py was started.
-- Container configuration is immutable in the relevant fields; replace only the assigned broken instance.
-- Remove "$DOCKYARD_CONTAINER", then use the earlier application command with the assigned label, mount,
-  working directory, and loopback port.
+- 'Look at what the broken container actually ran: docker inspect --format ''{{json .Config.Cmd}}'' "$DOCKYARD_CONTAINER",
+  then read its logs.'
+- A container’s command cannot be changed after it is created, so you need a replacement container with
+  the same name. Remove the old one first.
+- 'Remove "$DOCKYARD_CONTAINER", then start Dispatch with the full docker run command from the first lesson:
+  label, port mapping, folder mount, working directory, and python app.py.'
 sources:
 - https://docs.docker.com/engine/containers/run/
 starter: {}

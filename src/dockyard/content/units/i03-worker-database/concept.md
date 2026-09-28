@@ -1,13 +1,24 @@
-## Incident briefing
+## What you’re walking into
 
-The API and its readiness check work, and newly submitted jobs appear in the queue, but background results never finish.
-A worker-specific configuration overlay was deployed immediately before the symptom; the API, queue, and database processes stayed healthy.
-Restore two interchangeable workers while preserving the current PostgreSQL volume, private dependency network, and API endpoint.
-Prove a new job completes through a real worker and persists in the database.
+Dispatch accepts new jobs, and they appear in the list, but none of them ever finish.
+The API’s `/readyz` check is green, and the database and queue are running normally.
+Just before the problem started, someone changed settings that apply only to the workers.
 
-## Evidence discipline
+Your job is to find out why the workers are not finishing jobs and fix it, without losing any stored jobs.
 
-State the user-visible failure, collect a discriminating observation, and make a bounded repair.
-Use the preceding teaching labs and reference desk when needed.
-Record the cause, repair, verification, and remaining risk in your observations.
-Hints and reference reveal remain available but record supported practice.
+## How to approach an incident
+
+1. **Describe the symptom** in one sentence, in terms a user would notice.
+2. **Collect evidence** before changing anything.
+3. **Form a theory** that explains all of that evidence.
+4. **Make the smallest fix** that addresses the cause.
+5. **Check the result** the way a user would, with a new job.
+
+Write each step in your notes as you go.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.
+
+## Useful reminders
+
+The API and workers are built from the same image, but each service in `compose.yaml` can have its own settings.
+A healthy API only tells you the API’s own connections work.
+`docker compose logs worker` shows what the workers are doing, or failing to do.

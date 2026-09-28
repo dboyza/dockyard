@@ -1,10 +1,10 @@
 ## Compare your diagnosis
 
-The build cache correctly reused layers for unchanged files in the stale staged context.
-The edited root VERSION was never part of that build input.
-Selecting the correct context repairs the input boundary; deleting the entire Docker cache would waste work without correcting the release script.
-The final health response comes from a self-contained image, not a source bind mount.
+`release.sh` built from `staged-context`, an old folder left over from a previous packaging step.
+The `VERSION` you edited was in the workspace folder, which that build never looked at.
+The cache was doing its job correctly: the files it was given had not changed.
+Pointing the build at the right folder fixes the cause; `--no-cache` would rebuild the same old files more slowly.
 
-Which observation ruled out your first alternative explanation?
-Which preservation constraint would a quick reset have violated?
-What should an operator monitor to detect this failure earlier?
+Check your understanding:
+Which observation showed you the build was reading a different folder?
+How could a team catch this before release, for example by checking the release reported by a freshly built image?

@@ -1,9 +1,10 @@
-## Publish and select a release
+## Publish a release and run it by digest
 
-Prepare builds the known-good application image and starts the assigned local registry.
-Tag the application as `127.0.0.1:$DOCKYARD_REGISTRY_PORT/dispatch:release`, push it, and find its digest in that repository.
-Pull that digest, then create the assigned API container using the digest reference rather than the mutable tag.
-Keep the usual lab label and loopback API port contract.
+Dockyard has built a working Dispatch image as `$DOCKYARD_IMAGE` and started this lab’s registry.
 
-Leave the registry and API running.
-Verify the API reports release `dispatch-1`, and explain why its Config.Image reference includes @sha256.
+1. Tag the image as `127.0.0.1:$DOCKYARD_REGISTRY_PORT/dispatch:release` and push it.
+2. Find the digest this registry reported for it.
+3. Pull the image by digest, then run `$DOCKYARD_CONTAINER` from that digest reference, with the lab label and `127.0.0.1:$DOCKYARD_PORT:8080`.
+4. Check that `/healthz` reports release `dispatch-1`.
+
+Leave both the registry and the API running, then choose **Check work**.

@@ -2,15 +2,15 @@ id: m05-mission
 revision: 1
 module: 5
 order: 4
-title: 'Mission: operate the complete Dispatch stack'
-summary: Deliver the four-role application with durable data, readiness gates, and independent workers.
+title: 'Mission: run the complete Dispatch project'
+summary: Write the whole Compose project yourself, with health checks, saved data, and two workers.
 kind: mission
 runtime: docker
 minutes: 50
 outcomes:
-- Combine service configuration, network isolation, storage, and readiness.
-- Run an interchangeable worker role with multiple replicas.
-- Prove end-to-end processing through direct database evidence.
+- Combine services, networking, storage, and health checks in one Compose file.
+- Run two copies of the worker.
+- Confirm a new job is finished by a worker and saved in PostgreSQL.
 prerequisites:
 - m05-scaling
 objectives:
@@ -19,19 +19,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation best proves the whole background workflow?
+  question: What best shows the whole background workflow works?
   options:
-  - A fresh job is completed by an actual worker and stored in PostgreSQL.
-  - The API container is merely running.
-  - A Compose file contains four service names.
+  - A new job is finished by a worker and its result is saved in PostgreSQL.
+  - The API container is running.
+  - The Compose file lists four services.
   correct: 0
-  explanation: Configuration and process existence are useful evidence, but the application contract requires
-    actual completed work and durable state.
+  explanation: Running containers and a tidy file are good signs, but users need their jobs finished and
+    saved.
 hints:
-- Model each role and its dependencies before adding replica count and startup gates.
-- Keep database and queue internal, label every resource, and mount the named volume at PostgreSQL’s data
-  path.
-- Apply the complete model with --scale worker=2 --wait, then follow a new job through the API, worker
+- List each service and what it depends on before you write the file.
+- Keep db and queue without ports, label everything, and mount the volume only into db.
+- Start it with docker compose up -d --scale worker=2 --wait, then follow a new job through the API, worker
   logs, and database.
 sources:
 - https://docs.docker.com/compose/intro/compose-application-model/

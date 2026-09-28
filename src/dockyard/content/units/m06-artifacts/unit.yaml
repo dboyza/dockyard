@@ -2,15 +2,15 @@ id: m06-artifacts
 revision: 2
 module: 6
 order: 2
-title: Know the platform and control the build context
-summary: Inspect native image architecture and remove a deliberately fake secret from every shipped layer.
+title: Check the platform and keep secrets out
+summary: Build for your own processor and stop a fake secret file getting into any layer of the image.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Distinguish an image platform from the host operating system.
-- Explain how a multi-platform index selects a platform-specific image.
-- Keep unintended secret files out of the build context instead of deleting them later.
+- Find which processor platform an image was built for.
+- Explain why a file deleted in a later build step is still inside the image.
+- Use .dockerignore or specific COPY lines to keep private files out of a build.
 prerequisites:
 - m06-registry
 objectives:
@@ -19,20 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A Dockerfile copies .env and removes it in a later RUN instruction. Is the earlier layer necessarily
-    free of that file?
+  question: A Dockerfile copies .env, then deletes it in a later RUN step. Is the file gone from the image?
   options:
-  - No; earlier layer content can still contain it.
-  - Yes; deleting a file rewrites all prior layers.
+  - No. The earlier layer still contains it.
+  - Yes. Deleting it rewrites every earlier layer.
   - Only on ARM64 images.
   correct: 0
-  explanation: Layers preserve prior filesystem changes. Preventing a secret from entering the build is
-    different from hiding it in the final merged filesystem.
+  explanation: Each layer is saved separately. A later deletion hides the file but does not remove it
+    from the layer that added it.
 hints:
-- Inspect the COPY scope and whether a .dockerignore exists.
-- Exclude .env before building, or copy only app.py and VERSION.
-- Rebuild for the native platform in DOCKER_DEFAULT_PLATFORM and recreate the API; deleting the file only
-  from a later layer will still fail the artifact check.
+- Look at the Dockerfile’s COPY line, and check whether a .dockerignore file exists (ls -a).
+- Create .dockerignore containing .env, or change COPY . . to copy only app.py and VERSION.
+- Rebuild with --platform "$DOCKER_DEFAULT_PLATFORM", then replace the running container with one from
+  the new image.
 sources:
 - https://docs.docker.com/build/building/multi-platform/
 - https://docs.docker.com/build/building/secrets/

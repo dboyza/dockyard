@@ -2,15 +2,15 @@ id: m05-services
 revision: 1
 module: 5
 order: 1
-title: Describe the application as a Compose project
-summary: Replace separate run commands with a reviewable service, network, and volume model.
+title: Describe Dispatch as a Compose project
+summary: Replace a list of docker run commands with one file that describes all four parts of Dispatch.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Read and author a Compose application model.
-- Separate application configuration from host-side variable interpolation.
-- Start an API, database, queue, and worker as one scoped project.
+- Read and write a Compose file with services, a network, and a volume.
+- Explain the difference between variables Compose reads and settings a container receives.
+- Start the API, database, queue, and worker together as one project.
 prerequisites:
 - m04-mission
 objectives:
@@ -19,20 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A variable exists in your host shell. Does every Compose service automatically receive it?
+  question: A variable is set in your terminal. Does every Compose service receive it automatically?
   options:
-  - No; interpolation and service environment injection are separate.
-  - Yes; the host environment is copied wholesale.
-  - Only if the service has a volume.
+  - No. A container only gets the settings listed under its environment.
+  - Yes. Compose copies your whole terminal environment into every container.
+  - Only services that have a volume.
   correct: 0
-  explanation: Compose uses host values to resolve its model, then passes only configured values into
-    each container.
+  explanation: Compose uses your terminal’s variables to fill in ${...} in the file. Containers only receive
+    what the file lists for them.
 hints:
-- Begin with the four roles and their internal addresses; API and worker share one image.
-- Publish only the API and mount the named volume into PostgreSQL, using the supplied environment variables
-  for names and credentials.
-- Use docker compose config before up, then follow a submitted job through compose logs and GET /jobs.
-  The reference contains a complete labeled model.
+- Start by listing the four services and how each one reaches the others. The API and worker share one
+  image.
+- Only the API needs ports:. Only db needs the volume, mounted at /var/lib/postgresql/data.
+- Run docker compose config --quiet before up, then submit a job and follow it with docker compose logs.
 sources:
 - https://docs.docker.com/compose/intro/compose-application-model/
 - https://docs.docker.com/reference/compose-file/services/

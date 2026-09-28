@@ -2,16 +2,16 @@ id: m06-mission
 revision: 1
 module: 6
 order: 4
-title: 'Capstone: deliver and recover Dispatch'
-summary: Repair a broken worker path, publish a pinned release, constrain the application, and verify
-  a real PostgreSQL restore.
+title: 'Capstone: fix, ship, and recover Dispatch'
+summary: Repair the workers, run a published release by digest, lock the app down, and prove a database
+  restore.
 kind: mission
 runtime: docker
 minutes: 50
 outcomes:
-- Integrate images, networking, persistence, Compose, distribution, and runtime controls.
-- Recover the original workload state into a separate database.
-- Produce a reviewable operational handoff and immutable source checkpoint.
+- Combine images, networking, storage, Compose, registries, and restrictions in one project.
+- Restore the original data into a separate database.
+- Write a runbook another person could follow.
 prerequisites:
 - m06-limits
 objectives:
@@ -20,21 +20,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: The live stack works again and a pg_dump file exists. What still establishes recoverability?
+  question: The project works again and a backup file exists. What shows you can really recover?
   options:
-  - Restore into a separate target and verify the original record there.
-  - Only inspect the dump filename.
-  - Delete the live database and hope the dump is usable.
+  - Restoring it into a separate database and finding the original job there.
+  - Checking the backup file’s name.
+  - Deleting the live database to test the backup.
   correct: 0
-  explanation: A separate restore demonstrates that the backup can recreate useful state while preserving
-    the functioning original.
+  explanation: A restore into a separate database proves the backup is usable while the live data stays
+    safe.
 hints:
-- Follow the queued job from the API into worker logs, and compare the worker database hostname with the
-  Compose service name.
-- Publish the application, select its registry digest for API and worker, and apply restrictions to those
-  application roles.
-- Use pg_dump -Fc for a logical archive, createdb for the separate restored target, and pg_restore --exit-on-error;
-  then verify the original job and document the complete handoff.
+- 'Follow a stuck job: check docker compose logs worker, then compare the worker’s DB_ settings with the
+  API’s.'
+- 'Push the image to this lab’s registry, find its digest, and set it as image: for both api and worker,
+  removing their build: sections.'
+- 'For recovery: pg_dump the dispatch database, createdb restored, load the dump into restored, and query
+  it for the capstone job.'
 sources:
 - https://www.postgresql.org/docs/17/app-pgdump.html
 - https://www.postgresql.org/docs/17/app-pgrestore.html

@@ -1,10 +1,10 @@
 ## Compare your diagnosis
 
-The incident changed an existing file to owner-read-only after data had already been written.
-Health and read paths continued working, which made process-level monitoring misleading.
-Restoring the owner write bit repaired the narrow permission boundary while retaining the data and non-root runtime.
-Broad permissions or replacing the database would violate the preservation and access constraints.
+The maintenance left `jobs.db` owned by user 10001, but without its owner’s write permission.
+Reading still worked, so health checks and the job list looked normal; only saving failed.
+Giving the owner write permission back fixed it without widening access or touching the data.
 
-Which observation ruled out your first alternative explanation?
-Which preservation constraint would a quick reset have violated?
-What should an operator monitor to detect this failure earlier?
+Check your understanding:
+Which observation showed the problem was writing rather than reading?
+Why would `chmod 777` or running as root be a worse fix, even though either would make saving work?
+What check could a team run regularly to catch this, beyond `/healthz`?

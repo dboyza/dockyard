@@ -2,15 +2,15 @@ id: m03-mission
 revision: 1
 module: 3
 order: 4
-title: 'Mission: an isolated service dependency'
-summary: Assemble the two-service path and prove it works without exposing the dependency on the host.
+title: 'Mission: connect Dispatch to a private dependency'
+summary: Build and connect the API and its dependency from scratch, publishing only the API.
 kind: mission
 runtime: docker
 minutes: 50
 outcomes:
-- Design host-facing and internal service endpoints deliberately.
-- Use DNS-based communication on an owned user-defined bridge.
-- Demonstrate the actual end-to-end dependency path.
+- Decide which service needs a port on your computer and which does not.
+- Connect containers by name on a network you create.
+- Test the whole path, from your terminal through the API to its dependency.
 prerequisites:
 - m03-diagnosis
 objectives:
@@ -19,18 +19,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which endpoint should the API use for its internal peer?
+  question: Which address should the API use to reach its dependency?
   options:
-  - The stable dependency alias and its container port.
-  - A randomly assigned host port on host computer loopback.
-  - The current private IP copied into source code.
+  - The dependency’s network name and its container port, such as dependency:8080.
+  - A port published on your computer’s 127.0.0.1.
+  - The dependency’s current IP address, copied into the settings.
   correct: 0
-  explanation: The service relationship belongs inside the shared bridge and should survive ordinary container
-    replacement.
+  explanation: A network name keeps working when the dependency is replaced. IP addresses can change,
+    and published ports are for your computer, not other containers.
 hints:
-- Draw the host-to-API and API-to-peer paths separately.
-- Both services need the same bridge, and the peer needs the dependency alias.
-- Reuse the earlier image build and labeled run patterns; only the API needs -p.
+- 'Sketch the two paths separately: your computer to the API, and the API to its dependency.'
+- Both containers must be on the same network, and the dependency needs the alias dependency.
+- Reuse the build and run commands from earlier lessons; only the API gets a -p mapping.
 sources:
 - https://docs.docker.com/engine/network/drivers/bridge/
 - https://docs.docker.com/engine/network/port-publishing/

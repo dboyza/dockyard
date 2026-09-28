@@ -2,15 +2,15 @@ id: m04-permissions
 revision: 1
 module: 4
 order: 2
-title: Repair storage access without widening authority
-summary: Diagnose a healthy-looking API whose non-root process cannot write its volume.
+title: Fix storage access without giving away extra power
+summary: The API is healthy but cannot save jobs; fix the storage owner without running as root.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Compare process UID/GID with mounted directory ownership and permissions.
-- Distinguish liveness from a successful persistence operation.
-- Repair a scoped volume without using root as the application identity.
+- Compare the app’s user and group numbers with who owns the data folder.
+- Explain why a healthy status does not prove the app can save data.
+- Fix ownership without running the app as root or opening the folder to everyone.
 prerequisites:
 - m04-mounts
 objectives:
@@ -19,19 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Rebuilding an image fixes /data ownership in its Dockerfile. Must an already-existing mounted
-    volume inherit that repair?
+  question: You fix the /data owner in the Dockerfile and rebuild. Does the existing volume change?
   options:
-  - No; the existing volume keeps its own stored metadata.
-  - Yes; every start replaces its contents.
+  - No. The volume keeps its own files and owners.
+  - Yes. Every start copies the image’s /data over it.
   - Only if the host port changes.
   correct: 0
-  explanation: A mounted existing volume has a separate lifecycle and covers the image path.
+  explanation: An existing volume lives separately from the image and hides the image’s /data folder.
+    Rebuilding does not touch it.
 hints:
-- Inspect the effective UID and the numeric owner of /data.
-- The API is UID 10001; repair the assigned volume rather than replacing the image.
-- Use a short-lived labeled maintenance container to chown /data to 10001:10001, keeping mode 0700 and
-  the API non-root.
+- Compare docker exec "$DOCKYARD_CONTAINER" id with docker exec "$DOCKYARD_CONTAINER" ls -ldn /data.
+- The API runs as user 10001. Change the owner of the existing volume, not the image.
+- Run a short-lived labeled container with the volume mounted and chown 10001:10001 /data, then try saving
+  a job again.
 sources:
 - https://docs.docker.com/engine/storage/bind-mounts/
 - https://docs.docker.com/engine/storage/volumes/

@@ -2,16 +2,15 @@ id: m05-scaling
 revision: 1
 module: 5
 order: 3
-title: Scale workers and keep tools optional
-summary: Run multiple interchangeable consumers while keeping one-off tooling out of the ordinary service
-  set.
+title: Run more workers
+summary: Run two workers on the same queue, try an optional tool, and practise a database backup.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Scale a service without fixed container-name collisions.
-- Use a profile for optional diagnostic tooling.
-- Verify multiple workers and a correctly processed durable job.
+- Scale a service to several containers.
+- Use a profile to keep occasional tools out of normal start-up.
+- Back up PostgreSQL with pg_dump and restore it into a separate database.
 prerequisites:
 - m05-readiness
 objectives:
@@ -20,19 +19,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Why should the worker service avoid a fixed container_name?
+  question: Why should the worker service not set container_name?
   options:
-  - Multiple replicas need distinct container identities.
-  - Worker images cannot contain Python.
+  - Several workers need different container names.
+  - Workers cannot run Python.
   - Compose cannot label scaled services.
   correct: 0
-  explanation: A single fixed name cannot identify several simultaneous containers. Compose can assign
-    replica names while preserving shared service labels.
+  explanation: Two containers cannot share a name. Without container_name, Compose gives each copy its
+    own name.
 hints:
-- Inspect docker compose ps worker to establish the current count.
-- Use compose up --scale worker=2; keep the shared image and service configuration.
-- The supplied inspect service belongs to the tools profile. Run it with compose --profile tools run --rm
-  inspect, then leave the application workers running.
+- Check how many workers are running now with docker compose ps worker.
+- Run docker compose up -d --scale worker=2.
+- Run the tool with docker compose --profile tools run --rm inspect, and leave both workers running.
 sources:
 - https://docs.docker.com/compose/how-tos/profiles/
 - https://docs.docker.com/reference/cli/docker/compose/up/

@@ -1,28 +1,40 @@
-## The host and container platforms are different facts
+## Two questions about what you ship
 
-Docker runs Linux containers on every supported platform.
-On macOS and Windows, Docker runs them in a Linux environment; a native Linux Docker Engine uses its host kernel.
-The image platform combines that Linux operating system with the processor architecture: `linux/arm64` on ARM64, or `linux/amd64` on x86-64.
-Dockyard sets `DOCKER_DEFAULT_PLATFORM` in the lab shell to the native platform.
-An image for another processor may require emulation, which can affect performance and compatibility.
-Inspect the artifact you actually built rather than inferring its architecture from a tag name.
+Before you send an image to someone else, it is worth checking two things:
+
+1. Will it run on their computer’s kind of processor?
+2. Does it contain anything that should have stayed private?
+
+## Processor architecture
+
+Container images are built for a particular kind of processor.
+Apple Silicon Macs and many cloud servers use **ARM64**; most Windows PCs and older Macs use **x86-64**, which Docker calls `amd64`.
+Docker combines the operating system and processor into a **platform** name, such as `linux/arm64` or `linux/amd64`.
+All containers here are Linux containers, even on macOS and Windows.
+
+An image built for a different processor may still run through emulation, but slowly and sometimes incorrectly.
+Dockyard sets `DOCKER_DEFAULT_PLATFORM` in your lab terminal to your computer’s own platform.
+Check what an image was built for rather than guessing from its name:
 
 ```sh
+echo "$DOCKER_DEFAULT_PLATFORM"
 docker image inspect --format '{{.Os}}/{{.Architecture}}' "$DOCKYARD_IMAGE"
 ```
 
-A multi-platform image reference can point to an index containing platform-specific manifests.
-The runtime selects a matching platform, and each platform's content can have its own digest.
-Building a tested native image is sufficient for this exercise; it does not certify that an untested variant for another processor works.
+Many public images are published for several platforms under one name, and Docker automatically downloads the one that matches your computer.
 
-## Context control is a supply-chain boundary
+## Secrets in images
 
-A broad COPY can accidentally include local credentials, Git metadata, or debugging artifacts.
-Deleting a copied secret in a later layer does not remove it from earlier image layers.
-The correct preventive boundary is to keep unwanted files out of the build context or copy only explicit required files.
-Build-time secrets that are genuinely needed should use an appropriate secret mount, not a persistent build argument or copied file.
+This lab’s Dockerfile uses `COPY . .`, which copies everything in the build folder into the image.
+The folder contains a file called `.env`, a common place for passwords.
+Here it is a harmless fake, but in real projects this is a classic way to leak secrets.
 
-## Worked example: exclude local material
+Remember that an image is a stack of layers.
+If one step copies `.env` in and a later step deletes it, the file is hidden from the running container but still stored in the earlier layer.
+Anyone who has the image can extract it.
+
+The fix is to stop the file entering the build at all.
+Either copy only the files the app needs, or list the file in a `.dockerignore` file next to the Dockerfile:
 
 ```dockerignore
 .env
@@ -31,13 +43,20 @@ Build-time secrets that are genuinely needed should use an appropriate secret mo
 __pycache__
 ```
 
-The task includes a deliberately fake .env file so you can observe this boundary safely.
-It contains no real credential and must never be replaced with one.
-The checker examines all layers of the final image archive for the forbidden file, so a later RUN rm is not an acceptable repair.
+Each line is a pattern for files the build should never see.
+Leave the fake `.env` in your workspace; the point is that the build ignores it.
 
-## What a digest does and does not establish
+## Build for your platform and check
 
-A digest identifies content; it does not establish who authored it or whether it contains vulnerabilities.
-Provenance, signatures, SBOMs, and vulnerability findings answer different questions.
-The advanced hardening module will use scanning and SBOM evidence in more depth.
-For now, combine precise artifact identity with deliberate inputs and an actually tested native runtime.
+```sh
+docker build --platform "$DOCKER_DEFAULT_PLATFORM" --build-arg "BASE_IMAGE=$DOCKYARD_PYTHON_IMAGE" -t "$DOCKYARD_IMAGE" .
+```
+
+`--platform` states the target platform explicitly.
+Then replace the running container so it uses the new image.
+Check work examines every layer of the running image for `.env`, so deleting it in a later step will not pass.
+
+## What this does not prove
+
+Knowing an image’s platform and inputs is useful, but it does not tell you whether the software inside has known security problems or who built it.
+Later, the security modules cover scanning images and recording what they contain.

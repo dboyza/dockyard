@@ -5,16 +5,16 @@ A runtime pass alone is not a teaching-quality result.
 
 | Activity | Learner walkthrough | Editorial review | Findings and observations |
 | --- | --- | --- | --- |
-| m01-processes | Completed in initial review | Revised in initial review | See teaching-review.md. |
-| m01-lifecycle | Completed in initial review | Revised in initial review | See teaching-review.md. |
-| m01-signals | Completed in initial review | Revised in initial review | See teaching-review.md. |
-| m01-mission | Completed in initial review | Revised in initial review | See teaching-review.md. |
-| i01-lifecycle | Pending | Pending |  |
-| m02-dockerfile | Completed in initial review | Revised in initial review | See teaching-review.md. |
+| m01-processes | Completed without solutions | Revised | Debrief rewritten without jargon; hints now name concrete commands. |
+| m01-lifecycle | Completed without solutions | Revised | Concept introduced writable layer and namespaces without explanation and contradicted the unstarted lab; rewritten around created, running, and exited states. Observed created state and an unchanged ID across restart; passed. |
+| m01-signals | Completed without solutions | Revised | Streams, signals, and exit codes now explained in plain terms. Observed the 200 log line and Exited (0); passed. |
+| m01-mission | Completed without solutions | Revised | Found the one-shot command from inspect and logs, replaced the container, passed. |
+| i01-lifecycle | Completed without solutions | Revised | Required rebuilding an image before docker build was taught; moved after the Dockerfile lesson. Incident template jargon replaced with a plain five-step method. Diagnosed the backgrounded wrapper from Cmd and logs; passed. |
+| m02-dockerfile | Completed without solutions | Revised | Layers, tags, and build context now introduced before use. The build warning appears exactly as described; passed. |
 | m02-cache | Completed without solutions | Revised | Observed dispatch-1 after both the source edit and rebuild; image and container IDs differed; only the replacement served dispatch-2. Rebuild and replacement commands are now shown with their expected observations. |
 | m02-multistage | Completed without solutions | Revised | Built a named verification stage and non-root final stage; observed UID 10001, no /source, and a passing service check. Placeholder build tools replaced with explained Python fragments. |
 | m02-mission | Completed without solutions | Revised | Built a two-stage image independently; release and non-root checks passed. Final-state checks do not establish build-stage use or quality of explanation. |
-| i02-build-context | Pending | Pending |  |
+| i02-build-context | Completed without solutions | Revised | Diagnosed staged-context from release.sh and the two VERSION files; passed. Generic incident outcomes and prediction replaced. |
 | m03-ports | Completed without solutions | Revised | Observed listener 8080 versus mapping 8081 and an empty reply; corrected mapping passed. Port and loopback diagnostics now name the command to run and the expected mapping. |
 | m03-bridges | Completed without solutions | Revised | Observed failed dependency request, then attached both containers with alias; DNS and real peer identity passed. |
 | m03-diagnosis | Completed without solutions | Revised | Observed working peer DNS and direct peer HTTP while configured localhost upstream failed; replaced only API with corrected URL, then passed. |
@@ -23,16 +23,16 @@ A runtime pass alone is not a teaching-quality result.
 | m04-permissions | Completed without solutions | Revised | Observed HTTP 503 and root-owned 0700 /data against UID 10001; chown through a maintenance container fixed writes; passed with least-permission check. |
 | m04-recovery | Completed without solutions | Revised | Archived the closed database, restored into the stopped target, found the seeded job, and wrote a new job; passed. |
 | m04-mission | Completed without solutions | Revised | Stopped the API, copied jobs.db with docker cp, archived, restored into a new labeled volume, replaced the API, and passed. The lesson's docker cp section supplied the missing step. |
-| i04-volume-mode | Pending | Pending |  |
+| i04-volume-mode | Completed without solutions | Revised | File permission bits were never taught; the incident now explains ls -ln and chmod u+w. Observed readonly database error and -r-------- file; passed. |
 | m05-services | Completed without solutions | Revised | Wrote compose.yaml from the lesson fragments; a fresh job completed and passed. The API can be briefly absent from ps while PostgreSQL initializes, which the lesson warns about. |
 | m05-readiness | Completed without solutions | Revised | The starter was machine-generated YAML with unexplained anchors and an unused block that already contained the answer; replaced with plain YAML. Missing-health-check failures reported an unrelated worker message; all Compose diagnostics are now specific. Passed after adding the three taught health checks. |
 | m05-scaling | Completed without solutions | Revised | Scaled to two workers, observed completed jobs, ran the inspect profile, and restored a pg_dump into a separate database with all four jobs present. |
 | m05-mission | Completed without solutions | Revised | Starter is an empty services map. Wrote the full project independently with health checks and two workers; passed. |
-| i03-worker-database | Pending | Pending |  |
-| m06-registry | Pending | Pending |  |
-| m06-artifacts | Pending | Pending |  |
-| m06-limits | Pending | Pending |  |
-| m06-mission | Pending | Pending |  |
+| i03-worker-database | Completed without solutions | Revised | Worker logs show only dependency_retry without naming the database; hint now directs learners to compare DB_ settings. Passed. |
+| m06-registry | Completed without solutions | Revised | Lesson never showed how to find or run by a digest; now does. RepoDigests held two entries, confirming the need to choose this registry's. Passed. |
+| m06-artifacts | Completed without solutions | Revised | Platform and layer-secret explanations rewritten for beginners; passed with .dockerignore. |
+| m06-limits | Completed without solutions | Revised | Capabilities and cgroups explained plainly; cgroup values match the lesson; passed. Compose equivalents added because the capstone needs them. |
+| m06-mission | Completed without solutions | Revised | Capstone required Compose restriction keys never taught; now taught in m06-limits. Completed with plain SQL backup method from m05; all checks passed. |
 | m07-reconciliation | Completed in initial review | Revised in initial review | See teaching-review.md. |
 | m07-inspection | Pending | Pending |  |
 | m07-declarative | Pending | Pending |  |

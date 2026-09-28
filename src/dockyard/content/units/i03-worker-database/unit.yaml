@@ -2,16 +2,15 @@ id: i03-worker-database
 revision: 1
 module: 5
 order: 90
-title: Jobs queue normally after a worker-only configuration change
-summary: The API and its readiness check work, and newly submitted jobs appear in the queue, but background
-  results never finish.
+title: Jobs are queued, but none ever finish
+summary: After a worker-only settings change, new jobs are accepted but never completed.
 kind: incident
 runtime: docker
 minutes: 30
 outcomes:
-- Diagnose the reported failure from real runtime evidence.
-- Repair the specific boundary while preserving the stated resource and data constraints.
-- Demonstrate useful behavior with a fresh end-to-end observation.
+- Compare the settings of two services built from the same image.
+- Use worker logs to find why jobs are not being processed.
+- Fix the setting and confirm a new job completes, without losing stored data.
 prerequisites:
 - m05-mission
 objectives:
@@ -20,18 +19,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What should establish that this incident is resolved?
+  question: The API is healthy and accepts jobs, but none complete. Where should you look first?
   options:
-  - The requested fresh behavior works and its preservation constraints still hold.
-  - The most recent command exited zero.
-  - The container list contains a running process.
+  - The worker’s logs and settings.
+  - The API’s port mapping.
+  - Delete the database volume and start again.
   correct: 0
-  explanation: A command result or process state alone does not establish the requested application outcome.
+  explanation: 'The API side works, so the problem is where jobs are processed: the worker. Deleting data
+    would lose jobs without explaining anything.'
 hints:
-- Compare API and worker configuration rather than assuming a shared image implies identical settings.
-- The queue and DNS path work; inspect the worker’s database connection error and effective DB_NAME.
-- Correct the worker-specific DB_NAME override, apply the Compose model with two workers, and follow a
-  fresh job through completion and a database read.
+- The API and worker share an image, but their settings in compose.yaml can differ. Compare them.
+- 'docker compose logs worker shows repeated dependency_retry errors: the workers cannot use their database.
+  Compare every DB_ setting of the worker with the API’s in compose.yaml.'
+- Fix the worker’s DB_NAME to match the API, run docker compose up -d --scale worker=2, and watch a new
+  job complete.
 sources:
 - https://docs.docker.com/compose/intro/compose-application-model/
 - https://docs.docker.com/reference/compose-file/services/

@@ -3,14 +3,14 @@ revision: 1
 module: 2
 order: 4
 title: 'Mission: a portable Dispatch release'
-summary: Deliver a self-contained image with the required release and a non-root runtime.
+summary: Build a self-contained Dispatch image with a new release that runs as an ordinary user.
 kind: mission
 runtime: docker
 minutes: 50
 outcomes:
-- Combine a controlled build context, runtime artifact boundary, and explicit process command.
-- Ship a new application release without a development bind mount.
-- Verify process identity, release response, and local-only exposure.
+- Write a two-stage Dockerfile on your own.
+- Ship a new release without mounting your workspace.
+- Check the running release, user, and port to confirm the result.
 prerequisites:
 - m02-multistage
 objectives:
@@ -19,18 +19,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: The image builds successfully but its non-root process cannot read VERSION. Which evidence
-    proves the release works?
+  question: The image builds, but the app cannot read VERSION as its non-root user. What shows the release
+    really works?
   options:
-  - A live response from the actual non-root container.
-  - Only the final build exit code.
-  - The existence of a USER instruction in any stage.
+  - A successful /healthz response from the running non-root container.
+  - The build finishing without errors.
+  - A USER line somewhere in the Dockerfile.
   correct: 0
-  explanation: Build success and source instructions do not establish behavior in the final running container.
+  explanation: A build can succeed and still produce an image that fails when run. Only the running container
+    shows the real result.
 hints:
-- Use the previous lab’s artifact boundary but select the release required by this brief.
-- VERSION must be part of the built image and readable by the final user.
-- Build the image, run it without -v, and check both its health response and UID with docker exec.
+- Start from the multi-stage pattern in the previous lesson, and set VERSION to the release this task
+  asks for.
+- VERSION must be copied into the final image and readable by the user that runs the app.
+- Build, run without -v, then check both /healthz and docker exec "$DOCKYARD_CONTAINER" id.
 sources:
 - https://docs.docker.com/reference/dockerfile/
 - https://docs.docker.com/build/building/context/

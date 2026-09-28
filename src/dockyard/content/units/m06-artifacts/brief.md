@@ -1,9 +1,10 @@
-## Remove the context leak
+## Keep the fake secret out of the image
 
-Prepare builds and starts an image whose broad COPY includes the supplied fake .env file.
-Repair the build context or explicit copy selection so that file never enters a layer of the final application image.
-Build explicitly for `"$DOCKER_DEFAULT_PLATFORM"`, then replace the API container with the corrected image.
-Do not solve the leak by copying and later deleting the file.
+Dockyard has built and started an image whose `COPY . .` includes the fake `.env` file.
 
-Preserve the application release and endpoint contract.
-Leave the fake .env in the workspace as evidence of the excluded input, and inspect the shipped image's platform.
+1. Change the build so `.env` never enters the image, using `.dockerignore` or by copying only `app.py` and `VERSION`.
+2. Rebuild `$DOCKYARD_IMAGE` with `--platform "$DOCKER_DEFAULT_PLATFORM"`.
+3. Replace `$DOCKYARD_CONTAINER` with one from the new image, keeping the lab label and `127.0.0.1:$DOCKYARD_PORT:8080`.
+4. Check the new image’s platform and that `/healthz` still reports `dispatch-1`.
+
+Leave the fake `.env` in your workspace, and do not copy it in and delete it later.

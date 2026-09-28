@@ -19,19 +19,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A Dockerfile contains EXPOSE 8080. Can you reach it from the host computer without a published
-    port?
+  question: A Dockerfile contains EXPOSE 8080. Can you reach the app from your computer without -p?
   options:
-  - No; EXPOSE does not publish a host port.
-  - Yes; Docker automatically selects host port 8080.
+  - No. EXPOSE only documents the port; -p is still needed.
+  - Yes. Docker publishes port 8080 automatically.
   - Only if the container runs as root.
   correct: 0
-  explanation: EXPOSE records intended use. A runtime port mapping creates the host endpoint.
+  explanation: EXPOSE is a note about which port the app uses. Only a -p mapping at run time makes it
+    reachable from your computer.
 hints:
-- 'Separate COPY and CMD: one adds files at build time, the other records how to start the container.'
-- Use WORKDIR /app and copy both app.py and VERSION from the context.
-- Build with the supplied BASE_IMAGE argument; run the resulting DOCKYARD_IMAGE without -v, but with the
-  same label and loopback port pattern as Module 1.
+- 'You need three kinds of instruction: FROM to choose the base, COPY to add files, and CMD to say how
+  to start.'
+- Follow the worked example, but use WORKDIR /app, copy both app.py and VERSION, and start with python
+  app.py.
+- Build with the --build-arg shown in the lesson, then run $DOCKYARD_IMAGE with the label and -p mapping
+  from module 1, but without -v.
 sources:
 - https://docs.docker.com/reference/dockerfile/
 - https://docs.docker.com/build/building/context/

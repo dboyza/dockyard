@@ -3,15 +3,14 @@ revision: 1
 module: 2
 order: 90
 title: A clean cached build shipped yesterday’s release
-summary: The workspace VERSION says incident-release-v2, but a fresh container still reports incident-release-v1
-  after a successful build.
+summary: The workspace says release v2, but a freshly built image still serves v1.
 kind: incident
 runtime: docker
 minutes: 30
 outcomes:
-- Diagnose the reported failure from real runtime evidence.
-- Repair the specific boundary while preserving the stated resource and data constraints.
-- Demonstrate useful behavior with a fresh end-to-end observation.
+- Work out which folder a build actually reads its files from.
+- Explain why the build cache is not the cause.
+- Ship an image with the current release and confirm it with a fresh request.
 prerequisites:
 - m02-mission
 objectives:
@@ -20,18 +19,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What should establish that this incident is resolved?
+  question: The build finished quickly and reused cached steps. What is the most likely reason the old
+    release survived?
   options:
-  - The requested fresh behavior works and its preservation constraints still hold.
-  - The most recent command exited zero.
-  - The container list contains a running process.
+  - The build read its files from a different folder than the one you edited.
+  - Docker’s cache is corrupted and must be cleared.
+  - The container needs a restart to pick up the new VERSION.
   correct: 0
-  explanation: A command result or process state alone does not establish the requested application outcome.
+  explanation: The cache is only reused when the input files are unchanged. If the edited file never reached
+    the build, the cache is behaving correctly and the input folder is the problem.
 hints:
-- Compare the build command’s context argument with the file you edited.
-- Inspect the staged context’s VERSION and the Dockerfile COPY sources.
-- Build using the current root context, then replace the container from that resulting image; --no-cache
-  alone does not change an incorrect input directory.
+- Compare the folder named at the end of the docker build command in release.sh with the folder where
+  you edited VERSION.
+- release.sh builds from staged-context. Run cat staged-context/VERSION and compare it with cat VERSION.
+- Change the build context in release.sh to the workspace folder (.), run it, then replace the container
+  from the new image with the same name, label, and port.
 sources:
 - https://docs.docker.com/build/cache/invalidation/
 - https://docs.docker.com/build/cache/optimize/

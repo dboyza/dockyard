@@ -1,18 +1,21 @@
-## The start command says it worked. The app is missing.
+## The launch said it worked, but Dispatch is missing
 
 Someone changed the command used to start Dispatch.
-The deployment reported success, but the API never became available.
-Use what you learned about processes, logs, and ports to find out why.
+The launch reported success, yet the API never answered a request.
+Your job is to find out why and put it right, using what you learned in this module.
 
-Before replacing the container, find out what it actually ran.
-`Exited (0)` means its program finished without reporting an error.
-It does not mean the API is available.
-This mission does not prescribe a command sequence.
-Your task describes how the repaired service should behave.
-Check work will test that result.
+This is a **mission**: it describes the result you need, not the commands to type.
+Take it one question at a time:
 
-## Independent work
+- What state is the container in, and what exit code did it report?
+- What command did it actually run?
+- What did that command print in the logs?
+
+Remember from the last lesson that `Exited (0)` only means the program finished without an error.
+For a web service, finishing at all is the problem.
+
+## Working on your own
 
 Try the task without hints first.
-Hints and the reference remain available if needed, but using them records supported practice for this attempt.
-Equivalent commands are accepted; your diagnosis in the notes is self-review and does not replace the live API check.
+Hints and the reference solution are there if you get stuck, but using them marks this attempt as practice with help.
+Any commands that produce the working result are accepted.

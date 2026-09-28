@@ -2,15 +2,15 @@ id: i04-volume-mode
 revision: 1
 module: 4
 order: 90
-title: Health is green, but persistence became read-only
-summary: After permission maintenance, creating jobs fails even though the service is still available.
+title: Health is green, but saving jobs fails
+summary: After permission maintenance, the API still answers and reads jobs, but cannot save new ones.
 kind: incident
 runtime: docker
 minutes: 30
 outcomes:
-- Diagnose the reported failure from real runtime evidence.
-- Repair the specific boundary while preserving the stated resource and data constraints.
-- Demonstrate useful behavior with a fresh end-to-end observation.
+- Test the action that is failing, not just the health check.
+- Read a file’s owner and permission bits and compare them with the app’s user.
+- Restore the narrowest permission needed, keeping the original data.
 prerequisites:
 - m04-mission
 objectives:
@@ -19,19 +19,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What should establish that this incident is resolved?
+  question: Health checks pass and old jobs load, but new jobs fail. What does that suggest?
   options:
-  - The requested fresh behavior works and its preservation constraints still hold.
-  - The most recent command exited zero.
-  - The container list contains a running process.
+  - The app can read its data but not write it.
+  - The container has stopped.
+  - The port mapping is wrong.
   correct: 0
-  explanation: A command result or process state alone does not establish the requested application outcome.
+  explanation: Reading working while writing fails points at write permission, not at the network or the
+    process.
 hints:
-- Compare process health with an actual POST /jobs and inspect the database file’s mode.
-- Directory ownership is already correct; the existing jobs.db file is owned by UID 10001 but lacks its
-  write bit.
-- Restore owner read/write permission on that exact file, keep the application non-root, and verify both
-  the original record and a fresh persisted write.
+- Try saving a job with curl and read the error. Then compare the app’s user with the owner and permissions
+  of /data/jobs.db.
+- In ls -ln, the first column shows permissions. rw- means the owner can read and write; r-- means read
+  only.
+- Give the file’s owner write permission again with chmod u+w, using a short-lived labeled container on
+  the same volume, then save a new job.
 sources:
 - https://docs.docker.com/engine/storage/bind-mounts/
 - https://docs.docker.com/engine/storage/volumes/

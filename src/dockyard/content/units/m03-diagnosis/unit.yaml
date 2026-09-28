@@ -2,15 +2,15 @@ id: m03-diagnosis
 revision: 1
 module: 3
 order: 3
-title: Diagnose from the caller’s network namespace
-summary: Repair a dependency URL that mistakes container loopback for a different service.
+title: Diagnose from inside the calling container
+summary: Fix an API that tries to reach its dependency at localhost, which inside a container means itself.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Distinguish DNS, TCP, and HTTP failure evidence.
-- Run diagnostics from the component that actually makes the request.
-- Correct service addressing while preserving network isolation.
+- Tell a name-lookup failure apart from a connection failure and an HTTP error.
+- Run tests from inside the container that actually makes the request.
+- Point the API at its dependency by name while keeping the dependency private.
 prerequisites:
 - m03-bridges
 objectives:
@@ -19,18 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Inside the API container, 127.0.0.1 refers to which system?
+  question: Inside the API container, what does 127.0.0.1 refer to?
   options:
-  - The API container’s own network namespace.
-  - The neighboring dependency container.
-  - Always the physical host.
+  - The API container itself.
+  - The dependency container next to it.
+  - Your computer.
   correct: 0
-  explanation: Loopback is local to the current network namespace. A neighboring service needs a reachable
-    service address.
+  explanation: localhost always means the machine or container making the request. To reach another container,
+    use its name on a shared network.
 hints:
-- Compare UPSTREAM_URL with the bridge alias and actual dependency listener.
-- Use docker exec to test dependency:8080 from the API container.
-- Recreate only the API with UPSTREAM_URL=http://dependency:8080/healthz and --network "$DOCKYARD_NETWORK".
+- Compare the API’s UPSTREAM_URL setting with the dependency’s name on the network.
+- Use docker exec to test http://dependency:8080/healthz from inside the API container.
+- Replace only the API container, keeping everything else, but with UPSTREAM_URL=http://dependency:8080/healthz
+  and --network "$DOCKYARD_NETWORK".
 sources:
 - https://docs.docker.com/engine/network/drivers/bridge/
 - https://docs.docker.com/engine/network/port-publishing/

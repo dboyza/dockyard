@@ -1,15 +1,9 @@
-## Delivery and recovery contract
+## Fix, ship, secure, and recover Dispatch
 
-Diagnose why the prepared stack's original job is not completing, then repair the worker's dependency configuration.
-Publish the supplied application to the assigned loopback registry and run both API and workers from its immutable digest.
-Use at least two workers, healthy dependency gates, private database/queue endpoints, and the assigned owned PostgreSQL volume.
-
-Keep API and every worker non-root, read-only, with all capabilities dropped and no-new-privileges enabled.
-For each application role, use 32-256 MiB memory, a positive CPU quota at most one CPU, and a 16-256 process limit.
-Do not apply an unsuitable read-only recipe blindly to PostgreSQL's writable data path.
-
-Create a logical PostgreSQL backup and restore it into a separate database named `restored`.
-Prove the original `capstone-$DOCKYARD_LAB` job exists there.
-Leave the ordinary application database serving new jobs successfully.
-Write RUNBOOK.md with the operational steps and your diagnosis.
-The resulting source checkpoint is available after a passing check; its exclusion manifest explains omitted runtime or credential files.
+- Find and fix why the workers cannot finish jobs.
+- Push the application image to this lab’s registry and run both `api` and `worker` from its digest.
+- Run at least two workers. Keep the health-check waits, the private database and queue, and the assigned PostgreSQL volume.
+- Give `api` and every worker a read-only filesystem, no capabilities, no-new-privileges, 32-256 MiB of memory, at most one CPU, and 16-256 processes. Keep them non-root.
+- Back up the `dispatch` database, restore it into a separate database named `restored`, and confirm `capstone-$DOCKYARD_LAB` is there.
+- Leave the live application saving and finishing new jobs.
+- Write `RUNBOOK.md` in the workspace.

@@ -1,46 +1,64 @@
 ## What can the logs tell you?
 
-A container running in the background can still write messages.
-Programs write ordinary output to **standard output** and often send errors or diagnostic messages to **standard error**.
-Docker collects those messages, and `docker logs` lets you read them.
-A message saying "listening" records an earlier event, so it cannot prove the service is still available now.
-Combine logs with process inspection and a current request.
+A program running in a container still prints messages, even though you cannot see its screen.
+Programs have two output channels: **standard output** for ordinary messages and **standard error** for errors and warnings.
+Docker collects both, and `docker logs` shows them to you.
 
 ```sh
 docker logs --tail 20 --timestamps "$DOCKYARD_CONTAINER"
-docker inspect --format '{{json .State}}' "$DOCKYARD_CONTAINER"
 ```
 
-`--tail 20` shows only the last 20 lines, and `--timestamps` adds a time to each line.
-`--follow` stays attached to new output; press Control-C to leave the log viewer without stopping the application.
-The viewer and the container process are different processes.
+`--tail 20` shows only the last 20 lines, and `--timestamps` adds the time each line was written.
+Adding `--follow` keeps showing new lines as they arrive.
+Press Control-C to leave it; that stops the log viewer in your terminal, not Dispatch.
 
-## Give the program time to stop
+Remember that logs describe the past.
+A line saying Dispatch is "listening" tells you it started; it does not prove it is still answering now.
+To know that, make a fresh request.
 
-A normal `docker stop` sends the configured stop signal, usually SIGTERM, to the container's main process.
-Docker waits for its grace period before forcefully killing an unresponsive process.
-SIGTERM gives an application a chance to close listeners and flush buffered data.
-SIGKILL cannot be caught and cannot provide that cleanup opportunity.
-
-Dispatch installs a SIGTERM handler and exits with code zero.
-That exit reports successful shutdown, not continuous service availability.
-A one-shot migration job can also finish successfully, while an API that exits immediately is unavailable even with exit code zero.
-
-## Match a request to its log message
+## Match a request to its log line
 
 ```sh
 curl --fail "http://127.0.0.1:$DOCKYARD_PORT/healthz"
-docker logs --tail 10 "$DOCKYARD_CONTAINER"
+docker logs --tail 5 "$DOCKYARD_CONTAINER"
 ```
 
-Find the GET request line and its HTTP status.
-An application may write startup output to stdout and request diagnostics to stderr; Docker captures both.
-When redirecting logs in your shell, use `2>&1` if you intend to capture both streams.
+`--fail` makes curl report an error if the server returns an error status.
+In the logs, look for a line containing `GET /healthz` followed by `200`.
+**200** is the HTTP status code for a successful request.
 
-## A detail you’ll use when writing Dockerfiles
+## How a container stops
 
-In a Linux container's PID namespace, the main process is PID 1.
-Signal forwarding matters when a shell wrapper launches the real server as a child.
-An exec-form command such as `CMD ["python", "app.py"]` avoids an unnecessary shell layer.
-A deliberately written wrapper should replace itself with the server using `exec` or forward signals correctly.
-The next module applies this to Dockerfiles.
+When you run `docker stop`, Docker sends the main process a **signal**, a short message from the operating system.
+The usual one is **SIGTERM**, which means “please finish up and exit.”
+A well-written program catches it, closes its connections, and exits.
+If the program ignores it, Docker waits about ten seconds and then sends **SIGKILL**, which ends the process immediately with no chance to clean up.
+
+When a process ends it reports an **exit code**.
+Zero means it finished normally; any other number means something went wrong.
+Dispatch handles SIGTERM and exits with code 0, so a normal `docker stop` should leave it `Exited (0)`.
+A process killed with SIGKILL usually shows `Exited (137)`.
+
+Be careful what you conclude from exit code 0.
+It means the program finished without an error.
+For a one-off task, such as a database migration, finishing is the goal.
+For a web service like Dispatch, finishing means it is no longer answering requests, even though nothing “failed.”
+
+## See it for yourself
+
+After stopping the container, read its final state:
+
+```sh
+docker ps -a --filter "name=$DOCKYARD_CONTAINER"
+docker inspect --format '{{.State.Running}} {{.State.ExitCode}}' "$DOCKYARD_CONTAINER"
+docker logs --tail 5 "$DOCKYARD_CONTAINER"
+```
+
+The logs are still there after the container stops.
+They disappear only when the container is removed.
+
+## Looking ahead
+
+Inside a container, the main process has process number 1, and it is the one that receives Docker’s stop signal.
+If a shell script starts the real server as a background task and then finishes, the container stops with it, even though the server had started.
+You will meet this problem again when you write Dockerfiles.

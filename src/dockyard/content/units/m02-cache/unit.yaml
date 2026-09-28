@@ -3,14 +3,14 @@ revision: 1
 module: 2
 order: 2
 title: Rebuild what actually changed
-summary: Trace source changes through the build cache into a newly created running container.
+summary: Change Dispatch’s version and follow the change from your file to the image to a running container.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Explain why changing host source does not update an existing image or container.
-- Order Dockerfile steps according to their inputs and change frequency.
-- Distinguish rebuilding an image from replacing a running container.
+- Explain why editing a file does not change an image that is already built.
+- Explain why rebuilding an image does not change a container that is already running.
+- Order Dockerfile steps so rebuilds reuse as much work as possible.
 prerequisites:
 - m02-dockerfile
 objectives:
@@ -19,19 +19,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You rebuild a tag and then docker restart the old container. Which image does that container
-    use?
+  question: You rebuild an image with the same tag, then restart the old container. Which image does it
+    run?
   options:
-  - The image recorded when the container was created.
-  - Whatever image the tag points to now.
-  - A merge of both images.
+  - The image it was created from.
+  - The newly built image the tag now points to.
+  - A mix of the two.
   correct: 0
-  explanation: Restart reuses container configuration. Recreate the container to select a new image.
+  explanation: A container remembers the exact image it was created from. To use a new image, create a
+    new container.
 hints:
-- Request /healthz after editing VERSION and observe which artifact the request is actually reaching.
-- Rebuild the tag, then compare docker image inspect .Id with docker inspect .Image.
-- After rebuilding, remove only the assigned container and create a new one from DOCKYARD_IMAGE with its
-  label and published port.
+- After each step, request /healthz and note which release you see.
+- Compare the image ID from docker image inspect --format '{{.Id}}' "$DOCKYARD_IMAGE" with the container’s
+  docker inspect --format '{{.Image}}' "$DOCKYARD_CONTAINER".
+- After rebuilding, stop and remove only "$DOCKYARD_CONTAINER", then run a new one from "$DOCKYARD_IMAGE"
+  with the same label and port mapping.
 sources:
 - https://docs.docker.com/build/cache/invalidation/
 - https://docs.docker.com/build/cache/optimize/

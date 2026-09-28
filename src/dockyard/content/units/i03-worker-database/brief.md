@@ -1,4 +1,11 @@
-The API and its readiness check work, and newly submitted jobs appear in the queue, but background results never finish.
-A worker-specific configuration overlay was deployed immediately before the symptom; the API, queue, and database processes stayed healthy.
-Restore two interchangeable workers while preserving the current PostgreSQL volume, private dependency network, and API endpoint.
-Prove a new job completes through a real worker and persists in the database.
+## Get jobs finishing again
+
+Find out why the workers are not completing jobs, then fix the cause.
+
+- Keep the existing PostgreSQL volume and its data.
+- Keep the database and queue private, and the API on `127.0.0.1:$DOCKYARD_PORT`.
+- Run two workers.
+- Submit a new job and confirm a worker finishes it and its result is saved.
+
+In your notes, record the symptom, the evidence that pointed to the cause, your fix, and how you confirmed it.
+Explain why resetting the database would have been the wrong move.

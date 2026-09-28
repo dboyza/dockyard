@@ -3,14 +3,14 @@ revision: 1
 module: 2
 order: 3
 title: Separate building from running
-summary: Use a verification stage and a minimal non-root runtime with deliberate file ownership.
+summary: Check the code in one build stage, then run it from a clean final stage as an ordinary user.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Explain what crosses a multi-stage build boundary.
-- Use a numeric non-root identity with readable runtime files.
-- Verify runtime behavior instead of assuming USER in a source file took effect.
+- Explain what gets from one build stage into the next.
+- Run the application as a numbered non-root user that can still read its files.
+- Check the running container, not just the Dockerfile, to confirm the result.
 prerequisites:
 - m02-cache
 objectives:
@@ -19,18 +19,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A build stage contains a compiler. Does the final stage automatically contain it?
+  question: An early build stage installs a compiler. Does the final image contain it?
   options:
-  - No; stages have separate roots unless content is copied or inherited.
-  - Yes; all stages are merged automatically.
-  - Only when USER is non-root.
+  - No, unless you copy it or build the final stage from that stage.
+  - Yes, all stages are merged into the final image.
+  - Only when the final stage runs as root.
   correct: 0
-  explanation: The final stage selects its own base and explicit copied artifacts. A separate build stage
-    can be omitted from the runtime image.
+  explanation: Each FROM starts fresh. The final image only contains what its own stage copies in, which
+    is how build tools stay out.
 hints:
-- Use two FROM instructions and name the verification stage.
-- COPY --from selects source-stage files; copy app.py and VERSION instead of the whole /source tree.
-- Set USER 10001:10001 in the final stage, copy with readable ownership, rebuild, and run a new container.
+- You need two FROM lines, and the first one needs a name, such as AS verify.
+- In the final stage, use COPY --from=verify to copy app.py and VERSION individually, not the whole /source
+  folder.
+- Put USER 10001:10001 in the final stage, give the copied files to that user with --chown=10001:10001,
+  rebuild, and run a new container.
 sources:
 - https://docs.docker.com/build/building/multi-stage/
 - https://docs.docker.com/reference/dockerfile/#user

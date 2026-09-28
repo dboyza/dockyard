@@ -2,15 +2,16 @@ id: m04-mounts
 revision: 1
 module: 4
 order: 1
-title: Move data outside the container layer
-summary: Persist real Dispatch jobs in an explicitly scoped host directory.
+title: Keep data outside the container
+summary: Store Dispatch’s jobs in a folder on your computer so they survive replacing the container.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Distinguish image files, the container writable layer, bind mounts, and named volumes.
-- Mount the intended data directory without obscuring the application source.
-- Verify committed data from outside the API process.
+- Explain the difference between files in the image, the container’s own writable area, bind mounts, and
+  volumes.
+- Mount only the data folder, without hiding the application’s files.
+- Confirm that a job survives when the container is replaced.
 prerequisites:
 - m03-mission
 objectives:
@@ -19,19 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You remove a container whose database is in a bind-mounted host directory. What happens to
-    the directory?
+  question: You remove a container whose database is in a bind-mounted folder. What happens to the folder?
   options:
-  - It remains unless separately deleted.
-  - Docker always deletes it with the container.
+  - It stays until you delete it yourself.
+  - Docker deletes it along with the container.
   - It becomes part of the image.
   correct: 0
-  explanation: The bind source has a separate lifecycle. Container removal does not remove that host directory.
+  explanation: A bind mount uses a folder on your computer. Removing the container does not touch that
+    folder.
 hints:
-- The supplied application writes /data/jobs.db. Mount /data, not /app.
-- Create the assigned host storage directory and use your host UID/GID for this bind exercise.
-- Use --mount "type=bind,source=$DOCKYARD_STORAGE,target=/data" and --user "$(id -u):$(id -g)" when running
-  the assigned image.
+- Dispatch writes its database to /data/jobs.db, so mount /data, not /app.
+- Create the storage folder first, and run the container as your own user so it can write there.
+- Add --mount "type=bind,source=$DOCKYARD_STORAGE,target=/data" and --user "$(id -u):$(id -g)" to the
+  run command.
 sources:
 - https://docs.docker.com/engine/storage/bind-mounts/
 - https://docs.docker.com/engine/storage/volumes/

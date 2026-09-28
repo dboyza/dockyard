@@ -2,15 +2,15 @@ id: m05-readiness
 revision: 1
 module: 5
 order: 2
-title: Separate startup order from readiness
-summary: Add real dependency health checks and make application startup wait for usable services.
+title: Wait until dependencies are ready
+summary: Add health checks so the API and workers wait until the database and queue can actually do work.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Distinguish created, running, healthy, and application-ready states.
-- Choose health checks that exercise the dependency boundary.
-- Use service_healthy dependencies without assuming they solve every later outage.
+- Explain the difference between started, running, healthy, and ready.
+- Write health checks that test whether a service can really do its job.
+- Make services wait for healthy dependencies, and know what that does not cover.
 prerequisites:
 - m05-services
 objectives:
@@ -19,19 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: depends_on uses service_started. What does that establish?
+  question: 'depends_on uses condition: service_started. What does that guarantee?'
   options:
-  - The dependency container started, not necessarily that it is ready.
-  - Every application query will succeed.
-  - The dependency will never need a retry.
+  - Only that the dependency container has started, not that it is ready.
+  - That every database query will succeed.
+  - That the app will never need to retry.
   correct: 0
-  explanation: A running process can still be initializing. service_healthy uses its declared health check
-    as a stronger startup gate.
+  explanation: A database can be running while still setting itself up. service_healthy waits for its
+    health check to pass instead.
 hints:
-- Inspect State.Health and the resolved depends_on conditions separately.
-- Use pg_isready for PostgreSQL, redis-cli ping for Redis, and the supplied /readyz for the API.
-- Set both db and queue conditions to service_healthy for api and worker, recreate with compose up, and
-  wait for observed healthy states.
+- 'Look at the STATUS column of docker compose ps: which services show (healthy)?'
+- Use pg_isready for PostgreSQL, redis-cli ping for Redis, and the /readyz address for the API.
+- 'Set db and queue to condition: service_healthy under both api and worker, then run docker compose up
+  --wait.'
 sources:
 - https://docs.docker.com/compose/how-tos/startup-order/
 starter: {}

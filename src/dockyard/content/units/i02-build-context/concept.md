@@ -1,13 +1,25 @@
-## Incident briefing
+## What you’re walking into
 
-The workspace VERSION says `incident-release-v2`, but a fresh container still reports `incident-release-v1` after a successful build.
-The release script builds from a staged context directory used by an older packaging step.
-Diagnose which files the builder actually receives and ship the current root application without bind-mounting it into the running container.
-Prove the assigned endpoint serves the new built artifact.
+The team edited `VERSION` in the workspace to `incident-release-v2` and ran the release script, `release.sh`.
+The build succeeded.
+But a brand-new container from that image still reports `incident-release-v1`.
 
-## Evidence discipline
+Something between the edit and the running container is using old files.
+Your job is to find where, fix it properly, and ship the new release.
 
-State the user-visible failure, collect a discriminating observation, and make a bounded repair.
-Use the preceding teaching labs and reference desk when needed.
-Record the cause, repair, verification, and remaining risk in your observations.
-Hints and reference reveal remain available but record supported practice.
+## How to approach an incident
+
+1. **Describe the symptom** in one sentence, in terms a user would notice.
+2. **Collect evidence** before changing anything.
+3. **Form a theory** that explains all of that evidence.
+4. **Make the smallest fix** that addresses the cause.
+5. **Check the result** the way a user would, with a fresh request.
+
+Write each step in your notes as you go.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.
+
+## Useful reminders
+
+The last argument of `docker build` is the **build context**, the folder whose files Docker may copy.
+`COPY VERSION ./` copies `VERSION` from that folder, whichever folder it is.
+Read `release.sh` and list the workspace with `ls -R` before you rebuild anything.

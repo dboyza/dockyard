@@ -2,15 +2,15 @@ id: m04-recovery
 revision: 1
 module: 4
 order: 3
-title: A backup earns trust through a restore
-summary: Create an archive from quiescent source data and verify it through a separate target volume.
+title: Test a backup by restoring it
+summary: Back up a database, restore it into separate storage, and confirm the original job came back.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Explain why copying live database files can produce an inconsistent backup.
-- Keep backup source and restore target identities separate.
-- Prove recovery by reading original records through the application.
+- Explain why copying a database while it is being written can produce a broken backup.
+- Keep the backup’s source and the restore target separate.
+- Confirm a restore by finding the original data through the application.
 prerequisites:
 - m04-permissions
 objectives:
@@ -19,18 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A backup command returns zero. Which additional observation is strongest?
+  question: Your backup command finished without errors. What gives you the most confidence in it?
   options:
-  - Restore separately and verify original records plus new writes.
-  - Confirm only that the archive filename exists.
-  - Delete the source immediately to save space.
+  - Restoring it separately and finding the original data, then saving something new.
+  - Seeing that backup.tar exists.
+  - Deleting the original straight away to save space.
   correct: 0
-  explanation: A separate restore tests usability and service behavior while preserving the known source.
+  explanation: Only a real restore shows a backup can be used. Keep the original until you have done one.
 hints:
-- Keep source and target volume names separate throughout the commands.
-- The source is quiescent, so archive jobs.db from its read-only mount.
-- Restore backup.tar into the target, preserve numeric ownership for UID 10001, and request /jobs from
-  the API.
+- Keep the source volume ($DOCKYARD_VOLUME-source) and the target volume ($DOCKYARD_VOLUME) straight in
+  every command.
+- Nothing is writing to the source, so you can archive jobs.db from a read-only mount of it.
+- Stop the API, extract backup.tar into the target volume, give user 10001 ownership, start the API, and
+  request /jobs.
 sources:
 - https://docs.docker.com/engine/storage/bind-mounts/
 - https://docs.docker.com/engine/storage/volumes/

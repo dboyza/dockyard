@@ -28,12 +28,10 @@ prediction:
   explanation: An image is a reusable template. Stopping a container stops its processes; it does not
     remove the image. A container also has its own writable layer, which is distinct from the image.
 hints:
-- The API source is already in app.py. Use a Python image, mount this workspace at /app, and make python
-  app.py the container's main process.
-- The process listens on port 8080 inside the container. Publish the assigned DOCKYARD_PORT on 127.0.0.1
-  to container port 8080, and use DOCKYARD_CONTAINER for the name.
-- A complete command is in the worked example. Check that the workspace mount uses "$DOCKYARD_WORKSPACE:/app:ro",
-  the working directory is /app, and the final arguments are python app.py.
+- 'Start with docker ps -a: is there a container with this lab’s name, and is it running?'
+- The command in Understand needs every line, including the label, port mapping, and folder mount.
+- If the name is already taken, run docker start "$DOCKYARD_CONTAINER" instead of docker run, then request
+  /healthz with curl.
 sources:
 - https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/
 - https://docs.docker.com/engine/containers/run/

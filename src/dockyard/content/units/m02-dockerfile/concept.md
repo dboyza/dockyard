@@ -1,29 +1,38 @@
 ## Put the application inside its image
 
-The first module mounted app.py from your host computer into a reusable Python image.
-That is convenient for experimentation, but another machine would also need your source directory.
-An application image carries the files and runtime configuration required to start the service.
-Building the image and running a container are separate operations.
+In module 1, you mounted `app.py` from your computer into a general Python image.
+That works for experiments, but anyone else who wanted to run Dispatch would need a copy of your folder too.
+In this lesson you’ll build an **application image**: one that already contains Dispatch’s files and knows how to start it.
 
-A **Dockerfile** is a text file containing the build recipe.
-Open the supplied `Dockerfile` in your preferred editor and save your changes there.
-If you use a terminal editor such as `nano`, run `nano Dockerfile`; in nano, Control-O then Enter saves and Control-X exits.
-You can check the saved file with `cat Dockerfile`.
-The terminal guide explains another way to create a text file if no editor is installed.
+Building an image and running a container are two separate steps.
+You build once, then run as many containers from that image as you like.
 
-`FROM` selects a base image, `WORKDIR` sets the working directory, and `COPY` adds files from the build context.
-`RUN` executes during the build and commits its filesystem changes into the next layer.
-`CMD` records the default command for a future container; it does not start the application during the build.
+## The Dockerfile
 
-## Choose which files Docker can copy
+A **Dockerfile** is a plain text file containing the recipe for an image.
+Docker follows it from top to bottom.
+These are the instructions you need today:
 
-In `docker build -t my-image .`, the final dot names the current directory as the build context.
-A COPY instruction reads from that context, not from arbitrary paths on the host.
-A `.dockerignore` file excludes files before they become available to the build.
-Exclude private credentials, local caches, and irrelevant large directories.
-An excluded file cannot be copied merely because it exists beside the Dockerfile.
+- `FROM` picks the starting image, here one that already contains Python.
+- `WORKDIR` sets the folder that later instructions, and the running program, work in.
+- `COPY` copies files from your folder into the image.
+- `RUN` runs a command while the image is being built, for example to install something.
+- `CMD` records the command a container should run when it starts. Nothing runs during the build.
 
-## Worked example: package a one-shot tool
+Each instruction that changes files adds a **layer**, a saved snapshot of just those changes.
+An image is a stack of layers; the next lesson shows how Docker reuses them to make rebuilds faster.
+
+## Edit the Dockerfile
+
+The workspace already contains a `Dockerfile` with a single comment in it.
+Open it in any text editor and save your changes there.
+If you are using a terminal editor, `nano Dockerfile` is a simple choice: Control-O then Enter saves, and Control-X exits.
+Check what you saved with `cat Dockerfile`.
+The terminal guide shows another way to write a file if no editor is installed.
+
+## A worked example
+
+Here is a Dockerfile for a different program, a one-off `report.py` script:
 
 ```dockerfile
 ARG BASE_IMAGE
@@ -33,25 +42,29 @@ COPY report.py ./
 CMD ["python", "report.py"]
 ```
 
-This recipe runs a supplied report script when a container starts.
-For an HTTP application, the main command must remain running and listen on the correct address.
-The task below packages an API rather than a one-shot report.
+`ARG BASE_IMAGE` declares a value you supply at build time, and `FROM ${BASE_IMAGE}` uses it.
+Dockyard supplies a specific Python image so everyone builds on exactly the same starting point.
+Your Dispatch Dockerfile will follow the same pattern, but with `/app`, both of Dispatch’s files, and Dispatch’s start command.
+
+Build it like this:
 
 ```sh
 docker build --build-arg "BASE_IMAGE=$DOCKYARD_PYTHON_IMAGE" -t "$DOCKYARD_IMAGE" .
-docker image inspect "$DOCKYARD_IMAGE"
+docker image ls "$DOCKYARD_IMAGE"
 ```
 
-`ARG BASE_IMAGE` declares a value to supply when building; `--build-arg` supplies it.
-Dockyard gives you a Python image identified by a content digest, so this exercise uses a known version.
-Docker may warn that `BASE_IMAGE` has no default.
-Here that is intentional: always include the shown build argument, and check that the build finishes successfully.
-The resulting local application tag is a convenient reference for this lab's builds.
-Later you will distinguish that mutable tag from an immutable digest.
+`--build-arg` supplies the `BASE_IMAGE` value, and `-t` gives the new image a name, called a **tag**.
+Docker may warn that `BASE_IMAGE` has no default value; that is expected here, because you always supply it.
+Read the last lines of the output to confirm the build succeeded before you run anything.
 
-## Ports are still runtime choices
+## Which files can a build see?
 
-`EXPOSE 8080` documents an intended container port.
-It does not publish that port on your host computer.
-The container run command still needs a loopback-bound `-p` mapping.
-The application must listen on `0.0.0.0` inside the container to accept forwarded requests.
+The final `.` in the build command is the **build context**: the folder whose files Docker is allowed to copy.
+`COPY` can only use files inside it.
+A `.dockerignore` file in that folder lists files to leave out, such as passwords, caches, or large folders the image does not need.
+
+## Ports are still chosen at run time
+
+A Dockerfile can include `EXPOSE 8080`.
+That only documents which port the application uses; it does not make it reachable from your computer.
+You still publish the port with `-p` when you run the container, exactly as in module 1.

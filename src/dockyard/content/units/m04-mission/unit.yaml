@@ -3,14 +3,14 @@ revision: 1
 module: 4
 order: 4
 title: 'Mission: rescue data before replacing the container'
-summary: Migrate an existing job out of a container’s writable layer and prove it survived replacement.
+summary: Move a job out of a container’s own storage into a volume, without losing it.
 kind: mission
 runtime: docker
 minutes: 50
 outcomes:
-- Preserve original data before removing its only container copy.
-- Create and restore into an owned named volume.
-- Verify the recovered record and continued write behavior.
+- Back up data before removing the only container that holds it.
+- Create a labeled volume and restore the data into it.
+- Confirm the original job survived and new jobs can still be saved.
 prerequisites:
 - m04-recovery
 objectives:
@@ -19,18 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: The only database is in the current container’s writable layer. Which action belongs first?
+  question: The only copy of the database is inside the current container. What should you do first?
   options:
-  - Obtain a consistent backup before removing the container.
-  - Remove the container and create a volume afterward.
-  - Rebuild the image and assume it contains the jobs.
+  - Make a backup before removing the container.
+  - Remove the container, then create a volume.
+  - Rebuild the image, which will contain the jobs.
   correct: 0
-  explanation: Runtime data in a writable layer is not automatically part of the image or a future volume.
+  explanation: Data written by a running container lives in that container only. It is not in the image,
+    and removing the container deletes it.
 hints:
-- Inspect the original container mounts and find where /data currently lives.
-- Stop the API cleanly before copying its SQLite file; docker cp works on a stopped container.
-- Archive jobs.db, restore it into the labeled named volume with suitable ownership, then recreate the
-  API using that volume.
+- 'Check where /data currently lives: does the container have any mounts at all?'
+- Stop the API before copying jobs.db. docker cp works on stopped containers.
+- Archive jobs.db, restore it into a new labeled volume with owner 10001, then replace the API using that
+  volume.
 sources:
 - https://docs.docker.com/engine/storage/bind-mounts/
 - https://docs.docker.com/engine/storage/volumes/

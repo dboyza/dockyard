@@ -2,15 +2,16 @@ id: m06-limits
 revision: 1
 module: 6
 order: 3
-title: Constrain a running service deliberately
-summary: Apply and verify a non-root, read-only runtime with bounded memory, CPU, and process creation.
+title: Limit what a container can do
+summary: Run the API with a read-only filesystem, no special powers, and limits on memory, CPU, and processes.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Explain the different roles of process identity, filesystem permissions, capabilities, and cgroups.
-- Set resource limits appropriate to the supplied application.
-- Observe enforced runtime state while preserving useful service behavior.
+- Explain what running as non-root, a read-only filesystem, dropped capabilities, and resource limits
+  each protect against.
+- Choose limits the API can live with.
+- Check that the limits are really in force and the API still works.
 prerequisites:
 - m06-artifacts
 objectives:
@@ -19,20 +20,22 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A non-root write fails with permission denied. Does that alone prove the root filesystem is
-    read-only?
+  question: A non-root process gets “permission denied” writing a file. Does that prove the filesystem
+    is read-only?
   options:
-  - No; ordinary file permissions can reject a write on a writable filesystem.
-  - Yes; every permission failure means a read-only mount.
-  - Only if a memory limit exists.
+  - No. Ordinary file permissions can refuse a write on a writable filesystem.
+  - Yes. Every permission error means a read-only filesystem.
+  - Only if a memory limit is set.
   correct: 0
-  explanation: Read-only filesystem enforcement and user permission checks are separate boundaries, so
-    they need distinct evidence.
+  explanation: File permissions and a read-only filesystem are separate protections, so each needs its
+    own evidence.
 hints:
-- Inspect the current HostConfig and effective process UID before replacing the container.
-- Use --read-only, --cap-drop ALL, and --security-opt no-new-privileges along with bounded resource flags.
-- The supplied API needs no writable source path. Recreate it with --memory 128m --cpus 0.5 --pids-limit
-  64 and verify a real health request.
+- 'Start by checking the current container: docker exec "$DOCKYARD_CONTAINER" id, and docker inspect for
+  its HostConfig.'
+- You need --read-only, --cap-drop ALL, and --security-opt no-new-privileges, plus memory, CPU, and process
+  limits.
+- Replace the container adding --memory 128m --cpus 0.5 --pids-limit 64 to those options, then request
+  /healthz.
 sources:
 - https://docs.docker.com/engine/containers/resource_constraints/
 - https://docs.docker.com/engine/containers/run/

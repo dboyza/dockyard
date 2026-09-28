@@ -2,15 +2,15 @@ id: m03-bridges
 revision: 1
 module: 3
 order: 2
-title: Connect services through a named bridge
-summary: Give two independently running containers a shared network and a stable dependency name.
+title: Connect two containers by name
+summary: Put two containers on a shared network so one can reach the other by a stable name.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Create a user-defined bridge with explicit ownership.
-- Use a network alias instead of a container IP.
-- Keep an internal dependency off the host’s published ports.
+- Create a Docker network for related containers.
+- Give a container a name on that network instead of relying on its IP address.
+- Keep an internal service reachable by other containers but not from your computer.
 prerequisites:
 - m03-ports
 objectives:
@@ -19,19 +19,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Both containers are running on different bridges. Is a dependency alias on one bridge automatically
-    available to the other?
+  question: Two containers are on different networks. Can one reach the other using an alias from its
+    network?
   options:
-  - No; network attachment and naming scope must align.
-  - Yes; aliases are global across Docker.
-  - Only if both images use the same base.
+  - No. Names only work between containers on the same network.
+  - Yes. Aliases work across every Docker network.
+  - Only if both use the same base image.
   correct: 0
-  explanation: A user-defined bridge provides a scoped communication and naming domain, independent of
-    the images used.
+  explanation: Each network has its own set of names. Containers must share a network for its names to
+    work between them.
 hints:
-- Inspect each container’s NetworkSettings.Networks.
-- Create the labeled user-defined bridge, then connect both existing containers.
-- Use --alias dependency when connecting the peer, and verify the name from inside the API container.
+- Check which networks each container is attached to with docker inspect --format '{{json .NetworkSettings.Networks}}'.
+- Create the labeled network first, then connect both existing containers to it.
+- Add --alias dependency when you connect the dependency container, then test the name from inside the
+  API.
 sources:
 - https://docs.docker.com/engine/network/drivers/bridge/
 - https://docs.docker.com/engine/network/port-publishing/

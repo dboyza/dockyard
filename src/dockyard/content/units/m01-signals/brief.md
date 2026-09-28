@@ -1,12 +1,11 @@
-## Prove a clean stop
+## Stop Dispatch cleanly
 
-Prepare starts a healthy Dispatch instance for this exercise.
+Dockyard has started a working Dispatch container for this exercise.
 
-1. Make a successful request to `/healthz` and locate its HTTP 200 request line in the container's logs.
-2. Stop the assigned container using normal graceful termination.
-3. Inspect its final state and exit code.
-4. Leave the container present but stopped, then check your work.
+1. Request `/healthz` successfully, then find that request’s `200` line in the container’s logs.
+2. Stop the container with `docker stop`.
+3. Check its final state and exit code with `docker ps -a` or `docker inspect`.
+4. Leave the stopped container in place and choose **Check work**.
 
-Use `docker stop` in the terminal for this task.
-Dockyard's separate Stop button pauses a practice environment and therefore blocks assessment until resumed.
-Do not delete the container: its state and logs are the evidence this exercise needs.
+Use `docker stop` in your terminal, not Dockyard’s Stop lab button: that button pauses the whole practice lab, and Check work cannot run while the lab is paused.
+Do not remove the container, because its state and logs are what Check work reads.

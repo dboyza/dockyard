@@ -1,36 +1,39 @@
 id: i01-lifecycle
 revision: 1
-module: 1
-order: 90
+module: 2
+order: 80
 title: The deployment exited successfully, but the service vanished
-summary: The release wrapper reports success, then the container exits with status zero.
+summary: A new start-up script reports success, then the container exits and Dispatch disappears.
 kind: incident
 runtime: docker
 minutes: 30
 outcomes:
-- Diagnose the reported failure from real runtime evidence.
-- Repair the specific boundary while preserving the stated resource and data constraints.
-- Demonstrate useful behavior with a fresh end-to-end observation.
+- Use the container’s state, command, and logs to find why it stops.
+- Explain why a script that backgrounds the server ends the container.
+- Fix the image so Dispatch stays running, and confirm it with a fresh request.
 prerequisites:
-- m01-mission
+- m02-dockerfile
 objectives:
 - docker.mission
 concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What should establish that this incident is resolved?
+  question: What would show that this incident is really fixed?
   options:
-  - The requested fresh behavior works and its preservation constraints still hold.
-  - The most recent command exited zero.
-  - The container list contains a running process.
+  - A fresh request to /healthz succeeds and the container keeps running.
+  - The launch command exits with code 0.
+  - docker ps shows a container for a moment.
   correct: 0
-  explanation: A command result or process state alone does not establish the requested application outcome.
+  explanation: The launch already exits with code 0 and that is exactly the problem. Only a working, lasting
+    service shows the fix.
 hints:
-- Inspect the container command and process lifetime before changing its port.
-- A shell wrapper that backgrounds the server can exit while its child is still starting.
-- Run the server in the foreground, preferably with exec, then replace the stopped container using the
-  same declared endpoint.
+- 'Look at what the container actually runs: docker inspect --format ''{{json .Config.Cmd}}'' "$DOCKYARD_CONTAINER",
+  then read launch.sh in the workspace.'
+- In launch.sh, the & after python app.py sends the server to the background, and the script then finishes.
+  The container stops when the script does.
+- Change the line to exec python app.py (without &), rebuild the image with the BASE_IMAGE argument, remove
+  the stopped container, and run a new one with the same name, label, and port.
 sources:
 - https://docs.docker.com/engine/containers/run/
 starter: {}

@@ -1,4 +1,10 @@
-After permission maintenance, creating jobs fails even though the service is still available.
-The API still answers health checks and can read its original job, but creating new jobs fails.
-Restore writes as UID 10001 while retaining the original named volume and original job.
-Do not solve this by running the application as root, granting group/world write access, deleting data, or creating a replacement empty database.
+## Let Dispatch save jobs again
+
+Find out why saving new jobs fails while reading still works, then fix the cause.
+
+- Keep the original named volume and the original job.
+- Keep the API running as user 10001.
+- Do not run the API as root, give group or everyone write access, or replace the database with a new empty one.
+- Confirm that a new job saves and the original job is still listed.
+
+In your notes, record the symptom, the evidence that pointed to the cause, your fix, and how you confirmed it.

@@ -1,15 +1,17 @@
 ## Get Dispatch running again
 
-Prepare lab gives you a container whose program has already finished with exit code zero.
-The supplied app.py is correct and does not need editing.
+When you prepare the lab, you get a container whose program has already finished with exit code 0.
+The supplied `app.py` is correct and does not need editing.
 
-Restore a long-running Dispatch API using the assigned container name, lab label, and host port.
-The endpoint must bind only to 127.0.0.1 and respond on `/healthz` with service `dispatch`.
-Preserve other containers and the supplied image.
-Leave the corrected instance running.
+Get a Dispatch API running that keeps running, using this lab’s container name, label, and host port.
+Publish it only on `127.0.0.1`, and make sure `/healthz` answers with service `dispatch`.
+Leave other containers and the supplied image alone, and leave your repaired container running.
 
-In your notes, answer three questions: What command did the broken container run?
-Why did it finish instead of serving requests?
-Which two observations show that your replacement works?
-These answers are for self-review; the checker tests the repaired service, not your explanation.
-Use only commands and concepts already introduced in this module.
+In your notes, answer three questions:
+
+1. What command did the broken container run?
+2. Why did it finish instead of serving requests?
+3. Which two observations show that your replacement works?
+
+Check work tests the repaired service; your answers are for your own review.
+Everything you need was introduced earlier in this module.

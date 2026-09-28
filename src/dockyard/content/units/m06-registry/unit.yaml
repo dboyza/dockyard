@@ -2,15 +2,15 @@ id: m06-registry
 revision: 1
 module: 6
 order: 1
-title: Ship a digest through a local registry
-summary: Push a real application artifact and select its immutable registry digest when creating the container.
+title: Publish an image and run it by digest
+summary: Push Dispatch to a practice registry and run the exact image by its content fingerprint.
 kind: lesson
 runtime: docker
 minutes: 35
 outcomes:
-- Distinguish a mutable tag, a local image ID, and a registry content digest.
-- Push and pull through a loopback-bound owned registry.
-- Run the exact published artifact by digest.
+- Explain the difference between a tag, which can move, and a digest, which cannot.
+- Push to and pull from a registry.
+- Run a container from an exact image digest.
 prerequisites:
 - m05-mission
 objectives:
@@ -19,19 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You move the release tag to a new manifest. What happens to a deployment pinned to the old
-    digest?
+  question: Someone moves the release tag to a new image. What happens to a container created from the
+    old digest?
   options:
-  - It still selects the old content digest.
-  - It silently selects the new tag target.
-  - Its local writable layer is merged with the new image.
+  - It keeps the old image.
+  - It switches to the new image.
+  - It combines both images.
   correct: 0
-  explanation: A digest reference names specific content and does not follow later changes to a tag.
+  explanation: A digest names exact content. It never follows a tag to something new.
 hints:
-- The registry endpoint is separate from the API endpoint; use DOCKYARD_REGISTRY_PORT for image distribution.
-- Tag and push the image, then select the RepoDigests entry matching this exact local registry.
-- Run the container from registry/dispatch@sha256:... after pulling that digest, preserving the API label
-  and host-port mapping.
+- The registry has its own port, $DOCKYARD_REGISTRY_PORT, separate from the API’s port.
+- After docker push, run docker image inspect --format '{{json .RepoDigests}}' on the pushed name and
+  pick the entry for this registry.
+- Pull that name@sha256:... reference, then docker run the API from it with the lab label and -p mapping.
 sources:
 - https://docs.docker.com/reference/cli/docker/image/push/
 - https://docs.docker.com/reference/cli/docker/image/pull/

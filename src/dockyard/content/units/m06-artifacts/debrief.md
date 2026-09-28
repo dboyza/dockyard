@@ -1,3 +1,8 @@
-The final artifact now matches the tested platform and excludes unintended context material from its layer history.
-This establishes a narrow input-control property, not a claim that the whole image is vulnerability-free or that its publisher is authenticated.
-Record which additional questions an SBOM, signature, and vulnerability scan would each help answer.
+## What you prevented
+
+The fake `.env` no longer reaches any layer of your image, and the image matches your computer’s processor.
+Preventing a file from entering the build is much safer than trying to delete it afterwards.
+
+Check your understanding:
+Why can a file deleted in a later Dockerfile step still be recovered from the image?
+Name one thing this lesson’s checks do not tell you about the image’s safety.
