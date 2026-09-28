@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import shutil
 import threading
@@ -203,6 +204,11 @@ class KubernetesRuntime:
                 )
             )
         self.docker.discover()
+        node_network = self.docker.inspect("network", network) or {}
+        pod_subnet = choose_pod_subnet(
+            [item["Subnet"] for item in (node_network.get("IPAM", {}).get("Config") or [])]
+        )
+        self.lab.resources["pod_subnet"] = pod_subnet
         self.lab.resources["kind_network"] = network
         self.env["KIND_EXPERIMENTAL_DOCKER_NETWORK"] = network
         names = [self.name + "-control-plane"]
@@ -215,7 +221,7 @@ class KubernetesRuntime:
             "networking": {
                 "apiServerAddress": "127.0.0.1",
                 "disableDefaultCNI": True,
-                "podSubnet": "192.168.0.0/16",
+                "podSubnet": pod_subnet,
             },
             "nodes": [
                 {
@@ -305,6 +311,7 @@ class KubernetesRuntime:
         ):
             local = self.load_image(name, cancel)
             manifest = manifest.replace(f"quay.io/calico/{upstream}:v3.32.2", local)
+        manifest = calico_pool(manifest, pod_subnet)
         self.docker.require(
             self.kubectl(
                 [
@@ -557,6 +564,42 @@ class KubernetesRuntime:
 
 
 SYSTEM_NAMESPACES = {"kube-system", "local-path-storage"}
+SERVICE_SUBNET = ipaddress.ip_network("10.96.0.0/12")
+# Docker's default address pools use 172.17.0.0/12 and 192.168.0.0/16, so prefer ranges
+# outside them; the native VM labs use 10.244.0.0/16 too.
+POD_SUBNETS = ("10.244.0.0/16", "10.200.0.0/16", "100.64.0.0/16")
+CALICO_POOL_COMMENT = """            # - name: CALICO_IPV4POOL_CIDR
+            #   value: "192.168.0.0/16"
+"""
+
+
+def choose_pod_subnet(node_subnets: list[str]) -> str:
+    """Pick a Pod range disjoint from the node network and the Service range."""
+    taken = [SERVICE_SUBNET] + [
+        network
+        for network in (ipaddress.ip_network(value, strict=False) for value in node_subnets)
+        if network.version == 4
+    ]
+    for candidate in POD_SUBNETS:
+        network = ipaddress.ip_network(candidate)
+        if not any(network.overlaps(other) for other in taken):
+            return candidate
+    raise RuntimeErrorBase(
+        "Every Pod address range Dockyard can use overlaps this lab's Docker network. "
+        "Remove Docker networks you no longer need, then prepare again."
+    )
+
+
+def calico_pool(manifest: str, pod_subnet: str) -> str:
+    """Set Calico's default pool to the cluster's Pod range instead of its 192.168 default."""
+    if CALICO_POOL_COMMENT not in manifest:
+        raise RuntimeErrorBase("The cached Calico manifest has an unexpected pool setting.")
+    return manifest.replace(
+        CALICO_POOL_COMMENT,
+        f"""            - name: CALICO_IPV4POOL_CIDR
+              value: "{pod_subnet}"
+""",
+    )
 
 
 def parse_time(value: str) -> datetime:

@@ -340,12 +340,14 @@ class Service:
     def _make_cluster_room(self, lab: Lab, cancel: threading.Event) -> None:
         for other in self.store.labs():
             if other.id != lab.id and other.runtime in {Runtime.KUBERNETES, Runtime.LINUX}:
-                if other.state in {"failed", "preparing", "checking", "stopping", "cleaning"}:
+                if other.state in {"preparing", "checking", "stopping", "cleaning"}:
                     raise LabError(
-                        f"Inspect and stop or clean {other.unit_id} ({other.state}) "
-                        "before switching the cluster budget."
+                        f"Wait for {other.unit_id} to finish {other.state}, "
+                        "then prepare this lab again."
                     )
-                if other.state == "ready":
+                # A failed lab is stopped like a ready one; stopping is reversible, and its
+                # recorded error stays visible so the learner can return to it later.
+                if other.state in {"ready", "failed"}:
                     with operation_lock(self.directory / "locks", other.unit_id):
                         self.runtime(other).change("stop", cancel)
                         other.state = "stopped"

@@ -311,6 +311,9 @@ The four native administration units passed their complete broken-starter/refere
 The course now has 76 authored units with successful real-runtime reference audits.
 The new checkpoint runs the hardened Dispatch application on kubeadm guests, imports platform-specific images without host mounts, and stores PostgreSQL on a retained worker-local PV with explicit node affinity.
 The native Pod CIDR is 10.244.0.0/16, separate from the 192.168.104.0/24 guest network.
+Kind labs now choose a Pod range disjoint from their Docker node network, normally 10.244.0.0/16, and set Calico's pool to match.
+Before this, a hard-coded 192.168.0.0/16 Pod range overlapped the 192.168.x.0/20 networks Docker allocates once its 172 ranges are used; a three-node lab then left CoreDNS and the Calico controller unready until preparation timed out.
+A 2026-09-28 walkthrough reproduced that on node network 192.168.96.0/20 and prepared the same lab in 59 seconds with Pods in 10.244.0.0/16 after the change.
 A separate proof verified cross-node Service DNS/HTTP, actual ingress denial, and recovery after an explicit allow policy on this configuration.
 
 The native checks observe an actual API process through CRI and its Linux cgroup, active kubelet services and fresh node leases, a separate private guest operator client, serving-certificate trust, and all four static control-plane components.

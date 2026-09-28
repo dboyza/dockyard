@@ -92,7 +92,8 @@ Lab Manager reports Docker health, architecture, host memory, free disk, and sav
 Dockyard permits one active application cluster or native VM lab across its registered profiles.
 Switching within one profile stops its previous ready owned cluster.
 A cluster in another profile must be stopped or cleaned from that profile before another starts.
-A failed environment requires inspection and Stop or Clean up before switching the budget.
+A failed environment is stopped like a ready one when another cluster lab starts; its error stays visible for when you return to it.
+A lab that is still preparing, checking, stopping, or cleaning must finish first.
 Unrelated Docker resources are not stopped to make room.
 Every Docker and kind lab uses its own Docker network, and Docker has a limited number of private address ranges.
 When none remain, preparing a lab cleans the least recently used stopped lab and tries again, up to eight times.

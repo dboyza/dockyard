@@ -61,10 +61,18 @@ def test_switching_within_a_profile_stops_only_ready_owned_cluster(tmp_path, mon
     assert calls == ["stop"]
     assert service.store.lab(previous.unit_id).state == "stopped"
     previous.state = "failed"
+    previous.error = "The earlier preparation timed out."
     service.store.save_lab(previous)
-    with pytest.raises(LabError, match="Inspect and stop or clean"):
+    service._make_cluster_room(target, threading.Event())
+    assert calls == ["stop", "stop"]
+    stopped = service.store.lab(previous.unit_id)
+    assert stopped.state == "stopped"
+    assert stopped.error == "The earlier preparation timed out."
+    previous.state = "preparing"
+    service.store.save_lab(previous)
+    with pytest.raises(LabError, match="to finish preparing"):
         service._make_cluster_room(target, threading.Event())
-    assert calls == ["stop"]
+    assert calls == ["stop", "stop"]
 
 
 def test_exhausted_address_pools_reclaim_only_the_oldest_stopped_lab(tmp_path, monkeypatch):
