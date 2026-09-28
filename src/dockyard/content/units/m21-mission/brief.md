@@ -1,5 +1,8 @@
-Upgrade the supplied 1.34.12 cluster to 1.35.8 without replacing the original cluster or its data.
-Return both nodes Ready and schedulable and prove new Dispatch work completes.
-Preserve the original namespace, nodes, marker object, and stored sentinel row.
-Write `maintenance-handoff.md` with the sequence, before/after observations, interruption boundaries, backup considerations, and remaining risks.
-Self-review the handoff against `handoff-rubric.md` after the runtime checks pass.
+## Upgrade the cluster and hand it over
+
+Upgrade the cluster from 1.34.12 to 1.35.8 in place.
+Both nodes must end Ready and uncordoned, and a new job must complete.
+Keep the original namespace, nodes, marker object, and stored data.
+
+Write `maintenance-handoff.md` covering the order you followed, what you saw before and after, when the service was interrupted, what backup you would want before doing this in production, and the remaining risks.
+Then compare it with `handoff-rubric.md`.

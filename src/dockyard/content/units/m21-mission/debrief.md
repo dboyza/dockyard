@@ -1,12 +1,6 @@
-# Debrief: Execute and hand off an in-place maintenance window
+## A maintenance window someone else can trust
 
-The maintenance window upgrades the existing cluster while preserving original namespace and node identities and the pre-maintenance database marker.
-The fresh application transaction checks useful service after the version transition rather than assuming version strings imply recovery.
+The same cluster, nodes, and data came through the upgrade, and a new job proved Dispatch works afterwards.
 
-## Explain your result
-
-Document the order of maintenance, the observation that permitted each next step, and the condition that would have required stopping.
-
-## Transfer beyond this lab
-
-A successful local rehearsal is evidence for the mechanism; production timing and disruption risk depend on workload placement and spare capacity.
+Check your understanding:
+For each step, which observation told you it was safe to carry on, and what would have made you stop?

@@ -2,17 +2,17 @@ id: m21-upgrade
 revision: 1
 module: 21
 order: 2
-title: Upgrade the actual control plane and kubelets in place
-summary: Perform an adjacent minor upgrade while preserving cluster and application identity.
+title: Upgrade a kubeadm cluster
+summary: Upgrade a cluster from 1.34 to 1.35 in place, control plane first, one node at a time.
 kind: lesson
 runtime: linux
 nodes: 2
 native_version: 1.34.12
 minutes: 65
 outcomes:
-- Plan an adjacent minor upgrade and explain control-plane versus kubelet versions.
-- Upgrade kubeadm, the control plane, and each kubelet in the supported order.
-- Verify original cluster objects and stored application data survive maintenance.
+- Upgrade kubeadm, the control plane, and each kubelet in the right order.
+- Drain and uncordon each node around its kubelet upgrade.
+- Confirm versions and that the original cluster and data survived.
 prerequisites:
 - m21-drain
 objectives:
@@ -56,8 +56,9 @@ prepare:
   timeout: 90
 checks:
 - id: maintenance-preserved
-  title: Original cluster identities and pre-maintenance data survive
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before maintenance
+    must all be the originals.
   command:
     args:
     - python
@@ -69,10 +70,13 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Compare the live preserved evidence with the required maintenance boundary.
+  diagnostic: Something from before maintenance is missing or was replaced. Maintenance must change the
+    existing cluster, not rebuild it; if objects were deleted or the cluster was recreated, reset the
+    lab and try again.
 - id: maintenance-upgrade
-  title: The existing API, control-plane images, and all kubelets reach 1.35.8
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: The API server, control plane, and kubelets are all on 1.35.8
+  explanation: kubectl get --raw=/version, the control-plane component images, and every node’s kubelet
+    must report v1.35.8.
   command:
     args:
     - python
@@ -84,10 +88,13 @@ checks:
   json_path:
   - upgrade
   expected: 'true'
-  diagnostic: Compare the live upgrade evidence with the required maintenance boundary.
+  diagnostic: Not everything is on 1.35.8 yet. Compare kubectl get --raw=/version, kubectl get nodes (VERSION
+    shows each kubelet), and the images of the kube-system control-plane Pods. The control plane needs
+    kubeadm upgrade apply; each node needs its kubelet package upgraded and restarted, and the worker
+    needs kubeadm upgrade node first.
 - id: maintenance-workflow
-  title: A fresh browser and cross-node Dispatch transaction completes
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: A job from the frontend completes after maintenance
+  explanation: A real job submitted from the frontend must cross the nodes, be processed, and be saved.
   command:
     args:
     - python
@@ -99,7 +106,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Compare the live workflow evidence with the required maintenance boundary.
+  diagnostic: A job did not complete. Check every node is Ready and uncordoned, run sh bootstrap.sh to
+    wait for Dispatch to recover, and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

@@ -1,12 +1,7 @@
-# Debrief: Drain a worker without bypassing availability protection
+## Maintenance without losing capacity
 
-The extra worker is evacuated while the remaining replicas and disruption budget continue to protect the intended availability.
-Drain operates through eviction semantics; bypassing those protections would avoid the operational decision the exercise asks you to make.
+Relaxing the budget to one allowed exactly one eviction at a time, the Deployment replaced the evicted copy on the other worker, and the database never moved.
 
-## Explain your result
-
-Which observation proved the target was evacuated, and which proved the application still had useful capacity elsewhere?
-
-## Transfer beyond this lab
-
-Before a production drain, identify non-evictable workloads, local data, spare capacity, and the conditions under which the maintenance must stop.
+Check your understanding:
+Why did the drain wait forever while the budget required both copies?
+What would stop the replacement Pod from starting if the API used *required* anti-affinity?

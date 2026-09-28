@@ -2,17 +2,17 @@ id: m21-drain
 revision: 1
 module: 21
 order: 1
-title: Drain a worker without bypassing availability protection
-summary: Separate cordoning, eviction budgets, replacement scheduling, and node-local data.
+title: Drain a node for maintenance
+summary: Drain a worker safely by adjusting its disruption budget, without bypassing evictions.
 kind: lesson
 runtime: linux
 nodes: 3
 native_version: 1.35.8
 minutes: 40
 outcomes:
-- Explain why cordoning does not move existing Pods.
-- Adjust a disruption budget while retaining at least one available API replica.
-- Evacuate a real worker and verify replacement workloads and application traffic.
+- Explain cordon, drain, eviction, and rescheduling as separate steps.
+- Set a disruption budget that permits safe maintenance.
+- Drain a node and confirm workloads moved and the app still works.
 prerequisites:
 - m20-mission
 objectives:
@@ -60,8 +60,9 @@ prepare:
   timeout: 90
 checks:
 - id: maintenance-preserved
-  title: Original cluster identities and pre-maintenance data survive
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before maintenance
+    must all be the originals.
   command:
     args:
     - python
@@ -73,10 +74,13 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Compare the live preserved evidence with the required maintenance boundary.
+  diagnostic: Something from before maintenance is missing or was replaced. Maintenance must change the
+    existing cluster, not rebuild it; if objects were deleted or the cluster was recreated, reset the
+    lab and try again.
 - id: maintenance-drained
-  title: The extra worker is evacuated while a valid disruption budget and replicas remain
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: The extra worker is drained with a sensible budget
+  explanation: worker2 must be cordoned with no ordinary Pods left, the disruption budget must still select
+    the stable API and require at least one available, and two API copies must be available elsewhere.
   command:
     args:
     - python
@@ -88,10 +92,13 @@ checks:
   json_path:
   - drained
   expected: 'true'
-  diagnostic: Compare the live drained evidence with the required maintenance boundary.
+  diagnostic: The drain is not complete. Wait for kubectl rollout status deployment/dispatch so both API
+    copies are running elsewhere, then check kubectl get pods -A --field-selector spec.nodeName=NODE for
+    anything left, kubectl get nodes for SchedulingDisabled, and that the budget still has minAvailable
+    1 for the stable API.
 - id: maintenance-workflow
-  title: A fresh browser and cross-node Dispatch transaction completes
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: A job from the frontend completes after maintenance
+  explanation: A real job submitted from the frontend must cross the nodes, be processed, and be saved.
   command:
     args:
     - python
@@ -103,7 +110,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Compare the live workflow evidence with the required maintenance boundary.
+  diagnostic: A job did not complete. Check every node is Ready and uncordoned, run sh bootstrap.sh to
+    wait for Dispatch to recover, and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

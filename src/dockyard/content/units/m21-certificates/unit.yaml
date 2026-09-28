@@ -2,17 +2,17 @@ id: m21-certificates
 revision: 1
 module: 21
 order: 3
-title: Renew and verify the certificate clients actually receive
-summary: Distinguish certificate files, the running API process, and the original trust anchor.
+title: Renew the API server certificate
+summary: Renew the API server’s serving certificate and make the running server use it.
 kind: lesson
 runtime: linux
 nodes: 2
 native_version: 1.35.8
 minutes: 40
 outcomes:
-- Inspect kubeadm certificate ownership and expiry without exposing private keys.
-- Renew the API serving certificate and reconcile its running static Pod.
-- Verify that a trusted TLS connection receives the new certificate under the original CA.
+- Inspect certificate expiry, serial, and issuer.
+- Renew a kubeadm certificate under the existing CA.
+- Restart a static Pod so it serves the new certificate.
 prerequisites:
 - m21-upgrade
 objectives:
@@ -56,8 +56,9 @@ prepare:
   timeout: 90
 checks:
 - id: maintenance-preserved
-  title: Original cluster identities and pre-maintenance data survive
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before maintenance
+    must all be the originals.
   command:
     args:
     - python
@@ -69,10 +70,13 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Compare the live preserved evidence with the required maintenance boundary.
+  diagnostic: Something from before maintenance is missing or was replaced. Maintenance must change the
+    existing cluster, not rebuild it; if objects were deleted or the cluster was recreated, reset the
+    lab and try again.
 - id: maintenance-renewed
-  title: A verified TLS connection receives the renewed leaf under the original CA
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: The API server serves the renewed certificate
+  explanation: A new, verified TLS connection to the API must receive a certificate with a new serial
+    number, signed by the original CA.
   command:
     args:
     - python
@@ -84,10 +88,12 @@ checks:
   json_path:
   - renewed
   expected: 'true'
-  diagnostic: Compare the live renewed evidence with the required maintenance boundary.
+  diagnostic: The API server is not serving a renewed certificate yet. After kubeadm certs renew apiserver,
+    stop the running kube-apiserver container with sudo crictl stop so the kubelet starts a new one, then
+    wait for kubectl get --raw=/readyz.
 - id: maintenance-workflow
-  title: A fresh browser and cross-node Dispatch transaction completes
-  explanation: Observe actual maintenance outcomes against the private before-maintenance record.
+  title: A job from the frontend completes after maintenance
+  explanation: A real job submitted from the frontend must cross the nodes, be processed, and be saved.
   command:
     args:
     - python
@@ -99,7 +105,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Compare the live workflow evidence with the required maintenance boundary.
+  diagnostic: A job did not complete. Check every node is Ready and uncordoned, run sh bootstrap.sh to
+    wait for Dispatch to recover, and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

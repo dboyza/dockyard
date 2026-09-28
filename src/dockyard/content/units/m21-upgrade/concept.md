@@ -1,12 +1,21 @@
-## A cluster has several independently installed versions
+## Upgrading Kubernetes, one step at a time
 
-This fixture starts with a real Kubernetes 1.34.12 control plane and kubelets.
-The target is the frozen 1.35.8 course version.
-Installing a newer host `kubectl` does not upgrade the server, and replacing only `kubeadm` does not upgrade a running kubelet.
-The outcome must be visible in the API version, component images, and every node's reported kubelet version.
-The supported path advances one minor version at a time.
+Upgrading a kubeadm cluster is one of the CKA’s classic tasks.
+A cluster has several separately installed pieces, and each must be upgraded on purpose:
 
-Read the linked version-specific upgrade guide and inspect this cluster before changing it:
+- **kubeadm**, the tool that performs the upgrade;
+- the **control-plane components**, the API server, controller manager, scheduler, and etcd, which kubeadm upgrades;
+- the **kubelet** on every node, a system package;
+- **kubectl**, the client.
+
+Installing a newer `kubectl` does not upgrade the cluster, and upgrading kubeadm does not upgrade a running kubelet.
+You can only move **one minor version at a time**, for example from 1.34 to 1.35.
+
+This lab starts at Kubernetes 1.34.12 and the target is 1.35.8.
+
+## Look first
+
+Read the official upgrade guide for the target version, then inspect the cluster:
 
 ```sh
 kubectl get --raw=/version
@@ -15,19 +24,31 @@ kubectl get pods -n kube-system -o wide
 kubectl get pdb -A
 ```
 
-Check add-on compatibility, removed APIs, backup readiness, and workload maintenance requirements before a production upgrade.
-The pinned Calico release supports both course versions.
-This fixture uses currently served APIs, but that does not prove an arbitrary application has no deprecated API clients.
-Use API discovery and workload/controller inventories alongside release deprecation guidance.
+Before a real upgrade, check your add-ons support the new version, look for APIs being removed, and make sure you have a tested etcd backup.
 
-## Stage packages without installing them
+## The order of operations
 
-`python -m dockyard.native stage-upgrade` transfers verified Debian archives into each recorded guest.
-It does not execute the upgrade.
-The directory is `/tmp/dockyard-$DOCKYARD_LAB-upgrade` inside each guest.
-The lab shell sets `DOCKYARD_ARCH` to `arm64` or `amd64`.
-Use the architecture-specific package names `kubeadm_1.35.8-1.1_${DOCKYARD_ARCH}.deb`, `kubelet_1.35.8-1.1_${DOCKYARD_ARCH}.deb`, and `kubectl_1.35.8-1.1_${DOCKYARD_ARCH}.deb`.
-Temporary unhold/install/hold steps make the version choice explicit:
+**On the control-plane node:**
+
+1. Upgrade the kubeadm package.
+2. `sudo kubeadm upgrade plan` shows what will change.
+3. `sudo kubeadm upgrade apply v1.35.8` upgrades the control-plane components.
+4. Drain the node (from your lab terminal), upgrade the kubelet and kubectl packages, then `sudo systemctl daemon-reload` and `sudo systemctl restart kubelet`.
+5. Uncordon the node.
+
+**On each worker, one at a time:**
+
+1. Upgrade the kubeadm package, then run `sudo kubeadm upgrade node`. Never `upgrade apply` on a worker.
+2. Drain it, upgrade the kubelet and kubectl packages, reload systemd, restart the kubelet.
+3. Uncordon it.
+
+## Packages in this lab
+
+Ubuntu’s package manager usually installs these with `apt-get install kubeadm=1.35.8-1.1`, and they are **held** (`apt-mark hold`) so a routine update never upgrades them by accident.
+This lab works offline, so `python -m dockyard.native stage-upgrade` copies the verified package files into each VM at `/tmp/dockyard-$DOCKYARD_LAB-upgrade`; it does not install anything.
+`$DOCKYARD_ARCH` holds `arm64` or `amd64` for the file names.
+
+For example, on the control plane:
 
 ```sh
 packages="/tmp/dockyard-$DOCKYARD_LAB-upgrade"
@@ -37,30 +58,26 @@ limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo apt-mark hold kubead
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo kubeadm upgrade plan v1.35.8
 ```
 
-Review the plan before running `sudo kubeadm upgrade apply v1.35.8` inside the control-plane guest.
-Kubeadm updates static component manifests and associated cluster configuration.
-This single-control-plane lab has a deliberate API maintenance interruption; it is not a zero-downtime upgrade demonstration.
+The kubelet and kubectl packages follow the same unhold, install, hold pattern.
+With only one control-plane node, the API is briefly unavailable during the upgrade; this is not a zero-downtime upgrade.
 
-## Upgrade one node at a time
+## Wait for each node to really finish
 
-After the control-plane upgrade, drain that node through the private host client before replacing its kubelet and kubectl packages.
-Use `--ignore-daemonsets --delete-emptydir-data` only after identifying the fixture's disposable scratch volumes.
-Run `systemctl daemon-reload` and restart kubelet.
-Before uncordoning or touching the next node, use `python -m dockyard.native wait-upgraded-node "$DOCKYARD_CONTROL_PLANE"` for the primary, or the same helper with `$DOCKYARD_WORKER` for the worker.
-This observation waits for the reported target kubelet version and API readiness to remain stable for 30 seconds, including unchanged running static component identities on the primary.
-A service restart returning successfully is not proof that its asynchronous reconciliation has finished.
-Then uncordon the node.
-On the worker, first install the target kubeadm package and run `sudo kubeadm upgrade node` before its drain and kubelet package update.
-Do not run `upgrade apply` on the worker.
-Restore package holds after each explicit installation.
+Restarting the kubelet returns immediately, but the node takes a little longer to report its new version and settle.
+Before uncordoning a node or moving on, run:
 
-The database uses a retained worker-local PV, so draining that worker also creates planned application downtime.
-Its data remains on that worker and becomes usable again when it returns.
-The earlier drain lesson demonstrated moving stateless replicas to spare capacity; it did not make this local disk portable.
+```sh
+python -m dockyard.native wait-upgraded-node "$DOCKYARD_CONTROL_PLANE"
+python -m dockyard.native wait-upgraded-node "$DOCKYARD_WORKER"
+```
 
-## Verify continuity, not just a version string
+It waits until the node reports the new kubelet version and the API stays ready for 30 seconds.
 
-Wait for both nodes to become Ready and schedulable, refresh the private client, and use `sh bootstrap.sh` to wait for the existing Dispatch checkpoint to recover.
-Compare `kubectl get --raw=/version`, node kubelet versions, and control-plane images.
-The assessment requires the original namespace, Node UIDs, ConfigMap identity, and a pre-maintenance SQL row to remain intact, then submits fresh work.
-Resetting into a brand-new 1.35 cluster is useful for a different task but does not satisfy an in-place upgrade.
+The database’s volume lives on the worker, so draining the worker takes Dispatch’s data offline until the worker returns.
+That is planned downtime; the data is safe on the worker’s disk.
+
+## Check the result
+
+When both nodes are Ready and uncordoned, run `python -m dockyard.native refresh-client` and `sh bootstrap.sh` to wait for Dispatch to recover.
+Then compare `kubectl get --raw=/version`, the nodes’ kubelet versions, and the control-plane images.
+Check work also confirms the cluster is the same one you started with, with the same nodes and data, not a freshly built 1.35 cluster.

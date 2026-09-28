@@ -1,12 +1,7 @@
-# Debrief: Renew and verify the certificate clients actually receive
+## A new certificate, actually in use
 
-The renewed certificate is checked through the TLS connection that a client actually receives, under the original trusted CA.
-A changed certificate file alone would not prove that the serving API process has loaded it.
+The renewed file had a new serial, but only after the API server restarted did clients receive it.
 
-## Explain your result
-
-Which observations separate renewed on-disk material, the served leaf certificate, and preserved trust in the original cluster?
-
-## Transfer beyond this lab
-
-Certificate rotation needs a rollout or reload plan for consumers as well as expiry monitoring and recoverable access to the appropriate signing authority.
+Check your understanding:
+Why is a renewed certificate file not proof that the server uses it?
+How would you renew every kubeadm certificate at once?

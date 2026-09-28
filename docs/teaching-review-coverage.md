@@ -97,10 +97,10 @@ A runtime pass alone is not a teaching-quality result.
 | m20-join | Completed without solutions | Revised | Explained token versus CA hash and added kubeadm token create --print-join-command, verified on the cluster. Calico used 10.244.0.0/16; cross-node job completed; passed. |
 | m20-ha | Completed without solutions | Revised | Added a quorum table, stacked versus external etcd, and HA kubeadm flags; documented the EOF symptom seen before the fix. Passed with the primary still stopped. |
 | m20-mission | Completed without solutions | Revised | Built the cluster from scratch independently; passed. |
-| m21-drain | Pending | Pending |  |
-| m21-upgrade | Pending | Pending |  |
-| m21-certificates | Pending | Pending |  |
-| m21-mission | Pending | Pending |  |
+| m21-drain | Completed without solutions | Revised | Plain explanation of cordon, drain, eviction, and PDBs. PDB allowed 0 then 1 disruption as described. A check during the replacement Pod's startup failed with a misleading message; the brief now waits for the rollout and the diagnostic says so. Passed. |
+| m21-upgrade | Completed without solutions | Revised | Rewrote with the full control-plane-first order and the apt hold pattern. Followed the lesson exactly from v1.34.12 to v1.35.8; passed. |
+| m21-certificates | Completed without solutions | Revised | Explained why the running server needs a restart and why deleting the mirror Pod does not help. Serial changed under the same issuer; passed. |
+| m21-mission | Completed without solutions | Revised | Completed the upgrade independently with a handoff; passed. |
 | m22-packets | Pending | Pending |  |
 | m22-dns | Pending | Pending |  |
 | m22-storage | Pending | Pending |  |

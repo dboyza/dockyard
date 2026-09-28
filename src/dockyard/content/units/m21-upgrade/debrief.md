@@ -1,12 +1,7 @@
-# Debrief: Upgrade the actual control plane and kubelets in place
+## One version, one node, one step at a time
 
-The existing API, control-plane images, and kubelets move through the supported adjacent-version upgrade while original identities and data remain.
-Recreating a new cluster at the target version would not establish an in-place upgrade or continuity of the old cluster.
+You upgraded kubeadm, then the control plane, then each node’s kubelet, draining each node first, and the same cluster came out on 1.35.8 with its data intact.
 
-## Explain your result
-
-Compare the API version, static component images, and every kubelet version, then explain why a new persisted job is still needed after they agree.
-
-## Transfer beyond this lab
-
-Plan maintenance around supported version skew, backups, disruption constraints, and a recovery strategy suited to the actual cluster topology.
+Check your understanding:
+Why does the worker run `kubeadm upgrade node` rather than `upgrade apply`?
+What would you back up before doing this on a production cluster?

@@ -1,44 +1,63 @@
-## Renewal has both a file and a process boundary
+## Renewing the API server’s certificate
 
-A serving certificate binds the API endpoint's identity to a trusted certificate authority.
-Its private key stays on the control-plane guest.
-Renewing the API certificate should preserve the intended subject alternative names and CA trust while issuing a new leaf certificate.
-Replacing the CA is a different operation requiring a coordinated trust migration.
-This exercise practices proactive renewal; the initial certificate is valid, so the starter fails because renewal has not yet occurred, not because the cluster is broken.
+kubeadm issues certificates that expire after one year.
+If they expire, components stop trusting each other and the cluster breaks.
+Renewing them before that happens is routine maintenance, and a CKA topic.
 
-## Inspect public metadata
+The API server’s **serving certificate** proves to clients that they are talking to the real API server.
+Its **private key** never leaves the control-plane node.
+Renewing it issues a new certificate, with a new serial number, signed by the same cluster **CA**, and keeping the same names (SANs) it is valid for.
+Replacing the CA itself is a much bigger job, because every client must learn to trust the new one.
+
+In this lab the certificate is still valid; you are renewing it early, as you would on a maintenance schedule.
+
+## Look at the current certificate
 
 ```sh
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo kubeadm certs check-expiration
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo openssl x509 -in /etc/kubernetes/pki/apiserver.crt -noout -serial -dates -issuer -ext subjectAltName
 ```
 
-The expiry report distinguishes kubeadm-managed credentials from externally managed certificates.
-Do not copy private keys into the workspace or paste administrative kubeconfigs into notes.
-Kubeadm uses existing certificate attributes when renewing this certificate.
-Changing a manifest or ConfigMap alone does not prove that an already-running process is serving a different leaf certificate.
+`check-expiration` lists every kubeadm-managed certificate and when it expires.
+The `openssl` command shows the serial number, validity dates, issuer, and the names the certificate covers.
+Write down the serial number.
+Never copy private keys or administrator kubeconfigs into your notes.
 
-## Renew deliberately
+## Renew it
 
-Run `sudo kubeadm certs renew apiserver` inside the primary guest.
-Inspect the public metadata again and compare the serial number with your first observation.
-Renewing this leaf does not require replacing the cluster CA or weakening client verification.
-The normal private client should continue to trust the API endpoint.
+Inside the control-plane VM:
 
-For a deterministic component restart in this disposable lab, find the actual `kube-apiserver` container with `sudo crictl ps` and stop that specific container with `sudo crictl stop CONTAINER_ID`.
-Kubelet reconciles the unchanged static Pod manifest and starts a replacement container.
-Expect a brief API interruption on this single-control-plane topology.
-Deleting the API's mirror Pod through kubectl is not the same as removing its static manifest.
-Do not place backup manifests beside active manifests in kubelet's watched directory.
+```sh
+sudo kubeadm certs renew apiserver
+```
 
-## Observe the served certificate
+Look at the certificate again: the serial number should have changed, and the issuer should be the same.
+`sudo kubeadm certs renew all` renews every kubeadm certificate at once.
 
-Wait for `kubectl get --raw=/readyz` to succeed using normal TLS verification.
-The assessment opens a fresh verified TLS connection to the private endpoint and compares the certificate it receives with the public certificate on disk.
-The serial must differ from the original, and the original CA must remain unchanged.
-It also checks the original cluster identities, stored data, and a fresh application transaction.
-This prevents a changed file, an insecure client, or a replacement cluster from masquerading as successful renewal.
+## Make the API server use it
 
-Kubelet client certificate rotation and administrative client renewal have different owners and lifecycles.
-Inspect each credential's purpose before deciding which renewal action applies.
-This lab renews the API serving leaf only; it is not a complete CA rotation or a claim that every cluster credential has been refreshed.
+Renewing writes a new file, but the running API server still has the old certificate loaded.
+It only picks up the new one when it restarts.
+
+The API server is a static Pod, so the kubelet restarts it if its container stops.
+Find the real container and stop it:
+
+```sh
+sudo crictl ps --name kube-apiserver
+sudo crictl stop CONTAINER_ID
+```
+
+The kubelet starts a fresh container from the same manifest, which loads the new certificate.
+Expect the API to be unavailable for a few seconds.
+
+Deleting the API server’s Pod with kubectl would not do this: that Pod is only a mirror, and the kubelet keeps the real one running from its manifest.
+Also, never leave backup copies of manifests in `/etc/kubernetes/manifests`; the kubelet would try to run them too.
+
+## Check the certificate being served
+
+Wait for `kubectl get --raw=/readyz` to succeed, with normal certificate checking.
+Check work connects to the API server and compares the certificate it actually receives with the renewed file: the serial must be new and the CA unchanged.
+That catches a renewed file the server has not loaded yet.
+
+This lab renews only the API server’s serving certificate.
+The kubelet’s own certificates, and the certificates inside kubeconfig files, are renewed separately, so check which credential you are dealing with before choosing how to renew it.
