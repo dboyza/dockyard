@@ -1,12 +1,7 @@
-# Debrief: Enforce and observe runtime restrictions
+## Rules at the door, limits inside
 
-Admission decides whether a proposed Pod configuration is accepted, while process observations show the restrictions that actually reached a running container.
-Non-root identity, dropped capabilities, seccomp filtering, and a read-only root filesystem address different forms of runtime authority.
+Admission now refuses Pods that would escalate privileges, and the running API process really is non-root, capability-free, filtered, and unable to change its own files.
 
-## Explain your result
-
-Why would an admission label alone be insufficient evidence that an already running workload has the intended restrictions?
-
-## Transfer beyond this lab
-
-Provide explicit writable locations for legitimate application state instead of weakening the entire runtime boundary.
+Check your understanding:
+Why was changing the namespace label not enough on its own?
+Name one restriction that Restricted requires, and one that is extra hardening you chose to add.

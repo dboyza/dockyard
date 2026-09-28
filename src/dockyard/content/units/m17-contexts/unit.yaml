@@ -2,15 +2,16 @@ id: m17-contexts
 revision: 1
 module: 17
 order: 3
-title: Enforce and observe runtime restrictions
-summary: Connect admission policy with actual kernel process state.
+title: 'Pod security: admission and security contexts'
+summary: Enforce the Restricted standard and restrict the running API process to match.
 kind: lesson
 runtime: kubernetes
 nodes: 2
 minutes: 45
 outcomes:
-- Repair Restricted admission and workload security contexts.
-- Keep necessary writes on explicit writable volumes.
+- Set Pod Security Admission levels on a namespace.
+- Write Pod and container security contexts.
+- Give applications writable volumes instead of loosening restrictions.
 prerequisites:
 - m17-network
 objectives:
@@ -30,11 +31,10 @@ prediction:
   correct: 0
   explanation: Admission evaluates requests; it does not retroactively rewrite or evict existing processes.
 hints:
-- Separate API authorization, network reachability, admission, and process restrictions.
-- Compare the affected Role, peer selector list, DNS protocols, and namespace/runtime settings with the
-  concept.
-- Apply the repaired source, complete the rollout where needed, and inspect each positive and negative
-  observation.
+- Look at the namespace labels in admission.yaml and the api container’s securityContext in platform.yaml.
+- enforce should be restricted; the API needs allowPrivilegeEscalation false, capabilities drop ALL, and
+  readOnlyRootFilesystem true.
+- Apply both files through render.py, then kubectl rollout restart deployment/dispatch and wait for it.
 sources:
 - https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 - https://kubernetes.io/docs/concepts/services-networking/network-policies/
@@ -66,8 +66,9 @@ prepare:
   timeout: 420
 checks:
 - id: security-admission
-  title: Restricted admission accepts a compliant Pod and rejects privilege escalation
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: Restricted admission accepts good Pods and rejects escalation
+  explanation: The dispatch namespace must enforce the Restricted standard, so a compliant Pod passes
+    a server dry run and one allowing privilege escalation is rejected.
   command:
     args:
     - python
@@ -79,11 +80,13 @@ checks:
   json_path:
   - admission
   expected: 'true'
-  diagnostic: Enforce Restricted v1.35 and compare server-side dry-run results for compliant and escalating
-    Pods.
+  diagnostic: 'Admission is not enforcing Restricted. Check kubectl get namespace dispatch --show-labels:
+    pod-security.kubernetes.io/enforce should be restricted, with enforce-version v1.35. Apply admission.yaml
+    through render.py.'
 - id: security-runtime
-  title: The live API is non-root, capability-free, filtered, and read-only
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: The running API is restricted
+  explanation: Inside the live API container, the process must be non-root with no capabilities, no-new-privileges
+    and seccomp on, and a read-only root filesystem.
   command:
     args:
     - python
@@ -95,11 +98,13 @@ checks:
   json_path:
   - runtime
   expected: 'true'
-  diagnostic: Complete the repaired API rollout and inspect UID, capabilities, NoNewPrivs, Seccomp, and
-    root mount flags.
+  diagnostic: The running API is not fully restricted. Check its securityContext has allowPrivilegeEscalation
+    false, capabilities drop ALL, and readOnlyRootFilesystem true, with runAsNonRoot and a RuntimeDefault
+    seccomp profile, then roll out the Deployment so new Pods start with it.
 - id: security-workflow
-  title: An allowed frontend completes a real persistent job
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: A job from the trusted frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in PostgreSQL.
   command:
     args:
     - python
@@ -111,7 +116,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Preserve trusted frontend access and API/worker connectivity to PostgreSQL and Redis.
+  diagnostic: A job from the trusted frontend did not complete. Check the API and workers can reach PostgreSQL
+    and Redis on their exact ports, that DNS works, and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - kind

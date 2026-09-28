@@ -30,11 +30,9 @@ prediction:
   explanation: A denial is specific to the requested operation and scope; test the required allowed operation
     separately.
 hints:
-- Separate API authorization, network reachability, admission, and process restrictions.
-- Compare the affected Role, peer selector list, DNS protocols, and namespace/runtime settings with the
-  concept.
-- Apply the repaired source, complete the rollout where needed, and inspect each positive and negative
-  observation.
+- Compare the Role’s rules with what the inventory Pod actually needs to do.
+- Pod reads need get, list, and watch on pods; nothing in the task needs secrets.
+- Remove secrets from the Role’s resources, apply identity.yaml, and check with kubectl auth can-i --as.
 sources:
 - https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 - https://kubernetes.io/docs/concepts/services-networking/network-policies/
@@ -66,8 +64,9 @@ prepare:
   timeout: 420
 checks:
 - id: security-rbac
-  title: The real reader token can list Pods but cannot read Secrets or cross namespace boundaries
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: The reader can list Pods and nothing more
+  explanation: Using its own token, dispatch-reader must list Pods in dispatch, be refused Secrets and
+    kube-system, and be unable to create Pods, patch Deployments, or create RoleBindings.
   command:
     args:
     - python
@@ -79,12 +78,12 @@ checks:
   json_path:
   - rbac
   expected: 'true'
-  diagnostic: In Measured state, look for pods 200, secrets 403, and other_namespace 403. If Secrets
-    return 200, remove secrets from the Role in identity.yaml and apply it with python render.py identity.yaml
-    piped to kubectl apply -f -. Keep Pod reads and the existing RoleBinding.
+  diagnostic: 'The reader has too little or too much access. Run kubectl auth can-i --list --as=system:serviceaccount:dispatch:dispatch-reader
+    -n dispatch and compare with the Role in identity.yaml: it should only get, list, and watch pods.'
 - id: security-tokens
-  title: API and worker have no automatically mounted Kubernetes token
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: The API and worker have no API token
+  explanation: The API and worker never call the Kubernetes API, so they must run without an automatically
+    mounted ServiceAccount token.
   command:
     args:
     - python
@@ -96,11 +95,12 @@ checks:
   json_path:
   - tokens
   expected: 'true'
-  diagnostic: Disable automatic service-account token mounting for API and worker, then replace their
-    Pods.
+  diagnostic: 'The API or worker still has a ServiceAccount token. Check both use serviceAccountName dispatch-app
+    with automountServiceAccountToken: false, then roll them out again.'
 - id: security-workflow
-  title: An allowed frontend completes a real persistent job
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: A job from the trusted frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in PostgreSQL.
   command:
     args:
     - python
@@ -112,7 +112,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Preserve trusted frontend access and API/worker connectivity to PostgreSQL and Redis.
+  diagnostic: A job from the trusted frontend did not complete. Check the API and workers can reach PostgreSQL
+    and Redis on their exact ports, that DNS works, and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - kind

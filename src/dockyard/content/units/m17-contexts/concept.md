@@ -1,45 +1,77 @@
-# Admission rules and runtime restrictions answer different questions
+## Two layers of container security
 
-Pod Security Admission checks whether a Pod specification meets a namespace's selected policy level.
-Baseline blocks common privilege escalations, while Restricted requires additional constraints such as non-root execution, dropped capabilities, an allowed seccomp profile, and disabled privilege escalation.
-The namespace labels pin the policy version to v1.35 so the exercise does not silently change with a newer cluster.
-Enforce rejects new violations, warn reports them to clients, and audit annotates API audit events when an audit backend is configured.
-The local lab does not claim to collect an external audit log.
+This lesson connects two separate controls:
 
-Changing a namespace policy does not evict an already running violating Pod.
-Repair the workload template and complete a rollout as well as changing the admission setting.
-The assessment tests both an acceptable server-side dry-run Pod and a nearly identical Pod that allows privilege escalation.
-Dry-run reaches admission without creating a Pod.
+- **Pod Security Admission** decides whether a Pod is *allowed to be created* at all, based on rules set for its namespace.
+- **Security contexts** are the settings on the Pod and its containers that actually *restrict the running process*.
 
-An unrelated batch worker could declare these restrictions:
+## Pod Security Admission
+
+Kubernetes has three built-in **Pod Security Standards**:
+
+- **Privileged**: no restrictions.
+- **Baseline**: blocks the most dangerous settings, such as privileged containers and using the host’s network.
+- **Restricted**: also requires running as non-root, dropping all capabilities, a seccomp profile, and no privilege escalation.
+
+You choose a standard per namespace with labels:
 
 ```yaml
-securityContext:
-  runAsNonRoot: true
-  runAsUser: 12000
-  seccompProfile:
-    type: RuntimeDefault
-containers:
-- name: report
-  image: your-tested-image
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    capabilities:
-      drop: [ALL]
+metadata:
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: v1.35
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: v1.35
 ```
 
-The Pod-level context supplies shared defaults, while container-level fields constrain each process.
-runAsNonRoot is a requirement; runAsUser selects the concrete numeric identity.
-allowPrivilegeEscalation: false sets the no-new-privileges mechanism.
-Dropping capabilities removes independent kernel privileges, and RuntimeDefault applies the runtime's default syscall filter.
-None of these alone makes arbitrary code safe.
+- `enforce` rejects Pods that break the standard.
+- `warn` accepts them but shows a warning to whoever created them.
+- `audit` records them in the cluster’s audit log, if one is set up (this lab does not collect one).
+- The `-version` labels pin the rules to a Kubernetes version, so a cluster upgrade does not quietly change them.
 
-A read-only root filesystem is additional hardening and is not itself required by the Restricted policy.
-Applications that need temporary or persistent writes must receive deliberately writable volumes.
-Dispatch uses a bounded emptyDir at /tmp, Redis has its own temporary data directory, and PostgreSQL writes inside its persistent claim.
-fsGroup supplies volume access for the chosen non-root process; it does not mean every host filesystem path becomes writable.
+You can set these with `kubectl label namespace NAME pod-security.kubernetes.io/enforce=restricted --overwrite`.
 
-The checker inspects the live API process's numeric UID, effective capabilities, NoNewPrivs, Seccomp, and root mount flags through /proc.
-That connects the declared fields to actual runtime behavior.
-It then submits and completes a real job to prove the restrictions did not break the application.
+Admission only checks Pods when they are created.
+Tightening a namespace does not evict Pods already running, so you also have to fix the workload and roll it out.
+When you apply the stricter label, kubectl warns you, for example “existing pods in namespace "dispatch" violate the new PodSecurity enforce level”, but those Pods keep running until they are replaced.
+
+## Security contexts
+
+```yaml
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 12000
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+  - name: report
+    image: your-tested-image
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop: [ALL]
+```
+
+- The Pod-level `securityContext` sets defaults for every container; the container-level one applies to that container.
+- `runAsNonRoot: true` refuses to start the container as root; `runAsUser` picks the exact user number.
+- `seccompProfile: RuntimeDefault` applies the container runtime’s standard filter on low-level system calls.
+- `allowPrivilegeEscalation: false` stops the process gaining more privileges later.
+- `capabilities.drop: [ALL]` removes root’s special powers, as in the Docker hardening lesson.
+- `readOnlyRootFilesystem: true` makes the container’s own files unchangeable. It is extra hardening, not required by Restricted.
+- `fsGroup` at Pod level gives a group access to mounted volumes, so a non-root process can write to them.
+
+An application that needs to write somewhere needs a writable volume there.
+Dispatch writes temporary files to an `emptyDir` at `/tmp`; Redis and PostgreSQL have their own writable data directories.
+
+## Testing both layers
+
+A server dry run sends a Pod to admission without creating it:
+
+```sh
+kubectl apply --dry-run=server -f some-pod.yaml
+```
+
+Check work uses this to confirm a compliant Pod is accepted and one that allows privilege escalation is rejected.
+It also reads the running API process’s real restrictions from `/proc` (its user ID, capabilities, no-new-privileges and seccomp status, and whether the root filesystem is read-only), then submits a real job to make sure nothing broke.

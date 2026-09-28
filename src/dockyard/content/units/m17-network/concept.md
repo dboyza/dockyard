@@ -1,49 +1,91 @@
-# A policy declaration needs an enforcing data plane
+## Deciding which Pods may talk to which
 
-NetworkPolicy selects Pods and describes allowed ingress, egress, or both.
-The installed Calico CNI enforces those rules in the actual practice cluster.
-Simply creating a NetworkPolicy object on an unsupported CNI would not establish isolation.
-Policies are additive: a broad allow policy can reopen traffic even when a default-deny policy also exists.
+By default, every Pod in a cluster can connect to every other Pod.
+A **NetworkPolicy** narrows that down: it picks some Pods and says which traffic they may receive (**ingress**) or send (**egress**).
+Policies are enforced by the cluster’s network plugin; this lab uses Calico, which supports them.
+On a plugin without NetworkPolicy support, the objects are accepted and silently do nothing.
 
-The Dispatch namespace starts with ingress and egress isolation for every Pod.
-Separate rules allow DNS, API access from the trusted frontend, API and worker access to PostgreSQL and Redis, and the inventory process's Kubernetes API connection.
-Replies to an allowed connection do not need a separate reverse connection rule.
-New reverse connections are different and must satisfy the applicable policies.
+## How policies combine
 
-A peer with namespaceSelector and podSelector in the same list item requires both to match.
-Putting them in separate list items creates alternatives.
-For an unrelated reporting service, this peer allows only reporter Pods in the analytics namespace:
+- A Pod not selected by any policy allows all traffic.
+- Once a policy selects a Pod for a direction, only traffic some policy allows in that direction gets through. The Pod is **isolated** for that direction.
+- Policies only ever add permissions. There is no “deny” rule; if two policies select a Pod, traffic allowed by either gets through.
+- Replies to an allowed connection are allowed automatically.
+
+A **default-deny** policy selects every Pod and allows nothing:
 
 ```yaml
-from:
-- namespaceSelector:
-    matchLabels:
-      kubernetes.io/metadata.name: analytics
-  podSelector:
-    matchLabels:
-      app: reporter
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
 ```
 
-A podSelector without a namespaceSelector selects peers in the policy's own namespace.
-An empty selector selects all Pods in its scope; it is not a denial by itself.
-A default-deny policy isolates selected Pods by declaring a direction with no allowed rules.
-An empty ingress rule, written ingress: [{}], instead allows all ingress for those Pods.
+`podSelector: {}` means “every Pod in this namespace”.
+With `policyTypes` listed and no rules, nothing is allowed.
+Be careful: `ingress: [{}]`, a rule with nothing in it, means the opposite: allow all ingress.
 
-DNS normally uses UDP but can also require TCP.
-The allow-dns policy explicitly permits both protocols on port 53 to CoreDNS Pods in kube-system.
-The checker performs real UDP and TCP DNS requests rather than accepting a YAML port list as proof.
-It also checks an allowed frontend, a wrong Pod label, and the correct Pod label in the wrong namespace across two nodes.
+## Allowing specific traffic
+
+```yaml
+spec:
+  podSelector:
+    matchLabels: {app: dispatch}
+  policyTypes: [Ingress]
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: frontend
+      podSelector:
+        matchLabels:
+          app: trusted
+    ports:
+    - protocol: TCP
+      port: 8080
+```
+
+This lets Pods labelled `app: trusted` **in** the `frontend` namespace reach Dispatch on port 8080.
+
+The indentation of the `from` list is the single most common NetworkPolicy mistake:
+
+- `namespaceSelector` and `podSelector` in the **same** list item (one `-`) must **both** match.
+- In **separate** list items (two `-`), **either** one is enough.
+
+A `podSelector` with no `namespaceSelector` means Pods in the policy’s own namespace.
+Every namespace automatically has the label `kubernetes.io/metadata.name` set to its name, which makes it easy to select.
+
+## Don’t forget DNS
+
+Once egress is denied, Pods cannot even look up names.
+Allow traffic to the cluster’s DNS Pods (CoreDNS, in `kube-system`) on port 53, over **both UDP and TCP**.
+DNS usually uses UDP but falls back to TCP for larger answers, and allowing only UDP causes confusing, intermittent failures.
+
+## This lab
+
+The `dispatch` namespace starts with ingress and egress denied for every Pod, plus rules that allow DNS, the trusted frontend to reach the API, the API and workers to reach PostgreSQL and Redis, and the inventory Pod to reach the Kubernetes API.
 
 ```sh
 kubectl get networkpolicy
 kubectl describe networkpolicy allow-business-reads
-kubectl get pods -n frontend -o wide
+kubectl get pods -n frontend -o wide --show-labels
 kubectl get pods -l app=dispatch -o wide
 ```
 
-A failed connection is meaningful only when a positive control shows the destination is reachable from an allowed peer.
-The egress target in dockyard-observer remains reachable from the frontend while the API is denied access to it.
-The API can reach the database while a frontend client cannot.
-These tests distinguish policy enforcement from a down service or broken DNS.
-NetworkPolicy does not replace TLS, application authentication, RBAC, or host isolation.
-Its treatment of node-origin traffic and address translation requires care; this exercise measures Pod-to-Pod traffic explicitly.
+## Testing a policy properly
+
+A blocked connection only means something if you also show that an allowed connection works.
+Otherwise you cannot tell a working policy from a broken service.
+Check work tests a whole set of paths, across two nodes:
+
+- the trusted frontend reaches the API (must work);
+- an untrusted frontend Pod, and a trusted-looking Pod in the wrong namespace, cannot;
+- DNS works over both UDP and TCP;
+- the frontend cannot reach the database;
+- the API cannot reach an outside test target that the frontend *can* reach.
+
+NetworkPolicy controls which connections are allowed.
+It is not encryption, it does not check who a user is, and traffic from the nodes themselves can behave differently, which is why this lab only tests Pod-to-Pod traffic.

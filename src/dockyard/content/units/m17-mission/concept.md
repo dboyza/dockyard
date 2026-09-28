@@ -1,13 +1,23 @@
-# Restrict access while preserving the useful path
+## Secure, and still working
 
-A working secure deployment must allow the intended workflow and deny specific unintended operations.
-An unavailable application with every connection blocked is not a successful security outcome.
-Treat the Kubernetes API identity, Pod network, admission boundary, and process privileges as separate controls and verify each with both positive and negative evidence.
+This mission combines the whole security module.
+Four separate controls protect Dispatch, and each one is currently weaker than it should be:
 
-The checkpoint supplies two nodes, known application dependencies, three distinguishable clients, and an independent egress target.
-Use those controls to explain why a denied request is actually denied rather than misconfigured or unreachable for everyone.
-Keep database credentials separate from service-account tokens and source control.
+- **API permissions**: an identity can read Secrets it does not need.
+- **Network rules**: a frontend peer is too broad, and DNS is only partly allowed.
+- **Admission**: the namespace does not enforce the Restricted standard.
+- **Process restrictions**: the API runs with more privilege than it needs.
 
-A useful security handoff names the protected resource, allowed identity or peer, denied alternative, observed result, and any remaining limitation.
-For example, denying a frontend's direct database connection complements the API boundary but does not prove the API itself authorizes every business action.
-The final note is a self-review artifact; automatic completion comes from observed access boundaries and a completed Dispatch job.
+Tightening them is only half the job.
+A system that blocks everything is not secure, just broken.
+For each control, show one thing that should work *does* work, and one thing that should be blocked *is* blocked for the right reason.
+
+The lab gives you what you need to test that: two nodes, three distinguishable clients, and an outside target the API must not reach.
+Keep the database password in its Secret and out of your files and notes.
+
+There are no step-by-step commands; everything you need is in this module’s lessons.
+
+## Working on your own
+
+Try it without hints first.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.

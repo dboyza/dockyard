@@ -1,7 +1,12 @@
-# Restrict Dispatch without blocking its workflow
+## Lock Dispatch down without breaking it
 
-The environment combines excessive Secret-read access, an overly broad frontend peer, incomplete DNS permission, and a weak admission/runtime boundary.
-Repair the authored sources and deploy the changes without granting broad API permissions or removing default-deny isolation.
-Prove the intended and denied access paths across both nodes, test admission with a valid and invalid candidate, and inspect the actual process restrictions.
-Leave a real submitted job completing through the API, queue, worker, and persistent database.
-Write SECURITY-NOTES.md describing each boundary, its positive and negative evidence, and what the local exercise does not establish about production security.
+Fix the authored files so that:
+
+- the reader identity can list Pods in `dispatch` but cannot read Secrets or reach other namespaces;
+- only trusted frontend Pods in the `frontend` namespace reach the API, DNS works over UDP and TCP, and the default-deny policy stays;
+- the namespace enforces Restricted, and the API runs with no privilege escalation, no capabilities, and a read-only root filesystem.
+
+Apply the changes, roll out the API, and show the allowed and blocked paths across both nodes, a compliant and a rejected Pod at admission, and the running process’s real restrictions.
+A submitted job must still complete through the API, queue, worker, and database.
+
+Write `SECURITY-NOTES.md`: for each control, the thing it protects, one allowed and one blocked observation, and what this local exercise does not prove about production security.

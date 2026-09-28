@@ -2,15 +2,16 @@ id: m17-mission
 revision: 1
 module: 17
 order: 4
-title: Restrict Dispatch without breaking it
-summary: Combine least privilege, enforced traffic rules, and runtime hardening.
+title: 'Mission: secure Dispatch without breaking it'
+summary: Tighten API permissions, network rules, admission, and process restrictions, and prove each one.
 kind: mission
 runtime: kubernetes
 nodes: 2
 minutes: 65
 outcomes:
-- Prove separate positive and negative security boundaries.
-- Retain the complete working business path.
+- Show an allowed and a blocked result for each control.
+- Keep the whole job workflow working.
+- Write down what a local security test does and does not prove.
 prerequisites:
 - m17-contexts
 objectives:
@@ -30,11 +31,10 @@ prediction:
   explanation: Use a working positive control and an observed denial to distinguish enforcement from unrelated
     failure.
 hints:
-- Separate API authorization, network reachability, admission, and process restrictions.
-- Compare the affected Role, peer selector list, DNS protocols, and namespace/runtime settings with the
-  concept.
-- Apply the repaired source, complete the rollout where needed, and inspect each positive and negative
-  observation.
+- 'Take the four controls one at a time: RBAC, NetworkPolicy, admission, and the API’s security context.'
+- Remove Secret access from the reader Role, fix the frontend peer and DNS in network.yaml, and apply
+  the Restricted and security context changes.
+- After applying and rolling out, check with auth can-i, a server dry run, and a real job.
 sources:
 - https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 - https://kubernetes.io/docs/concepts/services-networking/network-policies/
@@ -66,8 +66,9 @@ prepare:
   timeout: 420
 checks:
 - id: security-rbac
-  title: The real reader token can list Pods but cannot read Secrets or cross namespace boundaries
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: The reader can list Pods and nothing more
+  explanation: Using its own token, dispatch-reader must list Pods in dispatch, be refused Secrets and
+    kube-system, and be unable to create Pods, patch Deployments, or create RoleBindings.
   command:
     args:
     - python
@@ -79,10 +80,12 @@ checks:
   json_path:
   - rbac
   expected: 'true'
-  diagnostic: Compare actual token HTTP status codes and remove Secret or write permissions from the reader.
+  diagnostic: 'The reader has too little or too much access. Run kubectl auth can-i --list --as=system:serviceaccount:dispatch:dispatch-reader
+    -n dispatch and compare with the Role in identity.yaml: it should only get, list, and watch pods.'
 - id: security-tokens
-  title: API and worker have no automatically mounted Kubernetes token
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: The API and worker have no API token
+  explanation: The API and worker never call the Kubernetes API, so they must run without an automatically
+    mounted ServiceAccount token.
   command:
     args:
     - python
@@ -94,11 +97,13 @@ checks:
   json_path:
   - tokens
   expected: 'true'
-  diagnostic: Disable automatic service-account token mounting for API and worker, then replace their
-    Pods.
+  diagnostic: 'The API or worker still has a ServiceAccount token. Check both use serviceAccountName dispatch-app
+    with automountServiceAccountToken: false, then roll them out again.'
 - id: security-network
-  title: Cross-node allowed and denied connections match the intended boundary
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: Allowed and blocked connections match the intended rules
+  explanation: Across two nodes, the trusted frontend must reach the API, while the untrusted frontend,
+    a trusted label in the wrong namespace, frontend-to-database, and API-to-outside-target connections
+    must all be blocked.
   command:
     args:
     - python
@@ -110,10 +115,14 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: Keep both peer selectors in one rule and inspect the cross-node connection matrix.
+  diagnostic: At least one connection is allowed or blocked wrongly. Use --json with Check work to see
+    which. If the wrong-namespace client gets through, check the namespaceSelector and podSelector are
+    in the same from item; if an allowed path fails, check the matching egress and ingress rules and their
+    exact ports.
 - id: security-dns
-  title: Real UDP and TCP DNS queries both resolve the database
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: DNS works over both UDP and TCP
+  explanation: Real DNS lookups for the database must succeed over UDP and over TCP under the default-deny
+    policy.
   command:
     args:
     - python
@@ -125,10 +134,12 @@ checks:
   json_path:
   - dns
   expected: 'true'
-  diagnostic: Allow both UDP and TCP port 53 to the actual CoreDNS namespace and Pod labels.
+  diagnostic: A DNS lookup failed. The DNS egress rule must allow port 53 over both UDP and TCP to the
+    CoreDNS Pods in kube-system.
 - id: security-admission
-  title: Restricted admission accepts a compliant Pod and rejects privilege escalation
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: Restricted admission accepts good Pods and rejects escalation
+  explanation: The dispatch namespace must enforce the Restricted standard, so a compliant Pod passes
+    a server dry run and one allowing privilege escalation is rejected.
   command:
     args:
     - python
@@ -140,11 +151,13 @@ checks:
   json_path:
   - admission
   expected: 'true'
-  diagnostic: Enforce Restricted v1.35 and compare server-side dry-run results for compliant and escalating
-    Pods.
+  diagnostic: 'Admission is not enforcing Restricted. Check kubectl get namespace dispatch --show-labels:
+    pod-security.kubernetes.io/enforce should be restricted, with enforce-version v1.35. Apply admission.yaml
+    through render.py.'
 - id: security-runtime
-  title: The live API is non-root, capability-free, filtered, and read-only
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: The running API is restricted
+  explanation: Inside the live API container, the process must be non-root with no capabilities, no-new-privileges
+    and seccomp on, and a read-only root filesystem.
   command:
     args:
     - python
@@ -156,11 +169,13 @@ checks:
   json_path:
   - runtime
   expected: 'true'
-  diagnostic: Complete the repaired API rollout and inspect UID, capabilities, NoNewPrivs, Seccomp, and
-    root mount flags.
+  diagnostic: The running API is not fully restricted. Check its securityContext has allowPrivilegeEscalation
+    false, capabilities drop ALL, and readOnlyRootFilesystem true, with runAsNonRoot and a RuntimeDefault
+    seccomp profile, then roll out the Deployment so new Pods start with it.
 - id: security-workflow
-  title: An allowed frontend completes a real persistent job
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: A job from the trusted frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in PostgreSQL.
   command:
     args:
     - python
@@ -172,7 +187,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Preserve trusted frontend access and API/worker connectivity to PostgreSQL and Redis.
+  diagnostic: A job from the trusted frontend did not complete. Check the API and workers can reach PostgreSQL
+    and Redis on their exact ports, that DNS works, and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - kind

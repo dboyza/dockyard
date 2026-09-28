@@ -1,12 +1,7 @@
-# Debrief: Restrict Dispatch without breaking it
+## Every control proven both ways
 
-The mission combines narrow API authority, absent unnecessary tokens, enforced network boundaries, and restricted process execution.
-A fresh persistent job demonstrates that those controls preserve the required application path rather than securing the system by making it unusable.
+Each control now allows exactly what Dispatch needs and blocks a specific alternative, and a real job still completes end to end.
 
-## Explain your result
-
-For each control, name one allowed behavior and one forbidden behavior that the evidence distinguishes.
-
-## Transfer beyond this lab
-
-These local tests cover specific mechanisms and do not constitute an exhaustive production security assessment.
+Check your understanding:
+For each of the four controls, name one allowed behaviour and one forbidden behaviour your evidence showed.
+Blocking the frontend from the database is useful. Why does it not prove the API itself checks who may do what?

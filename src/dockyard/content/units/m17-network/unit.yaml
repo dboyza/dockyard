@@ -2,15 +2,16 @@ id: m17-network
 revision: 1
 module: 17
 order: 2
-title: Enforce network intent across nodes
-summary: Validate allowed and denied traffic with live controls.
+title: 'NetworkPolicy: allow only what is needed'
+summary: Fix a policy that lets too much in and a DNS rule that lets too little out.
 kind: lesson
 runtime: kubernetes
 nodes: 2
 minutes: 45
 outcomes:
-- Express namespace and Pod selectors with the intended logic.
-- Preserve DNS and dependency traffic under default deny.
+- Write default-deny and allow policies for ingress and egress.
+- Combine namespace and Pod selectors with the intended meaning.
+- Keep DNS working under default deny, and test allowed and blocked paths.
 prerequisites:
 - m17-rbac
 objectives:
@@ -30,11 +31,10 @@ prediction:
   explanation: Separate peers are alternatives; put both selectors in one peer when an intersection is
     intended.
 hints:
-- Separate API authorization, network reachability, admission, and process restrictions.
-- Compare the affected Role, peer selector list, DNS protocols, and namespace/runtime settings with the
-  concept.
-- Apply the repaired source, complete the rollout where needed, and inspect each positive and negative
-  observation.
+- In allow-business-reads, look at how many - markers begin items under from.
+- The namespaceSelector and podSelector must be in the same item; DNS needs both UDP and TCP on port 53.
+- Move podSelector into the namespaceSelector item, add a TCP 53 port, and apply network.yaml through
+  render.py.
 sources:
 - https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 - https://kubernetes.io/docs/concepts/services-networking/network-policies/
@@ -66,8 +66,10 @@ prepare:
   timeout: 420
 checks:
 - id: security-network
-  title: Cross-node allowed and denied connections match the intended boundary
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: Allowed and blocked connections match the intended rules
+  explanation: Across two nodes, the trusted frontend must reach the API, while the untrusted frontend,
+    a trusted label in the wrong namespace, frontend-to-database, and API-to-outside-target connections
+    must all be blocked.
   command:
     args:
     - python
@@ -79,10 +81,14 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: Keep both peer selectors in one rule and inspect the cross-node connection matrix.
+  diagnostic: At least one connection is allowed or blocked wrongly. Use --json with Check work to see
+    which. If the wrong-namespace client gets through, check the namespaceSelector and podSelector are
+    in the same from item; if an allowed path fails, check the matching egress and ingress rules and their
+    exact ports.
 - id: security-dns
-  title: Real UDP and TCP DNS queries both resolve the database
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: DNS works over both UDP and TCP
+  explanation: Real DNS lookups for the database must succeed over UDP and over TCP under the default-deny
+    policy.
   command:
     args:
     - python
@@ -94,10 +100,12 @@ checks:
   json_path:
   - dns
   expected: 'true'
-  diagnostic: Allow both UDP and TCP port 53 to the actual CoreDNS namespace and Pod labels.
+  diagnostic: A DNS lookup failed. The DNS egress rule must allow port 53 over both UDP and TCP to the
+    CoreDNS Pods in kube-system.
 - id: security-workflow
-  title: An allowed frontend completes a real persistent job
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: A job from the trusted frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in PostgreSQL.
   command:
     args:
     - python
@@ -109,7 +117,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Preserve trusted frontend access and API/worker connectivity to PostgreSQL and Redis.
+  diagnostic: A job from the trusted frontend did not complete. Check the API and workers can reach PostgreSQL
+    and Redis on their exact ports, that DNS works, and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - kind

@@ -59,6 +59,19 @@ A ClusterRole can also supply rules to a RoleBinding without granting access eve
 A ClusterRoleBinding, by contrast, grants the referenced permissions across the cluster.
 Do not widen this task to cluster-wide access.
 
+Some objects, such as nodes, PersistentVolumes, and namespaces themselves, do not belong to any namespace.
+Access to them needs a ClusterRole *and* a ClusterRoleBinding.
+The command-line versions follow the same pattern as their namespaced relatives:
+
+```sh
+kubectl create clusterrole node-reader --verb=get,list,watch --resource=nodes
+kubectl create clusterrolebinding node-reader --clusterrole=node-reader --serviceaccount=monitoring:agent
+kubectl create rolebinding view-here --clusterrole=view --serviceaccount=dispatch:dispatch-reader -n dispatch
+```
+
+The last line reuses Kubernetes’ built-in `view` ClusterRole but, because it is a RoleBinding, only inside `dispatch`.
+These are examples; your task does not need them.
+
 ## Ask what the account is allowed to do
 
 ```sh
@@ -73,6 +86,7 @@ kubectl auth can-i list pods -n kube-system --as=system:serviceaccount:dispatch:
 Your lab administrator account is allowed to do this; it is not permission every Kubernetes user has.
 After your repair, the three answers should be `yes`, `no`, and `no`.
 Running these checks without `--as` would test your administrator permissions instead.
+`kubectl auth can-i --list --as=system:serviceaccount:dispatch:dispatch-reader -n dispatch` prints everything that identity may do in the namespace, which is a quick way to spot extra access.
 
 After editing and saving `identity.yaml`, apply it with:
 

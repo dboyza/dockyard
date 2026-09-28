@@ -1,12 +1,8 @@
-# Debrief: Enforce network intent across nodes
+## Allowed on purpose, blocked on purpose
 
-The cross-node connection matrix demonstrates allowed and denied paths through an enforcing network plugin.
-Testing both TCP and UDP DNS matters because restricting one transport can leave resolution failures that look intermittent.
+The corrected peer now requires the right namespace *and* the right label, and DNS works over both protocols.
+Check work proved it both ways: allowed paths connected, and blocked paths failed while their targets were demonstrably up.
 
-## Explain your result
-
-Which negative request proves the boundary is enforced, and which positive request proves you did not simply break all connectivity?
-
-## Transfer beyond this lab
-
-NetworkPolicy does not authenticate application users or automatically isolate every host-network path, so describe the tested scope precisely.
+Check your understanding:
+Which blocked request proves the boundary is enforced, and which allowed request proves you did not just break everything?
+Rewrite the `from` list so that *either* the frontend namespace *or* any Pod labelled `app: trusted` in `dispatch` is allowed.

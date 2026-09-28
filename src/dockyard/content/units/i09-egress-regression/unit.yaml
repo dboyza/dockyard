@@ -2,16 +2,17 @@ id: i09-egress-regression
 revision: 1
 module: 17
 order: 90
-title: A policy cleanup stalls requests and worker retries
-summary: After an egress-policy edit, the trusted frontend can still reach the API address, but requests
-  fail and worker dependency retries accumulate.
+title: A policy clean-up stalls requests and worker retries
+summary: After an egress policy edit, requests fail and the workers keep retrying, although the frontend
+  still reaches the API address.
 kind: incident
 runtime: kubernetes
 nodes: 2
 minutes: 40
 outcomes:
-- Express namespace and Pod selectors with the intended logic.
-- Preserve DNS and dependency traffic under default deny.
+- Tell a DNS failure apart from a blocked dependency port.
+- Restore egress with narrow rules that keep the network boundary.
+- Prove the fix with a real job and the blocked paths.
 prerequisites:
 - m17-mission
 objectives:
@@ -22,14 +23,15 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A namespaceSelector and podSelector are separate peer list items. How are they combined?
+  question: The frontend reaches the API by address, but names do not resolve. What is the most likely
+    cause?
   options:
-  - Either matching peer can allow traffic.
-  - Both must match the same source Pod.
-  - All traffic is denied until both selectors are empty.
+  - DNS egress on port 53 is blocked.
+  - The API is down.
+  - The database password changed.
   correct: 0
-  explanation: Separate peers are alternatives; put both selectors in one peer when an intersection is
-    intended.
+  explanation: A working connection by address rules out the API being down; failing lookups point at
+    DNS traffic being blocked.
 hints:
 - Separate numeric-address connections from DNS queries and trace API and worker egress independently.
 - Check both DNS transports, then compare each allowed dependency port with its Service and actual listener.
@@ -66,8 +68,10 @@ prepare:
   timeout: 420
 checks:
 - id: security-network
-  title: Cross-node allowed and denied connections match the intended boundary
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: Allowed and blocked connections match the intended rules
+  explanation: Across two nodes, the trusted frontend must reach the API, while the untrusted frontend,
+    a trusted label in the wrong namespace, frontend-to-database, and API-to-outside-target connections
+    must all be blocked.
   command:
     args:
     - python
@@ -79,10 +83,14 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: Keep both peer selectors in one rule and inspect the cross-node connection matrix.
+  diagnostic: At least one connection is allowed or blocked wrongly. Use --json with Check work to see
+    which. If the wrong-namespace client gets through, check the namespaceSelector and podSelector are
+    in the same from item; if an allowed path fails, check the matching egress and ingress rules and their
+    exact ports.
 - id: security-dns
-  title: Real UDP and TCP DNS queries both resolve the database
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: DNS works over both UDP and TCP
+  explanation: Real DNS lookups for the database must succeed over UDP and over TCP under the default-deny
+    policy.
   command:
     args:
     - python
@@ -94,10 +102,12 @@ checks:
   json_path:
   - dns
   expected: 'true'
-  diagnostic: Allow both UDP and TCP port 53 to the actual CoreDNS namespace and Pod labels.
+  diagnostic: A DNS lookup failed. The DNS egress rule must allow port 53 over both UDP and TCP to the
+    CoreDNS Pods in kube-system.
 - id: security-workflow
-  title: An allowed frontend completes a real persistent job
-  explanation: Observe the actual allowed and denied operation, admission decision, or process state.
+  title: A job from the trusted frontend completes
+  explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
+    in PostgreSQL.
   command:
     args:
     - python
@@ -109,10 +119,12 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Preserve trusted frontend access and API/worker connectivity to PostgreSQL and Redis.
+  diagnostic: A job from the trusted frontend did not complete. Check the API and workers can reach PostgreSQL
+    and Redis on their exact ports, that DNS works, and read kubectl logs deployment/worker.
 - id: incident-preserved
-  title: The original namespace, database claim, and job survive
-  explanation: Compare actual original identities and a persisted row.
+  title: The original namespace, database storage, and job are still there
+  explanation: The fix must not replace the namespace or database claim, or lose the job stored before
+    the incident.
   command:
     args:
     - python
@@ -124,7 +136,8 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Repair egress without rebuilding the namespace or deleting its database claim.
+  diagnostic: The original namespace, the database’s claim, or the original job is gone. If they were
+    deleted or replaced, reset the lab and repair it in place instead.
 capabilities:
 - docker
 - kind

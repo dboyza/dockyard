@@ -79,11 +79,11 @@ A runtime pass alone is not a teaching-quality result.
 | m16-promotion | Completed without solutions | Revised | Rehearsal produced the described commits ending in a revert after ImagePullBackOff; passed. |
 | m16-mission | Completed without solutions | Revised | Re-enabled the gate, resumed Flux, and completed promotion and revert independently; passed. |
 | i07-registry-identity | Completed without solutions | Revised | Pull error ended in 401 Unauthorized as taught; fixed with kubectl create secret docker-registry referring to the password variable. A resumed lab moved the registry to a new random port and failed the check; the fixture now uses a fixed assigned port. Passed. |
-| m17-rbac | Completed in initial review | Revised in initial review | See teaching-review.md. |
-| m17-network | Pending | Pending |  |
-| m17-contexts | Pending | Pending |  |
-| m17-mission | Pending | Pending |  |
-| i09-egress-regression | Pending | Pending |  |
+| m17-rbac | Completed without solutions | Revised | Replaced placeholder hints; added ClusterRole, ClusterRoleBinding, reusing built-in roles, and auth can-i --list, which exposed the extra Secret access as described. Passed. |
+| m17-network | Completed without solutions | Revised | Added default-deny YAML, combined versus separate peer selectors, and DNS over both protocols; passed the full cross-node traffic matrix. |
+| m17-contexts | Completed without solutions | Revised | Explained Pod Security Standards, namespace labels, and each security context field. Quoted the real warning about existing violating Pods; server dry run rejected escalation; passed. |
+| m17-mission | Completed without solutions | Revised | Fixed RBAC, network, admission, and runtime independently; all seven checks passed. |
+| i09-egress-regression | Completed without solutions | Revised | Replaced outcomes and prediction copied from the network lesson. Evidence showed TCP-only DNS and a Redis rule on 6380 instead of 6379; patched both; passed. |
 | m18-images | Pending | Pending |  |
 | m18-rotation | Pending | Pending |  |
 | m18-recovery | Pending | Pending |  |
