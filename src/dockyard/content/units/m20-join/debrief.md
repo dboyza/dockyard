@@ -1,12 +1,8 @@
-# Debrief: Join a worker and establish cross-node networking
+## A real two-node cluster
 
-Joining the worker establishes membership, but CNI agents, DNS, and actual cross-node traffic still need independent verification.
-The fresh frontend job crosses the network and reaches persistent data, closing gaps that a pair of Ready nodes would leave open.
+The worker joined only after proving it had a valid token and checking it was talking to the right cluster.
+Calico then connected the nodes, and a real job crossing both machines proved it.
 
-## Explain your result
-
-Trace the bootstrap credential’s role in joining and distinguish it from the certificates used by the node afterward.
-
-## Transfer beyond this lab
-
-Protect join material and verify node addressing and network ranges before extending a production cluster.
+Check your understanding:
+What does the bootstrap token do, and what does the CA hash do?
+Why were both nodes NotReady until Calico was installed?

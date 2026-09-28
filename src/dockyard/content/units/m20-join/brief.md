@@ -1,7 +1,10 @@
-Join the worker, install the supplied native network, and deploy Dispatch with `sh bootstrap.sh`.
-Both recorded nodes must be Ready, CNI agents must be ready on both nodes, and CoreDNS must be available.
-A fresh cross-node frontend request must produce a completed, persisted job.
+## Join the worker and bring up networking
 
-Use the CA-pinned join configuration and inspect the CNI manifest before applying it.
-The practice image and pinned dependencies have already been transferred to the guests.
-Explain which observations establish registration, network readiness, DNS resolution, and actual application traffic.
+1. Look at the nodes and kube-system Pods before joining.
+2. Join the worker with the CA-pinned configuration from Understand.
+3. Generate and read the network manifest, then apply it and wait for the nodes, Calico, and CoreDNS.
+4. Run `sh bootstrap.sh` to deploy Dispatch.
+5. Choose **Check work**.
+
+Both nodes must be Ready, Calico must be ready on both, CoreDNS available, and a new job from the frontend must complete.
+In your notes, say which observation shows each of: the worker registered, the network is ready, DNS works, and real traffic flows.

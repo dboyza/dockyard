@@ -1,12 +1,23 @@
-## Discovery, credentials, and node registration
+## Adding a worker and a Pod network
 
-A worker does not become a cluster member merely because kubelet is running.
-`kubeadm join` discovers the API endpoint, verifies its CA, uses a short-lived bootstrap token, and configures the node's kubelet credentials.
-The token is a secret; the CA hash establishes which cluster the worker intends to trust.
-Skipping CA verification changes that trust boundary and is not a repair for a wrong endpoint.
-This lesson begins with one initialized control plane and an unjoined worker.
+The control plane is running on one machine.
+In this lesson you add the worker machine and install the Pod network, then deploy Dispatch across both.
 
-## Worked example: inspect the incomplete topology
+## How a worker joins
+
+A running kubelet is not enough to make a machine part of a cluster.
+`kubeadm join` does three things:
+
+1. It contacts the API server and checks it is the right cluster, using a **CA certificate hash**. This stops a worker joining an impostor.
+2. It proves the worker is allowed to join, using a short-lived **bootstrap token**.
+3. It gives the worker’s kubelet its own permanent credentials.
+
+The token is a secret; the hash is a fingerprint of the cluster’s CA.
+Skipping the hash check (`--discovery-token-unsafe-skip-ca-verification`) removes that protection and is never the fix for a wrong address.
+
+## Worked example
+
+Before joining, only the control plane is in the cluster:
 
 ```sh
 kubectl get nodes -o wide
@@ -14,9 +25,7 @@ kubectl get pods -n kube-system -o wide
 limactl shell --workdir=/tmp "$DOCKYARD_WORKER" systemctl status kubelet --no-pager
 ```
 
-Only the primary should appear in the API before the join.
-Its control-plane services can be healthy while DNS Pods await networking.
-Generate a private, attempt-specific join configuration and give it to the worker:
+Generate a join configuration for this lab’s worker, use it, and delete it:
 
 ```sh
 umask 077
@@ -25,15 +34,13 @@ limactl shell --workdir=/tmp "$DOCKYARD_WORKER" sudo kubeadm join --config=/dev/
 rm join.yaml
 ```
 
-The helper creates credentials and prints configuration; the real guest kubeadm command performs the join.
-Removing the temporary file limits accidental exposure but does not revoke the token before its expiry.
+`umask 077` makes new files readable only by you.
+Deleting the file reduces the chance of leaking it, but the token stays valid until it expires.
 
-## Install the network implementation
+## Installing the Pod network
 
-The supplied manifest is pinned Calico configured for VXLAN and `10.244.0.0/16` Pod addresses.
-VXLAN carries Pod traffic between the private guest node addresses.
-Each node needs a functioning CNI agent, while CoreDNS needs running Pods and Service connectivity.
-Inspect the rendered manifest, then apply it:
+A **CNI plugin** gives every Pod an address and carries traffic between nodes.
+This lab uses Calico, set up for the `10.244.0.0/16` Pod range and **VXLAN**, which wraps Pod traffic inside ordinary packets between the VMs.
 
 ```sh
 python -m dockyard.native network-manifest > calico.yaml
@@ -44,7 +51,20 @@ kubectl rollout status deployment/coredns -n kube-system --timeout=240s
 sh bootstrap.sh
 ```
 
-The last script deploys the supplied hardened Dispatch checkpoint and its worker-local persistent storage.
-Its frontend client runs on the control-plane guest and reaches the API on the worker by a Kubernetes Service DNS name.
-A new job must travel through that path, the queue, a worker process, and the database.
-This observed transaction complements node conditions; a Ready label alone is not networking proof.
+Read `calico.yaml` before applying it; it is a large file, but look for the Pod range.
+Once Calico runs on each node, the nodes turn Ready and CoreDNS starts.
+`bootstrap.sh` then deploys Dispatch, with its frontend on the control plane and its API on the worker, so a request must cross between machines.
+
+Ready nodes are not proof that networking works.
+A new job travelling from the frontend, through Service DNS, to the API, queue, worker, and database is.
+
+## In the exam
+
+On a real control plane, you create a join command with:
+
+```sh
+kubeadm token create --print-join-command
+```
+
+It prints a complete `kubeadm join HOST:6443 --token ... --discovery-token-ca-cert-hash sha256:...` command to run, with `sudo`, on the new worker.
+`kubeadm token list` shows existing tokens and when they expire.

@@ -93,10 +93,10 @@ A runtime pass alone is not a teaching-quality result.
 | m19-kubelet | Completed without solutions | Revised | Taught systemctl, journalctl, enable versus start, and daemon-reload. The stopped worker still showed Ready, as the lesson warns; passed after starting it. |
 | m19-control-plane | Completed without solutions | Revised | Taught the four client error categories, static Pods, certificate checks, and kubectl config set-cluster. The operator client targeted port 7443 instead of 6443; passed. |
 | m19-mission | Completed without solutions | Revised | Fixed crictl, kubelet, and the operator client independently; passed. |
-| m20-init | Pending | Pending |  |
-| m20-join | Pending | Pending |  |
-| m20-ha | Pending | Pending |  |
-| m20-mission | Pending | Pending |  |
+| m20-init | Completed without solutions | Revised | Explained each kubeadm init phase and added the flag-based exam form. kubeadm printed its join command and the node was NotReady pending CNI, as described; passed. |
+| m20-join | Completed without solutions | Revised | Explained token versus CA hash and added kubeadm token create --print-join-command, verified on the cluster. Calico used 10.244.0.0/16; cross-node job completed; passed. |
+| m20-ha | Completed without solutions | Revised | Added a quorum table, stacked versus external etcd, and HA kubeadm flags; documented the EOF symptom seen before the fix. Passed with the primary still stopped. |
+| m20-mission | Completed without solutions | Revised | Built the cluster from scratch independently; passed. |
 | m21-drain | Pending | Pending |  |
 | m21-upgrade | Pending | Pending |  |
 | m21-certificates | Pending | Pending |  |

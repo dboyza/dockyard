@@ -2,16 +2,16 @@ id: m20-ha
 revision: 1
 module: 20
 order: 3
-title: Keep the API writable through a control-plane outage
-summary: Repair endpoint routing while two etcd voters retain quorum.
+title: 'High availability: keep the API working through an outage'
+summary: Fix the load balancer so the API works while one of three control-plane nodes is down.
 kind: lesson
 runtime: linux
 nodes: 4
 minutes: 60
 outcomes:
-- Explain three-member etcd majority and a stable API endpoint.
-- Repair load balancer routing while a real primary API and etcd member remain down.
-- Prove a fresh API write and real application work through the surviving control plane.
+- Explain etcd quorum and why control planes use odd numbers.
+- Route API traffic through a load balancer to surviving servers.
+- Prove the API can still write, and name what is still a single point of failure.
 prerequisites:
 - m20-join
 objectives:
@@ -27,7 +27,8 @@ prediction:
   - Removing the failed member from membership immediately.
   - Disabling API certificate verification.
   correct: 0
-  explanation: A working route to an API server connected to the surviving majority.
+  explanation: The surviving majority can accept writes, but clients still need a route to an API server
+    connected to it.
 hints:
 - Inspect primary CRI containers and the worker load balancer before assuming the surviving datastore
   is unavailable.
@@ -61,8 +62,9 @@ prepare:
   timeout: 150
 checks:
 - id: bootstrap-outage
-  title: The primary API server and etcd member remain stopped
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: The primary’s API server and etcd are still stopped
+  explanation: The lesson proves failover, so the primary control-plane node’s API server and etcd must
+    stay stopped.
   command:
     args:
     - python
@@ -74,10 +76,12 @@ checks:
   json_path:
   - outage
   expected: 'true'
-  diagnostic: Compare the live evidence with the required outage boundary.
+  diagnostic: 'The primary’s API server or etcd is running again. Leave their manifests outside /etc/kubernetes/manifests
+    on the primary: this exercise is about working without them.'
 - id: bootstrap-quorum
-  title: The two surviving endpoints are healthy with all three voting members retained
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: The two surviving etcd members are healthy, and all three remain members
+  explanation: The surviving etcd members must report healthy, and the membership must still list all
+    three original voters.
   command:
     args:
     - python
@@ -89,10 +93,11 @@ checks:
   json_path:
   - quorum
   expected: 'true'
-  diagnostic: Compare the live evidence with the required quorum boundary.
+  diagnostic: Quorum is not as required. Do not remove the failed member. If a surviving member is unhealthy,
+    check its etcd container with sudo crictl ps and sudo crictl logs on that control-plane VM.
 - id: bootstrap-endpoint
-  title: The private API endpoint accepts a fresh write, read, and delete
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: The load-balanced API accepts a write
+  explanation: Through the shared endpoint, Dockyard must be able to create, read, and delete a ConfigMap.
   command:
     args:
     - python
@@ -104,10 +109,13 @@ checks:
   json_path:
   - endpoint
   expected: 'true'
-  diagnostic: Compare the live evidence with the required endpoint boundary.
+  diagnostic: Requests through the shared endpoint still fail. Check /etc/haproxy/haproxy.cfg on the worker
+    lists at least one healthy control-plane API server with check, validate it with sudo haproxy -c -f
+    /etc/haproxy/haproxy.cfg, and reload HAProxy.
 - id: bootstrap-workflow
-  title: A fresh cross-node frontend job completes and persists
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: A job crosses the nodes and completes
+  explanation: A real job submitted from the frontend on one node must be completed by Dispatch on the
+    other and saved in the database.
   command:
     args:
     - python
@@ -119,7 +127,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Compare the live evidence with the required workflow boundary.
+  diagnostic: A cross-node job did not complete. Make sure sh bootstrap.sh finished, then check kubectl
+    get pods -o wide for anything not ready, and read kubectl logs deployment/worker.
 capabilities:
 - limactl
 - kubectl

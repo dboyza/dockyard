@@ -1,12 +1,8 @@
-# Debrief: Initialize a control plane from prepared Linux guests
+## A control plane, but not yet a working cluster
 
-Initialization establishes the native API and the four primary static control-plane components on prepared Linux guests.
-It does not by itself establish a joined worker, working Pod networking, or a complete Dispatch transaction.
+kubeadm created the certificates, the static control-plane Pods, and the administrator credentials, and the API answers.
+There is still no Pod network and only one node, so nothing useful can run yet.
 
-## Explain your result
-
-Explain which state kubeadm created, which process the kubelet now supervises, and which observations remain necessary before scheduling application work.
-
-## Transfer beyond this lab
-
-Treat bootstrap configuration, certificates, and cluster identity as persistent operational state rather than disposable command output.
+Check your understanding:
+Which four components does the kubelet now run from `/etc/kubernetes/manifests`?
+Why is the node NotReady, and what will fix it?

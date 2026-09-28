@@ -1,12 +1,6 @@
-# Debrief: Mission: bootstrap Dispatch on a native cluster
+## From bare machines to a working application
 
-The completed native bootstrap connects static control-plane processes, node membership, CNI readiness, DNS, and useful application work.
-The sequence matters because a successful later observation depends on several earlier boundaries being correct.
+You built the control plane, joined the worker, connected them with a Pod network, and proved it all with a real job.
 
-## Explain your result
-
-Write a handoff that separates initialized control plane, joined nodes, working network, and completed persistent job instead of reporting only that kubeadm succeeded.
-
-## Transfer beyond this lab
-
-Reuse the configuration and verification method while revisiting failure domains, addressing, and certificate custody for a production topology.
+Check your understanding:
+In your handoff, did you separate “kubeadm succeeded” from “the application works”? Why does that distinction matter?

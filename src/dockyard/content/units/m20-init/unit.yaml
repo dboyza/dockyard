@@ -2,16 +2,16 @@ id: m20-init
 revision: 1
 module: 20
 order: 1
-title: Initialize a control plane from prepared Linux guests
-summary: Turn runtime-ready guests into an authenticated Kubernetes control plane.
+title: Create a control plane with kubeadm
+summary: Turn prepared machines into a Kubernetes control plane with kubeadm init.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 40
 outcomes:
-- Explain kubeadm preflight, static components, credentials, and cluster configuration.
-- Initialize a real control plane with a Pod network disjoint from the node network.
-- Use the private host client without changing the default kubeconfig.
+- Explain what kubeadm init creates, and what it leaves for later.
+- Initialise a control plane with a Pod network separate from the node network.
+- Use the new administrator credentials safely.
 prerequisites:
 - m19-mission
 objectives:
@@ -28,7 +28,7 @@ prediction:
   - The control plane must be completely absent.
   - Another init should be run immediately.
   correct: 0
-  explanation: The Pod networking implementation can still be absent.
+  explanation: The node needs a Pod network (CNI), which kubeadm init does not install.
 hints:
 - Inspect the prepared runtime and the two kubeadm configuration documents before initialization.
 - The control plane needs its actual node IP, containerd CRI socket, certificate SANs, and a non-overlapping
@@ -44,8 +44,9 @@ reference: {}
 prepare: []
 checks:
 - id: bootstrap-initialized
-  title: The native API and all four primary static components are initialized
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: The control plane is initialised
+  explanation: The API server must answer through kubeadm’s administrator client, and the API server,
+    controller manager, scheduler, and etcd static Pods must all run on the control-plane VM.
   command:
     args:
     - python
@@ -56,7 +57,9 @@ checks:
   json_path:
   - initialized
   expected: 'true'
-  diagnostic: Compare the live evidence with the required initialized boundary.
+  diagnostic: The control plane is not initialised yet. Inside the control-plane VM, check sudo crictl
+    ps for the four components and sudo journalctl -u kubelet -n 30 for errors. If kubeadm init failed
+    partway, read its output; you may need sudo kubeadm reset -f before trying again.
 capabilities:
 - limactl
 - kubectl

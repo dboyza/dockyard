@@ -1,7 +1,9 @@
-Initialize the primary guest using Kubernetes 1.35.8 and Pod subnet `10.244.0.0/16`.
-The API readiness endpoint must respond through the guest's kubeadm administrative client, and all four static components must run.
-Refresh the private host client and inspect the resulting node.
-Leave worker join and CNI installation for the following lesson.
+## Create the control plane
 
-Use the configuration inspection and initialization workflow in the concept page.
-Record why a responsive API does not yet imply that ordinary Pods can communicate.
+1. Inspect the VM’s runtime and generate `init.yaml` as shown in Understand. Check it uses Kubernetes 1.35.8 and Pod subnet `10.244.0.0/16`.
+2. Run `kubeadm init` inside the control-plane VM with that file.
+3. Run `python -m dockyard.native refresh-client`, then `kubectl get nodes` and `kubectl get pods -n kube-system`.
+4. Choose **Check work**.
+
+Do not join the worker or install networking yet; that is the next lesson.
+In your notes, explain why the API answering does not mean Pods can talk to each other yet.

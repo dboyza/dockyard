@@ -2,8 +2,8 @@ id: m20-mission
 revision: 1
 module: 20
 order: 4
-title: 'Mission: bootstrap Dispatch on a native cluster'
-summary: Build the cluster and prove its application path independently.
+title: 'Mission: build a cluster from scratch'
+summary: Initialise, join, network, and deploy Dispatch on two prepared machines.
 kind: mission
 runtime: linux
 nodes: 2
@@ -27,8 +27,8 @@ prediction:
   - Only a successful init exit code.
   - Only the presence of kubeconfig files.
   correct: 0
-  explanation: Authenticated control-plane health, fresh node and network state, and a completed application
-    transaction.
+  explanation: An exit code or a file only shows one step ran. Ready nodes, networking, and a real job
+    show the cluster works.
 hints:
 - Separate cluster initialization, private client setup, node registration, network readiness, and application
   deployment.
@@ -49,8 +49,9 @@ prepare:
   timeout: 600
 checks:
 - id: bootstrap-initialized
-  title: The native API and all four primary static components are initialized
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: The control plane is initialised
+  explanation: The API server must answer through kubeadm’s administrator client, and the API server,
+    controller manager, scheduler, and etcd static Pods must all run on the control-plane VM.
   command:
     args:
     - python
@@ -61,10 +62,13 @@ checks:
   json_path:
   - initialized
   expected: 'true'
-  diagnostic: Compare the live evidence with the required initialized boundary.
+  diagnostic: The control plane is not initialised yet. Inside the control-plane VM, check sudo crictl
+    ps for the four components and sudo journalctl -u kubelet -n 30 for errors. If kubeadm init failed
+    partway, read its output; you may need sudo kubeadm reset -f before trying again.
 - id: bootstrap-network
-  title: Both recorded nodes, CNI agents, and DNS are ready
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: Both nodes, their Calico agents, and DNS are ready
+  explanation: Both of this lab’s VMs must be registered and Ready, calico-node must be ready on both,
+    and CoreDNS must be available.
   command:
     args:
     - python
@@ -75,10 +79,13 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: Compare the live evidence with the required network boundary.
+  diagnostic: Networking is not complete. Check kubectl get nodes (is the worker joined?), kubectl get
+    pods -n kube-system -o wide for calico-node on each node, and kubectl rollout status deployment/coredns
+    -n kube-system.
 - id: bootstrap-workflow
-  title: A fresh cross-node frontend job completes and persists
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: A job crosses the nodes and completes
+  explanation: A real job submitted from the frontend on one node must be completed by Dispatch on the
+    other and saved in the database.
   command:
     args:
     - python
@@ -89,7 +96,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Compare the live evidence with the required workflow boundary.
+  diagnostic: A cross-node job did not complete. Make sure sh bootstrap.sh finished, then check kubectl
+    get pods -o wide for anything not ready, and read kubectl logs deployment/worker.
 capabilities:
 - limactl
 - kubectl

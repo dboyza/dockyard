@@ -1,21 +1,32 @@
-## What kubeadm creates
+## From prepared machines to a cluster
 
-Prepared Linux guests already contain containerd, kubelet, kubeadm, and kubectl.
-They are not yet a Kubernetes cluster.
-`kubeadm init` checks prerequisites, creates a certificate authority and component credentials, writes static Pod manifests, and starts the control plane through kubelet.
-It also records cluster configuration and bootstrap discovery information in the new API.
-It does not install the Pod network implementation or join another machine automatically.
+The two VMs in this lab already have containerd, the kubelet, `kubeadm`, and `kubectl` installed.
+They are not a cluster yet.
+In this lesson you create the **control plane** on the first machine with `kubeadm init`.
 
-## Read configuration before running it
+`kubeadm init` does several things in order:
 
-Kubeadm's `InitConfiguration` describes the first node, including its actual private address, CRI socket, and kubelet node IP.
-`ClusterConfiguration` describes shared choices such as the Kubernetes version, stable API endpoint, and Pod subnet.
-The two documents serve different scopes even when passed together in one YAML file.
-Dockyard's `init-config` helper prints configuration for this attempt's recorded guests; it does not run kubeadm.
-The supplied Pod range is `10.244.0.0/16`, separate from the guests' `192.168.104.0/24` network.
-Overlapping those networks can produce misleading partial connectivity and routing failures.
+1. **Preflight checks**: is the runtime working, swap off, the required ports free?
+2. **Certificates**: it creates a certificate authority (CA) for the cluster and a certificate for each component.
+3. **Static Pod manifests**: it writes the API server, controller manager, scheduler, and etcd manifests into `/etc/kubernetes/manifests`, and the kubelet starts them.
+4. **Configuration and credentials**: it stores the cluster’s configuration in the API and writes an administrator kubeconfig to `/etc/kubernetes/admin.conf`.
 
-## Worked example: inspect the prepared runtime
+It does **not** install a Pod network, and it does not add other machines.
+Those come next lesson.
+
+## The configuration file
+
+kubeadm can take its settings from a YAML file with two documents:
+
+- `InitConfiguration` is about *this* machine: its IP address, the containerd socket, and the kubelet’s node IP.
+- `ClusterConfiguration` is about the whole cluster: the Kubernetes version, the stable API address, and the **Pod subnet**, the address range Pods get IPs from.
+
+The Pod subnet here is `10.244.0.0/16`, separate from the VMs’ own `192.168.104.0/24` network.
+If the two overlapped, traffic could be routed to the wrong place and fail in confusing ways.
+
+## Worked example
+
+Look at what is installed, then have Dockyard write a configuration for this lab’s machines:
 
 ```sh
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo kubeadm version -o short
@@ -24,8 +35,9 @@ python -m dockyard.native init-config > init.yaml
 cat init.yaml
 ```
 
-Compare the two YAML documents and locate the node address, runtime socket, API endpoint, version, and Pod subnet.
-Then pass the reviewed file to the guest's real kubeadm process using standard input:
+Find the node address, the runtime socket, the API endpoint, the version, and the Pod subnet in `init.yaml`.
+The helper only writes the file; kubeadm does the real work.
+Send the file into kubeadm inside the VM, then refresh your lab terminal’s client:
 
 ```sh
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo kubeadm init --config=/dev/stdin < init.yaml
@@ -33,14 +45,26 @@ python -m dockyard.native refresh-client
 kubectl get nodes
 ```
 
-The refresh helper copies this lab's administrative client into its private host kubeconfig and substitutes the declared loopback endpoint.
-It does not change `~/.kube/config`.
-The control plane can answer authenticated requests while its node remains NotReady because CNI is still absent.
-That is the expected intermediate state for this lesson, not a reason to disable networking checks.
+`--config=/dev/stdin` with `< init.yaml` passes your local file to kubeadm inside the VM.
+`refresh-client` copies the new administrator credentials into your lab’s private kubeconfig; it does not touch `~/.kube/config`.
 
-## Credentials are part of the boundary
+The node will show **NotReady**, and CoreDNS will be Pending.
+That is expected: there is no Pod network yet.
 
-Administrative kubeconfigs and join tokens grant real privileges inside the practice cluster.
-Keep them private and do not paste their contents into notes.
-A join token authenticates bootstrap, while the discovery CA hash pins which cluster the worker may trust.
-The next lesson uses both to join the worker and install networking.
+## In the exam
+
+You will usually run kubeadm directly on the node with flags instead of a file:
+
+```sh
+sudo kubeadm init --kubernetes-version=v1.35.8 --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=NODE_IP
+mkdir -p "$HOME/.kube"
+sudo cp /etc/kubernetes/admin.conf "$HOME/.kube/config"
+sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"
+```
+
+kubeadm prints these last three lines itself when it finishes, along with a `kubeadm join` command for workers.
+
+## Keep credentials private
+
+The administrator kubeconfig and join tokens give real power over the cluster.
+Keep them out of your notes.

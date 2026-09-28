@@ -2,16 +2,16 @@ id: m20-join
 revision: 1
 module: 20
 order: 2
-title: Join a worker and establish cross-node networking
-summary: Complete CA-pinned bootstrap and prove real Dispatch traffic.
+title: Join a worker and install the Pod network
+summary: Join a worker with kubeadm, install Calico, and prove real traffic crosses the nodes.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 40
 outcomes:
-- Join the owned worker using authenticated discovery and a pinned CA.
-- Install the supplied VXLAN CNI with non-overlapping node and Pod networks.
-- Verify DNS, CNI readiness, and a real cross-node application transaction.
+- Join a worker using a token and a pinned CA hash.
+- Install a CNI plugin and check its readiness.
+- Prove cross-node networking with a real application request.
 prerequisites:
 - m20-init
 objectives:
@@ -27,7 +27,7 @@ prediction:
   - Counting YAML files.
   - Reading the kubeadm version.
   correct: 0
-  explanation: A fresh frontend job through Service DNS that completes on the other node.
+  explanation: A fresh job from the frontend, through Service DNS, completed on the other node.
 hints:
 - Compare the API node list with the two recorded guests; inspect CoreDNS and CNI state separately.
 - The worker needs a bootstrap token plus a CA hash, and both nodes need the supplied VXLAN network before
@@ -47,8 +47,9 @@ prepare:
   timeout: 600
 checks:
 - id: bootstrap-initialized
-  title: The native API and all four primary static components are initialized
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: The control plane is initialised
+  explanation: The API server must answer through kubeadm’s administrator client, and the API server,
+    controller manager, scheduler, and etcd static Pods must all run on the control-plane VM.
   command:
     args:
     - python
@@ -59,10 +60,13 @@ checks:
   json_path:
   - initialized
   expected: 'true'
-  diagnostic: Compare the live evidence with the required initialized boundary.
+  diagnostic: The control plane is not initialised yet. Inside the control-plane VM, check sudo crictl
+    ps for the four components and sudo journalctl -u kubelet -n 30 for errors. If kubeadm init failed
+    partway, read its output; you may need sudo kubeadm reset -f before trying again.
 - id: bootstrap-network
-  title: Both recorded nodes, CNI agents, and DNS are ready
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: Both nodes, their Calico agents, and DNS are ready
+  explanation: Both of this lab’s VMs must be registered and Ready, calico-node must be ready on both,
+    and CoreDNS must be available.
   command:
     args:
     - python
@@ -73,10 +77,13 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: Compare the live evidence with the required network boundary.
+  diagnostic: Networking is not complete. Check kubectl get nodes (is the worker joined?), kubectl get
+    pods -n kube-system -o wide for calico-node on each node, and kubectl rollout status deployment/coredns
+    -n kube-system.
 - id: bootstrap-workflow
-  title: A fresh cross-node frontend job completes and persists
-  explanation: Observe actual guest components, cluster state, and application behavior.
+  title: A job crosses the nodes and completes
+  explanation: A real job submitted from the frontend on one node must be completed by Dispatch on the
+    other and saved in the database.
   command:
     args:
     - python
@@ -87,7 +94,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Compare the live evidence with the required workflow boundary.
+  diagnostic: A cross-node job did not complete. Make sure sh bootstrap.sh finished, then check kubectl
+    get pods -o wide for anything not ready, and read kubectl logs deployment/worker.
 capabilities:
 - limactl
 - kubectl

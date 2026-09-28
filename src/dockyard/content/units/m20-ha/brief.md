@@ -1,8 +1,10 @@
-Restore the private API endpoint while leaving the primary API server and etcd member stopped.
-Preserve all three original etcd voting members.
-Both surviving etcd endpoints must be healthy, the private endpoint must accept a fresh write/read/delete, and Dispatch must complete a fresh job.
+## Route around the failed control plane
 
-Inspect and repair the worker's HAProxy configuration, validate it, and reload HAProxy.
-A correct configuration can select either or both healthy API servers; no exact backend ordering is graded.
-Do not restore the primary components as a substitute for demonstrating failover.
-Record the remaining endpoint, storage, and host failure points in your notes.
+1. Look at HAProxy’s configuration and log on the worker, and at which containers are running on the primary.
+2. Generate the correct configuration with `lb-config`, install it on the worker, validate it, and reload HAProxy.
+3. Check `kubectl get --raw=/readyz` works again.
+4. Choose **Check work**.
+
+Leave the primary’s API server and etcd stopped, and keep all three etcd members in the membership list.
+Any configuration that sends traffic to one or both healthy API servers is fine.
+In your notes, list the single points of failure that remain.

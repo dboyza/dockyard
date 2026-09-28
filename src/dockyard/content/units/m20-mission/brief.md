@@ -1,8 +1,12 @@
-Build a working Kubernetes 1.35.8 cluster from these two prepared Linux guests and deploy Dispatch.
-Use Pod subnet `10.244.0.0/16`, authenticated discovery, the supplied native CNI, and the private host client.
-Both nodes must be Ready, both CNI agents must be ready, DNS must be available, and a fresh frontend job must complete and persist.
-The initialization, join-configuration, manifest-rendering, client-refresh, and application-bootstrap helpers remain available in the workspace.
-Choose and carry out the sequence yourself.
+## Build a cluster and deploy Dispatch
 
-Write `handoff.md` with the observations that establish each stage, the location of private credentials without copying their contents, and the single points of failure that remain.
-The handoff is self-reviewed; live checks assess technical outcomes rather than claiming to interpret your prose.
+From the two prepared VMs, build a Kubernetes 1.35.8 cluster and deploy Dispatch:
+
+- Pod subnet `10.244.0.0/16`;
+- the worker joined with a CA-pinned configuration;
+- the supplied Calico network;
+- your lab terminal’s private client refreshed.
+
+Both nodes must be Ready, Calico ready on both, DNS available, and a new job from the frontend must complete and be saved.
+
+Write `handoff.md` listing the evidence for each stage, where the private credentials are (without copying them), and the single points of failure that remain.
