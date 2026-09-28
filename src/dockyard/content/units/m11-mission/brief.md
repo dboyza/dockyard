@@ -1,12 +1,9 @@
-# Repair, replace, restore, and explain
+## Protect the database and prove recovery
 
-Correct both StatefulSet claim-retention policies in `platform.yaml` and the incomplete dump in `backup.sh`.
-Preserve the source's existing claim and data.
-Apply the manifest, run `python storage-proof.py`, and run the repaired backup script.
+1. Fix both claim retention settings on the StatefulSet in `platform.yaml`, and the dump command in `backup.sh`.
+2. Apply the manifest, run `python storage-proof.py`, then run the fixed `backup.sh`.
+3. Check the original marker from the replacement source Pod, and the two recovery records in `db-restore-0`.
+4. Compare the claims and PVs of the source and restore databases to show they are separate.
+5. Make sure the application still works after the proof interrupted the database.
 
-Verify the original marker from a replacement source Pod and query the two recovery records from db-restore-0.
-Compare source and target claim UIDs and PV names to establish independent storage.
-Keep the source application available after the deliberate replacement interruption.
-
-Write a runbook with the exact source, destination, expected records, verification commands, and the circumstances this local setup does not survive.
-Use an independent retake to repeat the diagnosis without revealed reference files.
+Write a runbook listing the source and destination, the records to expect, the commands that verify them, and what this local setup would not survive.

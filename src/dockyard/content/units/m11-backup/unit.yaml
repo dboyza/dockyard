@@ -2,15 +2,15 @@ id: m11-backup
 revision: 1
 module: 11
 order: 3
-title: Restore a database onto independent storage
-summary: Verify a logical backup by restoring actual records to a separate claim.
+title: Back up and restore a database
+summary: Fix a backup that loses every row, and prove it by restoring into a separate database.
 kind: lesson
 runtime: kubernetes
 minutes: 40
 outcomes:
-- Distinguish logical backups from storage snapshots and schema-only exports.
-- Restore into an independent destination without overwriting the source.
-- Compare restored records and storage identities.
+- Make a logical backup with pg_dump and restore it with psql.
+- Restore into separate storage so the original stays safe.
+- Check restored rows and storage identities, not just that a file exists.
 prerequisites:
 - m11-statefulsets
 objectives:
@@ -20,17 +20,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: The restore created every table, but each is empty. What is a likely explanation?
+  question: The restore created every table, but they are all empty. What is the likely cause?
   options:
-  - The backup captured only the schema and omitted table data.
-  - Independent storage always removes restored rows.
-  - StatefulSet names prevent logical restores.
+  - The backup contained only the table definitions, not the data.
+  - Separate storage always deletes rows.
+  - StatefulSets cannot be restored.
   correct: 0
-  explanation: A schema-only export preserves structure, not application records.
+  explanation: A schema-only dump recreates tables without any rows, which looks like success until you
+    query them.
 hints:
-- Read the pg_dump options in backup.sh and query recovery_records on both databases.
-- Remove --schema-only while preserving the separate restore destination.
-- Run the storage proof, rerun the full dump and restore, and compare the marker plus both records.
+- Read the pg_dump options in backup.sh, and query recovery_records in both databases.
+- Remove --schema-only, keeping the restore aimed at db-restore-0.
+- Run python storage-proof.py, then sh backup.sh, then query both records and the marker in db-restore-0.
 sources:
 - https://kubernetes.io/docs/concepts/storage/persistent-volumes/
 - https://kubernetes.io/docs/concepts/storage/storage-classes/
@@ -62,8 +63,9 @@ prepare:
   timeout: 240
 checks:
 - id: storage-claim
-  title: The database uses a bound claim and its actual persistent volume
-  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  title: The database is using a bound claim
+  explanation: PostgreSQL’s data directory must be mounted from a PersistentVolumeClaim that is Bound
+    to a real PersistentVolume.
   command:
     args:
     - python
@@ -75,10 +77,13 @@ checks:
   json_path:
   - claim
   expected: 'true'
-  diagnostic: Inspect the database Pod volume, PVC binding, and referenced PV.
+  diagnostic: 'The database is not using a bound claim yet. Check the database Pod’s volumes (kubectl
+    get pod -l app=db -o yaml): the data volume must use persistentVolumeClaim, not emptyDir. Then run
+    kubectl get pvc and kubectl describe pvc for its events.'
 - id: storage-persistence
-  title: A replacement Pod reads the original database marker
-  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  title: A new database Pod reads the original marker
+  explanation: After storage-proof.py replaces the database Pod, the new Pod must read the marker the
+    old one wrote, and the API must be ready.
   command:
     args:
     - python
@@ -90,11 +95,13 @@ checks:
   json_path:
   - persistence
   expected: 'true'
-  diagnostic: Run the supplied storage proof after mounting persistent storage; compare old and new Pod
-    UIDs.
+  diagnostic: The marker is missing, or it was not written by an earlier Pod. Run python storage-proof.py
+    after the database is ready and read its output. If the marker disappears after replacement, the data
+    is not on persistent storage.
 - id: storage-identity
-  title: The StatefulSet retains stable Pod, Service, and claim identity
-  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  title: The StatefulSet keeps its name, Service, and claims
+  explanation: The database must run as db-0 from the db StatefulSet with one replica, a headless Service,
+    a data-db-0 claim, and Retain for both claim retention settings.
   command:
     args:
     - python
@@ -106,10 +113,13 @@ checks:
   json_path:
   - identity
   expected: 'true'
-  diagnostic: Inspect StatefulSet replicas, headless Service, claim templates, and both retention policies.
+  diagnostic: 'The StatefulSet is not in the expected shape. Check kubectl get statefulset db -o yaml:
+    replicas 1, persistentVolumeClaimRetentionPolicy with whenDeleted and whenScaled both Retain, and
+    a volumeClaimTemplates entry named data. Its serviceName must be a Service with clusterIP: None.'
 - id: storage-restore
-  title: An independent claim contains the restored records and database marker
-  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  title: A separate database holds the restored records
+  explanation: db-restore-0 must contain both recovery records and the proof marker, on a different claim
+    and PV from the source.
   command:
     args:
     - python
@@ -121,8 +131,9 @@ checks:
   json_path:
   - restore
   expected: 'true'
-  diagnostic: Use a full logical dump, restore into db-restore, and compare actual records from both independent
-    claims.
+  diagnostic: The restore is missing records or the marker. Query recovery_records in db-restore-0; empty
+    tables usually mean the dump used --schema-only. Run python storage-proof.py before sh backup.sh so
+    the marker is included, and check the two databases use different claims with kubectl get pvc.
 capabilities:
 - docker
 - kind

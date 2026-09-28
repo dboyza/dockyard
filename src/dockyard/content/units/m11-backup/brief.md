@@ -1,10 +1,12 @@
-# Repair the incomplete backup
+## Fix the backup so it contains the data
 
-The prepared source contains two recovery records, but `backup.sh` uses a schema-only dump.
-The recovery target has tables without the required data.
-Inspect both databases and the dump before editing.
+The source database `db-0` holds two recovery records and a marker, but `backup.sh` makes a schema-only dump, so the restored database has empty tables.
 
-Repair the dump command, run `python storage-proof.py` to demonstrate source durability, and rerun `sh backup.sh`.
-The script resets only the dedicated db-restore database before restoring.
-Verify both known records and the original marker in the target, then confirm source and target use different claims and PVs.
-Do not copy files into a shared volume or query the source while calling it a restore.
+1. Compare the `recovery_records` table in `db-0` and `db-restore-0`, and look at the `pg_dump` options in `backup.sh`.
+2. Fix the dump command so it includes the data.
+3. Run `python storage-proof.py` to show the source keeps its data across a Pod replacement.
+4. Run `sh backup.sh` again, then check both records and the marker are in `db-restore-0`.
+5. Confirm the two databases use different claims and PVs.
+6. Choose **Check work**.
+
+Do not copy files into a shared volume, and do not query the source and call it a restore.

@@ -50,11 +50,11 @@ A runtime pass alone is not a teaching-quality result.
 | m10-gateway | Completed without solutions | Revised | Explained GatewayClass, Gateway, HTTPRoute ownership and conditions. A missing parent Gateway leaves no Parents status at all, which the lesson now explains. Passed with 404 for the unmatched host. |
 | m10-mission | Completed without solutions | Revised | Fixed four independent faults and verified each path with its own request; passed. |
 | i06-service-selector | Completed without solutions | Revised | Diagnosed the extra release-channel selector key from labels and an empty EndpointSlice; the Service was changed live, so kubectl edit is now taught. Passed with a completed job. |
-| m11-claims | Pending | Pending |  |
-| m11-statefulsets | Pending | Pending |  |
-| m11-backup | Pending | Pending |  |
-| m11-mission | Pending | Pending |  |
-| i08-pending-claim | Pending | Pending |  |
+| m11-claims | Completed without solutions | Revised | Added the claim-to-disk chain, access modes, dynamic and static provisioning, and reclaim policy. The Pending event matched the lesson word for word; passed. Preparing later labs exposed Docker network exhaustion from stopped labs; the runtime now reclaims the oldest stopped lab. |
+| m11-statefulsets | Completed without solutions | Revised | Explained stable names, claim templates, headless Services, and the two retention layers; inspection commands switched to jsonpath because grep matched the applied-configuration annotation. Passed with the same name and a new UID. |
+| m11-backup | Completed without solutions | Revised | Observed two source rows and zero restored rows from the schema-only dump; fixed and restored onto a separate claim; passed. |
+| m11-mission | Completed without solutions | Revised | Fixed retention and the dump independently; records restored on a separate PV; passed. |
+| i08-pending-claim | Completed without solutions | Revised | Claim events said it waited for the Pod; Pod events showed a node selector mismatch (cold versus warm). Moved the archiver to the warm tier; claim bound; passed. |
 | m12-probes | Pending | Pending |  |
 | m12-rollouts | Pending | Pending |  |
 | m12-strategies | Pending | Pending |  |

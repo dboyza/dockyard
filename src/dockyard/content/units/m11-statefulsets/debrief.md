@@ -1,12 +1,8 @@
-# Debrief: Preserve stateful workload identity
+## Same name, same storage, new Pod
 
-The StatefulSet retains the stable Pod naming, Service relationship, and claim identity that a stateful workload needs.
-Stable identity and preserved bytes are complementary observations; a familiar Pod name can still point to an empty replacement database.
+`db-0` came back with the same name and claim but a new UID, and the data was still there.
+The Retain policy means scaling down or deleting the StatefulSet would no longer throw that claim away.
 
-## Explain your result
-
-Explain the separate roles of StatefulSet claim-retention behavior and the PersistentVolume reclaim policy.
-
-## Transfer beyond this lab
-
-Neither policy creates replication or an off-cluster backup, so plan those failure boundaries independently.
+Check your understanding:
+What is the difference between the StatefulSet’s claim retention policy and a PV’s reclaim policy?
+Why would scaling this StatefulSet to three not give you a replicated database?

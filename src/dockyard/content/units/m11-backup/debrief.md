@@ -1,12 +1,8 @@
-# Debrief: Restore a database onto independent storage
+## A restore you can trust
 
-The restored records live on an independent destination claim while the source claim and its marker remain intact.
-This distinguishes a successful restore from restarting the old database or merely producing a dump file.
+The records now exist in a separate database, on separate storage, while the source stayed untouched.
+That is much stronger evidence than a backup file existing.
 
-## Explain your result
-
-Which identities and data observations show that the recovered database is independent of the source storage?
-
-## Transfer beyond this lab
-
-A production recovery rehearsal must also measure recoverable data loss and recovery time, and keep a usable backup outside the original failure domain.
+Check your understanding:
+Which observations prove the restored database does not share storage with the source?
+If this cluster were deleted tonight, what would you still have, and what would you have lost?

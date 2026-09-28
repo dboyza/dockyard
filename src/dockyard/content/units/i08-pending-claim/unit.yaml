@@ -2,15 +2,16 @@ id: i08-pending-claim
 revision: 1
 module: 11
 order: 90
-title: The archive claim stays Pending beside an unscheduled consumer
-summary: A new archiver never starts and its claim stays Pending, although the storage provisioner is
-  running and the main Dispatch database works.
+title: The archive claim stays Pending, and its Pod never starts
+summary: A new archiver never starts and its claim stays Pending, although storage and the rest of Dispatch
+  work.
 kind: incident
 runtime: kubernetes
 minutes: 35
 outcomes:
-- Diagnose the reported boundary from live evidence.
-- Restore useful behavior while preserving the original state and operating constraints.
+- Read claim and Pod events together to find why storage is not provisioned.
+- Explain how wait-for-consumer binding depends on scheduling.
+- Fix the placement and prove the claim stores and shares a file.
 prerequisites:
 - m11-mission
 objectives:
@@ -21,13 +22,15 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation would establish recovery?
+  question: A claim using WaitForFirstConsumer is Pending, and its only Pod is also Pending. Where should
+    you look first?
   options:
-  - A fresh end-to-end request succeeds and the original data remains.
-  - The latest command exited zero.
-  - A replacement Pod exists.
+  - Why the Pod cannot be scheduled.
+  - Restart the storage provisioner.
+  - Delete and recreate the claim.
   correct: 0
-  explanation: Recovery requires useful behavior and the stated preservation constraints.
+  explanation: With wait-for-consumer binding, the claim waits for its Pod to be scheduled. Find out what
+    is stopping the Pod.
 hints:
 - Read the claim events, StorageClass binding mode, and consumer scheduling events together.
 - WaitForFirstConsumer needs an eligible consumer node. Compare the archiver node selector with actual
@@ -63,9 +66,9 @@ prepare:
   timeout: 360
 checks:
 - id: incident-preserved
-  title: The original namespace, database claim, and stored job remain
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The original namespace, database storage, and job are still there
+  explanation: The fix must not replace the namespace or database claim, or lose the job stored before
+    the incident.
   command:
     args:
     - python
@@ -77,12 +80,11 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The original namespace, the database’s data-db-0 claim, or the original job is gone. If
+    they were deleted or replaced, reset the lab and repair it in place instead.
 - id: incident-available
-  title: Two API replicas are available
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: Two API copies are available
+  explanation: The dispatch Deployment must still have two ready copies.
   command:
     args:
     - python
@@ -94,12 +96,11 @@ checks:
   json_path:
   - available
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The API does not have two available copies. Run kubectl get deployment dispatch and kubectl
+    describe pods -l app=dispatch.
 - id: incident-route
-  title: The Service reaches exactly the two ready API backends
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The Service reaches exactly the two API Pods
+  explanation: The dispatch Service must still select exactly the two ready API Pods.
   command:
     args:
     - python
@@ -111,12 +112,11 @@ checks:
   json_path:
   - route
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The Service no longer reaches exactly the two API Pods. Compare kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch with kubectl get pods -l app=dispatch.
 - id: incident-workflow
-  title: A fresh job completes and PostgreSQL contains its result
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: A new job is completed and saved
+  explanation: Dockyard submits a real job and checks PostgreSQL stores the worker’s result.
   command:
     args:
     - python
@@ -128,12 +128,11 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: A new job was not completed. Check the workers are running and read kubectl logs deployment/worker.
 - id: incident-contract
-  title: The original archive claim binds and a second consumer reads a fresh mounted file
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The archive claim is bound and shares a new file
+  explanation: The original archive claim must be Bound, the archiver must mount it at /archive, and a
+    separate Pod must read a file written through that mount.
   command:
     args:
     - python
@@ -145,7 +144,9 @@ checks:
   json_path:
   - contract
   expected: 'true'
-  diagnostic: Resolve consumer placement without recreating the claim or changing its binding mode.
+  diagnostic: The archive claim is not bound or not shared. Run kubectl describe pvc archive and kubectl
+    describe pod -l app=archiver, and read the Events. Compare the archiver’s nodeSelector with kubectl
+    get nodes --show-labels. Keep the original claim; do not swap in an emptyDir.
 capabilities:
 - docker
 - kind

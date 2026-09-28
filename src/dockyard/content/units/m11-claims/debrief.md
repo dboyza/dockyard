@@ -1,12 +1,8 @@
-# Debrief: Connect claims to durable database storage
+## Data that outlives the Pod
 
-The database writes through a bound claim into the backing PersistentVolume, and a replacement Pod reads the original marker.
-The marker makes persistence observable across Pod replacement instead of relying on a healthy-looking database process.
+PostgreSQL now writes through the claim to a PersistentVolume, and a brand-new Pod found the marker the old one wrote.
 
-## Explain your result
-
-Trace the data directory through the mount, claim, volume, and backing storage, naming which identities changed when the Pod was replaced.
-
-## Transfer beyond this lab
-
-This node-local volume survives the tested Pod lifecycle, but deleting the entire kind cluster removes its storage.
+Check your understanding:
+Trace the data from `/var/lib/postgresql/data` to the node’s disk, naming each object in the chain.
+Which of those objects changed when the Pod was replaced, and which stayed the same?
+What would you need to create by hand if the cluster had no provisioner?

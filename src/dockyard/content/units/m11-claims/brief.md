@@ -1,13 +1,12 @@
-# Mount the claim the application actually needs
+## Put the database on persistent storage
 
-The supplied claim `dispatch-data` exists, but the database Deployment still uses emptyDir.
-Inspect its events and explain why the claim may remain Pending before it has a consumer.
+The claim `dispatch-data` exists, but the database Deployment still uses `emptyDir`.
 
-Edit `platform.yaml` so volume `data` references claim `dispatch-data` and the database uses a Recreate update strategy.
-Keep the existing mount at `/var/lib/postgresql/data` and the single database replica.
-Apply `claim.yaml`, render and apply `platform.yaml`, and wait for database readiness.
-Then run `python storage-proof.py` and verify that a new database Pod reads the original marker.
+1. Look at the claim with `kubectl describe pvc dispatch-data` and explain in your notes why it may be Pending.
+2. In `platform.yaml`, change the database’s `data` volume to use claim `dispatch-data`, and set its update strategy to `Recreate`. Keep the mount path `/var/lib/postgresql/data` and one replica.
+3. Apply `claim.yaml`, then run `sh run.sh`, and wait for the database to be ready.
+4. Run `python storage-proof.py` and confirm the replacement Pod read the original marker.
+5. Choose **Check work**.
 
-This starter contains no business data to migrate.
-In a real migration, take and verify a backup before changing the storage destination.
-Do not conclude that attaching an empty persistent volume transfers the old container's data.
+There is no existing data to move here.
+In a real migration, back up the data first: attaching an empty new volume does not copy anything across.

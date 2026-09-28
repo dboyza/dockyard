@@ -1,7 +1,9 @@
-# Recovery review
+## Compare your diagnosis
 
-The archiver required a cold storage tier that no node advertised.
-The original claim waited for that unschedulable first consumer.
-Changing the placement to the existing warm tier let scheduling and provisioning complete together.
-The check preserves the original claim identity and reads a newly written file through a separate Pod mount.
-Explain why an emptyDir could make one process appear functional while failing this persistence contract.
+The archiver required a node labelled for a `cold` storage tier, and no node had that label.
+With nothing to schedule, the claim waited for its first consumer forever.
+Pointing the archiver at the existing `warm` tier let the Pod schedule, and the claim was bound and provisioned on that node.
+
+Check your understanding:
+Which event showed the problem was scheduling, not storage?
+Why would switching to an `emptyDir` have looked like a fix, while failing the real requirement?

@@ -2,15 +2,15 @@ id: m11-statefulsets
 revision: 1
 module: 11
 order: 2
-title: Preserve stateful workload identity
-summary: Use a headless Service, claim templates, and explicit retention policies.
+title: 'StatefulSets: stable names and storage'
+summary: Bring back a StatefulSet database and make sure scaling or deleting it keeps its claims.
 kind: lesson
 runtime: kubernetes
 minutes: 40
 outcomes:
-- Explain stable StatefulSet Pod names and per-Pod claim identity.
-- Distinguish claim retention from PV reclaim behavior.
-- Verify database persistence through controller-driven Pod replacement.
+- Explain the stable names and per-Pod claims a StatefulSet provides.
+- Tell a StatefulSet’s claim retention apart from a PV’s reclaim policy.
+- Show a replaced Pod keeps its name and data but gets a new UID.
 prerequisites:
 - m11-claims
 objectives:
@@ -20,17 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: db-0 is replaced with a new Pod UID. Which identity should keep its data available?
+  question: db-0 is replaced and gets a new UID. What keeps its data available?
   options:
-  - Its retained per-ordinal claim and bound volume.
-  - The deleted Pod UID itself.
-  - An unrelated emptyDir in the replacement Pod.
+  - Its own claim, data-db-0, and the volume bound to it.
+  - The old Pod’s UID.
+  - An emptyDir in the new Pod.
   correct: 0
-  explanation: The Pod is replaceable; the claim and persistent volume have independent lifetimes.
+  explanation: The Pod is replaceable; the claim and volume live on independently and are reattached to
+    the new db-0.
 hints:
-- Inspect replicas and both persistentVolumeClaimRetentionPolicy fields.
-- Set one replica and Retain for whenDeleted and whenScaled.
-- Wait for db-0, then run storage-proof.py and compare its new UID with the stored marker.
+- Look at replicas and persistentVolumeClaimRetentionPolicy in the StatefulSet.
+- 'Set replicas: 1 and Retain for both whenDeleted and whenScaled.'
+- Run sh run.sh, wait for statefulset/db, then run python storage-proof.py and compare the UID before
+  and after.
 sources:
 - https://kubernetes.io/docs/concepts/storage/persistent-volumes/
 - https://kubernetes.io/docs/concepts/storage/storage-classes/
@@ -62,8 +64,9 @@ prepare:
   timeout: 240
 checks:
 - id: storage-claim
-  title: The database uses a bound claim and its actual persistent volume
-  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  title: The database is using a bound claim
+  explanation: PostgreSQL’s data directory must be mounted from a PersistentVolumeClaim that is Bound
+    to a real PersistentVolume.
   command:
     args:
     - python
@@ -75,10 +78,13 @@ checks:
   json_path:
   - claim
   expected: 'true'
-  diagnostic: Inspect the database Pod volume, PVC binding, and referenced PV.
+  diagnostic: 'The database is not using a bound claim yet. Check the database Pod’s volumes (kubectl
+    get pod -l app=db -o yaml): the data volume must use persistentVolumeClaim, not emptyDir. Then run
+    kubectl get pvc and kubectl describe pvc for its events.'
 - id: storage-persistence
-  title: A replacement Pod reads the original database marker
-  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  title: A new database Pod reads the original marker
+  explanation: After storage-proof.py replaces the database Pod, the new Pod must read the marker the
+    old one wrote, and the API must be ready.
   command:
     args:
     - python
@@ -90,11 +96,13 @@ checks:
   json_path:
   - persistence
   expected: 'true'
-  diagnostic: Run the supplied storage proof after mounting persistent storage; compare old and new Pod
-    UIDs.
+  diagnostic: The marker is missing, or it was not written by an earlier Pod. Run python storage-proof.py
+    after the database is ready and read its output. If the marker disappears after replacement, the data
+    is not on persistent storage.
 - id: storage-identity
-  title: The StatefulSet retains stable Pod, Service, and claim identity
-  explanation: Observe live volume bindings, Pod identity, and actual database records.
+  title: The StatefulSet keeps its name, Service, and claims
+  explanation: The database must run as db-0 from the db StatefulSet with one replica, a headless Service,
+    a data-db-0 claim, and Retain for both claim retention settings.
   command:
     args:
     - python
@@ -106,7 +114,9 @@ checks:
   json_path:
   - identity
   expected: 'true'
-  diagnostic: Inspect StatefulSet replicas, headless Service, claim templates, and both retention policies.
+  diagnostic: 'The StatefulSet is not in the expected shape. Check kubectl get statefulset db -o yaml:
+    replicas 1, persistentVolumeClaimRetentionPolicy with whenDeleted and whenScaled both Retain, and
+    a volumeClaimTemplates entry named data. Its serviceName must be a Service with clusterIP: None.'
 capabilities:
 - docker
 - kind

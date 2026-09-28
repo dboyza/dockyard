@@ -1,10 +1,12 @@
-# Bring back a stateful database without disposable claims
+## Bring the database back without risking its claims
 
-The database StatefulSet is scaled to zero and configured to delete generated claims when scaled down or deleted.
-Repair `platform.yaml` so it runs one replica and explicitly retains claims for both events.
-Preserve the data claim template and governing headless Service.
-Apply the change and wait for `statefulset/db` to roll out.
+The database StatefulSet is scaled to zero, and it is set to delete its claims when scaled down or deleted.
 
-Run `python storage-proof.py`, inspect db-0 before and after replacement, and compare Pod UID, claim name, and PV identity.
-Explain why a replacement Pod can have the same name but a different UID.
-Do not scale PostgreSQL beyond one replica or claim that the StatefulSet automatically replicates its database.
+1. Look at its `replicas` and `persistentVolumeClaimRetentionPolicy`.
+2. In `platform.yaml`, set one replica and `Retain` for both `whenDeleted` and `whenScaled`. Keep the claim template and the headless Service.
+3. Run `sh run.sh` and wait for `statefulset/db` to roll out.
+4. Note `db-0`’s UID, claim, and PV, run `python storage-proof.py`, and compare them afterwards.
+5. Choose **Check work**.
+
+Keep PostgreSQL at one replica.
+In your notes, explain why the new `db-0` has the same name but a different UID.
