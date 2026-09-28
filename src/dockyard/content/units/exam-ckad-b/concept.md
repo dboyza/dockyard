@@ -1,15 +1,27 @@
-# Original performance practice
+# A timed CKAD practice exam
 
-Work independently using local command help, installed manuals, Kubernetes documentation and blog, and Helm documentation.
-Task-specific official documentation linked in the supplied task materials is permitted.
-Use the recorded isolated kubeconfig and ordinary external terminal.
-Do not use Dockyard hints or reference solutions during the timed attempt.
-The timer starts only after environment preparation and lasts 120 minutes.
-Closing the browser does not pause the persisted deadline.
-Keep the foreground Dockyard launcher running so it can capture the final state at expiry.
-Unavailable or changing environments produce an invalidated attempt without a score.
+This is a two-hour, hands-on practice exam in the style of the CKAD.
+You work in your own terminal on a real practice environment, completing several weighted tasks, and Dockyard scores the result when time runs out or you submit.
 
-These are original practice tasks with a deliberately limited local resource budget.
-They do not reproduce exam proctoring, and the weighted score is not a certification result or a pass prediction.
-Official policies can change; consult the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and [CKA/CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad) before an official exam.
-Policy links checked on 2026-09-27.
+Before you start, read the **Exam technique** guide in the Reference Desk.
+It covers switching context, generating YAML, looking things up quickly, checking each task, and managing your time.
+
+## The rules for this attempt
+
+- Work on your own. Dockyard’s hints and reference solutions are not available during the exam.
+- You may use command help (`--help`, `kubectl explain`, man pages), the Kubernetes documentation and blog, and the Helm documentation, and any official documentation linked from a task.
+- Use the lab terminal, which is already connected to the exam’s own cluster.
+- The two-hour timer starts once the environment is ready. Closing the browser does not pause it.
+- Keep the Dockyard launcher running, so it can record the final state when time is up.
+- If the environment breaks or changes underneath you, the attempt is marked invalid rather than scored.
+
+## What the score means
+
+These are original tasks written for practice, running on a small local environment.
+They are not copies of the real exam, and there is no proctoring.
+Your score shows how you did on these tasks today; it is not a certification result or a prediction of one.
+Where you lose marks, the results point to the lessons that teach that skill.
+
+The official rules change from time to time.
+Before booking the real exam, read the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and the [CKA and CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad).
+These links were checked on 2026-09-27.

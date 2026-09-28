@@ -28,5 +28,11 @@
     "title": "Linux essentials",
     "minutes": 10,
     "summary": "Users, file permissions, processes, services, and what makes a container."
+  },
+  {
+    "id": "exam",
+    "title": "Exam technique",
+    "minutes": 12,
+    "summary": "Contexts, generating YAML, quick lookups, vim basics, checking your work, and managing the clock in the CKA and CKAD."
   }
 ]

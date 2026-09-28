@@ -59,7 +59,8 @@ export function ReferencePage({ model }: { model: Workbench }) {
           className={!glossary ? "primary" : ""}
           onClick={() => setReferenceFocus(`primer/${primer.id}`)}
         >
-          Foundations <span className="small">5 primers</span>
+          Foundations{" "}
+          <span className="small">{library.primers.length} primers</span>
         </button>
         <button
           aria-pressed={glossary}
