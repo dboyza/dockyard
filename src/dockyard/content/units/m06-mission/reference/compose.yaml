@@ -1,17 +1,17 @@
 services:
   api:
     image: ${DISPATCH_RELEASE}
-    labels: &id001
+    labels:
       io.dockyard.lab: ${DOCKYARD_LAB}
-    environment: &id002
+    environment:
       DB_HOST: db
       DB_NAME: dispatch
       DB_USER: dispatch
       DB_PASSWORD: ${DOCKYARD_DB_PASSWORD}
       REDIS_URL: redis://queue:6379/0
-    networks: &id003
+    networks:
     - internal
-    depends_on: &id004
+    depends_on:
       db:
         condition: service_healthy
       queue:
@@ -38,10 +38,21 @@ services:
     pids_limit: 64
   worker:
     image: ${DISPATCH_RELEASE}
-    labels: *id001
-    environment: *id002
-    networks: *id003
-    depends_on: *id004
+    labels:
+      io.dockyard.lab: ${DOCKYARD_LAB}
+    environment:
+      DB_HOST: db
+      DB_NAME: dispatch
+      DB_USER: dispatch
+      DB_PASSWORD: ${DOCKYARD_DB_PASSWORD}
+      REDIS_URL: redis://queue:6379/0
+    networks:
+    - internal
+    depends_on:
+      db:
+        condition: service_healthy
+      queue:
+        condition: service_healthy
     command:
     - python
     - worker.py

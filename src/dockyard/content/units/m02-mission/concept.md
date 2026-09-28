@@ -1,12 +1,14 @@
-## Deliver an artifact another operator can run
+## Give another person a release they can run
 
-This mission combines the build-time and runtime boundaries you have practiced.
-You receive the supplied Dispatch source and a release requirement, rather than a sequence of commands.
-Your Dockerfile should make the application files, runtime identity, and startup behavior clear to a reviewer.
+You have practised building an image, updating a running release, and separating build work from runtime files.
+Now combine those skills without a complete command sequence.
+The application code is supplied; your work is the Dockerfile, the running container, and a clear explanation of how to reproduce the result.
 
-Use the known-good source checkpoint even if you entered this module through placement.
-It is independent of your earlier containers, so you can experiment without overwriting previous work.
-The resulting image remains local to this host computer; publishing and digest selection are introduced later.
+Start from this lab’s files even if you still have containers from earlier lessons.
+Each lab has its own names and workspace.
+The image stays on your computer; the registry lessons later show how to distribute it.
 
-Try the contract independently before opening hints.
-A correct HTTP response is necessary, but the checks also look for a non-root process and the absence of workspace mounts or build-only files.
+Before building, identify which stage will check the source, which files the final stage needs, and which user will run the API.
+After building, test the running container rather than assuming the Dockerfile guarantees the result.
+The check verifies the response, non-root user, and absence of host mounts and `/source`.
+Your explanation of the build process is self-review.

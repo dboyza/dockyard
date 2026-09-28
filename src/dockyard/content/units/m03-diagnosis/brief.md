@@ -1,9 +1,12 @@
-## Repair one wrong address
+## Repair the API’s dependency address
 
-Both services are already attached to the correct bridge and the dependency alias resolves.
-The API is configured with `UPSTREAM_URL=http://127.0.0.1:8081/healthz`, which does not identify the peer service.
-Diagnose this from inside the API container, then replace only the API with a corrected dependency URL.
+The bridge and dependency alias already work.
+The API has `UPSTREAM_URL=http://127.0.0.1:8081/healthz`, which points into the API’s own container.
 
-The API must call `http://dependency:8080/healthz` on `$DOCKYARD_NETWORK`.
-Keep the dependency unpublished and preserve its container.
-Verify the actual peer identity appears in the API's successful `/dependency` response.
+1. Inspect that setting and test the dependency name and correct URL from inside the API container.
+2. Replace only the API, setting its upstream URL to `http://dependency:8080/healthz`.
+3. Keep its lab label, `$DOCKYARD_NETWORK` attachment, image, and local port mapping.
+4. Request `/dependency` and confirm that it identifies the actual peer, then check your work.
+
+Preserve the dependency container and keep it unpublished.
+Explain why testing only with curl on your computer would miss part of this diagnosis.

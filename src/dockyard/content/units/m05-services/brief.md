@@ -13,4 +13,4 @@ Do not assign a fixed container_name to worker, because the next exercise scales
 
 Start the stack, open the API dashboard at the assigned host port, and submit a job.
 A complete result requires a worker to finish that job and store its real result in PostgreSQL.
-Readiness guards are introduced in the next lab; the reference includes them as a useful complete implementation.
+The next lesson adds health checks so startup waits for the database and queue to become ready.

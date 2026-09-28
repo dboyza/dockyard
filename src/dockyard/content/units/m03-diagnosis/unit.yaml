@@ -2,7 +2,7 @@ id: m03-diagnosis
 revision: 1
 module: 3
 order: 3
-title: "Diagnose from the caller\u2019s network namespace"
+title: Diagnose from the caller’s network namespace
 summary: Repair a dependency URL that mistakes container loopback for a different service.
 kind: lesson
 runtime: docker
@@ -21,12 +21,12 @@ debrief: debrief.md
 prediction:
   question: Inside the API container, 127.0.0.1 refers to which system?
   options:
-  - "The API container\u2019s own network namespace."
+  - The API container’s own network namespace.
   - The neighboring dependency container.
   - Always the physical host.
   correct: 0
-  explanation: Loopback is local to the current network namespace. A neighboring service needs a reachable service
-    address.
+  explanation: Loopback is local to the current network namespace. A neighboring service needs a reachable
+    service address.
 hints:
 - Compare UPSTREAM_URL with the bridge alias and actual dependency listener.
 - Use docker exec to test dependency:8080 from the API container.
@@ -84,7 +84,7 @@ prepare:
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -96,11 +96,13 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
-    exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -113,11 +115,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -131,11 +134,14 @@ checks:
   json_path:
   - service
   expected: dispatch
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
-    listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -150,10 +156,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -168,10 +177,12 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: network-owned
   title: Both services and their bridge belong to this lab
-  explanation: Cross-check resource identity with DNS and the live dependency response.
+  explanation: Both containers and their network must carry this lab's label so Dockyard can recognize
+    them.
   command:
     args:
     - python
@@ -182,11 +193,12 @@ checks:
   json_path:
   - owned
   expected: 'true'
-  diagnostic: Inspect bridge membership and aliases, then test DNS from inside Dispatch. The API must call dependency:8080,
-    not host loopback.
+  diagnostic: The API, its dependency, or the network is missing the io.dockyard.lab label. Check each
+    one with docker inspect. Networks and containers cannot be relabeled, so recreate whichever is unlabeled
+    with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: network-shared-bridge
   title: Both services attach to the assigned bridge
-  explanation: Cross-check resource identity with DNS and the live dependency response.
+  explanation: Containers can only talk by name when they are attached to the same user-defined network.
   command:
     args:
     - python
@@ -197,11 +209,13 @@ checks:
   json_path:
   - shared_bridge
   expected: 'true'
-  diagnostic: Inspect bridge membership and aliases, then test DNS from inside Dispatch. The API must call dependency:8080,
-    not host loopback.
+  diagnostic: At least one of the two containers is not attached to $DOCKYARD_NETWORK. Run docker network
+    inspect "$DOCKYARD_NETWORK" and look for both container names under Containers. Attach a missing one
+    with docker network connect.
 - id: network-dns
   title: The dependency name resolves to its actual container
-  explanation: Cross-check resource identity with DNS and the live dependency response.
+  explanation: Inside the API container, the name dependency must resolve to the dependency container's
+    address on the shared network.
   command:
     args:
     - python
@@ -212,11 +226,14 @@ checks:
   json_path:
   - dns
   expected: 'true'
-  diagnostic: Inspect bridge membership and aliases, then test DNS from inside Dispatch. The API must call dependency:8080,
-    not host loopback.
+  diagnostic: The name dependency did not resolve to the dependency container. Test it from inside the
+    API with docker exec "$DOCKYARD_CONTAINER" python -c 'import socket; print(socket.gethostbyname("dependency"))'.
+    The alias must be set on the dependency's connection to the network (docker network connect --alias
+    dependency).
 - id: network-dependency-private
   title: The dependency has no published host ports
-  explanation: Cross-check resource identity with DNS and the live dependency response.
+  explanation: The API reaches its dependency over the Docker network, so the dependency needs no port
+    on your computer.
   command:
     args:
     - python
@@ -227,11 +244,12 @@ checks:
   json_path:
   - dependency_private
   expected: 'true'
-  diagnostic: Inspect bridge membership and aliases, then test DNS from inside Dispatch. The API must call dependency:8080,
-    not host loopback.
+  diagnostic: The dependency container publishes a host port. Run docker port on it to confirm. Recreate
+    it without -p; the API does not need a published port to reach it.
 - id: network-reached-peer
   title: Dispatch reaches the actual dependency through its service name
-  explanation: Cross-check resource identity with DNS and the live dependency response.
+  explanation: The API's /dependency route makes a real request to the peer and reports which container
+    answered, so this confirms the whole path works.
   command:
     args:
     - python
@@ -242,8 +260,9 @@ checks:
   json_path:
   - reached_peer
   expected: 'true'
-  diagnostic: Inspect bridge membership and aliases, then test DNS from inside Dispatch. The API must call dependency:8080,
-    not host loopback.
+  diagnostic: 'The API could not reach the dependency container. Request http://127.0.0.1:$DOCKYARD_PORT/dependency
+    and read the error. Then check the API''s UPSTREAM_URL with docker inspect: it should be http://dependency:8080/healthz.
+    localhost inside the API container means the API itself, not the dependency.'
 capabilities:
 - docker
 - python-image

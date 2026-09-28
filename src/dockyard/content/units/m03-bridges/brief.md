@@ -1,11 +1,14 @@
-## Create the internal service path
+## Build the connection between the services
 
-Prepare starts the API and a dependency container separately.
-The API's normal `/healthz` endpoint works, but `/dependency` cannot reach the dependency by name.
+The API’s `/healthz` works, but `/dependency` cannot reach its peer by name.
+The application files and both containers are already supplied.
 
-Create `$DOCKYARD_NETWORK` with label `io.dockyard.lab=$DOCKYARD_LAB`.
-Attach both assigned containers to it and give `$DOCKYARD_CONTAINER-dependency` the alias `dependency`.
-Do not publish a host port for the dependency.
-Do not replace the supplied application source or hard-code the dependency's current IP.
+1. Create `$DOCKYARD_NETWORK` with the lab ownership label.
+2. Attach the API and `$DOCKYARD_CONTAINER-dependency` to it.
+3. Give the dependency the network alias `dependency`.
+4. Test name lookup from the API container, then request the API’s `/dependency` route.
+5. Leave both containers connected and running for Check work.
 
-Verify `dependency` resolves from the API container and `/dependency` returns a successful response from that actual peer.
+Keep the dependency unpublished: do not add a host port to it.
+Use its name instead of hard-coding an IP address, and leave the supplied application code unchanged.
+Explain what a successful name lookup would prove, and what the HTTP request proves in addition.

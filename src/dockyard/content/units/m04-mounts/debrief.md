@@ -1,3 +1,8 @@
-The database belongs to the mounted host directory, so replacing the process and container does not replace the data.
-Deleting that host directory would still destroy the only copy.
-Explain why persistence and backup are separate guarantees.
+## What survived, and why?
+
+The process was replaced, but its database stayed in the host directory mounted at `/data`.
+The image, container, and data directory have separate lifetimes.
+
+Compare your recorded job identity before and after replacement.
+Then predict what would happen if the replacement mounted a new, empty directory at the same path.
+A mount at the right path is not enough if it points to the wrong storage.

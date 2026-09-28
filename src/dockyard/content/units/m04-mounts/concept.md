@@ -1,41 +1,63 @@
-## Four different places a file can live
+## Keep jobs when you replace the container
 
-An image carries read-only layers shared by containers.
-Each container also has a writable layer that belongs to that particular container.
-Removing the container removes that writable layer.
-A mount at `/data` redirects accesses at that path to storage with a separate lifecycle.
+Dispatch now stores jobs in a small SQLite database: one file at `/data/jobs.db`.
+You do not need to write SQL for this lesson.
+You will submit a job, replace its container, and check that the job is still there.
 
-A bind mount exposes a specific host path.
-It is useful when the operator needs direct access to source or data on the host, but ties the runtime to that path and its permissions.
-A named volume is managed by Docker and is usually a better fit for service data that does not need direct host editing.
-Both can outlive container replacement; neither is automatically a backup.
+A container normally writes changes into its own writable layer.
+Removing that container removes those changes.
+A **mount** gives a path inside the container access to storage that exists separately.
+Here, mount `/data` so the database survives; leave `/app` alone so the packaged application stays visible.
 
-## A mount hides the covered directory
+There are two useful choices:
 
-Mounting a directory over `/app` changes what the process sees at `/app`.
-The original image files are not merged with arbitrary bind-mounted files.
-For this checkpoint the application lives in `/app` and its SQLite database belongs in `/data`.
-Mount the data path without hiding the packaged application.
+- A **bind mount** uses a directory you choose on your computer.
+- A **named volume** uses storage managed by Docker.
 
-## Worked example: an explicit bind mount
+Both can survive container replacement.
+Neither protects you from deleting or corrupting the data itself, so neither replaces a backup.
+
+## Build and start the storage version
+
+Prepare the lab and open its terminal.
+The supplied Dockerfile and Python application are complete.
+Build them, create the host directory, then start the API:
 
 ```sh
+docker build --build-arg BASE_IMAGE="$DOCKYARD_PYTHON_IMAGE" -t "$DOCKYARD_IMAGE" .
 mkdir -p "$DOCKYARD_STORAGE"
+docker run -d --name "$DOCKYARD_CONTAINER" \
+  --label "io.dockyard.lab=$DOCKYARD_LAB" \
+  --user "$(id -u):$(id -g)" \
+  --mount "type=bind,source=$DOCKYARD_STORAGE,target=/data" \
+  -p "127.0.0.1:$DOCKYARD_PORT:8080" "$DOCKYARD_IMAGE"
 ```
 
-A run command can then use `--mount "type=bind,source=$DOCKYARD_STORAGE,target=/data"`.
-The more explicit --mount form reports a missing host source path instead of quietly selecting an unintended location.
-In this lab the data directory sits beside the source workspace, so runtime database writes do not appear as source edits during assessment.
+`id -u` and `id -g` return your user and group numbers in the lab terminal.
+Using them for this container lets it write to the directory you just created.
+On Windows, these are your WSL user’s numbers.
+The next lesson uses a Docker-managed volume and a different ownership arrangement.
 
-## Permissions cross the boundary too
+The `--mount` option names the storage type, source, and destination explicitly.
+It reports an error if the source directory is missing.
+Mounting over `/app` instead would hide the application files you built into the image.
 
-The host directory and container process have numeric owners.
-For this host-bind exercise, run the API as your host UID and GID using `--user "$(id -u):$(id -g)"` so it can write its own practice directory.
-The supplied image makes application files readable to that identity.
-The following lab treats ownership inside a Docker-managed volume separately.
+## Write a job, then replace its container
 
-## Verify data rather than names
+Once the server has started:
 
-POSTing a job proves the application can write, and reading it through a separate container proves the committed database is accessible through the mount.
-The checker creates a uniquely named observation job, confirms it independently, and removes only that observation afterward.
-Your own jobs remain intact.
+```sh
+curl --fail -H 'Content-Type: application/json' \
+  -d '{"title":"keep this job"}' "http://127.0.0.1:$DOCKYARD_PORT/jobs"
+curl --fail "http://127.0.0.1:$DOCKYARD_PORT/jobs"
+```
+
+The `-d` option sends a request body and makes this a POST request.
+The header tells the API that the body is JSON.
+Record the returned job’s identity.
+Stop and remove only the assigned container, then repeat the same `docker run` command, including its mount.
+Request `/jobs` again: the same job should still be present.
+
+The checker also creates its own temporary job and reads the committed database through the mount independently.
+It removes that observation afterward and leaves your jobs intact.
+It checks the current storage arrangement; your before-and-after observation is what demonstrates replacement to you.

@@ -1,3 +1,8 @@
-You created both the route and the stable name used by the application.
-The dependency remained private to container networking, while the host used the API's single published endpoint.
-Compare this arrangement with the service discovery role Kubernetes Services will provide later.
+## Two tests answered two different questions
+
+Name lookup found an address for `dependency` from the API container.
+The HTTP request then established that the API could reach the application at that address and port.
+
+Explain why publishing a dependency port on your computer was unnecessary.
+Predict what would happen if you disconnected only the API from the shared bridge.
+The dependency could still be running, but that alone would not preserve this communication path.

@@ -1,3 +1,8 @@
-The restore was verified independently of the archive command's exit status.
-The original record demonstrates the chosen recovery point, and a new write demonstrates that the target is operational rather than merely readable.
-A production runbook should preserve the same distinction between backup creation, restore execution, and service validation.
+## A successful archive command is the beginning
+
+You verified the archive’s contents, restored into separate storage, and read the original job through the application.
+A new job also checked that the recovered service could continue working.
+
+Explain why the source had no active writer during the copy.
+Which observation would reveal a restore into the wrong volume?
+Which steps would you need to change for a database that must stay online during its backup?

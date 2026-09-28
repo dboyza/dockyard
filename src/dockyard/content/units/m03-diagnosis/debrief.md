@@ -1,2 +1,7 @@
-The network was already capable of carrying the request; the application was addressing the wrong endpoint in its own namespace.
-Record the observations that ruled out a missing bridge and missing DNS alias before you changed configuration.
+## Why was localhost wrong here?
+
+The API made the request, so its localhost address referred to its own container.
+The corrected setting names the peer on their shared network.
+
+Explain which observation ruled out a missing DNS alias and which showed the configuration mistake.
+If name lookup had failed too, what would you inspect before changing the URL again?

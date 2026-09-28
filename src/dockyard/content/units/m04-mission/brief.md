@@ -1,10 +1,12 @@
-## Migration contract
+## Preserve the job during the move
 
-Preserve the original job `recovery-$DOCKYARD_LAB` from the current API container.
-Create `backup.tar` containing its quiescent jobs.db at the archive root.
-Create a labeled named volume `$DOCKYARD_VOLUME`, restore the original data there, and replace the API container using that volume at `/data`.
-Keep the non-root application image, lab label, assigned name, and loopback port.
+Create `backup.tar` in your workspace from the stopped API’s database, with `jobs.db` at the archive root.
+Create the named volume `$DOCKYARD_VOLUME` with the lab ownership label, and restore the original data into it.
 
-The final service must return the original job and accept new writes.
-Leave the usable archive in the workspace.
-Explain the point at which removing the old container became safe and how you verified the replacement used the new storage resource.
+Replace the API using that volume at `/data`.
+Keep the supplied non-root image, assigned container name, lab label, and local port.
+The final service must return `recovery-$DOCKYARD_LAB` and accept new jobs.
+Leave the usable archive in the workspace for the checker.
+
+In your notes, identify when removing the old container became safe and how you confirmed the replacement used the new volume.
+The checker verifies data recovery; review the reasoning yourself.

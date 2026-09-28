@@ -1,23 +1,64 @@
-## Three versions can coexist
+## Why is the old version still running?
 
-Your workspace, an image tag, and a running container can each refer to different application content.
-Editing a file changes only the workspace.
-Building a new image can move a tag to a new image ID.
-An existing container still uses the image selected when that container was created.
-Restarting it does not replace that image with whatever its tag points to now.
+You changed a file, rebuilt the image, and still see the old application response.
+That can be correct: the file, image, and running container are three separate things.
+In this lesson you’ll change one at a time and observe the difference.
 
-## Cache reuse follows inputs
+Your workspace contains the files you are editing.
+An image is the package produced by a build.
+A container uses the image selected when that container was created.
+An **image tag** is a name that can be moved to a newer image; it does not update existing containers.
+Even stopping and starting an existing container keeps its original image.
 
-Docker can reuse a previous build result when the instruction and relevant inputs have not changed.
-A changed COPY input invalidates that step and dependent later steps.
-File modification time alone does not serve as the decisive content change signal for COPY.
-Avoid the habit of disabling the cache whenever results are confusing; first establish which artifact is stale.
+## Watch the release through three changes
 
-A typical dependency-heavy application copies its dependency manifest before rapidly changing source.
-It installs dependencies in that earlier layer so a source-only change can reuse the expensive installation result.
-This small checkpoint has no third-party dependencies, so there is no installation layer to optimize yet.
+Prepare the lab and open its terminal.
+The supplied Dockerfile already works, and a container is serving `dispatch-1`.
+Read `VERSION`, then request the running release:
 
-## Worked example: keep an expensive step reusable
+```sh
+cat VERSION
+curl --fail "http://127.0.0.1:$DOCKYARD_PORT/healthz"
+```
+
+Edit `VERSION` to contain `dispatch-2` and save it.
+Before rebuilding, repeat the request.
+It should still return `dispatch-1`: saving a local file did not change the image or container.
+
+Now build the image using the same command as the previous lesson:
+
+```sh
+docker build --build-arg "BASE_IMAGE=$DOCKYARD_PYTHON_IMAGE" -t "$DOCKYARD_IMAGE" .
+docker image inspect --format '{{.Id}}' "$DOCKYARD_IMAGE"
+docker inspect --format '{{.Image}}' "$DOCKYARD_CONTAINER"
+```
+
+The two image IDs should differ after this change.
+The tag now selects the rebuilt image, but the running container still uses the earlier one.
+Repeat the health request and predict its release before reading the response.
+
+Finally, stop and remove only this lab’s container, then create a new one from the rebuilt image:
+
+```sh
+docker stop "$DOCKYARD_CONTAINER"
+docker rm "$DOCKYARD_CONTAINER"
+docker run -d --name "$DOCKYARD_CONTAINER" \
+  --label "io.dockyard.lab=$DOCKYARD_LAB" \
+  -p "127.0.0.1:$DOCKYARD_PORT:8080" "$DOCKYARD_IMAGE"
+```
+
+The next successful health request should report `dispatch-2`.
+If you send it immediately after startup, give the application a moment and try again.
+We do not mount your workspace here because the point is to test the files packaged in the image.
+
+## What the build cache saves
+
+Docker can reuse a build step when its instruction and relevant inputs have not changed.
+This reuse is the **build cache**.
+When a file used by `COPY` changes, that step and later dependent steps must be rebuilt.
+Changing only the file’s modification time does not count as changing its contents for this purpose.
+
+For an application with third-party Python packages, this order can save work:
 
 ```dockerfile
 COPY requirements.txt ./
@@ -25,25 +66,10 @@ RUN python -m pip install --no-cache-dir -r requirements.txt
 COPY service/ ./service/
 ```
 
-Changing service code invalidates the final copy without necessarily reinstalling the same dependencies.
-Changing requirements invalidates the installation and later layers.
-Do not put private credentials in a build argument or copied file to make that installation work; later supply-chain labs cover secret handling.
+`requirements.txt` lists the packages, and `service/` contains the application source.
+A source-only edit can reuse the earlier package-installation step.
+A changed requirements file causes the installation and later steps to run again.
+This small Dispatch version has no third-party packages yet, so you do not need to add that example to its Dockerfile.
 
-## Observe identities, not just tags
-
-```sh
-docker image inspect --format '{{.Id}}' "$DOCKYARD_IMAGE"
-docker inspect --format '{{.Image}}' "$DOCKYARD_CONTAINER"
-docker history "$DOCKYARD_IMAGE"
-```
-
-The first two observations answer whether the running instance came from the image currently selected by the tag.
-A tag is a pointer; the image ID records a particular local artifact.
-`docker history` helps explain layers but does not substitute for an application response.
-
-## Deliberate failure exercise
-
-After editing VERSION, make a request before rebuilding.
-Then rebuild and make another request before replacing the container.
-Explain why those two requests can still return the old release.
-Only a newly created container from the rebuilt artifact should serve the new version.
+When the wrong release appears, compare the file, image, and container before disabling the cache.
+A perfectly correct cached build cannot update a container that you have not replaced.

@@ -25,8 +25,8 @@ prediction:
   - Yes; all stages are merged automatically.
   - Only when USER is non-root.
   correct: 0
-  explanation: The final stage selects its own base and explicit copied artifacts. A separate build stage can be
-    omitted from the runtime image.
+  explanation: The final stage selects its own base and explicit copied artifacts. A separate build stage
+    can be omitted from the runtime image.
 hints:
 - Use two FROM instructions and name the verification stage.
 - COPY --from selects source-stage files; copy app.py and VERSION instead of the whole /source tree.
@@ -40,7 +40,7 @@ prepare: []
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -52,11 +52,13 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
-    exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -69,11 +71,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -87,11 +90,14 @@ checks:
   json_path:
   - service
   expected: dispatch
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
-    listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -106,10 +112,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -124,10 +133,12 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: self-contained
   title: The application runs without workspace mounts
-  explanation: The application runs without workspace mounts
+  explanation: The image must carry its own application files, so the container should work without mounting
+    your workspace.
   command:
     args:
     - docker
@@ -138,10 +149,13 @@ checks:
   json_path:
   - '0'
   - Mounts
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The container still has a mount from your computer. Run docker inspect --format '{{json
+    .Mounts}}' "$DOCKYARD_CONTAINER" to see it. Make sure the Dockerfile COPYs app.py and VERSION into
+    the image, rebuild, then recreate the container without -v or --mount.
 - id: release
   title: The image serves the expected application release
-  explanation: The image serves the expected application release
+  explanation: The release field in /healthz comes from the VERSION file inside the image, so it shows
+    which build is actually serving requests.
   command:
     args:
     - curl
@@ -155,10 +169,13 @@ checks:
   expected: dispatch-1
   json_path:
   - release
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: 'The API reported a different release than this task expects. Compare the release in curl
+    "http://127.0.0.1:$DOCKYARD_PORT/healthz" with the task. If you changed files, remember that a container
+    keeps running the image it started from: rebuild the image, then replace the container.'
 - id: non-root-process
   title: The application actually runs without root identity
-  explanation: The application actually runs without root identity
+  explanation: Running as an ordinary user limits what a compromised application can change inside the
+    container.
   command:
     args:
     - docker
@@ -170,10 +187,13 @@ checks:
   expectation: equals
   expected: 'True'
   json_path: []
-  diagnostic: Set a non-root USER in the final image stage and recreate the container.
+  diagnostic: The application is running as root (UID 0). Run docker exec "$DOCKYARD_CONTAINER" id to
+    confirm. Add a USER instruction with a non-root number, such as USER 10001:10001, near the end of
+    the final stage, rebuild, and replace the container.
 - id: no-build-tree
   title: The final image excludes the verification source directory
-  explanation: The final image excludes the verification source directory
+  explanation: The final image should contain only what the application needs to run, not the directory
+    used for build-time verification.
   command:
     args:
     - docker
@@ -185,7 +205,9 @@ checks:
   expectation: equals
   expected: 'True'
   json_path: []
-  diagnostic: Copy only runtime files into a separate final stage.
+  diagnostic: The /source directory is still present in the running image. Only the last FROM stage becomes
+    the final image, so make sure that stage copies just the runtime files with COPY --from=<stage-name>
+    and never copies or works in /source.
 capabilities:
 - docker
 - python-image

@@ -19,7 +19,8 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You move the release tag to a new manifest. What happens to a deployment pinned to the old digest?
+  question: You move the release tag to a new manifest. What happens to a deployment pinned to the old
+    digest?
   options:
   - It still selects the old content digest.
   - It silently selects the new tag target.
@@ -29,8 +30,8 @@ prediction:
 hints:
 - The registry endpoint is separate from the API endpoint; use DOCKYARD_REGISTRY_PORT for image distribution.
 - Tag and push the image, then select the RepoDigests entry matching this exact local registry.
-- Run the container from registry/dispatch@sha256:... after pulling that digest, preserving the API label and host-port
-  mapping.
+- Run the container from registry/dispatch@sha256:... after pulling that digest, preserving the API label
+  and host-port mapping.
 sources:
 - https://docs.docker.com/reference/cli/docker/image/push/
 - https://docs.docker.com/reference/cli/docker/image/pull/
@@ -69,7 +70,7 @@ prepare:
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -81,11 +82,13 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
-    exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -98,11 +101,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -116,11 +120,14 @@ checks:
   json_path:
   - service
   expected: dispatch
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
-    listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -135,10 +142,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -153,10 +163,12 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: self-contained
   title: The application runs without workspace mounts
-  explanation: The application runs without workspace mounts
+  explanation: The image must carry its own application files, so the container should work without mounting
+    your workspace.
   command:
     args:
     - docker
@@ -167,10 +179,13 @@ checks:
   json_path:
   - '0'
   - Mounts
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The container still has a mount from your computer. Run docker inspect --format '{{json
+    .Mounts}}' "$DOCKYARD_CONTAINER" to see it. Make sure the Dockerfile COPYs app.py and VERSION into
+    the image, rebuild, then recreate the container without -v or --mount.
 - id: release
   title: The image serves the expected application release
-  explanation: The image serves the expected application release
+  explanation: The release field in /healthz comes from the VERSION file inside the image, so it shows
+    which build is actually serving requests.
   command:
     args:
     - curl
@@ -184,10 +199,13 @@ checks:
   expected: dispatch-1
   json_path:
   - release
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: 'The API reported a different release than this task expects. Compare the release in curl
+    "http://127.0.0.1:$DOCKYARD_PORT/healthz" with the task. If you changed files, remember that a container
+    keeps running the image it started from: rebuild the image, then replace the container.'
 - id: registry-pinned
   title: The application container selects a registry digest
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: An image digest names exact content, so the container keeps running the same bytes even
+    if a tag is later moved.
   command:
     args:
     - python
@@ -199,11 +217,13 @@ checks:
   json_path:
   - pinned
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: The container was started from a tag or a different registry, not a digest in this lab's
+    registry. Check docker inspect --format '{{.Config.Image}}' "$DOCKYARD_CONTAINER". It should look
+    like 127.0.0.1:$DOCKYARD_REGISTRY_PORT/dispatch@sha256:... using the digest printed when you pushed.
 - id: registry-served
   title: The owned registry serves that exact content digest
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: The lab registry must actually hold the digest the container uses, so it could be pulled
+    again.
   command:
     args:
     - python
@@ -215,11 +235,12 @@ checks:
   json_path:
   - served
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: The lab registry does not serve the digest the container is using. Push the image to 127.0.0.1:$DOCKYARD_REGISTRY_PORT/dispatch
+    and use the digest printed by the push.
 - id: registry-private
   title: The registry binds only to the assigned loopback port
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: The practice registry should be reachable only from your own computer, on its assigned
+    port.
   command:
     args:
     - python
@@ -231,11 +252,11 @@ checks:
   json_path:
   - private
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: The registry container is not published only on 127.0.0.1:$DOCKYARD_REGISTRY_PORT. Check
+    docker port on the registry container and recreate it with -p "127.0.0.1:$DOCKYARD_REGISTRY_PORT:5000".
 - id: registry-owned
   title: The registry belongs to this lab
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: The registry must carry this lab's label so Dockyard can recognize and remove it.
   command:
     args:
     - python
@@ -247,8 +268,7 @@ checks:
   json_path:
   - owned
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: The registry container lacks this lab's label. Recreate it with --label "io.dockyard.lab=$DOCKYARD_LAB".
 capabilities:
 - docker
 - python-image

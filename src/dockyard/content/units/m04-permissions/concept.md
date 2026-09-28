@@ -1,31 +1,33 @@
-## A healthy listener can hide a broken workflow
+## The API is alive, but cannot save a job
 
-The supplied `/healthz` endpoint establishes that the HTTP process is alive.
-Creating a job exercises the persistence path.
-A service can answer health requests while a job write fails because its mounted data directory has the wrong owner.
-Probe the operation users actually need before declaring recovery.
+This lab’s API can answer `/healthz`, yet writing a job fails.
+Its database directory is on a named volume whose owner does not match the application’s user.
+You will repair the directory’s ownership while keeping the API running as an ordinary user.
 
-## Numeric identities matter
+## Compare the process with the directory
 
-Linux file access is decided using numeric UIDs, GIDs, permission bits, and applicable access controls.
-A friendly user name is a lookup aid, not the authority itself.
-This image runs its API as UID 10001 and GID 10001.
-A volume directory owned by root with mode 0700 gives that application identity no access.
+First try a real write, then inspect both identities:
 
 ```sh
+curl -H 'Content-Type: application/json' -d '{"title":"permission check"}' \
+  "http://127.0.0.1:$DOCKYARD_PORT/jobs"
 docker exec "$DOCKYARD_CONTAINER" id
 docker exec "$DOCKYARD_CONTAINER" ls -ldn /data
 docker logs --tail 20 "$DOCKYARD_CONTAINER"
 ```
 
-Compare those observations with the actual POST /jobs response.
-The volume mount takes precedence over the image directory, so correct ownership in the Dockerfile does not guarantee a previously created volume has matching ownership.
+`id` shows the process user ID (UID) and group ID (GID).
+Here both are 10001.
+In `ls -ldn`, `-d` inspects the directory itself and `-n` shows numeric owners.
+The prepared directory belongs to root, number 0, and has mode `0700`.
+That mode allows only its owner to read, write, or enter it.
 
-## Worked example: a narrow ownership repair
+Linux uses these numbers to decide access; matching friendly user names is not enough.
+Rebuilding the image does not change the owner already stored on a separate volume.
 
-An operator can attach a short-lived maintenance container to the specific owned volume and change its directory ownership.
-That maintenance action may run as root inside the container, while the ordinary API continues to run without root privileges.
-The scope is the identified lab volume, not a host filesystem tree.
+## Repair the identified directory
+
+Use a temporary maintenance container to change just this volume’s directory owner:
 
 ```sh
 docker run --rm --label "io.dockyard.lab=$DOCKYARD_LAB" \
@@ -33,12 +35,13 @@ docker run --rm --label "io.dockyard.lab=$DOCKYARD_LAB" \
   chown 10001:10001 /data
 ```
 
-Changing a single assigned directory is enough for this fixture.
-Do not apply recursive ownership changes to unrelated paths.
-Making a directory world-writable or switching the long-running API to root would broaden authority instead of aligning ownership with the application.
+This temporary container runs with permission to make the ownership change.
+`--rm` removes it when the command finishes; the named volume remains.
+The ordinary API continues to run as user 10001.
 
-## Lifecycle reminder
+Repeat the directory inspection and job request.
+The owner should now match the API, and the write should succeed.
+Making the directory writable by everyone with `chmod 777`, or running the API as root, would avoid the mismatch by giving broader access than this job needs.
 
-A named volume survives normal container removal.
-That is why it can retain an ownership error across repeated rebuilds and restarts.
-Diagnose and repair the stored resource that actually carries the error.
+A successful health request alone cannot demonstrate this repair.
+Always repeat the operation that was failing for the user.

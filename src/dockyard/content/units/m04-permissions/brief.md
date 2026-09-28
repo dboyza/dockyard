@@ -1,9 +1,8 @@
-## Restore the write path
+## Restore the ability to save jobs
 
-Prepare starts the non-root API with a labeled volume whose directory has the wrong owner.
-Observe that `/healthz` works while POST /jobs fails.
-Compare the API identity with `/data` ownership, then repair the assigned volume's access.
+Compare the API’s user and group numbers with the owner and permissions of `/data`.
+Repair ownership of the assigned volume so user 10001 can write there.
+Keep the API running without root privileges and preserve the existing volume.
 
-Keep the API non-root and do not grant world-write access.
-Keep the same named volume, and prove new jobs can be written and independently read.
-No application source change is needed.
+Check a new job submission and read it back through `/jobs`.
+Explain why another image build would not repair the existing volume’s owner.

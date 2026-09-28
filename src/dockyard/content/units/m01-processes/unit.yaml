@@ -25,13 +25,13 @@ prediction:
   - Docker deletes the image along with the process.
   - The image becomes the stopped container's filesystem.
   correct: 0
-  explanation: An image is a reusable template. Stopping a container stops its processes; it does not remove the
-    image. A container also has its own writable layer, which is distinct from the image.
+  explanation: An image is a reusable template. Stopping a container stops its processes; it does not
+    remove the image. A container also has its own writable layer, which is distinct from the image.
 hints:
-- The API source is already in app.py. Use a Python image, mount this workspace at /app, and make python app.py
-  the container's main process.
-- The process listens on port 8080 inside the container. Publish the assigned DOCKYARD_PORT on 127.0.0.1 to container
-  port 8080, and use DOCKYARD_CONTAINER for the name.
+- The API source is already in app.py. Use a Python image, mount this workspace at /app, and make python
+  app.py the container's main process.
+- The process listens on port 8080 inside the container. Publish the assigned DOCKYARD_PORT on 127.0.0.1
+  to container port 8080, and use DOCKYARD_CONTAINER for the name.
 - A complete command is in the worked example. Check that the workspace mount uses "$DOCKYARD_WORKSPACE:/app:ro",
   the working directory is /app, and the final arguments are python app.py.
 sources:
@@ -46,7 +46,7 @@ capabilities:
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -58,11 +58,13 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
-    exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -75,11 +77,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -93,11 +96,14 @@ checks:
   json_path:
   - service
   expected: dispatch
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
-    listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -112,10 +118,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -130,9 +139,8 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the port mapping with docker port "$DOCKYARD_CONTAINER". It should start with 127.0.0.1,
-    not 0.0.0.0. If the binding is wrong, recreate only this lab's container using
-    -p "127.0.0.1:$DOCKYARD_PORT:8080".
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 checkpoint: dispatch-process-v1
 alternatives:
 - docker run or docker create followed by docker start are both accepted.

@@ -1,40 +1,66 @@
-## A file named backup is not evidence of recovery
+## Restore a backup into separate storage
 
-A usable backup must contain the intended state, remain readable, and restore into an environment that can serve that state.
-This exercise keeps a known source volume and an independent target volume so you can establish those properties without overwriting the source.
-The source contains an original job with a lab-specific identity.
-The target begins empty.
+A backup is useful only if you can recover the intended data from it.
+This lab gives you two named volumes: a source containing a known job and an empty target used by the API.
+You will copy the source into an archive, restore into the target, and find the original job through the API.
 
-## Quiesce or use an application-aware backup
+The source database has already been committed and closed, with no process writing to it.
+That matters: copying a database file while it changes can produce an inconsistent backup.
+For this small SQLite database, stopping writes before copying is sufficient.
+Later, PostgreSQL uses its own backup tool instead of copying its live files.
 
-Copying files while a database is writing can capture an inconsistent point in time.
-A production database has backup mechanisms for consistency, including its transaction logs and recovery requirements.
-For this small SQLite fixture, the source database was created, committed, and closed before the lab begins.
-No writer is attached to that source volume, so its data is quiescent.
-This lab does not claim that a generic tar of a running PostgreSQL data directory is a valid database backup.
-
-## Worked example: archive a stopped source
+## Create and inspect the archive
 
 ```sh
 docker run --rm --label "io.dockyard.lab=$DOCKYARD_LAB" \
-  -v "$DOCKYARD_VOLUME-source:/data:ro" -v "$DOCKYARD_WORKSPACE:/backup" \
-  "$DOCKYARD_PYTHON_IMAGE" tar -cf /backup/backup.tar -C /data jobs.db
+  -v "$DOCKYARD_VOLUME-source:/data:ro" \
+  -v "$DOCKYARD_WORKSPACE:/backup" "$DOCKYARD_PYTHON_IMAGE" \
+  tar -cf /backup/backup.tar -C /data jobs.db
+tar -tf backup.tar
 ```
 
-The source mount is read-only, the output stays in this lab's workspace, and the archive contains the database file rather than an absolute host path.
-Inspect an archive's member names before restoring it.
-Treat archives from an untrusted source as untrusted input; do not extract them over arbitrary host directories.
+`tar` bundles files into an archive.
+Here `-c` creates it, `-f` names it, and `-C /data` changes the directory before adding `jobs.db`.
+The result contains `jobs.db` at its root, rather than a full filesystem path.
+`-t` lists the contents without extracting them.
+The source mount is read-only; the output is written into your workspace through the second mount.
 
-## Restore into a separate target
+## Restore and test the target
 
-The target is `$DOCKYARD_VOLUME`, distinct from the `-source` volume.
-Restore jobs.db there and give the non-root API access to it.
-Then request `/jobs` from the target API and find the original job.
-The checker also reads the target with an independent read-only container and checks that backup.tar itself contains a usable database with that job.
+Stop the target API so it cannot write while you replace its database.
+Extract into the assigned target volume and set the restored file’s owner:
 
-## Recovery point and recovery time
+```sh
+docker stop "$DOCKYARD_CONTAINER"
+docker run --rm --label "io.dockyard.lab=$DOCKYARD_LAB" \
+  -v "$DOCKYARD_VOLUME:/data" \
+  -v "$DOCKYARD_WORKSPACE:/backup:ro" "$DOCKYARD_PYTHON_IMAGE" \
+  sh -c 'tar -xf /backup/backup.tar -C /data && chown 10001:10001 /data /data/jobs.db'
+docker start "$DOCKYARD_CONTAINER"
+```
 
-The recovery point describes how much recent data may be missing relative to the incident.
-Recovery time describes how long it takes to restore useful service.
-Neither is established merely by a successful archive command.
-In your notes, identify the recovery point of this deliberately quiescent fixture and which operations consumed restoration time.
+`-x` extracts the archive.
+The command changes ownership of only the target directory and restored database.
+Once the API has started, request `/jobs` and look for `recovery-$DOCKYARD_LAB`.
+Submit another job to check that the restored database is writable too.
+Keep the source volume intact so a failed restoration does not destroy the original.
+
+## If the data is inside a container
+
+The next mission starts with the database in a container’s writable layer instead of a separate source volume.
+After stopping that API, you can copy the closed file out before removing the container:
+
+```sh
+docker cp "$DOCKYARD_CONTAINER:/data/jobs.db" ./jobs.db
+```
+
+`docker cp` works with stopped containers.
+It copies the file, not the whole application; you still need to archive it and restore it into the new volume.
+Keep the original container until you have inspected your backup.
+
+## Measure what you recovered
+
+The **recovery point** is the time represented by the recovered data.
+Changes made after that point will be missing.
+The **recovery time** is how long it takes to make useful service available again.
+For this exercise, identify both from your actual steps rather than from the archive’s filename.

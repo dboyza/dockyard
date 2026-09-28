@@ -1,36 +1,58 @@
-## A request crosses an explicit mapping
+## Follow a request from your computer to Dispatch
 
-The address your browser uses belongs to the host computer.
-The address the application listens on belongs to its container's network namespace.
-A mapping such as `127.0.0.1:49152:8080` connects the host computer's loopback port 49152 to container port 8080.
-These port numbers may differ, and neither number changes the application's configured listener.
+Dispatch can be running correctly while Docker forwards requests to the wrong port.
+In this lesson you’ll inspect that mismatch and repair only the mapping.
+The supplied application listens on port 8080 inside its container.
 
-Docker Desktop carries the forwarded traffic through its Linux environment; native Linux Docker Engine publishes it on its host.
-On this host computer, directly using a container's private bridge IP from the host is not the intended portable access path.
-Use the published host endpoint for host-to-container requests.
+Read a mapping such as `127.0.0.1:49152:8080` from left to right:
 
-## Worked example: read the mapping left to right
+- `127.0.0.1` is the address on your computer where Docker accepts requests.
+- `49152` is the port on your computer.
+- `8080` is the destination port inside the container.
+
+The mapping forwards traffic; it does not change the port the application listens on.
+For example, forwarding to 8081 would be wrong for this application even if the host port were correct.
+
+## Inspect before replacing
+
+Prepare the lab, open its terminal, and run:
 
 ```sh
+docker ps --filter "name=$DOCKYARD_CONTAINER"
+docker logs --tail 20 "$DOCKYARD_CONTAINER"
 docker port "$DOCKYARD_CONTAINER"
-docker inspect --format '{{json .NetworkSettings.Ports}}' "$DOCKYARD_CONTAINER"
+curl --max-time 3 "http://127.0.0.1:$DOCKYARD_PORT/healthz"
 ```
 
-For an application listening on container port 9000, `-p 127.0.0.1:49152:9000` would create the matching host route.
-Publishing 49152 to container port 9001 would not make the application move to 9001.
-It would forward requests to a port where that application is not listening.
+The logs should say Dispatch listens on `0.0.0.0:8080`.
+Compare that with the container port shown by `docker port`.
+A request can fail here even though the container is running, because the forwarding rule sends it somewhere the app is not listening.
+`--max-time 3` stops curl waiting after three seconds.
 
-## Two different loopbacks
+You cannot change an existing container’s published port mapping in place.
+After recording the wrong mapping, stop and remove only the assigned container, then create its replacement:
 
-`127.0.0.1` in your terminal refers to the host environment running that terminal.
-On Windows, the lab terminal runs inside WSL 2, with Windows browser access handled by localhost forwarding.
-Inside a container, that address refers to the container itself.
-A server bound only to container loopback cannot normally receive packets forwarded to its container interface.
-The supplied API listens on `0.0.0.0:8080` inside its container, accepting traffic to any of that namespace's interfaces.
-The host side is deliberately restricted to `127.0.0.1` so the practice endpoint is not published to other machines.
+```sh
+docker stop "$DOCKYARD_CONTAINER"
+docker rm "$DOCKYARD_CONTAINER"
+docker run -d --name "$DOCKYARD_CONTAINER" \
+  --label "io.dockyard.lab=$DOCKYARD_LAB" \
+  -p "127.0.0.1:$DOCKYARD_PORT:8080" "$DOCKYARD_IMAGE"
+```
 
-## Diagnose in order
+The image is already built, so you do not need to rebuild or mount the application source.
+Repeat the port inspection and health request after the app starts.
 
-Establish whether the process is running, what address and port it reports, how Docker maps the host endpoint, and whether a real request succeeds.
-A failed request alone does not identify which of these layers is wrong.
-Changing every port at once removes useful evidence.
+## Localhost depends on where you stand
+
+`127.0.0.1` refers to the environment making the request.
+In your lab terminal it refers to the host environment; on Windows, that terminal runs in WSL.
+Inside a container, it refers to that container’s own network environment, not your computer or a neighboring container.
+
+The server listens on `0.0.0.0` inside the container so it can receive forwarded traffic through its container interface.
+On the host side, we deliberately publish only to `127.0.0.1` for local practice.
+Those addresses serve different purposes.
+
+Use the published host endpoint for requests from your computer.
+A container’s private IP is not the portable host-access method across Docker Desktop and native Linux.
+The next lesson uses a Docker network for requests between containers.

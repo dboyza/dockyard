@@ -1,8 +1,9 @@
-## Make startup assumptions explicit
+## Make the startup wait meaningful
 
-Prepare starts a stack that may work after initialization but has no health checks and only service_started dependency conditions.
-Add PostgreSQL and Redis health checks, an API `/readyz` health check, and service_healthy guards for both API and worker dependencies.
+Add working health checks for PostgreSQL, Redis, and the API’s `/readyz` endpoint.
+Make both API and worker depend on healthy database and queue services.
+Validate the Compose file, apply it, and wait with a 90-second deadline.
 
-Apply the model and use a bounded `docker compose up --wait` to establish readiness.
-Verify all three health checks are healthy and a new job is processed and stored.
-Do not replace the real health checks with unconditional success commands.
+Check that the three health checks are healthy and a newly submitted job finishes.
+An unconditional success command does not demonstrate readiness.
+Explain why the API’s `/healthz` is not enough for this task.

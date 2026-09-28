@@ -36,7 +36,7 @@ spec:
           value: ${DOCKYARD_DB_PASSWORD}
         - name: REDIS_URL
           value: redis://queue:6379/0
-        volumeMounts: &id001
+        volumeMounts:
         - name: shared
           mountPath: /shared
       - name: observer
@@ -53,7 +53,9 @@ spec:
         - sh
         - -c
         - while true; do cat /shared/worker.conf; sleep 2; done
-        volumeMounts: *id001
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
       volumes:
       - name: shared
         emptyDir: {}
@@ -74,6 +76,8 @@ spec:
         - sh
         - -c
         - printf "queue=redis://queue:6379/0\n" > /shared/worker.conf
-        volumeMounts: *id001
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
         securityContext:
           runAsUser: 0

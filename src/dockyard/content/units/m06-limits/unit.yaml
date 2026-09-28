@@ -19,19 +19,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A non-root write fails with permission denied. Does that alone prove the root filesystem is read-only?
+  question: A non-root write fails with permission denied. Does that alone prove the root filesystem is
+    read-only?
   options:
   - No; ordinary file permissions can reject a write on a writable filesystem.
   - Yes; every permission failure means a read-only mount.
   - Only if a memory limit exists.
   correct: 0
-  explanation: Read-only filesystem enforcement and user permission checks are separate boundaries, so they need
-    distinct evidence.
+  explanation: Read-only filesystem enforcement and user permission checks are separate boundaries, so
+    they need distinct evidence.
 hints:
 - Inspect the current HostConfig and effective process UID before replacing the container.
 - Use --read-only, --cap-drop ALL, and --security-opt no-new-privileges along with bounded resource flags.
-- The supplied API needs no writable source path. Recreate it with --memory 128m --cpus 0.5 --pids-limit 64 and
-  verify a real health request.
+- The supplied API needs no writable source path. Recreate it with --memory 128m --cpus 0.5 --pids-limit
+  64 and verify a real health request.
 sources:
 - https://docs.docker.com/engine/containers/resource_constraints/
 - https://docs.docker.com/engine/containers/run/
@@ -61,7 +62,7 @@ prepare:
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -73,11 +74,13 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
-    exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -90,11 +93,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -108,11 +112,14 @@ checks:
   json_path:
   - service
   expected: dispatch
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
-    listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -127,10 +134,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -145,10 +155,12 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: self-contained
   title: The application runs without workspace mounts
-  explanation: The application runs without workspace mounts
+  explanation: The image must carry its own application files, so the container should work without mounting
+    your workspace.
   command:
     args:
     - docker
@@ -159,10 +171,13 @@ checks:
   json_path:
   - '0'
   - Mounts
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The container still has a mount from your computer. Run docker inspect --format '{{json
+    .Mounts}}' "$DOCKYARD_CONTAINER" to see it. Make sure the Dockerfile COPYs app.py and VERSION into
+    the image, rebuild, then recreate the container without -v or --mount.
 - id: release
   title: The image serves the expected application release
-  explanation: The image serves the expected application release
+  explanation: The release field in /healthz comes from the VERSION file inside the image, so it shows
+    which build is actually serving requests.
   command:
     args:
     - curl
@@ -176,10 +191,12 @@ checks:
   expected: dispatch-1
   json_path:
   - release
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: 'The API reported a different release than this task expects. Compare the release in curl
+    "http://127.0.0.1:$DOCKYARD_PORT/healthz" with the task. If you changed files, remember that a container
+    keeps running the image it started from: rebuild the image, then replace the container.'
 - id: hardening-nonroot
   title: The API process is non-root
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: An ordinary user can change far less inside the container than root can.
   command:
     args:
     - python
@@ -191,11 +208,12 @@ checks:
   json_path:
   - nonroot
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: The API is running as root. Run docker exec "$DOCKYARD_CONTAINER" id to confirm, then set
+    a non-root user with the image's USER instruction or --user.
 - id: hardening-readonly
   title: The root filesystem actually rejects a root write
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: A read-only root filesystem stops the process altering its own program files; only chosen
+    paths stay writable.
   command:
     args:
     - python
@@ -207,11 +225,12 @@ checks:
   json_path:
   - readonly
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: Dockyard could write to the container's root filesystem. Recreate the container with --read-only,
+    and add a writable mount only where the application genuinely needs one.
 - id: hardening-caps
   title: All ambient container capabilities are dropped
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: Linux capabilities are individual root powers; Dispatch needs none of them, so drop them
+    all.
   command:
     args:
     - python
@@ -223,11 +242,12 @@ checks:
   json_path:
   - caps
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: The container keeps some Linux capabilities or runs privileged. Recreate it with --cap-drop
+    ALL and without --privileged.
 - id: hardening-no-escalation
   title: The no-new-privileges control is configured
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: no-new-privileges stops a process gaining extra privileges later, for example through setuid
+    programs.
   command:
     args:
     - python
@@ -239,11 +259,10 @@ checks:
   json_path:
   - no_escalation
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: The no-new-privileges option is not set. Recreate the container with --security-opt no-new-privileges.
 - id: hardening-memory
   title: A 32-256 MiB memory limit is enforced in cgroups
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: A memory limit stops one container using all of the computer's memory.
   command:
     args:
     - python
@@ -255,11 +274,11 @@ checks:
   json_path:
   - memory
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: No memory limit between 32 and 256 MiB is in force. Recreate the container with a setting
+    such as --memory 128m, then confirm it in docker stats.
 - id: hardening-cpu
   title: A positive CPU quota no greater than one CPU is enforced
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: A CPU limit stops one busy container slowing everything else on the computer.
   command:
     args:
     - python
@@ -271,11 +290,11 @@ checks:
   json_path:
   - cpu
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: No CPU limit of at most one CPU is in force. Recreate the container with a setting such
+    as --cpus 0.5.
 - id: hardening-pids
   title: A 16-256 process limit is enforced
-  explanation: Observe the selected artifact or enforced runtime behavior in the actual lab.
+  explanation: A process limit stops runaway process creation from exhausting the host.
   command:
     args:
     - python
@@ -287,8 +306,8 @@ checks:
   json_path:
   - pids
   expected: 'true'
-  diagnostic: Compare the actual selected image and running container configuration with the release contract, then
-    rebuild or recreate only the assigned resources.
+  diagnostic: No process limit between 16 and 256 is in force. Recreate the container with a setting such
+    as --pids-limit 64.
 capabilities:
 - docker
 - python-image

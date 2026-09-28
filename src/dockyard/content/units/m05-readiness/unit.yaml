@@ -25,13 +25,13 @@ prediction:
   - Every application query will succeed.
   - The dependency will never need a retry.
   correct: 0
-  explanation: A running process can still be initializing. service_healthy uses its declared health check as a
-    stronger startup gate.
+  explanation: A running process can still be initializing. service_healthy uses its declared health check
+    as a stronger startup gate.
 hints:
 - Inspect State.Health and the resolved depends_on conditions separately.
 - Use pg_isready for PostgreSQL, redis-cli ping for Redis, and the supplied /readyz for the API.
-- Set both db and queue conditions to service_healthy for api and worker, recreate with compose up, and wait for
-  observed healthy states.
+- Set both db and queue conditions to service_healthy for api and worker, recreate with compose up, and
+  wait for observed healthy states.
 sources:
 - https://docs.docker.com/compose/how-tos/startup-order/
 starter: {}
@@ -47,7 +47,7 @@ prepare:
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -59,11 +59,13 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
-    exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -76,11 +78,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -94,11 +97,14 @@ checks:
   json_path:
   - service
   expected: dispatch
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
-    listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -113,10 +119,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -131,10 +140,12 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: compose-owned
   title: Every observed service belongs to this lab
-  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  explanation: Every Dispatch container must carry this lab's label so Dockyard can recognize and clean
+    them up.
   command:
     args:
     - python
@@ -146,11 +157,13 @@ checks:
   json_path:
   - owned
   expected: 'true'
-  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
-    alone does not prove background processing.
+  diagnostic: 'At least one service container is missing the io.dockyard.lab label. Run docker compose
+    ps, then docker inspect a container to check its labels. Add labels: io.dockyard.lab: ${DOCKYARD_LAB}
+    under every service, then run docker compose up -d so Compose recreates them.'
 - id: compose-ready
   title: The API can reach PostgreSQL and Redis
-  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  explanation: The API's /readyz endpoint checks its own connections to PostgreSQL and Redis, so this
+    confirms the API can use both.
   command:
     args:
     - python
@@ -162,11 +175,13 @@ checks:
   json_path:
   - ready
   expected: 'true'
-  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
-    alone does not prove background processing.
+  diagnostic: The API reports it cannot use PostgreSQL or Redis. Request http://127.0.0.1:$DOCKYARD_PORT/readyz
+    to see which one, then read docker compose logs api. Check the API's DB_HOST, DB_PASSWORD, and REDIS_URL
+    settings against the service names db and queue, and confirm all services share one network.
 - id: compose-private
   title: Only the API publishes a host endpoint
-  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  explanation: Only the API should be reachable from your computer; the database, queue, and workers talk
+    over the internal network.
   command:
     args:
     - python
@@ -178,11 +193,12 @@ checks:
   json_path:
   - private
   expected: 'true'
-  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
-    alone does not prove background processing.
+  diagnostic: 'A database, queue, or worker container publishes a host port. Run docker compose ps and
+    look at the PORTS column. Remove the ports: section from every service except api.'
 - id: compose-persistent
   title: PostgreSQL uses the assigned owned volume
-  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  explanation: PostgreSQL's data must live in the named volume assigned to this lab so it survives container
+    replacement.
   command:
     args:
     - python
@@ -194,11 +210,13 @@ checks:
   json_path:
   - persistent
   expected: 'true'
-  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
-    alone does not prove background processing.
+  diagnostic: 'PostgreSQL is not using the assigned volume at /var/lib/postgresql/data, or that volume
+    lacks the lab label. Check the top-level volumes: entry has name: ${DOCKYARD_VOLUME} and labels, and
+    that the db service mounts it at /var/lib/postgresql/data.'
 - id: compose-processed
   title: A real worker completes a newly submitted job
-  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  explanation: Dockyard submits a fresh job and waits for a running worker to finish it. That is the result
+    a Dispatch user actually cares about.
   command:
     args:
     - python
@@ -210,11 +228,13 @@ checks:
   json_path:
   - processed
   expected: 'true'
-  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
-    alone does not prove background processing.
+  diagnostic: 'A new job was not completed by a worker within 15 seconds. Run docker compose ps worker
+    to check a worker is running, then docker compose logs worker for connection errors. The worker needs
+    the same database and Redis settings as the API, and command: [python, worker.py].'
 - id: compose-durable
   title: PostgreSQL independently contains the completed result
-  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  explanation: Dockyard reads the completed result directly from PostgreSQL, confirming the worker saved
+    it rather than only reporting it.
   command:
     args:
     - python
@@ -226,11 +246,12 @@ checks:
   json_path:
   - durable
   expected: 'true'
-  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
-    alone does not prove background processing.
+  diagnostic: The completed result was not found in PostgreSQL's dispatch database. Check docker compose
+    logs worker and db for errors, and make sure the API and workers use DB_NAME dispatch.
 - id: compose-healthy
-  title: The API and both dependencies have healthy live checks
-  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  title: The API, database, and queue report healthy
+  explanation: Health checks let Docker test whether each service can do its job, not just whether its
+    process is running.
   command:
     args:
     - python
@@ -242,11 +263,14 @@ checks:
   json_path:
   - healthy
   expected: 'true'
-  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
-    alone does not prove background processing.
+  diagnostic: 'The API, db, or queue container has no health check, or it is not currently healthy. Run
+    docker compose ps and look for (healthy) in the STATUS column. For a missing one, add a healthcheck:
+    to that service; for an unhealthy one, run docker inspect --format ''{{json .State.Health}}'' on the
+    container to read its recent check output.'
 - id: compose-guarded
-  title: API and worker wait for dependency health
-  explanation: Correlate actual service identities with a fresh submitted job and a direct database read.
+  title: The API and workers wait for a healthy database and queue
+  explanation: 'depends_on with condition: service_healthy stops the API and workers starting before PostgreSQL
+    and Redis can accept work.'
   command:
     args:
     - python
@@ -258,8 +282,9 @@ checks:
   json_path:
   - guarded
   expected: 'true'
-  diagnostic: Use docker compose ps, logs, and exec to follow the API, dependency, and worker path. A healthy API
-    alone does not prove background processing.
+  diagnostic: 'The api or worker service does not wait for both db and queue to be healthy. In compose.yaml,
+    give each of them depends_on: entries for db and queue with condition: service_healthy. Run docker
+    compose config --quiet to check the file is still valid.'
 capabilities:
 - docker
 - compose

@@ -1,12 +1,11 @@
-## One application, several failure boundaries
+## Bring the application up as a complete project
 
-Dispatch now depends on network discovery, database access, queue availability, and worker execution.
-This mission asks you to assemble those boundaries into a reviewable Compose release.
-The supplied source code and Dockerfile are complete; the Compose model is your infrastructure deliverable.
+You have practised each part separately: describing services, waiting for dependencies, and running multiple workers.
+Now build a Compose file that combines them without a prepared working stack.
+The supplied Python application and Dockerfile are complete.
 
-A passing liveness request is only one observation.
-The assessment submits fresh work, checks its computed result and worker identity, and reads the completed record directly from PostgreSQL.
-It also checks owned persistent storage and the absence of host-published dependency ports.
+Plan the path of a job: the API accepts it, PostgreSQL stores it, Redis signals work, and a worker saves its completed result.
+Keep the database and queue reachable inside the application network without publishing them to your computer.
 
-Try the contract independently, using the previous concepts as references rather than copying a solution first.
-The resulting Compose model is the foundation for the shipping and recovery capstone.
+Use the checks you have learned at each point in that path.
+A list of running containers is a starting observation; the completed job is the result the user needs.

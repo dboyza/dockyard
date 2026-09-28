@@ -25,7 +25,8 @@ prediction:
   - The detached API process.
   - The Docker daemon.
   correct: 0
-  explanation: Control-C targets the foreground log-viewing command. The detached application is controlled separately.
+  explanation: Control-C targets the foreground log-viewing command. The detached application is controlled
+    separately.
 hints:
 - First make a real HTTP request while the process is running.
 - Use docker logs to find the request, then docker stop to request graceful shutdown.
@@ -55,7 +56,7 @@ prepare:
 checks:
 - id: stopped
   title: The process has stopped
-  explanation: The process has stopped
+  explanation: This lesson ends with a deliberate stop, so the container should no longer be running.
   command:
     args:
     - docker
@@ -67,10 +68,12 @@ checks:
   - '0'
   - State
   - Running
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The container is still running. Stop it with docker stop "$DOCKYARD_CONTAINER" and confirm
+    with docker ps -a that its status begins with Exited.
 - id: clean-exit
   title: Shutdown completed successfully
-  explanation: Shutdown completed successfully
+  explanation: Exit code 0 means the application received the stop signal and shut down cleanly rather
+    than being killed or crashing.
   command:
     args:
     - docker
@@ -82,10 +85,13 @@ checks:
   - '0'
   - State
   - ExitCode
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The container stopped with a nonzero exit code. Run docker ps -a to see the code and docker
+    logs to see the last messages. Code 137 usually means the process was killed (for example with docker
+    kill) instead of stopped. Start the container, make a request, and stop it with docker stop.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -98,11 +104,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: request-log
   title: A successful HTTP request was logged
-  explanation: A successful HTTP request was logged
+  explanation: The container's log should show the request you made, which is how you trace activity after
+    the fact.
   command:
     args:
     - docker
@@ -112,7 +119,9 @@ checks:
   expectation: contains
   expected: GET /healthz HTTP/1.1" 200
   json_path: []
-  diagnostic: Make a successful health request before stopping the process; preserve the container logs.
+  diagnostic: No successful request appears in this container's logs. Start the container, request /healthz
+    with curl, and check docker logs for a line ending in 200 before you stop it. Removing and recreating
+    the container discards its old logs.
 capabilities:
 - docker
 - python-image

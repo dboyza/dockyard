@@ -1,10 +1,12 @@
-## A small service boundary
+## Make the service relationship work from scratch
 
-Dispatch now has an internal HTTP dependency.
-Your job is to provide a stable communication path and a single host-facing API endpoint.
-The supplied image checkpoint can run in both roles, and the dependency response includes the identity of the process that answered.
-That lets you prove the API reached its actual peer rather than merely receiving an unrelated success response.
+You now know how to build an image, publish an API port, connect containers, and diagnose a dependency address.
+This mission starts with source files rather than a prepared connection.
+Use those skills to create one public entry point on your computer and one internal service.
 
-This independent mission begins with source files only.
-Use the earlier build, process, and network skills to create the required topology.
-Keep the dependency off host-published ports and use its network alias rather than an observed IP address.
+The supplied image can run in either role.
+The dependency’s health response includes its container identity, so you can check that the API really called that peer.
+Keep the services connected by a name, not by an IP address observed during setup.
+
+Plan the request path before running commands: your terminal to the API’s published port, then the API to the dependency over the shared bridge.
+Check each part separately if the complete request fails.

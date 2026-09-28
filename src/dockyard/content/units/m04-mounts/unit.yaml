@@ -19,7 +19,8 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You remove a container whose database is in a bind-mounted host directory. What happens to the directory?
+  question: You remove a container whose database is in a bind-mounted host directory. What happens to
+    the directory?
   options:
   - It remains unless separately deleted.
   - Docker always deletes it with the container.
@@ -29,8 +30,8 @@ prediction:
 hints:
 - The supplied application writes /data/jobs.db. Mount /data, not /app.
 - Create the assigned host storage directory and use your host UID/GID for this bind exercise.
-- Use --mount "type=bind,source=$DOCKYARD_STORAGE,target=/data" and --user "$(id -u):$(id -g)" when running the
-  assigned image.
+- Use --mount "type=bind,source=$DOCKYARD_STORAGE,target=/data" and --user "$(id -u):$(id -g)" when running
+  the assigned image.
 sources:
 - https://docs.docker.com/engine/storage/bind-mounts/
 - https://docs.docker.com/engine/storage/volumes/
@@ -40,7 +41,7 @@ prepare: []
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -52,11 +53,13 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
-    exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -69,11 +72,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -87,11 +91,14 @@ checks:
   json_path:
   - service
   expected: dispatch
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
-    listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -106,10 +113,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -124,10 +134,12 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: storage-mount
   title: The expected writable storage is mounted at /data
-  explanation: Inspect the mount and perform real application and independent database reads.
+  explanation: Dispatch keeps its database in /data, so that path must be backed by the storage this task
+    asks for, and it must be writable.
   command:
     args:
     - python
@@ -139,11 +151,13 @@ checks:
   json_path:
   - mount
   expected: 'true'
-  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
-    original job and a valid backup.tar.
+  diagnostic: /data is not mounted from the expected storage, or it is read-only. Run docker inspect --format
+    '{{json .Mounts}}' "$DOCKYARD_CONTAINER" and check the Type, Source or Name, Destination, and RW fields
+    against the task. Mounts are fixed at creation, so replace the container to change them.
 - id: storage-roundtrip
   title: The API can create and read a new job
-  explanation: Inspect the mount and perform real application and independent database reads.
+  explanation: Dockyard submits a new job through the API and reads it back to confirm storage really
+    works.
   command:
     args:
     - python
@@ -155,11 +169,14 @@ checks:
   json_path:
   - roundtrip
   expected: 'true'
-  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
-    original job and a valid backup.tar.
+  diagnostic: The API could not save and then list a new job. Submit one yourself with curl and read the
+    error message, then check docker logs. "unable to open database file" usually means the process user
+    cannot write to /data; compare docker exec "$DOCKYARD_CONTAINER" id with docker exec "$DOCKYARD_CONTAINER"
+    ls -ldn /data.
 - id: storage-durable
   title: A separate read-only container observes the committed job
-  explanation: Inspect the mount and perform real application and independent database reads.
+  explanation: A separate read-only container opens the same storage and finds the new job, which shows
+    the data lives outside the API container.
   command:
     args:
     - python
@@ -171,8 +188,9 @@ checks:
   json_path:
   - durable
   expected: 'true'
-  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
-    original job and a valid backup.tar.
+  diagnostic: The new job was not found when Dockyard read the storage from a separate container. This
+    usually means the API is writing to a different location than the mounted storage. Check that the
+    mount target is exactly /data.
 capabilities:
 - docker
 - python-image

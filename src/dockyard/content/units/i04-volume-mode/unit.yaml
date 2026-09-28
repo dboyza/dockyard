@@ -25,14 +25,13 @@ prediction:
   - The most recent command exited zero.
   - The container list contains a running process.
   correct: 0
-  explanation: A command result or process state alone does not establish the requested application
-    outcome.
+  explanation: A command result or process state alone does not establish the requested application outcome.
 hints:
-- "Compare process health with an actual POST /jobs and inspect the database file\u2019s mode."
-- Directory ownership is already correct; the existing jobs.db file is owned by UID 10001 but lacks
-  its write bit.
-- Restore owner read/write permission on that exact file, keep the application non-root, and verify
-  both the original record and a fresh persisted write.
+- Compare process health with an actual POST /jobs and inspect the database file’s mode.
+- Directory ownership is already correct; the existing jobs.db file is owned by UID 10001 but lacks its
+  write bit.
+- Restore owner read/write permission on that exact file, keep the application non-root, and verify both
+  the original record and a fresh persisted write.
 sources:
 - https://docs.docker.com/engine/storage/bind-mounts/
 - https://docs.docker.com/engine/storage/volumes/
@@ -106,7 +105,7 @@ prepare:
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -123,12 +122,14 @@ checks:
   - '0'
   - State
   - Running
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when
-    its main process exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
   points: 1
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -146,13 +147,13 @@ checks:
   - Config
   - Labels
   - io.dockyard.lab
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do
-    not label an unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
   points: 1
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published
-    port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -171,12 +172,15 @@ checks:
   output: stdout
   json_path:
   - service
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside
-    the container listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
   points: 1
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -196,11 +200,14 @@ checks:
   - 8080/tcp
   - '0'
   - HostPort
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
   points: 1
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -220,11 +227,12 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
   points: 1
 - id: incident-mount
   title: The original owned named volume is mounted read/write
-  explanation: Observe the actual storage and process boundary after the incident.
+  explanation: The API must still use the original named volume, mounted writable at /data.
   command:
     args:
     - python
@@ -236,11 +244,11 @@ checks:
   json_path:
   - mount
   expected: 'true'
-  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
-    behavior.
+  diagnostic: /data is not the original volume, or it is read-only. Inspect the container's Mounts. Replacing
+    the volume would lose the original job, so keep the existing one.
 - id: incident-roundtrip
   title: A non-root API creates and reads a fresh job
-  explanation: Observe the actual storage and process boundary after the incident.
+  explanation: A new job must save and read back through the API while it runs as an ordinary user.
   command:
     args:
     - python
@@ -252,11 +260,11 @@ checks:
   json_path:
   - roundtrip
   expected: 'true'
-  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
-    behavior.
+  diagnostic: The API still cannot save a new job. Submit one with curl, read the error, and compare the
+    process identity with the owner and mode of /data and jobs.db.
 - id: incident-durable
   title: A separate read-only volume reader finds the same new job
-  explanation: Observe the actual storage and process boundary after the incident.
+  explanation: A separate read-only reader must find the new job in the volume itself.
   command:
     args:
     - python
@@ -268,11 +276,11 @@ checks:
   json_path:
   - durable
   expected: 'true'
-  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
-    behavior.
+  diagnostic: The new job did not appear in the volume. Confirm the API writes to the same volume that
+    is mounted at /data.
 - id: incident-preserved
   title: The original job remains present
-  explanation: Observe the actual storage and process boundary after the incident.
+  explanation: Fixing the incident must not lose the job that existed before it.
   command:
     args:
     - python
@@ -284,11 +292,11 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
-    behavior.
+  diagnostic: The original job is missing. Request /jobs. If the volume was replaced or the database deleted,
+    reset the lab and repair the existing data instead.
 - id: incident-nonroot
   title: The application and database retain UID 10001 without broad write access
-  explanation: Observe the actual storage and process boundary after the incident.
+  explanation: The fix should keep the API as user 10001 and avoid giving every user write access.
   command:
     args:
     - python
@@ -300,8 +308,9 @@ checks:
   json_path:
   - nonroot
   expected: 'true'
-  diagnostic: Compare file ownership and mode, non-root process identity, original row, and fresh write
-    behavior.
+  diagnostic: The API is not running as 10001, jobs.db is not owned by 10001, or the file is writable
+    by its group or every user. Compare the process id with ls -ln /data inside the container, and grant
+    only the access the API needs.
 capabilities:
 - docker
 - python-image

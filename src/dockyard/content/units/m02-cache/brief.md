@@ -1,10 +1,14 @@
-## Ship the source change
+## Put your changed release into service
 
-Prepare supplies a working Dockerfile and starts release `dispatch-1` from an image.
-Change VERSION to `dispatch-2`.
-Build the updated image under the assigned tag, then replace only the assigned container with a new instance of that image.
-Keep the required lab label and loopback port mapping.
-Do not bind-mount local source as a shortcut.
+The lab starts with a working image and container serving `dispatch-1`.
+Use the sequence in Understand to make a small, visible release change.
 
-Leave `/healthz` serving release `dispatch-2`.
-Use the intermediate requests described above to distinguish a changed file, a rebuilt image, and a replaced running instance.
+1. Change `VERSION` to `dispatch-2` and save it.
+2. Request `/healthz` before rebuilding and record the release you see.
+3. Rebuild `$DOCKYARD_IMAGE`, compare its ID with the running container’s image ID, and request `/healthz` again.
+4. Replace only `$DOCKYARD_CONTAINER` with a new container from the rebuilt image.
+   Keep its lab label and local port mapping, and do not mount the workspace.
+5. Confirm that `/healthz` now reports `dispatch-2`, then check your work.
+
+Explain why the first two requests still returned the old version.
+The checker tests the final release and its packaged files; your intermediate observations are for self-review.

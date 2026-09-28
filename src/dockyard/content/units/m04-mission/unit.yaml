@@ -3,7 +3,7 @@ revision: 1
 module: 4
 order: 4
 title: 'Mission: rescue data before replacing the container'
-summary: "Migrate an existing job out of a container\u2019s writable layer and prove it survived replacement."
+summary: Migrate an existing job out of a container’s writable layer and prove it survived replacement.
 kind: mission
 runtime: docker
 minutes: 50
@@ -19,7 +19,7 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: "The only database is in the current container\u2019s writable layer. Which action belongs first?"
+  question: The only database is in the current container’s writable layer. Which action belongs first?
   options:
   - Obtain a consistent backup before removing the container.
   - Remove the container and create a volume afterward.
@@ -29,8 +29,8 @@ prediction:
 hints:
 - Inspect the original container mounts and find where /data currently lives.
 - Stop the API cleanly before copying its SQLite file; docker cp works on a stopped container.
-- Archive jobs.db, restore it into the labeled named volume with suitable ownership, then recreate the API using
-  that volume.
+- Archive jobs.db, restore it into the labeled named volume with suitable ownership, then recreate the
+  API using that volume.
 sources:
 - https://docs.docker.com/engine/storage/bind-mounts/
 - https://docs.docker.com/engine/storage/volumes/
@@ -65,13 +65,13 @@ prepare:
   - '{{container}}'
   - python
   - -c
-  - import sqlite3,os; c=sqlite3.connect("/data/jobs.db"); c.execute("CREATE TABLE IF NOT EXISTS jobs(id TEXT PRIMARY
-    KEY,title TEXT NOT NULL)"); c.execute("INSERT OR REPLACE INTO jobs VALUES(?,?)",("recovery-{{lab_id}}","Preserve
+  - import sqlite3,os; c=sqlite3.connect("/data/jobs.db"); c.execute("CREATE TABLE IF NOT EXISTS jobs(id
+    TEXT PRIMARY KEY,title TEXT NOT NULL)"); c.execute("INSERT OR REPLACE INTO jobs VALUES(?,?)",("recovery-{{lab_id}}","Preserve
     this original job")); c.commit(); c.close(); os.chown("/data",10001,10001); os.chown("/data/jobs.db",10001,10001)
 checks:
 - id: process-running
   title: Dispatch's container is running
-  explanation: The container must still be running when its application is checked.
+  explanation: Dockyard can only test the application while its container is running.
   command:
     args:
     - docker
@@ -83,11 +83,13 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: Inspect docker ps -a and docker logs for the assigned container. A container stops when its main process
-    exits.
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
 - id: lab-identity
   title: The container belongs to this lab
-  explanation: A dedicated label lets Dockyard recognize the resource without touching unrelated containers.
+  explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
+    and clean it up without touching your other containers.
   command:
     args:
     - docker
@@ -100,11 +102,12 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Recreate this lab's container with the io.dockyard.lab label shown in the example. Do not label an
-    unrelated container.
+  diagnostic: The container is missing this lab's label, or has a different value. Labels cannot be added
+    to an existing container, so remove the assigned container and run it again with --label "io.dockyard.lab=$DOCKYARD_LAB".
 - id: application-response
   title: A request reaches the real API
-  explanation: A running process alone is insufficient; the application must respond through the published port.
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
   command:
     args:
     - curl
@@ -118,11 +121,14 @@ checks:
   json_path:
   - service
   expected: dispatch
-  diagnostic: Inspect the published port and logs. The host port is DOCKYARD_PORT; the process inside the container
-    listens on 8080.
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
 - id: published-port
   title: The assigned endpoint belongs to this container
-  explanation: The responding host port must actually be published by the assessed container.
+  explanation: The answer must come from this container, so its port 8080 must be published on your assigned
+    host port.
   command:
     args:
     - docker
@@ -137,10 +143,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Publish the assigned host port to port 8080 inside this lab's container.
+  diagnostic: This container does not publish container port 8080 on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what it publishes. Port mappings are fixed when a container is created, so replace the container
+    with -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: loopback-binding
   title: Only the local host computer can reach the published port
-  explanation: Only the local host computer can reach the published port
+  explanation: Publishing on 127.0.0.1 keeps the practice API reachable from your own computer only, not
+    from other machines on your network.
   command:
     args:
     - docker
@@ -155,10 +164,12 @@ checks:
   - 8080/tcp
   - '0'
   - HostIp
-  diagnostic: Inspect the container and its logs, then compare the observation with the task contract.
+  diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
+    if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: storage-mount
   title: The expected writable storage is mounted at /data
-  explanation: Inspect the mount and perform real application and independent database reads.
+  explanation: Dispatch keeps its database in /data, so that path must be backed by the storage this task
+    asks for, and it must be writable.
   command:
     args:
     - python
@@ -170,11 +181,13 @@ checks:
   json_path:
   - mount
   expected: 'true'
-  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
-    original job and a valid backup.tar.
+  diagnostic: /data is not mounted from the expected storage, or it is read-only. Run docker inspect --format
+    '{{json .Mounts}}' "$DOCKYARD_CONTAINER" and check the Type, Source or Name, Destination, and RW fields
+    against the task. Mounts are fixed at creation, so replace the container to change them.
 - id: storage-roundtrip
   title: The API can create and read a new job
-  explanation: Inspect the mount and perform real application and independent database reads.
+  explanation: Dockyard submits a new job through the API and reads it back to confirm storage really
+    works.
   command:
     args:
     - python
@@ -186,11 +199,14 @@ checks:
   json_path:
   - roundtrip
   expected: 'true'
-  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
-    original job and a valid backup.tar.
+  diagnostic: The API could not save and then list a new job. Submit one yourself with curl and read the
+    error message, then check docker logs. "unable to open database file" usually means the process user
+    cannot write to /data; compare docker exec "$DOCKYARD_CONTAINER" id with docker exec "$DOCKYARD_CONTAINER"
+    ls -ldn /data.
 - id: storage-durable
   title: A separate read-only container observes the committed job
-  explanation: Inspect the mount and perform real application and independent database reads.
+  explanation: A separate read-only container opens the same storage and finds the new job, which shows
+    the data lives outside the API container.
   command:
     args:
     - python
@@ -202,11 +218,12 @@ checks:
   json_path:
   - durable
   expected: 'true'
-  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
-    original job and a valid backup.tar.
+  diagnostic: The new job was not found when Dockyard read the storage from a separate container. This
+    usually means the API is writing to a different location than the mounted storage. Check that the
+    mount target is exactly /data.
 - id: storage-restored
   title: The original seeded job is present in the restored data
-  explanation: Inspect the mount and perform real application and independent database reads.
+  explanation: The job created before the incident must be present after your restore, not just new jobs.
   command:
     args:
     - python
@@ -218,11 +235,14 @@ checks:
   json_path:
   - restored
   expected: 'true'
-  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
-    original job and a valid backup.tar.
+  diagnostic: 'The original recovery-$DOCKYARD_LAB job is missing from the API''s database. Request /jobs
+    to see what the API holds. An empty list usually means the API started with a fresh database instead
+    of the restored one: check that you extracted the archive into the same storage the API mounts at
+    /data, and that the API was stopped while you did.'
 - id: storage-backup
   title: The backup archive contains a usable database with that original job
-  explanation: Inspect the mount and perform real application and independent database reads.
+  explanation: Dockyard opens backup.tar and checks it contains a readable database with the original
+    job, because a backup you cannot restore is not a backup.
   command:
     args:
     - python
@@ -234,8 +254,9 @@ checks:
   json_path:
   - backup
   expected: 'true'
-  diagnostic: Inspect /data mount identity and permissions, then POST and GET /jobs. Recovery also requires the
-    original job and a valid backup.tar.
+  diagnostic: backup.tar is missing from the workspace, or does not contain jobs.db with the original
+    job at its root. List it with tar -tf backup.tar; the only entry should be jobs.db. Create it from
+    the stopped database with -C pointing at the directory that holds jobs.db.
 capabilities:
 - docker
 - python-image

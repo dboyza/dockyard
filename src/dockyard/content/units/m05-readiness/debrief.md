@@ -1,3 +1,7 @@
-Startup dependency order and readiness are now separate, explicit properties.
-The observed workflow still matters after health checks pass, because a narrow health check cannot prove every user operation.
-Describe what will happen if the database later becomes unavailable and which component is responsible for retrying.
+## Separate starting from being ready
+
+Your dependency conditions now wait for real health checks.
+Your completed job tests the application after those checks succeed.
+
+Predict what happens if PostgreSQL becomes unavailable five minutes after startup.
+Which part can Compose’s startup ordering handle, and which part must the application handle?

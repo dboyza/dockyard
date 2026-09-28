@@ -1,10 +1,10 @@
-## Prove a separate restore
+## Find the original job in the restored service
 
-The source volume `$DOCKYARD_VOLUME-source` contains the original job; it has no active writer.
-The assigned API uses a separate empty target volume `$DOCKYARD_VOLUME`.
+Archive the closed database from `$DOCKYARD_VOLUME-source` into `backup.tar` in your workspace.
+Its archive member must be named `jobs.db`.
+Restore it into the separate target volume `$DOCKYARD_VOLUME` while the target API is stopped.
+Give user 10001 access to the target, then restart the API.
 
-Create `backup.tar` in the workspace with jobs.db at the archive root.
-Restore that database into the target volume and ensure the non-root API can read and write it.
-Preserve the source volume.
-Verify `/jobs` on the target contains the original `recovery-$DOCKYARD_LAB` record and that new jobs can also be committed.
-Leave both the archive and the restored service available for checking.
+Find the original `recovery-$DOCKYARD_LAB` job through `/jobs`, and submit a new job to test writes.
+Preserve the source volume and leave the archive and restored API available for checking.
+The checker inspects both the archive and the restored database, so an empty file named `backup.tar` is not enough.
