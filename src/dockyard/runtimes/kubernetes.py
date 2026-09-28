@@ -423,6 +423,24 @@ class KubernetesRuntime:
             )
         )
 
+    def wait_resynced(self, cancel: threading.Event) -> None:
+        # After a node container restarts, the API still reports the pre-stop Pod
+        # and controller status until each kubelet restarts its containers.
+        starts: dict[str, datetime] = {}
+        for entry in self.discover():
+            resource = self.verify(entry)
+            if resource is not None:
+                starts[entry["name"]] = parse_time(resource["State"]["StartedAt"])
+        deadline = time.monotonic() + 240
+        while True:
+            listed = self.kubectl(["get", "pods", "--all-namespaces", "-o", "json"], cancel=cancel)
+            if listed.ok and not stale_pods(json.loads(listed.stdout)["items"], starts):
+                return
+            if cancel.wait(1) or time.monotonic() >= deadline:
+                raise RuntimeErrorBase(
+                    "Cluster workloads did not restart after resuming; the lab was preserved."
+                )
+
     def health(self, cancel: threading.Event) -> ProcessResult:
         return self.kubectl(["get", "--raw=/readyz"], timeout=20, cancel=cancel)
 
@@ -455,6 +473,7 @@ class KubernetesRuntime:
             Path(self.env["KUBECONFIG"]).unlink(missing_ok=True)
         elif action == "resume":
             self.wait_ready(cancel)
+            self.wait_resynced(cancel)
         elif action == "stop":
             self.docker.change("stop", cancel)
 
@@ -535,3 +554,38 @@ class KubernetesRuntime:
         else:
             records.append(["api-unavailable", result.returncode])
         return hashlib.sha256(json.dumps(records, sort_keys=True).encode()).hexdigest()
+
+
+SYSTEM_NAMESPACES = {"kube-system", "local-path-storage"}
+
+
+def parse_time(value: str) -> datetime:
+    """Parse Docker and Kubernetes RFC 3339 times, truncated to whole seconds."""
+    return datetime.fromisoformat(value.split(".")[0].rstrip("Z") + "+00:00")
+
+
+def stale_pods(pods: list[dict[str, Any]], node_starts: dict[str, datetime]) -> list[str]:
+    """Return Pods whose reported state predates their node's latest start."""
+    stale = []
+    for pod in pods:
+        status = pod.get("status", {})
+        if status.get("phase") in {"Succeeded", "Failed"}:
+            continue
+        name = f"{pod['metadata'].get('namespace')}/{pod['metadata']['name']}"
+        started = node_starts.get(pod.get("spec", {}).get("nodeName", ""))
+        running_since = [
+            container["state"]["running"]["startedAt"]
+            for container in status.get("containerStatuses", [])
+            if "running" in container.get("state", {})
+        ]
+        if (
+            started
+            and any(parse_time(value) < started for value in running_since)
+            or pod["metadata"].get("namespace") in SYSTEM_NAMESPACES
+            and not any(
+                condition.get("type") == "Ready" and condition.get("status") == "True"
+                for condition in status.get("conditions", [])
+            )
+        ):
+            stale.append(name)
+    return stale
