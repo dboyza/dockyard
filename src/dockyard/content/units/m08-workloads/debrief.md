@@ -1,12 +1,8 @@
-# Debrief: Choose a controller for its lifecycle
+## Two controllers, two different fixes
 
-The worker Deployment maintains replicated long-running consumers, while the DaemonSet expresses coverage of eligible nodes.
-A completed job in the application database proves useful processing beyond the existence of those controller objects.
+The Deployment needed more copies; the DaemonSet needed permission to run somewhere.
+Scaling a DaemonSet is not possible, because its size comes from the nodes it matches.
 
-## Explain your result
-
-Why would increasing worker replicas fail to repair a wrong queue address, and which observation would reveal that distinction?
-
-## Transfer beyond this lab
-
-Choose controllers by lifecycle and placement requirements before tuning replica counts for a production workload.
+Check your understanding:
+If the workers had the wrong Redis address, why would adding more workers not help, and which log would show it?
+Which controller would you choose for a database migration that must run once per release?

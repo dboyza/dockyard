@@ -1,12 +1,11 @@
-# Deliver the workload checkpoint
+## Get every workload doing its job
 
-Repair the supplied workload manifests and demonstrate these outcomes:
+Fix the supplied manifests so that:
 
-- Two API replicas and two worker replicas serve and process real Dispatch jobs.
-- A healthy `dispatch-node-agent` DaemonSet covers every eligible node.
-- `dispatch-maintenance` schedules maintenance every five minutes with `Forbid` concurrency and bounded retries.
-- A Job named `maintenance-proof` created from that template completes and records a real database observation.
-- `WORKLOADS.md` explains why each controller was chosen, what a retry can repeat, and when the current database data would disappear.
+- two API copies and two workers are running and a new job gets completed;
+- the `dispatch-node-agent` DaemonSet runs on every node it should;
+- `dispatch-maintenance` runs `python maintenance.py` every five minutes with `Forbid` concurrency and a small retry limit;
+- a Job named `maintenance-proof`, created from that CronJob, completes and writes its row to `maintenance_runs`.
 
-No exact repair command sequence is required.
-The automated assessment verifies live workload and application behavior; your written tradeoffs are for self-review and the mission portfolio.
+Then write `WORKLOADS.md` explaining why each controller fits its job, what could run twice if a retry happens, and when the database’s current data would be lost.
+Check work tests the live cluster; your write-up is for your own review and your portfolio.

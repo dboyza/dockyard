@@ -1,12 +1,8 @@
-# Debrief: Coordinate containers inside a Pod
+## Preparation, then work
 
-The init container establishes shared configuration before the main containers start, and the sidecar observes files in the same Pod volume.
-Sharing that volume connects the containers without making their files durable beyond the volume lifetime.
+The init container had to succeed before the worker could start, and the shared emptyDir carried its file to both the worker and the observer.
+Because the file lives in the Pod, it disappears when the Pod is replaced, and the init container simply writes it again.
 
-## Explain your result
-
-Identify the order constraint enforced by the init container and explain why an unrelated file in another Pod would not prove this coordination.
-
-## Transfer beyond this lab
-
-Use a separate durable storage design when a process must retain this state after its Pod is replaced.
+Check your understanding:
+Why could a file written in a *different* Pod not satisfy this worker?
+When would an init container be a better choice than making the application wait for its own dependencies?

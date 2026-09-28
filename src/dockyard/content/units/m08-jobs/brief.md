@@ -1,9 +1,10 @@
-# Repair and prove the maintenance schedule
+## Repair the maintenance schedule and prove it works
 
-The CronJob is suspended and its template runs an invalid script.
-Configure `dispatch-maintenance` to run every five minutes with `Forbid` concurrency, bounded retries, and the supplied `maintenance.py` command.
+1. Look at the `dispatch-maintenance` CronJob and work out what is wrong with it.
+2. In `maintenance.yaml`, make it run `python maintenance.py` every five minutes, not suspended, with `Forbid` concurrency and a small `backoffLimit`.
+3. Apply the file.
+4. Create a Job called `maintenance-proof` from the CronJob and wait for it to complete. Delete any earlier failed `maintenance-proof` first.
+5. Read its logs and the `maintenance_runs` row in PostgreSQL.
+6. Choose **Check work**.
 
-Apply the repaired template, create `maintenance-proof` from that CronJob, and wait for completion.
-If a failed proof Job already exists, delete that single practice Job before creating a replacement; editing the CronJob does not rewrite existing Jobs.
-Inspect both logs and the actual maintenance row in PostgreSQL.
-The worker fleet must continue processing fresh jobs while maintenance succeeds.
+The workers must keep processing new jobs while you do this.

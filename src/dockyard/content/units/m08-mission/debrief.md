@@ -1,12 +1,7 @@
-# Debrief: Mission: process work and prove maintenance
+## Different lifecycles, different evidence
 
-Worker availability, node-agent coverage, and finite maintenance completion are different contracts even though all involve Pods.
-The fresh Dispatch job ties the API, queue, database, and worker together after those lifecycle choices have been repaired.
+Each controller had its own definition of “working”: staying up, covering every node, or finishing a task.
+A completed job and a database row showed the whole application doing real work.
 
-## Explain your result
-
-Name a fault that a controller can repair automatically and a configuration fault that it will repeatedly recreate.
-
-## Transfer beyond this lab
-
-Your runbook should identify which controller owns each process and which completion or availability signal matters for that role.
+Check your understanding:
+Name one problem a controller fixes by itself, and one it will keep recreating no matter how often Pods restart.

@@ -1,12 +1,8 @@
-# Debrief: Run finite and scheduled maintenance
+## A schedule and a proof run
 
-A CronJob describes scheduling policy, whereas a Job records one finite execution and its completion behavior.
-The proof Job performs a real database observation, so a valid cron expression alone cannot satisfy the task.
+The CronJob describes *when* maintenance should happen; the Job you created showed the task really works right now, and the database row proved its effect.
 
-## Explain your result
-
-Explain what concurrency and retry policy protect against, and what one successful proof run cannot tell you about a month of scheduled executions.
-
-## Transfer beyond this lab
-
-Production maintenance also needs idempotent operations, time-zone awareness, alerting, and a plan for missed schedules.
+Check your understanding:
+What does `Forbid` protect against if one maintenance run takes longer than five minutes?
+What can one successful run *not* tell you about next month’s runs?
+Write the schedule for “at 23:45 every Friday”.

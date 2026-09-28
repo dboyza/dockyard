@@ -1,12 +1,10 @@
-# Run workers and one agent per eligible node
+## Get the workers and the node agent running
 
-Dispatch's API, database, and Redis are prepared, but the worker Deployment requests zero replicas and the DaemonSet has an impossible node selector.
+1. Look at the `worker` Deployment and the `dispatch-node-agent` DaemonSet and work out why each has no Pods.
+2. Change `worker.yaml` to ask for two copies.
+3. Remove the impossible `dockyard.invalid/node: missing` node selector from `agent.yaml`.
+4. Apply both files and wait for both rollouts.
+5. Submit a job and find a worker’s log line showing it was completed.
+6. Choose **Check work**.
 
-1. Inspect the controller and Pod state before changing it.
-2. Request two worker replicas in `worker.yaml`.
-3. Remove the impossible `dockyard.invalid/node: missing` constraint from `agent.yaml`.
-4. Apply the manifests and wait for the worker Deployment and DaemonSet rollouts.
-5. Submit a job through the API and inspect a worker's completion log.
-
-The checker submits a unique real job and verifies its result and worker identity.
-It also requires one available DaemonSet Pod on every currently eligible node.
+Check work submits its own job and checks a worker finishes it, and that the agent is running on every node it is allowed on.

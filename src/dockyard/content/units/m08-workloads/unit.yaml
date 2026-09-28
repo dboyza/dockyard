@@ -2,15 +2,15 @@ id: m08-workloads
 revision: 2
 module: 8
 order: 1
-title: Choose a controller for its lifecycle
-summary: Operate replicated workers and a node-scoped DaemonSet.
+title: Choose the right controller
+summary: Get Dispatch’s workers running and make a node agent run on every node.
 kind: lesson
 runtime: kubernetes
 minutes: 40
 outcomes:
-- Choose between a naked Pod, Deployment, DaemonSet, and Job.
-- Scale a worker Deployment and observe its ownership.
-- Verify a DaemonSet schedules an agent on eligible nodes.
+- Choose between a Deployment, DaemonSet, Job, and CronJob for a piece of work.
+- Scale a Deployment and explain why a DaemonSet cannot be scaled.
+- Use kubectl port-forward to test an application inside the cluster.
 prerequisites:
 - m07-mission
 objectives:
@@ -19,18 +19,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which controller is appropriate for one observation agent on each eligible node?
+  question: Which controller should run one monitoring agent on every node?
   options:
-  - DaemonSet.
-  - A Deployment with an arbitrarily large replica count.
-  - CronJob.
+  - A DaemonSet.
+  - A Deployment with a large replicas number.
+  - A CronJob.
   correct: 0
-  explanation: DaemonSet scheduling follows eligible nodes, whereas Deployment replicas express an application
-    count.
+  explanation: A DaemonSet runs one Pod per suitable node and follows nodes as they join or leave. A Deployment’s
+    count has nothing to do with nodes.
 hints:
-- Inspect both controllers; they fail for different reasons.
-- The workers request zero replicas, while the agent selector excludes every node.
-- Set worker replicas to 2 and remove the impossible nodeSelector; apply and wait for both rollouts.
+- Look at both controllers separately; they are broken for different reasons.
+- The workers ask for zero copies, and the agent’s nodeSelector matches no node.
+- 'Set replicas: 2 in worker.yaml, delete the nodeSelector from agent.yaml, apply both, and wait for both
+  rollouts.'
 sources:
 - https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
 - https://kubernetes.io/docs/concepts/workloads/pods/init-containers/
@@ -69,8 +70,8 @@ prepare:
   timeout: 130
 checks:
 - id: workload-api
-  title: The API is available
-  explanation: Check live controller state and actual processing or maintenance effects.
+  title: Two API copies are available
+  explanation: The dispatch Deployment must have two ready copies to accept jobs.
   command:
     args:
     - python
@@ -82,10 +83,11 @@ checks:
   json_path:
   - api
   expected: 'true'
-  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+  diagnostic: The API does not have two available copies. Run kubectl get deployment dispatch and kubectl
+    describe pods -l app=dispatch, and read the Events for the reason.
 - id: workload-workers
-  title: Two worker replicas are available and owned
-  explanation: Check live controller state and actual processing or maintenance effects.
+  title: Two workers are available
+  explanation: The worker Deployment must ask for two copies and have both running.
   command:
     args:
     - python
@@ -97,10 +99,12 @@ checks:
   json_path:
   - workers
   expected: 'true'
-  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+  diagnostic: 'The worker Deployment does not have exactly two available copies. Check replicas: in worker.yaml,
+    apply it, and run kubectl rollout status deployment/worker. If Pods are stuck, kubectl describe pod
+    on one of them shows why.'
 - id: workload-processing
-  title: A fresh job is processed with the correct result
-  explanation: Check live controller state and actual processing or maintenance effects.
+  title: A new job is completed by a worker
+  explanation: Dockyard submits a real job and waits for a worker to finish it with the right result.
   command:
     args:
     - python
@@ -112,11 +116,12 @@ checks:
   json_path:
   - processing
   expected: 'true'
-  diagnostic: Inspect worker logs, Pod ownership, database connectivity, and Redis notifications. A fresh
-    job must finish with the expected result.
+  diagnostic: A new job was not completed. Check the workers are running with kubectl get pods -l app=worker,
+    then read kubectl logs deployment/worker for database or Redis connection errors.
 - id: workload-agents
-  title: The DaemonSet covers eligible nodes
-  explanation: Check live controller state and actual processing or maintenance effects.
+  title: The node agent runs on every allowed node
+  explanation: A DaemonSet should have one ready Pod on each node it is allowed to run on, and at least
+    one node must be allowed.
   command:
     args:
     - python
@@ -128,7 +133,9 @@ checks:
   json_path:
   - agents
   expected: 'true'
-  diagnostic: Compare the desired controller state with ready Pods, events, and the task contract.
+  diagnostic: The dispatch-node-agent DaemonSet has no ready Pods, or fewer than it should. Run kubectl
+    describe daemonset dispatch-node-agent. A DESIRED count of 0 usually means its nodeSelector or affinity
+    matches no node; compare it with kubectl get nodes --show-labels.
 capabilities:
 - docker
 - kind

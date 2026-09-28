@@ -37,10 +37,10 @@ A runtime pass alone is not a teaching-quality result.
 | m07-inspection | Completed without solutions | Revised | Rewritten from expert shorthand; now teaches -A, --show-labels, -o yaml, custom-columns, explain, and EndpointSlices. Empty EndpointSlice filled after the selector fix; passed. |
 | m07-declarative | Completed without solutions | Revised | Now teaches context switching, server dry runs, diff, and generating YAML with --dry-run=client. Every shown command produced the described output; passed. |
 | m07-mission | Completed without solutions | Revised | Fixed replicas and selector independently; passed after waiting for the rollout. |
-| m08-workloads | Pending | Pending |  |
-| m08-patterns | Pending | Pending |  |
-| m08-jobs | Pending | Pending |  |
-| m08-mission | Pending | Pending |  |
+| m08-workloads | Completed without solutions | Revised | Added a controller comparison, kubectl scale, and generation commands. The new port-forward example first used $DOCKYARD_PORT, which the kind node already publishes, so it failed silently; now uses a free port and was verified to complete a job. Passed. |
+| m08-patterns | Completed without solutions | Revised | Observed Init:Error and the configure log exactly as described; fixed init command and shared mount; passed. Verification commands now use deployment/worker to avoid picking a terminating Pod. |
+| m08-jobs | Completed without solutions | Revised | Cron syntax was never taught although the lab and CKAD practice exam depend on it; added a cron guide and the psql command to see the maintenance row. Passed. |
+| m08-mission | Completed without solutions | Revised | Fixed workers, agent, and CronJob independently; proof Job completed; passed. |
 | m09-configmaps | Pending | Pending |  |
 | m09-secrets | Pending | Pending |  |
 | m09-identities | Pending | Pending |  |
