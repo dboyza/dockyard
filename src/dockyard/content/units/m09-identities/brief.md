@@ -1,9 +1,11 @@
-# Repair the binding without broadening access
+## Let the inventory Pod list Pods, and nothing more
 
-The inventory Deployment uses `dispatch-reader`, but the RoleBinding mistakenly names another ServiceAccount.
+The `inventory` Deployment runs as the `dispatch-reader` ServiceAccount, but the RoleBinding grants the Pod-reading Role to a different account.
 
-Repair the binding so the inventory client can list Pods in `dispatch`.
-Preserve its narrow Role and do not attach cluster-admin or a broad wildcard role.
-Keep `dispatch-app` token mounting disabled for the API and workers.
-Verify the expected allowed request and both denied requests, then check the lab.
-A green administrator `kubectl get pods` does not prove that the application's identity has the required permission.
+1. Find which ServiceAccount the inventory Pod uses and which one the RoleBinding names.
+2. Fix the RoleBinding in `identity.yaml` so `dispatch-reader` gets the existing `dispatch-pod-reader` Role.
+3. Apply it and test with `kubectl auth can-i` and with the request from the Pod itself.
+4. Choose **Check work**.
+
+Do not widen access: keep the narrow Role, and do not bind `cluster-admin` or a wildcard role.
+Keep token mounting turned off for the `dispatch-app` account used by the API and workers.

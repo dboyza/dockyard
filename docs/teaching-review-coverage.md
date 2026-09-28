@@ -41,10 +41,10 @@ A runtime pass alone is not a teaching-quality result.
 | m08-patterns | Completed without solutions | Revised | Observed Init:Error and the configure log exactly as described; fixed init command and shared mount; passed. Verification commands now use deployment/worker to avoid picking a terminating Pod. |
 | m08-jobs | Completed without solutions | Revised | Cron syntax was never taught although the lab and CKAD practice exam depend on it; added a cron guide and the psql command to see the maintenance row. Passed. |
 | m08-mission | Completed without solutions | Revised | Fixed workers, agent, and CronJob independently; proof Job completed; passed. |
-| m09-configmaps | Pending | Pending |  |
-| m09-secrets | Pending | Pending |  |
-| m09-identities | Pending | Pending |  |
-| m09-mission | Pending | Pending |  |
+| m09-configmaps | Completed without solutions | Revised | Added ConfigMap YAML, kubectl create configmap, configMapKeyRef, envFrom, and volume items. Verified the optional experiment: the mounted banner updated after about 70 seconds, so the lesson now says a minute or two. Passed. |
+| m09-secrets | Completed without solutions | Revised | Added Secret creation, stringData, and why defaultMode shows as 292. FailedMount event named the missing key as described; passed. A check during rollout returned stale, whose message was misleading and is now explained. |
+| m09-identities | Completed without solutions | Revised | Lesson required a request with the Pod's own token but never showed one; added and verified (200, 403, 403). Added kubectl create serviceaccount, role, rolebinding, and auth can-i --as. Passed. |
+| m09-mission | Completed without solutions | Revised | Fixed five planted faults across both namespaces; preview needed a rollout restart for its changed environment value, as taught. Passed. |
 | m10-services | Pending | Pending |  |
 | m10-ingress | Pending | Pending |  |
 | m10-gateway | Pending | Pending |  |

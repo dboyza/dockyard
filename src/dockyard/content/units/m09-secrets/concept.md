@@ -1,27 +1,82 @@
-# Secret is a resource type, not a complete security system
+## Keep passwords out of ordinary configuration
 
-A Secret separates sensitive values from ordinary application configuration and supports specific delivery mechanisms.
-Base64 in the `data` field is encoding, not encryption.
-Cluster encryption at rest, authorization, transport security, application behavior, and operational handling determine the broader protection boundary.
-The later security modules examine those controls directly.
+A **Secret** is like a ConfigMap, but meant for sensitive values such as passwords, tokens, and keys.
+It is a separate object type so that access to it can be controlled separately, and so tools treat it more carefully, for example by hiding values in `kubectl describe`.
 
-`stringData` is convenient for authored input; the API converts it to encoded `data`.
-Never use production credentials in these disposable practice clusters.
-The lab uses an automatically generated practice password and excludes credentials from portfolio exports.
-Avoid printing decoded credentials, placing them in command history, or copying a runtime kubeconfig into the project.
+Be clear about what a Secret does *not* do.
+Its values are stored **base64 encoded**, which is a way of writing any bytes as plain text.
+That is not encryption: anyone who can read the Secret can decode it in one command.
+Real protection comes from who is allowed to read Secrets, encrypting the cluster’s storage, and the application not printing them.
+The security modules look at those controls.
 
-## Worked example
+## Creating a Secret
+
+```sh
+kubectl create secret generic demo --from-literal=password=example
+```
+
+In YAML you can use `stringData` to write plain values, and Kubernetes encodes them into `data` for you:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo
+stringData:
+  password: example
+```
+
+Only use made-up values in practice clusters.
+This lab generates its own practice password, and Dockyard never includes it in exported work.
+
+## Using a Secret
+
+Exactly like a ConfigMap, a Secret can become environment variables, with `secretKeyRef`, or files, with a `secret` volume:
+
+```yaml
+volumes:
+- name: database-credential
+  secret:
+    secretName: dispatch-database
+    defaultMode: 0444
+    items:
+    - key: password
+      path: password
+```
+
+Here the Secret’s `password` key becomes a file called `password` in whatever folder the volume is mounted at.
+`defaultMode` sets the files’ permissions; `0444` means read-only for everyone.
+When Kubernetes prints the YAML back, it shows the same value in decimal, `292`, which looks odd but means the same thing.
+
+Files are usually the safer choice: environment variables are easy to leak through logs and error reports, and, as with ConfigMaps, they never update while the container runs.
+
+## This lab
+
+Dispatch reads its database password from the file named in `DB_PASSWORD_FILE`, `/var/run/dispatch/password`.
+The Secret volume asks for a key called `missing-password`, which does not exist, so Kubernetes cannot set up the volume and the Pod never starts.
+
+Investigate without printing the password:
 
 ```sh
 kubectl describe secret dispatch-database
+kubectl get pods
 kubectl describe pod POD_NAME
-kubectl exec deployment/dispatch -c api -- test -r /var/run/dispatch/password
+```
+
+`describe secret` lists key names and sizes, never values.
+The Events at the bottom of `describe pod` explain why a volume could not be mounted.
+
+After fixing the key and running `sh run.sh`, confirm the file exists and the API can reach its database:
+
+```sh
+kubectl rollout status deployment/dispatch --timeout=90s
+kubectl exec deployment/dispatch -c api -- test -r /var/run/dispatch/password && echo readable
 kubectl logs deployment/dispatch --tail=20
 ```
 
-The application reads `DB_PASSWORD_FILE` and opens a real database connection.
-The projected volume is read-only, but the container user must still have permission to read it.
-A correct Secret object with an incorrect key reference produces a delivery failure before successful authentication.
-An environment-delivered credential has the same startup refresh limitation as other environment values.
-Mounted Secrets update eventually, and the application must reopen the file to observe changes.
-Database credential rotation requires coordinating the database and its clients, which is more than editing one Kubernetes object.
+`test -r` checks the file is readable without showing its contents.
+
+## Changing a password is more than editing a Secret
+
+If this password changed, PostgreSQL itself would need the new password too, and the API would need to pick it up.
+Coordinating that is called **credential rotation**, and a later security lesson practises it.

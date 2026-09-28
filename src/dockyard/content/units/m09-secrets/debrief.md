@@ -1,12 +1,9 @@
-# Debrief: Deliver a credential through a Secret
+## From Secret to working connection
 
-The repaired application reads its projected password file and authenticates against the real database.
-This proves the key reference, mount permissions, and consumer behavior together, while a Secret object by itself would prove none of those connections.
+The Secret existed the whole time.
+What was broken was the path from it to the application: the key name in the volume.
+Once the file appeared, the API could log in to PostgreSQL.
 
-## Explain your result
-
-Explain why base64 encoding does not protect a value from someone authorized to read the Secret, and where this credential could leak during troubleshooting.
-
-## Transfer beyond this lab
-
-Coordinate database-side rotation with client refresh, and keep live credentials outside exported source and operational notes.
+Check your understanding:
+Why does base64 not protect a password from someone allowed to read the Secret?
+Name two places a password could accidentally leak while you are troubleshooting.

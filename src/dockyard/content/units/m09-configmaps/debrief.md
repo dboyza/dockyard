@@ -1,12 +1,8 @@
-# Debrief: Deliver configuration without rebuilding
+## Configuration reaches the process in two ways
 
-The configuration object is only the beginning of the delivery path; the Pod reference and the application read determine the effective value.
-Comparing the process setting with the mounted file exposes the difference between startup environment capture and projected file delivery.
+The environment variable was fixed when the container started; the banner file could change while it ran.
+The ConfigMap itself was fine all along; the problem was how the Deployment used it.
 
-## Explain your result
-
-After editing a ConfigMap, which consumer needs a rollout, and which needs to reopen its configuration file?
-
-## Transfer beyond this lab
-
-Use application-level observations when planning configuration changes instead of assuming that an updated API object means every process has refreshed.
+Check your understanding:
+After editing a ConfigMap, which kind of consumer needs a rollout restart, and which only needs the application to reread its file?
+How would you create this ConfigMap with one `kubectl create configmap` command?

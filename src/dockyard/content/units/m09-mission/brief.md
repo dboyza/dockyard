@@ -1,15 +1,15 @@
-# Deliver learning and preview environments
+## Run learning and preview environments side by side
 
-Repair `dispatch` and the supplied `preview` manifests using the same application image.
+Fix the `dispatch` manifests and the supplied `preview.yaml` so both environments run from the same image:
 
-- `dispatch` must report environment `learning`; `preview` must report `preview`.
-- Both APIs must read the required banner through a ConfigMap volume and authenticate through their own mounted database Secret.
-- Each namespace must contain its own database, queue, worker Deployment, and Service destinations.
-- Both environments must process a newly submitted job with the correct result.
-- The dispatch inventory identity may list local Pods, but may not list Secrets or kube-system Pods.
-- Business API Pods must have automatic ServiceAccount token mounting disabled.
-- Record configuration refresh rules and the remaining ephemeral-storage limitation in `ENVIRONMENTS.md`.
+- `dispatch` reports environment `learning`, and `preview` reports `preview`.
+- Both APIs read the required banner from a ConfigMap volume and log in to their own database using their own mounted Secret.
+- Each namespace has its own database, queue, workers, and Services.
+- Both environments complete a new job with the correct result.
+- The `dispatch` inventory identity can list Pods in `dispatch`, but not Secrets, and not Pods in `kube-system`.
+- The API Pods do not have a ServiceAccount token mounted.
 
-The preview credential uses the lab practice password with a `-preview` suffix and is already expressed as a Secret template.
-Do not print or copy its resolved value into your notes.
-The checker observes live behavior; your explanation is retained for self-review.
+Write `ENVIRONMENTS.md` explaining when configuration changes reach running Pods and what the ephemeral database still means for each environment.
+
+The preview password is the lab’s practice password with `-preview` on the end, already set up in a Secret template.
+Do not print it or copy it into your notes.

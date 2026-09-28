@@ -2,15 +2,15 @@ id: m09-configmaps
 revision: 1
 module: 9
 order: 1
-title: Deliver configuration without rebuilding
-summary: Observe environment and file-based ConfigMap delivery.
+title: Configure Dispatch with a ConfigMap
+summary: Feed settings to Dispatch as an environment variable and as a file, and see when each one updates.
 kind: lesson
 runtime: kubernetes
 minutes: 35
 outcomes:
-- Separate application artifacts from environment configuration.
-- Reference ConfigMap keys through environment variables and volumes.
-- Explain why existing process environments do not refresh after a ConfigMap edit.
+- Create a ConfigMap and use its keys as environment variables or files.
+- Explain why changed environment variables need a restart but mounted files can update.
+- Check the settings a running application actually uses.
 prerequisites:
 - m08-mission
 objectives:
@@ -20,19 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You edit a ConfigMap key used as a container environment variable. Does an already-running
-    process receive the new value?
+  question: You edit a ConfigMap key that a container reads as an environment variable. Does the running
+    process see the new value?
   options:
-  - No; replace the container through its controller.
-  - Yes; environment variables update immediately.
-  - Only if the image uses a non-root user.
+  - No. The Pods must be replaced, for example with a rollout restart.
+  - Yes. Environment variables update straight away.
+  - Only if the container runs as non-root.
   correct: 0
-  explanation: The environment is supplied at process startup; it is not a live view of the API object.
+  explanation: A container’s environment is fixed when it starts. Only new containers see the new value.
 hints:
-- Compare the ConfigMap with the Pod template rather than assuming matching names connect them.
-- Use configMapKeyRef for DISPATCH_ENV and a ConfigMap volume for banner.txt.
-- Remove the literal stale value, reference dispatch-settings/environment, and mount the ConfigMap at
-  /config.
+- Compare the ConfigMap’s keys with what the Deployment in platform.yaml actually uses.
+- DISPATCH_ENV needs configMapKeyRef, and the settings volume should provide the banner.txt key as banner.txt.
+- 'Replace value: stale with valueFrom.configMapKeyRef (dispatch-settings, environment), change the volume
+  item key to banner.txt, and run sh run.sh.'
 sources:
 - https://kubernetes.io/docs/concepts/configuration/configmap/
 - https://kubernetes.io/docs/concepts/configuration/secret/
@@ -63,8 +63,9 @@ prepare:
   timeout: 90
 checks:
 - id: configuration-config
-  title: The process and mounted file consume the intended ConfigMap
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: Dispatch reads its settings from the ConfigMap
+  explanation: DISPATCH_ENV must come from the ConfigMap’s environment key, and /config must be a read-only
+    mount of the ConfigMap, so /config reports the right environment and banner.
   command:
     args:
     - python
@@ -76,11 +77,14 @@ checks:
   json_path:
   - config
   expected: 'true'
-  diagnostic: Inspect the ConfigMap, Pod references, mounted file, and process environment. Restart the
-    Deployment after changing environment-based configuration.
+  diagnostic: Dispatch’s /config does not show the ConfigMap’s values yet. In the API container, DISPATCH_ENV
+    needs valueFrom.configMapKeyRef with name dispatch-settings and key environment, and /config needs
+    a read-only configMap volume that provides banner.txt from the banner.txt key. Run sh run.sh and wait
+    for the rollout after changing it.
 - id: configuration-secret
-  title: The application authenticates using its mounted Secret
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: Dispatch logs in to its database with the mounted Secret
+  explanation: The password must arrive as a read-only file from the dispatch-database Secret, and the
+    API must be ready, which proves it logged in.
   command:
     args:
     - python
@@ -92,11 +96,13 @@ checks:
   json_path:
   - secret
   expected: 'true'
-  diagnostic: Inspect the Secret key and read-only volume reference without printing credentials; the
-    API must authenticate to its database using the mounted file.
+  diagnostic: The password file is missing, wrong, or not being used. Run kubectl describe pod on an API
+    Pod and read the Events for volume errors. The secret volume must map the key password to the file
+    password, be mounted read-only at /var/run/dispatch, and DB_PASSWORD_FILE must stay /var/run/dispatch/password
+    with no DB_PASSWORD variable.
 - id: configuration-processing
-  title: A fresh job completes through the configured stack
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
   command:
     args:
     - python
@@ -108,8 +114,8 @@ checks:
   json_path:
   - processing
   expected: 'true'
-  diagnostic: Inspect the actual resource state and application response, then reconcile the relevant
-    workload.
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then
+    kubectl logs deployment/worker for database or Redis errors.
 capabilities:
 - docker
 - kind

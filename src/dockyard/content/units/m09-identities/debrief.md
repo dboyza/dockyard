@@ -1,12 +1,8 @@
-# Debrief: Give an application a specific API identity
+## An identity, a Role, and the binding between them
 
-The workload uses its own ServiceAccount token to make an allowed request and encounter a denied request.
-That result is stronger evidence than an administrator successfully listing Pods or a RoleBinding merely existing.
+The Role was right and the ServiceAccount was right; the binding connected the Role to the wrong subject.
+The Pod’s own request returned 200 for what it needs and 403 for everything else, which is exactly the result you want.
 
-## Explain your result
-
-Trace the subject, binding, role, resource, verb, and namespace that authorize the observed request.
-
-## Transfer beyond this lab
-
-Keep API authorization separate from network reachability: a namespace and a narrow Role do not automatically isolate application traffic.
+Check your understanding:
+Trace the chain for the allowed request: which subject, which binding, which Role, which verb, which resource, which namespace?
+Why does a successful `kubectl get pods` from your terminal tell you nothing about the inventory Pod?

@@ -1,12 +1,9 @@
-# Debrief: Mission: configure two isolated environments
+## Same image, different behaviour
 
-The stable and preview environments consume distinct configuration and still complete real application jobs.
-This establishes the tested configuration and identity boundaries without claiming every possible network or storage boundary is isolated.
+Each environment got its settings and password from its own namespace, and both processed real jobs.
+That shows configuration and identity are separated.
+It does not show the environments are isolated from each other’s network traffic.
 
-## Explain your result
-
-Which source object and running-process observation prove that preview is not silently consuming the stable environment configuration?
-
-## Transfer beyond this lab
-
-Document the remaining isolation requirements before adapting this namespace pattern to environments with different trust levels.
+Check your understanding:
+What would you look at to prove preview is not accidentally reading the `dispatch` ConfigMap?
+What would you add before trusting this setup with environments that must not be able to reach each other?

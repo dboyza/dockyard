@@ -2,15 +2,15 @@ id: m09-secrets
 revision: 1
 module: 9
 order: 2
-title: Deliver a credential through a Secret
-summary: Repair a secret volume and prove authenticated application behavior.
+title: Deliver a password with a Secret
+summary: Fix how the database password reaches Dispatch, without ever printing it.
 kind: lesson
 runtime: kubernetes
 minutes: 35
 outcomes:
-- Distinguish Secret representation from encryption and access control.
-- Deliver credentials through a referenced read-only volume.
-- Verify that the application uses the intended credential without exposing its value.
+- Explain what a Secret does and does not protect.
+- Mount a Secret key as a read-only file.
+- Confirm an application is using a credential without revealing it.
 prerequisites:
 - m09-configmaps
 objectives:
@@ -20,17 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A Secret value appears as base64 in API output. What does that establish?
+  question: A Secret’s value shows as base64 in kubectl output. What does that tell you?
   options:
-  - It is encoded; encryption and access controls are separate concerns.
-  - It is encrypted against anyone who can read the Secret.
-  - The application is guaranteed not to log it.
+  - It is encoded, not encrypted; access control is a separate matter.
+  - It is encrypted, so readers cannot recover it.
+  - The application can never log it.
   correct: 0
-  explanation: Encoding does not prevent a reader from recovering the original bytes.
+  explanation: Anyone who can read the Secret can decode base64 in one command. Protection comes from
+    who may read it.
 hints:
-- Inspect the volume events and key mapping, without decoding the credential.
-- The Secret key is password, and the application opens /var/run/dispatch/password.
-- Map the password key to password in the read-only Secret volume and keep DB_PASSWORD_FILE unchanged.
+- kubectl describe pod on an API Pod shows why its volume cannot be set up. Don’t decode the password.
+- The Secret’s key is password, and Dispatch reads /var/run/dispatch/password.
+- 'In the database-credential volume, change the item key from missing-password to password, keep path:
+  password, and run sh run.sh.'
 sources:
 - https://kubernetes.io/docs/concepts/configuration/configmap/
 - https://kubernetes.io/docs/concepts/configuration/secret/
@@ -61,8 +63,9 @@ prepare:
   timeout: 90
 checks:
 - id: configuration-config
-  title: The process and mounted file consume the intended ConfigMap
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: Dispatch reads its settings from the ConfigMap
+  explanation: DISPATCH_ENV must come from the ConfigMap’s environment key, and /config must be a read-only
+    mount of the ConfigMap, so /config reports the right environment and banner.
   command:
     args:
     - python
@@ -74,11 +77,14 @@ checks:
   json_path:
   - config
   expected: 'true'
-  diagnostic: Inspect the ConfigMap, Pod references, mounted file, and process environment. Restart the
-    Deployment after changing environment-based configuration.
+  diagnostic: Dispatch’s /config does not show the ConfigMap’s values yet. In the API container, DISPATCH_ENV
+    needs valueFrom.configMapKeyRef with name dispatch-settings and key environment, and /config needs
+    a read-only configMap volume that provides banner.txt from the banner.txt key. Run sh run.sh and wait
+    for the rollout after changing it.
 - id: configuration-secret
-  title: The application authenticates using its mounted Secret
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: Dispatch logs in to its database with the mounted Secret
+  explanation: The password must arrive as a read-only file from the dispatch-database Secret, and the
+    API must be ready, which proves it logged in.
   command:
     args:
     - python
@@ -90,11 +96,13 @@ checks:
   json_path:
   - secret
   expected: 'true'
-  diagnostic: Inspect the Secret key and read-only volume reference without printing credentials; the
-    API must authenticate to its database using the mounted file.
+  diagnostic: The password file is missing, wrong, or not being used. Run kubectl describe pod on an API
+    Pod and read the Events for volume errors. The secret volume must map the key password to the file
+    password, be mounted read-only at /var/run/dispatch, and DB_PASSWORD_FILE must stay /var/run/dispatch/password
+    with no DB_PASSWORD variable.
 - id: configuration-processing
-  title: A fresh job completes through the configured stack
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
   command:
     args:
     - python
@@ -106,8 +114,8 @@ checks:
   json_path:
   - processing
   expected: 'true'
-  diagnostic: Inspect the actual resource state and application response, then reconcile the relevant
-    workload.
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then
+    kubectl logs deployment/worker for database or Redis errors.
 capabilities:
 - docker
 - kind

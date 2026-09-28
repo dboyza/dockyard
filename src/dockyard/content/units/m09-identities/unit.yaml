@@ -2,15 +2,15 @@ id: m09-identities
 revision: 1
 module: 9
 order: 3
-title: Give an application a specific API identity
-summary: Verify ServiceAccount authentication and namespace-scoped authorization.
+title: Give a Pod its own API identity
+summary: Let one Pod list Pods through the Kubernetes API, and confirm it can do nothing more.
 kind: lesson
 runtime: kubernetes
 minutes: 35
 outcomes:
-- Separate a ServiceAccount identity from permissions granted to it.
-- Use a Role and RoleBinding for a small namespaced permission set.
-- Verify allowed and denied requests with the actual projected token.
+- Explain the difference between an identity and its permissions.
+- Create a Role and RoleBinding for a ServiceAccount.
+- Test permissions with kubectl auth can-i and with the Pod’s own token.
 prerequisites:
 - m09-secrets
 objectives:
@@ -20,19 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Your administrator can list Pods, but the inventory Pod receives HTTP 403. What should you
-    inspect first?
+  question: You can list Pods, but the inventory Pod gets HTTP 403. What should you check first?
   options:
-  - The Pod's ServiceAccount and the binding for that identity.
-  - The administrator's successful command history.
-  - The image tag, because 403 always means an image pull failure.
+  - The Pod’s ServiceAccount and what is bound to it.
+  - Your own command history.
+  - The image tag.
   correct: 0
-  explanation: The two requests authenticate as different identities; authorization must be checked for
-    the workload itself.
+  explanation: You and the Pod are different identities. 403 means the Pod was identified but its identity
+    is not allowed.
 hints:
-- Read serviceAccountName from the actual inventory Pod.
-- Compare that identity and namespace with the RoleBinding subjects.
-- Bind dispatch-reader in namespace dispatch to the existing dispatch-pod-reader Role.
+- Find the inventory Pod’s serviceAccountName, then read the RoleBinding’s subjects.
+- The subject must be the ServiceAccount dispatch-reader in namespace dispatch.
+- Change the RoleBinding subject name from wrong-reader to dispatch-reader in identity.yaml and apply
+  it.
 sources:
 - https://kubernetes.io/docs/concepts/configuration/configmap/
 - https://kubernetes.io/docs/concepts/configuration/secret/
@@ -63,8 +63,9 @@ prepare:
   timeout: 90
 checks:
 - id: configuration-config
-  title: The process and mounted file consume the intended ConfigMap
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: Dispatch reads its settings from the ConfigMap
+  explanation: DISPATCH_ENV must come from the ConfigMap’s environment key, and /config must be a read-only
+    mount of the ConfigMap, so /config reports the right environment and banner.
   command:
     args:
     - python
@@ -76,11 +77,14 @@ checks:
   json_path:
   - config
   expected: 'true'
-  diagnostic: Inspect the ConfigMap, Pod references, mounted file, and process environment. Restart the
-    Deployment after changing environment-based configuration.
+  diagnostic: Dispatch’s /config does not show the ConfigMap’s values yet. In the API container, DISPATCH_ENV
+    needs valueFrom.configMapKeyRef with name dispatch-settings and key environment, and /config needs
+    a read-only configMap volume that provides banner.txt from the banner.txt key. Run sh run.sh and wait
+    for the rollout after changing it.
 - id: configuration-secret
-  title: The application authenticates using its mounted Secret
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: Dispatch logs in to its database with the mounted Secret
+  explanation: The password must arrive as a read-only file from the dispatch-database Secret, and the
+    API must be ready, which proves it logged in.
   command:
     args:
     - python
@@ -92,11 +96,13 @@ checks:
   json_path:
   - secret
   expected: 'true'
-  diagnostic: Inspect the Secret key and read-only volume reference without printing credentials; the
-    API must authenticate to its database using the mounted file.
+  diagnostic: The password file is missing, wrong, or not being used. Run kubectl describe pod on an API
+    Pod and read the Events for volume errors. The secret volume must map the key password to the file
+    password, be mounted read-only at /var/run/dispatch, and DB_PASSWORD_FILE must stay /var/run/dispatch/password
+    with no DB_PASSWORD variable.
 - id: configuration-processing
-  title: A fresh job completes through the configured stack
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
   command:
     args:
     - python
@@ -108,11 +114,12 @@ checks:
   json_path:
   - processing
   expected: 'true'
-  diagnostic: Inspect the actual resource state and application response, then reconcile the relevant
-    workload.
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then
+    kubectl logs deployment/worker for database or Redis errors.
 - id: configuration-identity
-  title: The real workload identity has only the required access
-  explanation: Inspect actual configuration delivery, process behavior, and API authorization.
+  title: The inventory Pod can list Pods, and nothing more
+  explanation: Using its own token, the inventory Pod must list Pods in dispatch, be refused Secrets and
+    kube-system Pods, and be refused create, patch, update, and delete. API Pods must have no token.
   command:
     args:
     - python
@@ -124,8 +131,10 @@ checks:
   json_path:
   - identity
   expected: 'true'
-  diagnostic: Verify the ServiceAccount, namespace-scoped binding, actual list request, and denied Secret
-    or cross-namespace access.
+  diagnostic: The inventory identity has too little or too much access, or an API Pod still has a token.
+    Run the request from the Pod shown in the lesson and kubectl auth can-i --list --as=system:serviceaccount:dispatch:dispatch-reader.
+    Check the RoleBinding’s subject is ServiceAccount dispatch-reader in namespace dispatch, and that
+    the Role only allows get, list, and watch on pods.
 capabilities:
 - docker
 - kind
