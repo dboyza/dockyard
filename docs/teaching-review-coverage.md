@@ -89,10 +89,10 @@ A runtime pass alone is not a teaching-quality result.
 | m18-recovery | Completed without solutions | Revised | Explained authenticated encryption, key custody, and restoring to separate storage; db-recovery with its own claim served the marker; passed. |
 | m18-mission | Completed without solutions | Revised | The draft said to fix network.yaml, but the fault is a live edit (retired-client label) while the file is correct; corrected the brief and hints. Completed all four repairs; passed. |
 | exam-ckad-b | Pending | Pending |  |
-| m19-runtime | Pending | Pending |  |
-| m19-kubelet | Pending | Pending |  |
-| m19-control-plane | Pending | Pending |  |
-| m19-mission | Pending | Pending |  |
+| m19-runtime | Completed without solutions | Revised | Replaced the repeated jargon block with a plain guide to the VMs; added a kubectl, crictl, and ctr comparison. Observed the retired socket, RuntimeReady, SystemdCgroup, and the process under kubepods.slice; passed. |
+| m19-kubelet | Completed without solutions | Revised | Taught systemctl, journalctl, enable versus start, and daemon-reload. The stopped worker still showed Ready, as the lesson warns; passed after starting it. |
+| m19-control-plane | Completed without solutions | Revised | Taught the four client error categories, static Pods, certificate checks, and kubectl config set-cluster. The operator client targeted port 7443 instead of 6443; passed. |
+| m19-mission | Completed without solutions | Revised | Fixed crictl, kubelet, and the operator client independently; passed. |
 | m20-init | Pending | Pending |  |
 | m20-join | Pending | Pending |  |
 | m20-ha | Pending | Pending |  |

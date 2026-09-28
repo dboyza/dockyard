@@ -1,12 +1,8 @@
-# Debrief: Separate client access from control-plane health
+## A broken client, a healthy cluster
 
-The private guest client reaches the intended API endpoint using the cluster’s certificate-backed connection.
-A failed client request can result from endpoint or trust configuration even when the control-plane processes themselves remain healthy.
+The control plane was fine all along; the operator client was aimed at the wrong place.
+Reading the error category first pointed you at the client rather than the cluster.
 
-## Explain your result
-
-What host-side observation would separate an unavailable API process from a client that targets the wrong address?
-
-## Transfer beyond this lab
-
-Keep administrative client configuration scoped to the intended cluster and never repair a trust problem by disabling certificate verification.
+Check your understanding:
+Which error would you expect for each of: wrong address, untrusted certificate, wrong password, and missing permission?
+Why must a kubeconfig containing a client key be mode 600?

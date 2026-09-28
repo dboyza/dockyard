@@ -2,16 +2,17 @@ id: m19-control-plane
 revision: 2
 module: 19
 order: 3
-title: Separate client access from control-plane health
-summary: Inspect TLS trust and static components while repairing a separate guest operator client.
+title: Troubleshoot kubectl access and the control plane
+summary: Fix a broken kubeconfig inside the control-plane VM, and check the control plane’s certificates
+  and static Pods.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 40
 outcomes:
-- Distinguish connection, certificate trust, authentication, and authorization failures.
-- Inspect kubeadm static components through CRI.
-- Restore a private guest operator client without modifying the managed host kubeconfig.
+- Tell connection, certificate, authentication, and permission errors apart.
+- Inspect control-plane static Pods and certificates on the node.
+- Fix a kubeconfig without weakening its security.
 prerequisites:
 - m19-kubelet
 objectives:
@@ -31,11 +32,9 @@ prediction:
   explanation: A working independent client narrows the problem to the failing access path before suggesting
     control-plane replacement.
 hints:
-- Separate the host API client, guest operator client, node agent, and runtime client.
-- Compare actual endpoint paths, systemd service state, lease renewal, and certificate trust before restarting
-  components.
-- The reference boundaries are the containerd Unix socket, active kubelet services, and the working private
-  administrative client supplied by kubeadm.
+- Read the exact error from the operator client, and see which server address it uses.
+- Compare that address with the server in /etc/kubernetes/admin.conf.
+- Correct the server address in operator.conf, keep certificate checks on, and run chmod 600 on it.
 sources:
 - https://v1-35.docs.kubernetes.io/docs/setup/production-environment/container-runtimes/
 - https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
@@ -63,8 +62,10 @@ prepare:
   timeout: 90
 checks:
 - id: native-operator
-  title: The private guest client reaches a certificate-backed control plane
-  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  title: The operator client inside the control plane works securely
+  explanation: $HOME/.kube/operator.conf in the control-plane VM must list both nodes against the real
+    API server with certificate checks on, be mode 600, and all four control-plane static Pods must be
+    running.
   command:
     args:
     - python
@@ -75,10 +76,12 @@ checks:
   json_path:
   - operator
   expected: 'true'
-  diagnostic: Compare the guest client endpoint, private permissions, certificate trust, and static containers.
+  diagnostic: The operator client still fails or is not private. Read its error category, compare its
+    server address with the one in /etc/kubernetes/admin.conf, keep certificate checks on, and set chmod
+    600 on the file.
 - id: native-workflow
-  title: A fresh frontend job is completed and persisted by the native worker
-  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  title: A job from the frontend completes on the native cluster
+  explanation: A real job submitted from the frontend must be completed by a worker and saved in the database.
   command:
     args:
     - python
@@ -89,7 +92,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Trace the frontend, Service, API, queue, worker, and persisted database result.
+  diagnostic: A job did not complete. Check kubectl get pods for anything not ready, then read kubectl
+    logs deployment/worker. If a node is NotReady, fix that first.
 capabilities:
 - docker
 - limactl

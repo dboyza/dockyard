@@ -1,22 +1,30 @@
-## Independent operations
+## Recover the whole chain
 
-The application, runtime, node agent, and operator client have different failure boundaries.
-Use evidence to decide which boundary to investigate next, and preserve working layers while repairing failed ones.
-Your earlier container and Kubernetes experience now connects to the Linux processes that implement the cluster.
-This mission supplies outcomes and an existing native checkpoint; choose your own diagnostic order.
+This mission combines the three lessons: several layers of the native cluster are broken at once.
+The application, the container runtime tools, the kubelet, and the separate operator client can each fail on their own, and each can look fine while its neighbour is broken.
 
-A successful HTTP request does not replace node-heartbeat evidence, and a working host client does not establish that the guest operator client is correctly configured.
-The assessment checks all these boundaries against live state.
+There are no step-by-step commands.
+Decide your own order, collect evidence before each change, and leave working layers alone.
 
-## The native checkpoint
+Remember the traps from the lessons:
 
-Dispatch now runs on two real Ubuntu guests, with containerd and kubeadm rather than kind nodes.
-The host terminal keeps its private Kubernetes client; `limactl` opens a separate Linux guest session.
-The guest's root account is confined to that app-owned VM, but the external host shell still has your normal user privileges.
-No host directories are mounted into either guest.
-The database uses a retained local PersistentVolume on the worker, which deliberately has node affinity and is not replicated storage.
-The hardened API, queue, worker, and frontend retain the application and access boundaries from the previous phase.
+- a successful HTTP request does not show the kubelet is supervising the node;
+- a working `kubectl` in your lab terminal says nothing about the operator client inside the VM;
+- a Ready status can be stale; a fresh lease renewal is stronger evidence.
 
-Use `exit` to return from a guest shell to the Dockyard workspace.
-The variables `DOCKYARD_CONTROL_PLANE` and `DOCKYARD_WORKER` name this attempt's guests; do not substitute unrelated VM names.
-The lab's resource panel shows the recorded guests and their state.
+## Working on your own
+
+Try it without hints first.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.
+
+## Working in this lab’s machines
+
+From this module on, Dispatch runs on two real Ubuntu virtual machines, a control-plane node and a worker node, built with **kubeadm** and **containerd** instead of kind.
+This is how most self-managed clusters are built, and it is what the CKA exam uses.
+
+- Your lab terminal still has `kubectl`, already connected to this cluster.
+- `limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE"` or `"$DOCKYARD_WORKER"` opens a shell *inside* a VM. Type `exit` to come back.
+- Inside a VM, `sudo` gives you root on that VM only. Your lab terminal itself still runs with your normal permissions on your computer.
+- The database keeps its data on a local volume on the worker, so it is tied to that one machine and not replicated.
+
+Use the VM names in those two variables; do not point commands at other VMs.

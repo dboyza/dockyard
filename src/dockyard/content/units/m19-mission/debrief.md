@@ -1,12 +1,6 @@
-# Debrief: Mission: recover the native supervision chain
+## Every layer checked on its own
 
-The native recovery combines CRI process visibility, fresh kubelet communication, valid client access, and a persisted application transaction.
-Each layer can appear healthy while a neighboring layer remains broken, which is why the final job is a separate check.
+You repaired each broken layer separately and proved each one, then finished with a real job across the whole system.
 
-## Explain your result
-
-Reconstruct the supervision chain from Linux service to runtime process to node lease to application result, naming the fault you repaired at each boundary.
-
-## Transfer beyond this lab
-
-A native node exposes host-level repair options that are hidden by an application-only cluster, but those options require tighter targeting and operational care.
+Check your understanding:
+Trace the chain from a systemd service to a container process to a node lease to a completed job, naming what you fixed at each step.

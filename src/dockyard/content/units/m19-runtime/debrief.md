@@ -1,12 +1,8 @@
-# Debrief: Trace a workload from CRI to its Linux cgroup
+## From Kubernetes object to Linux process
 
-The CRI client observes the actual container runtime and the application process inside its Linux cgroup.
-This connects a workload to host process supervision instead of inferring runtime health from a Kubernetes object alone.
+`crictl` now reaches containerd through the right socket, and you followed a Dispatch container all the way to its Linux process and cgroup.
+The containers were never affected; only the inspection tool was broken.
 
-## Explain your result
-
-Which observation established the process identity, and how did the fresh persisted job extend that evidence beyond a process listing?
-
-## Transfer beyond this lab
-
-On a real node, keep runtime inspection bounded and preserve other workloads while distinguishing a runtime fault from an application failure.
+Check your understanding:
+Why could Dispatch keep working while `crictl` was broken?
+What is the difference between a container ID, a process ID, and a Pod name?

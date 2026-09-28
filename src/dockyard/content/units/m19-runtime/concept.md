@@ -1,52 +1,67 @@
-## Three APIs, three different questions
+## Underneath Kubernetes: the container runtime
 
-`kubectl` talks to the Kubernetes API server about desired and observed objects.
-On each node, kubelet asks the container runtime to create and maintain Pod sandboxes and containers through the Container Runtime Interface, or CRI.
-`crictl` is a diagnostic client of that same interface; `ctr` is containerd's lower-level administrative client.
-A successful `ctr` command does not prove that the CRI plugin is ready, and a broken `crictl` configuration does not itself stop existing containers.
-Here the CRI endpoint is the Unix socket `/run/containerd/containerd.sock` inside the guest.
-The Docker daemon on your host computer is a separate runtime used to build and cache images.
+Kubernetes does not run containers itself.
+On every node, the **kubelet** (the node’s Kubernetes agent) asks a **container runtime**, here **containerd**, to start and stop containers.
+They talk through a standard interface called the **Container Runtime Interface (CRI)**.
 
-## What cgroups establish
+That gives you three different tools that look similar:
 
-Linux cgroups account for and limit process resources.
-This checkpoint uses cgroup v2 with the systemd driver, so containerd and kubelet cooperate with systemd's hierarchy.
-A configuration value is a statement of intent; a live process under a `kubepods.slice` path is evidence that a Kubernetes workload actually uses that hierarchy.
-Kubernetes 1.35 can discover the driver from a compatible runtime, including the containerd 2 runtime pinned here.
-Do not switch drivers on a live node merely to make a diagnostic command succeed.
+| Tool | Talks to | Use it to |
+| --- | --- | --- |
+| `kubectl` | the Kubernetes API server | see and change Kubernetes objects |
+| `crictl` | containerd, through the CRI | see what is really running on one node |
+| `ctr` | containerd directly, below the CRI | low-level containerd administration |
 
-## Worked example: inspect a different component
+`crictl` is the one to know for the CKA.
+It finds the runtime through a small config file, `/etc/crictl.yaml`, which names the runtime’s **socket**, a special file used for local connections.
+On these nodes that is `/run/containerd/containerd.sock`.
+If `crictl` is pointed at the wrong socket it fails, but that does not stop any container: running Pods carry on.
 
-Enter the control-plane guest and inspect the API server's runtime container:
+## cgroups: how Linux limits and tracks containers
+
+Linux **cgroups** group processes so the kernel can measure and limit their resources.
+These nodes use cgroup version 2 with the **systemd** cgroup driver, meaning containers are arranged under systemd’s tree, for example under `kubepods.slice`.
+A setting in a config file says what *should* happen; finding a real Dispatch process under `kubepods.slice` shows it *is* happening.
+Do not change the cgroup driver on a running node just to make a diagnostic command work.
+
+## Worked example: find a component’s real process
+
+Enter the control-plane VM and inspect the API server’s container:
 
 ```sh
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE"
 sudo crictl info
 sudo crictl ps --name kube-apiserver
-sudo crictl inspect CONTAINER_ID
+sudo crictl inspect CONTAINER_ID | grep '"pid"'
+sudo cat /proc/PID/cgroup
+exit
 ```
 
-Replace `CONTAINER_ID` with the ID you actually observed, and find `info.pid` in the inspection output.
-Then inspect `/proc/PID/cgroup` using that actual numeric PID.
-The container ID, process ID, and Kubernetes Pod name are different identifiers for related objects.
-`crictl` needs guest-root access to the containerd socket in this fixture.
-Exit the guest before running host-side Dockyard commands.
+Replace `CONTAINER_ID` with the ID from `crictl ps`, and `PID` with the number from `inspect`.
+The container ID, the process ID, and the Pod name are three different names for related things.
+`crictl` needs `sudo` because the socket belongs to root.
 
-## Diagnose the layer before changing it
+## Find the broken layer before changing it
 
-An endpoint connection error may mean the client is aimed at a nonexistent socket, the daemon is stopped, or the runtime plugin is unhealthy.
-Compare the socket path in `/etc/crictl.yaml`, `systemctl is-active containerd`, and kubelet's observed node health.
-The first observation that contradicts your hypothesis should change your next action.
+If `crictl` cannot connect, the cause could be a wrong socket path in `/etc/crictl.yaml`, containerd not running, or containerd running but unhealthy.
+Check them in that order:
 
-## The native checkpoint
+```sh
+sudo cat /etc/crictl.yaml
+systemctl is-active containerd
+kubectl get nodes
+```
 
-Dispatch now runs on two real Ubuntu guests, with containerd and kubeadm rather than kind nodes.
-The host terminal keeps its private Kubernetes client; `limactl` opens a separate Linux guest session.
-The guest's root account is confined to that app-owned VM, but the external host shell still has your normal user privileges.
-No host directories are mounted into either guest.
-The database uses a retained local PersistentVolume on the worker, which deliberately has node affinity and is not replicated storage.
-The hardened API, queue, worker, and frontend retain the application and access boundaries from the previous phase.
+The last one, run from your lab terminal, tells you whether Kubernetes still sees the node as healthy.
 
-Use `exit` to return from a guest shell to the Dockyard workspace.
-The variables `DOCKYARD_CONTROL_PLANE` and `DOCKYARD_WORKER` name this attempt's guests; do not substitute unrelated VM names.
-The lab's resource panel shows the recorded guests and their state.
+## Working in this lab’s machines
+
+From this module on, Dispatch runs on two real Ubuntu virtual machines, a control-plane node and a worker node, built with **kubeadm** and **containerd** instead of kind.
+This is how most self-managed clusters are built, and it is what the CKA exam uses.
+
+- Your lab terminal still has `kubectl`, already connected to this cluster.
+- `limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE"` or `"$DOCKYARD_WORKER"` opens a shell *inside* a VM. Type `exit` to come back.
+- Inside a VM, `sudo` gives you root on that VM only. Your lab terminal itself still runs with your normal permissions on your computer.
+- The database keeps its data on a local volume on the worker, so it is tied to that one machine and not replicated.
+
+Use the VM names in those two variables; do not point commands at other VMs.

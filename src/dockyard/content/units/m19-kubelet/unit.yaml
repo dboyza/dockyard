@@ -2,16 +2,16 @@ id: m19-kubelet
 revision: 2
 module: 19
 order: 2
-title: Reconnect node supervision through systemd
-summary: Use service state, journal evidence, and fresh node leases to recover kubelet.
+title: Troubleshoot the kubelet
+summary: Bring a stopped kubelet back using systemd and its logs, and prove the node is reporting again.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 40
 outcomes:
-- Distinguish container survival from active kubelet supervision.
-- Use systemd and journald to observe a stopped node agent.
-- Verify service recovery and fresh Kubernetes node heartbeats.
+- Explain why containers keep running when the kubelet stops.
+- Use systemctl and journalctl to diagnose a service.
+- Confirm recovery with node status and lease renewals.
 prerequisites:
 - m19-runtime
 objectives:
@@ -30,11 +30,10 @@ prediction:
   explanation: Containerd can preserve an existing process while kubelet heartbeats and reconciliation
     are unavailable.
 hints:
-- Separate the host API client, guest operator client, node agent, and runtime client.
-- Compare actual endpoint paths, systemd service state, lease renewal, and certificate trust before restarting
-  components.
-- The reference boundaries are the containerd Unix socket, active kubelet services, and the working private
-  administrative client supplied by kubeadm.
+- Inside the worker, systemctl status kubelet shows whether it is stopped or failing.
+- Read sudo journalctl -u kubelet -n 30 to see if it is simply stopped or failing because of its configuration.
+- Fix anything the journal points to, then sudo systemctl enable --now kubelet, and check kubectl get
+  nodes and leases.
 sources:
 - https://v1-35.docs.kubernetes.io/docs/setup/production-environment/container-runtimes/
 - https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
@@ -62,8 +61,9 @@ prepare:
   timeout: 90
 checks:
 - id: native-kubelet
-  title: Active kubelets publish fresh Ready node heartbeats
-  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  title: Both kubelets are active and reporting
+  explanation: The kubelet service must be active on both VMs, both nodes Ready, and both node leases
+    renewed recently.
   command:
     args:
     - python
@@ -74,10 +74,12 @@ checks:
   json_path:
   - kubelet
   expected: 'true'
-  diagnostic: Inspect systemd and the kubelet journal, then verify current node leases.
+  diagnostic: A kubelet is not active or its node is not reporting. Inside that VM, run systemctl status
+    kubelet and sudo journalctl -u kubelet -n 30 to see why; fix any configuration error before starting
+    it. Then check kubectl get leases -n kube-node-lease -o wide.
 - id: native-workflow
-  title: A fresh frontend job is completed and persisted by the native worker
-  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  title: A job from the frontend completes on the native cluster
+  explanation: A real job submitted from the frontend must be completed by a worker and saved in the database.
   command:
     args:
     - python
@@ -88,7 +90,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Trace the frontend, Service, API, queue, worker, and persisted database result.
+  diagnostic: A job did not complete. Check kubectl get pods for anything not ready, then read kubectl
+    logs deployment/worker. If a node is NotReady, fix that first.
 capabilities:
 - docker
 - limactl

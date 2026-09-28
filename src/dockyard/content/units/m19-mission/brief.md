@@ -1,11 +1,11 @@
-Restore the existing native environment so that:
+## Restore the native cluster
 
-- The worker's ordinary `sudo crictl info` reaches the runtime and its running API process belongs to the expected systemd cgroup hierarchy.
-- Both kubelet services are active, both nodes are Ready, and their leases are fresh.
-- The separate guest operator client lists both nodes using valid trust and private file permissions.
-- The four kubeadm static components remain running and a fresh Dispatch job completes through the frontend and persistent database.
+Get the existing environment to a state where:
 
-Preserve the current guests, application workloads, and database claim.
-Use the observations from previous lessons to choose your own repair sequence.
-Write a short handoff in `handoff.md` explaining each failed boundary, the evidence supporting its repair, and one observation that would falsify your conclusion.
-The handoff uses self-review; automatic completion grades the live technical criteria rather than claiming to understand your prose.
+- on the worker, `sudo crictl info` works with the normal `/etc/crictl.yaml`, and a running API process is under the systemd cgroup tree;
+- both kubelets are active, both nodes are Ready, and their leases are fresh;
+- the operator client in the control-plane VM lists both nodes with proper certificate checks and mode 600;
+- all four control-plane static Pods are running, and a new job completes through the frontend and database.
+
+Keep the current VMs, workloads, and database storage.
+Write `handoff.md` listing each broken layer, the evidence for your fix, and one observation that would have proved you wrong.

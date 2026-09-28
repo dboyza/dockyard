@@ -1,49 +1,73 @@
-## A running process is not a supervised node
+## When the node agent stops
 
-Kubelet watches assigned Pod specifications and reconciles their runtime state on one node.
-Containerd and its shims can keep existing containers running while kubelet is stopped.
-That makes an HTTP success a useful application observation but insufficient evidence of node health.
-The API does not instantly mark a node NotReady when its last heartbeat stops; its controllers need time to detect the missing updates.
-A cached Ready condition can therefore outlive the process that produced it.
+The **kubelet** is the agent on each node that starts the Pods assigned to it, keeps them running, and reports back to the API server.
+It runs as an ordinary Linux service managed by **systemd**.
 
-## Follow the supervision chain
+Something surprising happens if the kubelet stops: the containers keep running.
+containerd looks after them on its own, so the application can still answer requests.
+What stops is *supervision*: nobody restarts failed containers, starts new Pods on that node, or reports its status.
+So a working request is not proof that the node is healthy.
 
-systemd starts kubelet from its service unit and drop-in configuration.
-Kubeadm supplies configuration under `/var/lib/kubelet` and credentials under `/etc/kubernetes`.
-`systemctl status` describes the service and recent messages, while `journalctl -u kubelet` provides its journal history.
-`systemctl cat kubelet` reveals the effective unit files and drop-ins without changing them.
-Starting a stopped service and fixing an invalid service configuration are different repairs.
-Repeated restarts of a misconfigured service only repeat the failure.
+The API server also does not notice straight away.
+Every node renews a small **Lease** object in the `kube-node-lease` namespace every few seconds.
+When renewals stop, it can take up to about a minute before the node is marked `NotReady`, so for a while a stale `Ready` status can outlive the kubelet itself.
 
-## Worked example: inspect containerd without changing it
+## Reading a systemd service
+
+These commands work for any systemd service, and you will use them on the kubelet in the CKA:
+
+```sh
+systemctl status kubelet --no-pager
+sudo journalctl -u kubelet -n 30 --no-pager
+systemctl cat kubelet
+sudo systemctl start kubelet
+sudo systemctl enable kubelet
+sudo systemctl daemon-reload
+```
+
+- `status` shows whether it is running (`active (running)`) and its last few log lines.
+- `journalctl -u NAME` shows its full log; `-n 30` limits it to the last 30 lines.
+- `systemctl cat` shows the service’s definition files, including extra “drop-in” files that change its settings, without editing anything.
+- `start` runs it now; `enable` makes it start at boot. They are separate.
+- After editing a service definition, run `daemon-reload` so systemd reads it, then restart the service.
+
+A stopped service needs starting; a service with a broken configuration needs the configuration fixed.
+Restarting a misconfigured service just repeats the failure, so read the journal first.
+kubeadm keeps the kubelet’s settings under `/var/lib/kubelet` and its credentials under `/etc/kubernetes`.
+
+## Worked example: the same checks on containerd
 
 ```sh
 limactl shell --workdir=/tmp "$DOCKYARD_WORKER"
 systemctl show containerd -p ActiveState -p SubState -p MainPID
 sudo journalctl -u containerd -n 15 --no-pager
 systemctl cat containerd
+exit
 ```
 
-An active state establishes that systemd considers the service running; its PID links that claim to an actual process.
-The journal helps explain failed starts, but the absence of a recent error line does not establish application correctness.
-Apply this same observation pattern to kubelet for the task.
+`systemctl show -p` prints exactly the properties you name.
+A `MainPID` links “systemd thinks it is running” to a real process.
 
-## Verify at the API boundary
+## Checking from the API side
 
-Each node renews a Lease in `kube-node-lease`.
-A fresh `renewTime`, a Ready condition, and an active kubelet service together provide stronger evidence than any one of them alone.
-Inspect leases with `kubectl get leases -n kube-node-lease -o wide` from the host's private client.
-A Ready node can still have broken CNI or DNS, so the application check additionally exercises the actual frontend, API, queue, worker, and database path.
+From your lab terminal:
 
-## The native checkpoint
+```sh
+kubectl get nodes
+kubectl get leases -n kube-node-lease -o wide
+```
 
-Dispatch now runs on two real Ubuntu guests, with containerd and kubeadm rather than kind nodes.
-The host terminal keeps its private Kubernetes client; `limactl` opens a separate Linux guest session.
-The guest's root account is confined to that app-owned VM, but the external host shell still has your normal user privileges.
-No host directories are mounted into either guest.
-The database uses a retained local PersistentVolume on the worker, which deliberately has node affinity and is not replicated storage.
-The hardened API, queue, worker, and frontend retain the application and access boundaries from the previous phase.
+A fresh lease renewal time, a `Ready` condition, and an active kubelet service together are strong evidence.
+Even then, a Ready node can have broken networking, which is why Check work also runs a real job.
 
-Use `exit` to return from a guest shell to the Dockyard workspace.
-The variables `DOCKYARD_CONTROL_PLANE` and `DOCKYARD_WORKER` name this attempt's guests; do not substitute unrelated VM names.
-The lab's resource panel shows the recorded guests and their state.
+## Working in this lab’s machines
+
+From this module on, Dispatch runs on two real Ubuntu virtual machines, a control-plane node and a worker node, built with **kubeadm** and **containerd** instead of kind.
+This is how most self-managed clusters are built, and it is what the CKA exam uses.
+
+- Your lab terminal still has `kubectl`, already connected to this cluster.
+- `limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE"` or `"$DOCKYARD_WORKER"` opens a shell *inside* a VM. Type `exit` to come back.
+- Inside a VM, `sudo` gives you root on that VM only. Your lab terminal itself still runs with your normal permissions on your computer.
+- The database keeps its data on a local volume on the worker, so it is tied to that one machine and not replicated.
+
+Use the VM names in those two variables; do not point commands at other VMs.

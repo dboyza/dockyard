@@ -1,16 +1,11 @@
-Recover kubelet supervision on the worker without replacing the VM or rebuilding Dispatch.
-Both guests must have active kubelet services, fresh node leases, and Ready conditions.
-A new Dispatch job must complete through the existing application.
+## Restore the worker’s kubelet
 
-Inspect the worker before changing it:
+The kubelet on the worker is not supervising the node, though existing containers still run.
 
-```sh
-limactl shell --workdir=/tmp "$DOCKYARD_WORKER"
-systemctl status kubelet --no-pager
-sudo journalctl -u kubelet -n 30 --no-pager
-systemctl cat kubelet
-```
+1. Enter the worker and run `systemctl status kubelet --no-pager`, `sudo journalctl -u kubelet -n 30 --no-pager`, and `systemctl cat kubelet`.
+2. Decide whether the service just needs starting, or has a configuration problem to fix first, and repair it.
+3. Exit, then check both nodes are `Ready` and compare their lease renewal times with `kubectl get leases -n kube-node-lease -o wide`.
+4. Choose **Check work**.
 
-Use the observations to decide whether the service needs a start or a configuration repair.
-After the repair, return to the host shell and compare node conditions with lease renewal times.
-Record why an existing container can remain alive while its node loses active supervision.
+Do not replace the VM or rebuild Dispatch; a new job must complete through the existing application.
+In your notes, explain how a container can keep running while its node has lost supervision.

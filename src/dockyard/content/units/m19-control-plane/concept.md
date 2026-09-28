@@ -1,21 +1,26 @@
-## Find the failed boundary
+## When kubectl cannot reach the cluster
 
-A connection refusal means no service accepted the connection at the chosen endpoint.
-A certificate validation error means the client reached TLS but could not establish the expected trust or server identity.
-An HTTP 401 means authentication failed, while a 403 usually means an authenticated request lacked authorization.
-These observations lead to different repairs; disabling TLS verification obscures the boundary rather than establishing trust.
-A kubeconfig combines an endpoint, CA trust, credentials, and a selected context.
-Keep that file private because embedded client keys grant the identity's permissions.
+When a `kubectl` command fails, the error tells you how far it got.
+Learn to read these, because each needs a different fix:
 
-## The control plane beneath kubectl
+- **connection refused**: nothing is listening at that address and port. Wrong address, or the API server is down.
+- **certificate error** (such as “x509: certificate signed by unknown authority”): the client reached the server but cannot trust its certificate.
+- **401 Unauthorized**: the server does not accept the client’s credentials.
+- **403 Forbidden**: the credentials are accepted, but that user is not allowed to do this.
 
-Kubeadm writes static Pod manifests under `/etc/kubernetes/manifests`.
-The local kubelet watches that directory and supervises the API server, controller manager, scheduler, and local etcd through containerd.
-Mirror Pod objects expose those workloads through the API, but deleting a mirror object does not remove its source manifest.
-CRI inspection remains useful when a particular operator's API client is broken.
-A healthy API process still needs a functioning datastore and certificates, so one running process is not a complete readiness check.
+Never “fix” a certificate error by turning off verification; that hides the problem and removes the protection.
 
-## Worked example: inspect server trust
+A **kubeconfig** file holds everything a client needs: the server’s address, the certificate authority (CA) to trust, and the user’s credentials.
+Because it can contain a private key, keep it readable only by its owner (`chmod 600`).
+
+## The control plane is made of Pods
+
+kubeadm runs the control-plane components, the API server, controller manager, scheduler, and etcd, as **static Pods**.
+Their manifests are plain files in `/etc/kubernetes/manifests` on the control-plane node, and the kubelet runs whatever it finds there.
+They also appear in `kubectl get pods -n kube-system`, but deleting them there does not remove them; the kubelet recreates them from the files.
+If `kubectl` itself is broken, `sudo crictl ps` on the node still shows whether they are running.
+
+## Worked example: check the API server’s certificate
 
 ```sh
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE"
@@ -23,30 +28,41 @@ sudo kubeadm certs check-expiration
 sudo openssl x509 -in /etc/kubernetes/pki/apiserver.crt -noout -subject -issuer -dates
 sudo openssl verify -CAfile /etc/kubernetes/pki/ca.crt /etc/kubernetes/pki/apiserver.crt
 sudo crictl ps
+exit
 ```
 
-The certificate's validity dates, issuing CA, and SANs answer different questions.
-`openssl verify` checks trust and validity here; a real API request additionally checks the endpoint's identity and the client's permissions.
-Do not print private key material into notes or exported runbooks.
-Certificate renewal is taught in the maintenance module; this exercise does not require rotating working credentials.
+- `kubeadm certs check-expiration` lists every control-plane certificate and when it expires.
+- `openssl x509 ... -dates` shows who the certificate is for, who signed it, and its validity dates.
+- `openssl verify` checks it was signed by the cluster’s CA.
 
-## Two intentionally separate clients
+Never print private keys (`*.key` files) into your notes.
+Renewing certificates comes in the maintenance module; this lesson does not need it.
 
-The host computer uses Dockyard's managed private kubeconfig through a loopback forwarding endpoint.
-This lesson also supplies `$HOME/.kube/operator.conf` inside the control-plane guest, which connects directly to the native control-plane endpoint.
-Repair the guest client only.
-The guest's `/etc/kubernetes/admin.conf` is the authoritative working administrative client supplied by kubeadm, and it should remain root-readable.
-A copied operator client should belong to the guest user with mode 600.
+## Two separate clients
 
-## The native checkpoint
+Your lab terminal uses Dockyard’s own kubeconfig, which reaches the cluster through a forwarded port on your computer.
+This lab also gives the control-plane VM a separate client file, `$HOME/.kube/operator.conf`, which talks to the API server directly inside the VM network.
+That is the one that is broken, and the only one you should change.
+kubeadm’s own `/etc/kubernetes/admin.conf` on the control plane is a working administrator kubeconfig you can compare with; it must stay readable only by root.
 
-Dispatch now runs on two real Ubuntu guests, with containerd and kubeadm rather than kind nodes.
-The host terminal keeps its private Kubernetes client; `limactl` opens a separate Linux guest session.
-The guest's root account is confined to that app-owned VM, but the external host shell still has your normal user privileges.
-No host directories are mounted into either guest.
-The database uses a retained local PersistentVolume on the worker, which deliberately has node affinity and is not replicated storage.
-The hardened API, queue, worker, and frontend retain the application and access boundaries from the previous phase.
+You can edit a kubeconfig with any text editor, or with kubectl itself:
 
-Use `exit` to return from a guest shell to the Dockyard workspace.
-The variables `DOCKYARD_CONTROL_PLANE` and `DOCKYARD_WORKER` name this attempt's guests; do not substitute unrelated VM names.
-The lab's resource panel shows the recorded guests and their state.
+```sh
+kubectl --kubeconfig=FILE config view --minify
+kubectl --kubeconfig=FILE config set-cluster CLUSTER_NAME --server=https://HOST:6443
+```
+
+`config view` hides embedded keys unless you add `--raw`, so it is safe to read on screen.
+The API server normally listens on port 6443.
+
+## Working in this lab’s machines
+
+From this module on, Dispatch runs on two real Ubuntu virtual machines, a control-plane node and a worker node, built with **kubeadm** and **containerd** instead of kind.
+This is how most self-managed clusters are built, and it is what the CKA exam uses.
+
+- Your lab terminal still has `kubectl`, already connected to this cluster.
+- `limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE"` or `"$DOCKYARD_WORKER"` opens a shell *inside* a VM. Type `exit` to come back.
+- Inside a VM, `sudo` gives you root on that VM only. Your lab terminal itself still runs with your normal permissions on your computer.
+- The database keeps its data on a local volume on the worker, so it is tied to that one machine and not replicated.
+
+Use the VM names in those two variables; do not point commands at other VMs.

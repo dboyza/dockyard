@@ -2,16 +2,16 @@ id: m19-runtime
 revision: 2
 module: 19
 order: 1
-title: Trace a workload from CRI to its Linux cgroup
-summary: Locate a runtime-client fault without restarting a healthy workload.
+title: The container runtime and crictl
+summary: Fix crictl on a real node and follow a Dispatch container to its Linux process.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 40
 outcomes:
-- Distinguish the CRI endpoint from the Kubernetes API and containerd low-level client.
-- Identify a running Dispatch process through CRI and its actual systemd cgroup.
-- Repair runtime inspection while preserving the application.
+- Explain the difference between kubectl, crictl, and ctr.
+- Use crictl to find a container and its process.
+- Read a process’s cgroup to see how Linux tracks it.
 prerequisites:
 - m18-mission
 objectives:
@@ -31,11 +31,10 @@ prediction:
   explanation: Compare the client endpoint and daemon health before assuming the workload runtime has
     stopped.
 hints:
-- Separate the host API client, guest operator client, node agent, and runtime client.
-- Compare actual endpoint paths, systemd service state, lease renewal, and certificate trust before restarting
-  components.
-- The reference boundaries are the containerd Unix socket, active kubelet services, and the working private
-  administrative client supplied by kubeadm.
+- Inside the worker, compare the endpoint in /etc/crictl.yaml with where containerd’s socket really is.
+- containerd listens on unix:///run/containerd/containerd.sock.
+- Put that path in /etc/crictl.yaml as the runtime and image endpoint, then run sudo crictl info and sudo
+  crictl ps.
 sources:
 - https://v1-35.docs.kubernetes.io/docs/setup/production-environment/container-runtimes/
 - https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
@@ -63,8 +62,10 @@ prepare:
   timeout: 90
 checks:
 - id: native-cri
-  title: The worker CRI client observes a real API process in systemd cgroups
-  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  title: crictl on the worker sees a real Dispatch process
+  explanation: On the worker, sudo crictl info must use the normal /etc/crictl.yaml, report RuntimeReady
+    with the systemd cgroup driver, and show a running API container whose process is under the systemd
+    cgroup tree.
   command:
     args:
     - python
@@ -75,10 +76,12 @@ checks:
   json_path:
   - cri
   expected: 'true'
-  diagnostic: Inspect the guest CRI socket configuration, daemon readiness, and actual API process cgroup.
+  diagnostic: crictl on the worker still cannot see the runtime properly. Inside the worker, compare the
+    endpoint in /etc/crictl.yaml with unix:///run/containerd/containerd.sock, check systemctl is-active
+    containerd, and run sudo crictl info again.
 - id: native-workflow
-  title: A fresh frontend job is completed and persisted by the native worker
-  explanation: Compare live Linux and Kubernetes observations with the required outcome.
+  title: A job from the frontend completes on the native cluster
+  explanation: A real job submitted from the frontend must be completed by a worker and saved in the database.
   command:
     args:
     - python
@@ -89,7 +92,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Trace the frontend, Service, API, queue, worker, and persisted database result.
+  diagnostic: A job did not complete. Check kubectl get pods for anything not ready, then read kubectl
+    logs deployment/worker. If a node is NotReady, fix that first.
 capabilities:
 - docker
 - limactl
