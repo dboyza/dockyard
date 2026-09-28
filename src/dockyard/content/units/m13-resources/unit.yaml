@@ -2,15 +2,15 @@ id: m13-resources
 revision: 1
 module: 13
 order: 1
-title: Separate requests, limits, and admission budgets
-summary: Repair impossible scheduling requests and verify runtime enforcement.
+title: Requests, limits, and namespace budgets
+summary: Fix an impossible resource request, then add namespace defaults and a CPU budget.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Distinguish requested, limited, allocatable, and observed resources.
-- Relate resource settings to QoS and cgroup enforcement.
-- Use LimitRange defaults and ResourceQuota admission checks.
+- Explain what requests and limits each control.
+- Read CPU and memory units and QoS classes.
+- Use a LimitRange and ResourceQuota to set namespace rules.
 prerequisites:
 - m12-mission
 objectives:
@@ -20,17 +20,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A container uses almost no CPU but requests 99 CPUs on a smaller node. Why can it remain Pending?
+  question: A container uses almost no CPU but requests 99 CPUs on a small node. Why does it stay Pending?
   options:
-  - Scheduling uses the declared request, not its currently observed utilization.
-  - The scheduler ignores requests until a container is busy.
-  - A CPU limit automatically creates more node capacity.
+  - Scheduling uses the request, not actual use.
+  - The scheduler ignores idle containers.
+  - A limit adds node capacity.
   correct: 0
-  explanation: Requests are the scheduler input; actual use and runtime enforcement are separate observations.
+  explanation: The scheduler only places a Pod where its requests fit. What it actually uses does not
+    matter.
 hints:
-- Read FailedScheduling events and compare the request with allocatable CPU.
-- Use 50m/64Mi requests and 300m/192Mi limits for the API, then wait for readiness.
-- Apply the namespace defaults and aggregate budget after replacing the oversized Pods.
+- kubectl describe pod on a Pending API Pod shows a FailedScheduling event; compare it with the node’s
+  Allocatable CPU.
+- Use requests of 50m CPU and 64Mi memory, and limits of 300m CPU and 192Mi memory.
+- Apply the fixed platform.yaml first, then add the LimitRange and ResourceQuota to capacity.yaml and
+  apply it.
 sources:
 - https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 - https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
@@ -63,8 +66,9 @@ prepare:
   timeout: 240
 checks:
 - id: capacity-resources
-  title: API resource requests and enforced runtime limits are bounded
-  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  title: The API has sensible requests and limits in force
+  explanation: Each API container must request 25m-100m CPU and 32-128Mi memory, have limits no higher
+    than 1 CPU and 512Mi, be Burstable, and have those limits really applied inside the container.
   command:
     args:
     - python
@@ -76,10 +80,13 @@ checks:
   json_path:
   - resources
   expected: 'true'
-  diagnostic: Compare requests/limits with allocatable capacity, Pod QoS, and the running cgroup values.
+  diagnostic: 'The API’s resources are outside the allowed range, or the Pods are not all available. Check
+    the api container’s resources in the Deployment: requests of about 50m CPU and 64Mi memory, limits
+    of about 300m CPU and 192Mi. Then run kubectl get pods -o custom-columns=NAME:.metadata.name,QOS:.status.qosClass.'
 - id: capacity-budget
-  title: LimitRange defaults and quota admission enforce the namespace budget
-  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  title: The namespace applies defaults and a CPU budget
+  explanation: LimitRange dispatch-defaults must fill in requests and limits for a container that sets
+    none, and ResourceQuota dispatch-budget must reject a Pod that asks for too much CPU.
   command:
     args:
     - python
@@ -91,8 +98,9 @@ checks:
   json_path:
   - budget
   expected: 'true'
-  diagnostic: Apply the supplied LimitRange and ResourceQuota, then inspect admission errors for an oversized
-    request.
+  diagnostic: The namespace rules are missing or not working. Run kubectl get limitrange,resourcequota
+    and kubectl describe quota dispatch-budget. Both must exist as in the lesson, and the quota’s requests.cpu
+    must be no more than 2.
 capabilities:
 - docker
 - kind

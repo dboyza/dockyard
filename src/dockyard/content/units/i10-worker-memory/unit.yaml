@@ -2,15 +2,15 @@ id: i10-worker-memory
 revision: 1
 module: 13
 order: 90
-title: Jobs wait while worker containers repeatedly restart
-summary: A memory-budget edit coincides with worker restarts. The API still accepts jobs, but completed
-  results stop arriving.
+title: Jobs wait while the workers keep restarting
+summary: After a memory settings change, the workers keep restarting and no jobs finish.
 kind: incident
 runtime: kubernetes
 minutes: 35
 outcomes:
-- Diagnose the reported boundary from live evidence.
-- Restore useful behavior while preserving the original state and operating constraints.
+- Find why a container restarted from its last state and events.
+- Explain the difference between a memory request and a memory limit.
+- Choose a memory limit with room for the real working set, and confirm jobs finish.
 prerequisites:
 - m13-mission
 objectives:
@@ -20,13 +20,15 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation would establish recovery?
+  question: 'A worker keeps restarting and describe pod shows Last State: OOMKilled. What does that tell
+    you?'
   options:
-  - A fresh end-to-end request succeeds and the original data remains.
-  - The latest command exited zero.
-  - A replacement Pod exists.
+  - It used more memory than its limit.
+  - Its liveness probe failed.
+  - Its image is missing.
   correct: 0
-  explanation: Recovery requires useful behavior and the stated preservation constraints.
+  explanation: OOMKilled means the kernel stopped the container for exceeding its memory limit. Probe
+    failures and image problems show different reasons.
 hints:
 - Inspect the previous termination reason and the worker memory limit before changing restart policy.
 - The supplied workload retains an 80 MiB working set in addition to its Python runtime and dependencies.
@@ -61,9 +63,9 @@ prepare:
   timeout: 360
 checks:
 - id: incident-preserved
-  title: The original namespace, database claim, and stored job remain
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The original namespace, database storage, and job are still there
+  explanation: The fix must not replace the namespace or database claim, or lose the job stored before
+    the incident.
   command:
     args:
     - python
@@ -75,12 +77,11 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The original namespace, the database’s data-db-0 claim, or the original job is gone. If
+    they were deleted or replaced, reset the lab and repair it in place instead.
 - id: incident-available
-  title: Two API replicas are available
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: Two API copies are available
+  explanation: The dispatch Deployment must still have two ready copies.
   command:
     args:
     - python
@@ -92,12 +93,11 @@ checks:
   json_path:
   - available
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The API does not have two available copies. Run kubectl get deployment dispatch and kubectl
+    describe pods -l app=dispatch.
 - id: incident-route
-  title: The Service reaches exactly the two ready API backends
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The Service reaches exactly the two API Pods
+  explanation: The dispatch Service must still select exactly the two ready API Pods.
   command:
     args:
     - python
@@ -109,12 +109,11 @@ checks:
   json_path:
   - route
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The Service no longer reaches exactly the two API Pods. Compare kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch with kubectl get pods -l app=dispatch.
 - id: incident-workflow
-  title: A fresh job completes and PostgreSQL contains its result
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: A new job is completed and saved
+  explanation: Dockyard submits a real job and checks PostgreSQL stores the worker’s result.
   command:
     args:
     - python
@@ -126,12 +125,12 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: 'A new job was not completed. Run kubectl get pods -l app=worker: if RESTARTS keeps rising,
+    kubectl describe pod on one and read its Last State and Reason.'
 - id: incident-contract
-  title: The repaired workload retains its probe or memory contract
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The workers have a bounded memory limit and stay up
+  explanation: Two workers must keep their 80 MiB working set, with a memory limit of 128-256 MiB, a request
+    no larger than the limit, and no further restarts.
   command:
     args:
     - python
@@ -143,8 +142,9 @@ checks:
   json_path:
   - contract
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The workers’ memory settings are outside the required range or they are still restarting.
+    Set the worker container’s memory limit between 128Mi and 256Mi with a request no larger, apply it,
+    and watch kubectl get pods -l app=worker for a few minutes.
 capabilities:
 - observe-container-restarts
 - docker

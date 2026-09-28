@@ -1,13 +1,11 @@
-# Repair the envelope, then drain a worker
+## Fix the capacity setup, then drain a worker
 
-Repair required affinity and the taint toleration in `platform.yaml`, the HPA target in `autoscale.yaml`, and minAvailable in `capacity.yaml`.
-Keep the two dedicated application workers, real CPU requests and limits, namespace budgets, two-to-four HPA range, and topology spread.
-Wait for four available stable API replicas under the supplied load.
+1. Fix the API’s required affinity and taint toleration in `platform.yaml`, the HPA target in `autoscale.yaml`, and `minAvailable` in `capacity.yaml`.
+2. Keep the two dedicated workers, the API’s real requests and limits, the namespace budgets, the 2 to 4 HPA range, and the spread rule.
+3. Wait for four available stable API replicas under the supplied load.
+4. Run `python drain-proof.py`, then read its output and the new Pod distribution.
+5. Choose **Check work**.
 
-Run `python drain-proof.py` from the scoped terminal.
-The script uses the eviction API, keeps two replicas protected, samples readiness, restores node schedulability, and records the replaced Pod identities.
-Inspect its output and the final Pod distribution.
-If the drain is blocked, diagnose the budget and placement instead of adding force flags or deleting the budget.
-
-Write a maintenance note with the node, observed samples, replacement evidence, remaining capacity, and the local failure-domain limitation.
-Preserve the database claim and the dedicated dependency placement throughout the rehearsal.
+If the drain is blocked, find out why from the budget and placement; do not add force options or delete the budget.
+Write a maintenance note with the node drained, what the samples showed, which Pods were replaced, how much capacity remained, and why these three nodes on one computer are not independent failure domains.
+Keep the database’s storage and its placement unchanged throughout.

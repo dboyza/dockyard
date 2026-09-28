@@ -1,12 +1,8 @@
-# Debrief: Place workloads across dedicated workers
+## Pull, permit, and spread
 
-Node labels, placement rules, and taints describe different parts of where a workload may run.
-A toleration permits a placement that a taint would otherwise repel; it does not itself attract the Pod to that node.
+Affinity pulled the API towards the worker pool, the toleration let it past the workers’ taint, and the spread rule put one copy on each.
+Each rule did one job; none of them could do another’s.
 
-## Explain your result
-
-Explain how the required selector and toleration work together and why removing the node’s taint would weaken the intended boundary.
-
-## Transfer beyond this lab
-
-Review remaining eligible nodes and failure domains before combining hard placement rules with an availability target.
+Check your understanding:
+Why would removing the workers’ taint weaken the design, even though the API would still land there?
+What would happen to the second replica if one worker were full and `whenUnsatisfiable` were `DoNotSchedule`?

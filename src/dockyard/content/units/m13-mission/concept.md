@@ -1,19 +1,36 @@
-# Mission: capacity must survive a planned transition
+## Maintenance without an outage
 
-The application pool exists, but incorrect placement rules keep API Pods from using it, the HPA targets the wrong Deployment, and the disruption budget permits no loss of availability at the intended four-replica size.
-Repair the operating envelope before attempting maintenance.
-The source of evidence is the real scheduler, metrics API, HPA controller, eviction API, and application Service.
+Nodes need maintenance: operating system updates, restarts, replacement.
+To work on a node safely you **drain** it, which evicts its Pods so they are rescheduled elsewhere, while disruption budgets keep enough copies serving.
+This mission brings the whole module together: placement, resources, autoscaling, and a disruption budget, then a real drain under load.
 
-The supplied drain rehearsal chooses only a worker in this private cluster's application pool.
-It records current API Pod UIDs, samples readiness through the assigned loopback NodePort while draining, uncordons the worker, and waits for the workload to converge again.
-It writes the observation to `drain-evidence.json` for inspection.
-That record is a sampled local rehearsal, not proof of a production SLO or every request made between samples.
+Right now:
 
-## Eviction and request draining are separate
+- the API’s placement rules stop it using the worker pool;
+- the HPA targets the wrong Deployment;
+- the disruption budget, at four replicas, allows no Pod to be removed at all.
 
-EndpointSlice updates and process termination proceed asynchronously when a Pod is deleted.
-The supplied API has a five-second preStop sleep within its twenty-second termination grace period, allowing endpoint routing changes to propagate before SIGTERM closes the server.
-This is a measured local drain allowance, not a guarantee for arbitrary load balancers or long-lived connections.
-A PDB constrains the number of voluntary evictions; it does not drain individual network requests.
-After replacement, the rehearsal also waits for Metrics Server to observe the new Pod identities before assessing scaling.
-See the [official termination flow](https://kubernetes.io/docs/tutorials/services/pods-and-endpoint-termination-flow/) for the relationship between terminating endpoints and serving traffic.
+Fix those before any maintenance.
+There are no step-by-step commands.
+
+## The drain rehearsal
+
+`drain-proof.py` picks one application worker, notes the current API Pods, and drains the worker using the eviction API, which respects disruption budgets.
+While it drains, it checks readiness through the NodePort, then uncordons the worker and waits for everything to settle.
+It writes what it saw to `drain-evidence.json`.
+Those are samples taken during one rehearsal, not proof that no request anywhere failed.
+
+The commands it relies on are ones you will use in cluster administration:
+
+```sh
+kubectl cordon NODE_NAME
+kubectl drain NODE_NAME --ignore-daemonsets --delete-emptydir-data
+kubectl uncordon NODE_NAME
+```
+
+`cordon` stops new Pods being scheduled on a node; `drain` cordons it and evicts its Pods; `uncordon` makes it schedulable again.
+
+## Working on your own
+
+Try it without hints first.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.

@@ -1,12 +1,7 @@
-# Debrief: Keep Dispatch available through worker maintenance
+## A drain that kept serving
 
-The maintenance mission combines placement, available replicas, and disruption policy rather than treating a drain command as the whole operation.
-A valid disruption budget can deliberately prevent progress when the remaining replicas cannot satisfy the availability requirement.
+Placement let the API use both workers, autoscaling gave it room, and a realistic disruption budget let the drain proceed while protecting two copies.
+With `minAvailable` equal to the replica count, the same drain would have waited forever, and that would have been the budget working as written.
 
-## Explain your result
-
-Which evidence justified eviction, and which observation would require adding capacity or repairing a replica before continuing?
-
-## Transfer beyond this lab
-
-A disruption budget governs voluntary disruptions; it does not prevent a node from failing or create spare capacity.
+Check your understanding:
+What evidence told you it was safe to evict, and what would have made you stop and add capacity first?

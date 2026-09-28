@@ -1,12 +1,8 @@
-# Incident report
+## Get the workers finishing jobs again
 
-A memory-budget edit coincides with worker restarts. The API still accepts jobs, but completed results stop arriving.
+- Run two stable workers that keep their 80 MiB working set and finish new jobs.
+- Give each worker a memory limit between 128 and 256 MiB, with a request no larger than the limit.
+- Keep the application code, the database’s storage, and the original job.
+- Do not remove the limit or delete the workload.
 
-Restore two stable workers that retain the supplied 80 MiB working set and process fresh jobs.
-Choose a per-worker memory limit between 128 and 256 MiB, with a request no greater than that limit.
-Keep the application logic, database claim, and original job.
-The check observes actual resident memory, restart stability, and a result read directly from PostgreSQL.
-Removing the limit or deleting the workload does not meet the operational budget.
-
-Write a short account of the first discriminating observation, the repair, and a regression check.
-Use the debrief as a self-review rubric; prose is not automatically graded.
+In your notes, record the first observation that pointed at the cause, your fix, and a check you could run to catch this after future budget changes.

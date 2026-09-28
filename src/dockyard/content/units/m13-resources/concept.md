@@ -1,28 +1,62 @@
-# A request reserves scheduling capacity
+## Tell Kubernetes what each container needs
 
-The scheduler compares a Pod's resource requests with available allocatable capacity on candidate nodes.
-A request is not a measurement of current usage.
-A mostly idle container requesting 99 CPUs can remain Pending because no node can satisfy its declared scheduling requirement.
-A limit is a runtime constraint: CPU use can be throttled, while exceeding an enforced memory limit can lead to an OOM kill.
-Requests and limits have different roles even when their numbers happen to match.
+Every node has a limited amount of CPU and memory.
+To place Pods sensibly, and to stop one container starving the others, Kubernetes lets each container state two amounts:
 
-For CPU, 1000m equals one CPU unit.
-For memory, Mi and Gi are binary units, while M and G are decimal units.
-Read quantities carefully before diagnosing a capacity problem.
-The supplied API uses a modest 50m CPU and 64Mi memory request with a 300m CPU and 192Mi memory limit.
-These values are a local exercise budget, not a production sizing recommendation.
+```yaml
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 300m
+    memory: 192Mi
+```
 
-Kubernetes classifies Pods into QoS classes based on their configured resources.
-The supplied API is Burstable because its CPU and memory requests differ from its limits.
-QoS influences eviction behavior under node pressure; it does not make a workload immune to failure.
-Use measurements and load testing to choose production values.
+- A **request** is what the container is guaranteed. The scheduler only places a Pod on a node with enough unreserved room for all its requests.
+- A **limit** is the most it may use. Going over the CPU limit slows the container down (**throttling**); going over the memory limit gets it killed (**OOMKilled**, out of memory).
 
-## Admission operates before scheduling
+Requests are about *reservation*, not actual use.
+A container that does nothing but requests 99 CPUs can never be scheduled on a smaller node.
 
-A LimitRange can supply defaults for containers that omit resources.
-A ResourceQuota bounds aggregate namespace requests, limits, and object counts.
-An admission rejection and a scheduled Pod becoming unhealthy are different failure stages.
-This example supplies a CPU budget and container defaults:
+## Units
+
+| Written | Means |
+| --- | --- |
+| `1` or `1000m` CPU | one whole CPU core |
+| `250m` CPU | a quarter of a core ("m" means thousandths) |
+| `64Mi` memory | 64 mebibytes (64 × 1024 × 1024 bytes) |
+| `64M` memory | 64 megabytes (64 × 1000 × 1000 bytes) |
+
+`Mi` and `M` are easy to mix up; the difference grows with size.
+
+## Quality of service
+
+From its requests and limits, Kubernetes puts each Pod in a **QoS class**:
+
+- **Guaranteed**: every container has requests equal to limits for both CPU and memory.
+- **Burstable**: at least one request or limit is set, but not in the Guaranteed way.
+- **BestEffort**: no requests or limits at all.
+
+When a node runs short of memory, BestEffort Pods are evicted first and Guaranteed Pods last.
+Dispatch’s API is Burstable, because its requests are lower than its limits.
+
+## Seeing what a node has
+
+```sh
+kubectl describe node NODE_NAME
+kubectl describe pods -l app=dispatch,track=stable
+```
+
+In `describe node`, **Allocatable** is what Pods may use, and **Allocated resources** shows how much is already requested.
+A Pod that cannot fit stays `Pending` with a `FailedScheduling` event such as “Insufficient cpu”.
+
+## Rules for a whole namespace
+
+Two objects let an administrator set rules before Pods are even created. This checking step is called **admission**.
+
+- A **LimitRange** gives default requests and limits to containers that do not set their own, and can set minimums and maximums.
+- A **ResourceQuota** caps the total that everything in a namespace may request, and can cap object counts too.
 
 ```yaml
 apiVersion: v1
@@ -50,6 +84,15 @@ spec:
     pods: '24'
 ```
 
-Server-side dry-run still invokes relevant admission checks without creating the Pod.
-The assessment uses it to observe an oversized request being denied and omitted resources receiving defaults.
-It also reads the running API's cgroup limits, connecting declared intent to Linux enforcement.
+A Pod that would break the quota is rejected at creation with an error, which is a different failure from a Pod that is created but cannot be scheduled.
+`kubectl create quota` can also create simple quotas from the command line.
+
+```sh
+kubectl describe quota dispatch-budget
+kubectl get pods -o custom-columns=NAME:.metadata.name,QOS:.status.qosClass
+```
+
+Order matters in this lab: fix the oversized Pods *before* adding the quota, or their huge old requests will count against it and block the replacements.
+
+The values used here are a small practice budget.
+Real values come from measuring the application under realistic load.

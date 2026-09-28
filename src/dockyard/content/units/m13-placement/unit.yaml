@@ -2,15 +2,15 @@ id: m13-placement
 revision: 1
 module: 13
 order: 2
-title: Place workloads across dedicated workers
-summary: Combine affinity, taints, tolerations, and topology spread.
+title: Node affinity, taints, and tolerations
+summary: Put the API on dedicated worker nodes and spread its copies across them.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Distinguish node selection from permission to tolerate a taint.
-- Use topology spread to distribute application replicas.
-- Trace scheduling failures through concrete node constraints.
+- Use node selectors and affinity to choose nodes.
+- Use taints and tolerations to keep other Pods off, and explain why a toleration alone is not enough.
+- Spread copies across nodes with a topology spread constraint.
 prerequisites:
 - m13-resources
 objectives:
@@ -20,18 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A Pod tolerates a worker taint but has no matching affinity or selector. Does the toleration
-    require it to run there?
+  question: A Pod tolerates a worker’s taint but has no affinity or selector. Must it run on that worker?
   options:
-  - No; it permits placement without requiring that destination.
-  - Yes; tolerations are stronger than required affinity.
-  - Yes; all untainted nodes become forbidden.
+  - No. The toleration only allows it there.
+  - Yes. Tolerations pull Pods to tainted nodes.
+  - Yes. Untainted nodes become forbidden.
   correct: 0
-  explanation: Tolerations remove a scheduling obstacle; node selection expresses the desired destination.
+  explanation: A toleration removes an obstacle; affinity or a nodeSelector is what chooses the destination.
 hints:
-- Read both required nodeAffinity values and the matching toleration.
-- Both must use the apps value for the dockyard.pool key.
-- Keep maxSkew 1 across kubernetes.io/hostname and verify the two live Pod node names differ.
+- Compare the API’s required affinity and toleration with kubectl get nodes --show-labels and the workers’
+  taints.
+- Both the affinity value and the toleration value must be apps for the key dockyard.pool.
+- Fix both in platform.yaml, apply, and check with kubectl get pods -o wide that each worker has one API
+  Pod.
 sources:
 - https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
 - https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
@@ -64,8 +65,9 @@ prepare:
   timeout: 240
 checks:
 - id: capacity-resources
-  title: API resource requests and enforced runtime limits are bounded
-  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  title: The API has sensible requests and limits in force
+  explanation: Each API container must request 25m-100m CPU and 32-128Mi memory, have limits no higher
+    than 1 CPU and 512Mi, be Burstable, and have those limits really applied inside the container.
   command:
     args:
     - python
@@ -77,10 +79,13 @@ checks:
   json_path:
   - resources
   expected: 'true'
-  diagnostic: Compare requests/limits with allocatable capacity, Pod QoS, and the running cgroup values.
+  diagnostic: 'The API’s resources are outside the allowed range, or the Pods are not all available. Check
+    the api container’s resources in the Deployment: requests of about 50m CPU and 64Mi memory, limits
+    of about 300m CPU and 192Mi. Then run kubectl get pods -o custom-columns=NAME:.metadata.name,QOS:.status.qosClass.'
 - id: capacity-budget
-  title: LimitRange defaults and quota admission enforce the namespace budget
-  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  title: The namespace applies defaults and a CPU budget
+  explanation: LimitRange dispatch-defaults must fill in requests and limits for a container that sets
+    none, and ResourceQuota dispatch-budget must reject a Pod that asks for too much CPU.
   command:
     args:
     - python
@@ -92,11 +97,13 @@ checks:
   json_path:
   - budget
   expected: 'true'
-  diagnostic: Apply the supplied LimitRange and ResourceQuota, then inspect admission errors for an oversized
-    request.
+  diagnostic: The namespace rules are missing or not working. Run kubectl get limitrange,resourcequota
+    and kubectl describe quota dispatch-budget. Both must exist as in the lesson, and the quota’s requests.cpu
+    must be no more than 2.
 - id: capacity-placement
-  title: API Pods are distributed across the dedicated application workers
-  explanation: Observe live resources, admission behavior, measured scaling, and workload identity.
+  title: The API runs across both dedicated workers
+  explanation: The API must require dockyard.pool=apps, tolerate its taint, keep a hard spread rule by
+    hostname, and have its Pods split evenly across both workers.
   command:
     args:
     - python
@@ -108,7 +115,10 @@ checks:
   json_path:
   - placement
   expected: 'true'
-  diagnostic: Use the apps node affinity and matching taint toleration, then compare API Pod node names.
+  diagnostic: The API is not spread across both workers. Run kubectl get pods -l app=dispatch,track=stable
+    -o wide to see where each Pod is, and kubectl describe pod on any Pending one for its FailedScheduling
+    message. Check the required affinity (dockyard.pool In [apps]), the toleration (dockyard.pool=apps:NoSchedule),
+    and the topology spread (maxSkew 1, kubernetes.io/hostname, DoNotSchedule).
 capabilities:
 - docker
 - kind

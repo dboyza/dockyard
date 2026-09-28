@@ -61,11 +61,11 @@ A runtime pass alone is not a teaching-quality result.
 | m12-mission | Completed without solutions | Revised | Fixed image, probes, update budget, canary, and preview independently; termination proof clean; passed. |
 | i05-readiness-port | Completed without solutions | Revised | Probe events showed readiness on the metrics port name resolving to 9090 with connection refused. EndpointSlices list unready addresses, which the incident now explains. Passed. |
 | exam-ckad-a | Pending | Pending |  |
-| m13-resources | Pending | Pending |  |
-| m13-placement | Pending | Pending |  |
-| m13-autoscaling | Pending | Pending |  |
-| m13-mission | Pending | Pending |  |
-| i10-worker-memory | Pending | Pending |  |
+| m13-resources | Completed without solutions | Revised | Added units, QoS classes, allocatable capacity, and admission. FailedScheduling said Insufficient cpu as described; quota and QoS observed; passed. |
+| m13-placement | Completed without solutions | Revised | Added nodeSelector, affinity, kubectl taint and label, tolerations, and spread YAML. The real scheduling event lists only the first failed rule per node, and the control plane's own taint counts; the lesson now quotes the real message. Preparing this three-node lab exposed an overlapping Pod range, now fixed in the runtime. Passed with one Pod per worker. |
+| m13-autoscaling | Completed without solutions | Revised | Added HPA YAML, kubectl autoscale, utilization arithmetic, conditions, PDB YAML, and kubectl create pdb. HPA showed 517% (258m) of a 50m request and scaled to four; passed. |
+| m13-mission | Completed without solutions | Revised | After resume the metrics API stayed unavailable because kind nodes changed addresses and kubelet certificate requests were never approved; resume now restores them, and wait-scale.py waits instead of crashing. Drain recorded 41 samples with no failures; passed. |
+| i10-worker-memory | Completed without solutions | Revised | Last State showed OOMKilled with exit 137 and a 64Mi limit; raised to 192Mi with a 128Mi request; passed. |
 | m14-kustomize | Pending | Pending |  |
 | m14-helm | Pending | Pending |  |
 | m14-operators | Pending | Pending |  |

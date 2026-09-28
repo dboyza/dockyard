@@ -1,12 +1,8 @@
-# Debrief: Separate requests, limits, and admission budgets
+## Reserve, cap, and budget
 
-Requests inform scheduling, limits constrain runtime use, and admission policies can reject configurations before a Pod is created.
-Looking at these boundaries separately explains why an unschedulable request and a runtime memory termination need different repairs.
+Requests decide where a Pod can go, limits cap what it can use, and namespace rules can refuse a Pod before it exists.
+Each fails in its own recognisable way: Pending, OOMKilled or throttled, or an error at creation.
 
-## Explain your result
-
-Which observation would distinguish insufficient schedulable capacity from an application exceeding its memory limit?
-
-## Transfer beyond this lab
-
-Choose production requests and limits from measured workload behavior, leaving headroom for node services and transient demand.
+Check your understanding:
+Which event or status would tell you a Pod is Pending for lack of CPU, and which would tell you a container was killed for memory?
+What QoS class would a Pod with `requests` equal to `limits` for both CPU and memory have?
