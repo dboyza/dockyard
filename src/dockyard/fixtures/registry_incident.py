@@ -72,7 +72,9 @@ def install(*, broken: bool = True) -> None:
                 "--network",
                 os.environ["DOCKYARD_NETWORK"],
                 "--publish",
-                "127.0.0.1::5000",
+                # A fixed assigned port survives stop and start; Docker may choose a new
+                # random port each time, which would break registry.txt and image names.
+                f"127.0.0.1:{lab.resources['api_port']}:5000",
                 "--memory",
                 "128m",
                 "--cpus",
