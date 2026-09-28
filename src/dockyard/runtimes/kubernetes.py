@@ -430,7 +430,9 @@ class KubernetesRuntime:
             )
         )
 
-    def wait_resynced(self, cancel: threading.Event) -> None:
+    def wait_resynced(
+        self, cancel: threading.Event, tend: Callable[[], None] | None = None
+    ) -> None:
         # After a node container restarts, the API still reports the pre-stop Pod
         # and controller status until each kubelet restarts its containers.
         starts: dict[str, datetime] = {}
@@ -440,6 +442,8 @@ class KubernetesRuntime:
                 starts[entry["name"]] = parse_time(resource["State"]["StartedAt"])
         deadline = time.monotonic() + 240
         while True:
+            if tend is not None:
+                tend()
             listed = self.kubectl(["get", "pods", "--all-namespaces", "-o", "json"], cancel=cancel)
             if listed.ok and not stale_pods(json.loads(listed.stdout)["items"], starts):
                 return
@@ -480,7 +484,14 @@ class KubernetesRuntime:
             Path(self.env["KUBECONFIG"]).unlink(missing_ok=True)
         elif action == "resume":
             self.wait_ready(cancel)
-            self.wait_resynced(cancel)
+            if "metrics" in json.loads(self.lab.resources.get("cluster_capabilities", "[]")):
+                from dockyard.runtimes.metrics import approve_pending_serving, restore_after_resume
+
+                # Metrics Server only becomes ready once resumed kubelets have new certificates.
+                self.wait_resynced(cancel, lambda: approve_pending_serving(self, cancel))
+                restore_after_resume(self, cancel)
+            else:
+                self.wait_resynced(cancel)
         elif action == "stop":
             self.docker.change("stop", cancel)
 

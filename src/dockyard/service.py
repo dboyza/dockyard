@@ -299,6 +299,8 @@ class Service:
                     self._make_cluster_room(lab, cancel)
                 self.runtime(lab).change(action, cancel)
                 lab.state = "stopped" if action == "stop" else "ready"
+                if action == "resume":
+                    lab.error = None
                 self._save(lab)
                 result = self.public_lab(lab)
             if cancel.is_set():

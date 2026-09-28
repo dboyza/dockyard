@@ -104,6 +104,54 @@ def approve_owned_kubelets(runtime: KubernetesRuntime, cancel: threading.Event) 
     raise RuntimeErrorBase("Owned kubelet serving certificate requests did not become ready.")
 
 
+def approve_pending_serving(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
+    """Approve valid, undecided kubelet serving requests from this cluster's own nodes.
+
+    Docker can give resumed nodes new addresses; their kubelets then request certificates for
+    the new IPs, and until those are approved Metrics Server rejects every node.
+    """
+    owned = {entry["name"] for entry in runtime.discover() if runtime.verify(entry) is not None}
+    node_result = runtime.kubectl(["get", "nodes", "-o", "json"], cancel=cancel)
+    requests = runtime.kubectl(["get", "csr", "-o", "json"], cancel=cancel)
+    if not (node_result.ok and requests.ok):
+        return
+    nodes = {
+        item["metadata"]["name"]: item
+        for item in json.loads(node_result.stdout)["items"]
+        if item["metadata"]["name"] in owned
+    }
+    for request in json.loads(requests.stdout)["items"]:
+        if request.get("status", {}).get("conditions") or not valid_serving_request(request, nodes):
+            continue
+        runtime.docker.require(
+            runtime.kubectl(["certificate", "approve", request["metadata"]["name"]], cancel=cancel)
+        )
+
+
+def metrics_available(runtime: KubernetesRuntime, cancel: threading.Event) -> bool:
+    service = runtime.kubectl(
+        ["get", "apiservice", "v1beta1.metrics.k8s.io", "-o", "json"], cancel=cancel
+    )
+    return service.ok and any(
+        condition.get("type") == "Available" and condition.get("status") == "True"
+        for condition in json.loads(service.stdout).get("status", {}).get("conditions", [])
+    )
+
+
+def restore_after_resume(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
+    deadline = time.monotonic() + 240
+    while time.monotonic() < deadline:
+        if metrics_available(runtime, cancel):
+            return
+        approve_pending_serving(runtime, cancel)
+        if cancel.wait(2):
+            raise RuntimeErrorBase("Resume canceled while restoring cluster metrics.")
+    raise RuntimeErrorBase(
+        "The resumed cluster's metrics API did not become available. "
+        "Inspect kubectl get apiservice and the metrics-server logs."
+    )
+
+
 def serving_identity() -> tuple[str, str, str]:
     """Return a dedicated CA, server certificate, and key without touching host trust."""
     now = datetime.now(UTC)

@@ -314,6 +314,9 @@ The native Pod CIDR is 10.244.0.0/16, separate from the 192.168.104.0/24 guest n
 Kind labs now choose a Pod range disjoint from their Docker node network, normally 10.244.0.0/16, and set Calico's pool to match.
 Before this, a hard-coded 192.168.0.0/16 Pod range overlapped the 192.168.x.0/20 networks Docker allocates once its 172 ranges are used; a three-node lab then left CoreDNS and the Calico controller unready until preparation timed out.
 A 2026-09-28 walkthrough reproduced that on node network 192.168.96.0/20 and prepared the same lab in 59 seconds with Pods in 10.244.0.0/16 after the change.
+Resuming a paused multi-node kind lab can give its nodes different Docker addresses; kubelets then request serving certificates for the new IPs, and Metrics Server rejected every node until those requests were approved.
+Resume now approves only valid, undecided serving requests from the lab's own nodes whose addresses match current node status, and waits for the metrics API to report Available.
+The same walkthrough paused and resumed the capacity mission twice; the metrics API was Available with no pending requests immediately after each resume.
 A separate proof verified cross-node Service DNS/HTTP, actual ingress denial, and recovery after an explicit allow policy on this configuration.
 
 The native checks observe an actual API process through CRI and its Linux cgroup, active kubelet services and fresh node leases, a separate private guest operator client, serving-certificate trust, and all four static control-plane components.
