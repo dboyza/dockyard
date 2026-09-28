@@ -94,6 +94,10 @@ Switching within one profile stops its previous ready owned cluster.
 A cluster in another profile must be stopped or cleaned from that profile before another starts.
 A failed environment requires inspection and Stop or Clean up before switching the budget.
 Unrelated Docker resources are not stopped to make room.
+Every Docker and kind lab uses its own Docker network, and Docker has a limited number of private address ranges.
+When none remain, preparing a lab cleans the least recently used stopped lab and tries again, up to eight times.
+Its workspace and progress are kept, the lab shows why it was removed, and preparing it again reapplies your files.
+Running and failed labs are never reclaimed.
 
 | Action | Effect |
 | --- | --- |

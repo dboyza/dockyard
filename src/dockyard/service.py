@@ -36,6 +36,9 @@ from dockyard.store import Store, timestamp
 from dockyard.workspace import atomic_write, reset, snapshot, write_files
 
 COMPATIBILITY = json.loads((CONTENT / "compatibility.json").read_text())
+# Docker reports this when every private address range for new networks is in use.
+ADDRESS_POOLS_EXHAUSTED = "all predefined address pools have been fully subnetted"
+RECLAIM_LIMIT = 8
 PYTHON_IMAGE: str = COMPATIBILITY["images"]["python"]
 
 
@@ -265,7 +268,7 @@ class Service:
         try:
             result: dict[str, Any]
             if action == "prepare":
-                self._prepare(lab, cancel)
+                self._prepare_reclaiming(lab, cancel)
                 result = self.public_lab(lab)
             elif action == "check":
                 result = self._check(lab, cancel).model_dump(mode="json")
@@ -278,7 +281,7 @@ class Service:
                 )
                 lab.resources.pop("container_id", None)
                 lab.resources.pop("prepared_revision", None)
-                self._prepare(lab, cancel)
+                self._prepare_reclaiming(lab, cancel)
                 if action == "retake":
                     self.store.start_attempt(unit_id, self.catalog.get(unit_id).revision)
                 result = {"backup": str(backup), "lab": self.public_lab(lab)}
@@ -347,6 +350,53 @@ class Service:
                         self.runtime(other).change("stop", cancel)
                         other.state = "stopped"
                         self._save(other)
+
+    def _prepare_reclaiming(self, lab: Lab, cancel: threading.Event) -> None:
+        """Prepare, freeing Docker network ranges held by stopped labs when none remain."""
+        for _ in range(RECLAIM_LIMIT):
+            try:
+                self._prepare(lab, cancel)
+                return
+            except Exception as error:
+                if ADDRESS_POOLS_EXHAUSTED not in str(error) or cancel.is_set():
+                    raise
+                if not self._reclaim_stopped_lab(lab, cancel):
+                    raise LabError(
+                        "Docker has no free network address ranges for a new lab, and no "
+                        "stopped Dockyard lab can release one. Clean labs you have finished, "
+                        "or remove unused Docker networks of your own, then prepare again."
+                    ) from error
+        raise LabError(
+            "Docker still has no free network address ranges after cleaning "
+            f"{RECLAIM_LIMIT} stopped labs. Remove unused Docker networks, then prepare again."
+        )
+
+    def _reclaim_stopped_lab(self, lab: Lab, cancel: threading.Event) -> bool:
+        # Cleaning removes only the lab's recorded runtime resources; its workspace and
+        # progress remain, and preparing it again reapplies the learner's files.
+        candidates = sorted(
+            (
+                other
+                for other in self.store.labs()
+                if other.id != lab.id
+                and other.state == "stopped"
+                and other.runtime in {Runtime.DOCKER, Runtime.KUBERNETES}
+            ),
+            key=lambda other: other.updated_at,
+        )
+        if not candidates:
+            return False
+        oldest = candidates[0]
+        with operation_lock(self.directory / "locks", oldest.unit_id):
+            self._cleanup(oldest, cancel)
+            oldest.resources.pop("prepared_revision", None)
+            oldest.state = "absent"
+            oldest.error = (
+                f"Dockyard removed this stopped lab to free Docker network space for "
+                f"{lab.unit_id}. Your files and progress are kept; prepare it again to continue."
+            )
+            self._save(oldest)
+        return True
 
     def _prepare(self, lab: Lab, cancel: threading.Event) -> None:
         lab.state = "preparing"
