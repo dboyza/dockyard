@@ -371,7 +371,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                               : assessment.status === "blocked"
                                 ? "The environment needs attention."
                                 : assessment.status === "stale"
-                                  ? "Your work changed during the check."
+                                  ? "The lab changed while it was being checked. Wait for rollouts to finish, then check again."
                                   : "Here is what the lab observed."}
                         </h2>
                         <p>

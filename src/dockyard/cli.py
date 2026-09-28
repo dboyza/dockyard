@@ -20,6 +20,11 @@ if TYPE_CHECKING:
     from dockyard.service import Service
 from dockyard.store import BusyError
 
+STALE_NOTE = (
+    "\nThe lab changed while it was being checked, for example because Pods were still "
+    "starting or stopping. Wait for rollouts to finish, then check again."
+)
+
 
 def default_directory() -> Path:
     from dockyard.host import default_directory as directory
@@ -262,6 +267,8 @@ def main() -> None:
                                     subsequent_indent="          ",
                                 )
                             )
+                    if result["status"] == "stale":
+                        print(STALE_NOTE)
                     print("\nEvidence is saved in the workbench. Use --json for full observations.")
                 else:
                     print(json.dumps(result, indent=2))
