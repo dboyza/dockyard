@@ -2,15 +2,15 @@ id: m10-ingress
 revision: 1
 module: 10
 order: 2
-title: Terminate TLS at an ingress controller
-summary: Verify host routing, a backend Service, and certificate identity.
+title: HTTPS routing with Ingress
+summary: Fix an Ingress so HTTPS requests for dispatch.test reach Dispatch with a verified certificate.
 kind: lesson
 runtime: kubernetes
 minutes: 40
 outcomes:
-- Distinguish an Ingress declaration from its controller.
-- Connect a hostname and path to a Service backend.
-- Validate TLS trust and hostname identity without disabling verification.
+- Explain why an Ingress needs a controller.
+- Route a hostname and path to a Service, with TLS.
+- Test HTTPS without switching off certificate checks.
 prerequisites:
 - m10-services
 objectives:
@@ -20,17 +20,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: curl succeeds only after adding --insecure. Has the required TLS identity been demonstrated?
+  question: curl only works when you add --insecure. Have you shown the HTTPS setup is right?
   options:
-  - No; trust and hostname validation were bypassed.
-  - Yes; encryption proves the server identity by itself.
-  - Yes; an Ingress object always supplies the correct certificate.
+  - No. --insecure skips the checks that prove who the server is.
+  - Yes. Encryption proves the server is genuine.
+  - Yes. An Ingress always has the right certificate.
   correct: 0
-  explanation: Encryption, trusted issuance, and hostname identity are distinct properties of the connection.
+  explanation: Encryption alone does not tell you who you are talking to. Trust and hostname checks do.
 hints:
-- Inspect both the TLS Secret reference and the backend Service port.
-- The Secret is dispatch-tls; the Service exposes port 8080.
-- Correct those two references and retry with --cacert and --resolve while leaving verification enabled.
+- kubectl describe ingress dispatch shows both the TLS Secret it uses and the backend it sends to.
+- The Secret is dispatch-tls, and the dispatch Service listens on port 8080.
+- 'Set secretName: dispatch-tls and the backend port number to 8080, apply, and test with --cacert and
+  --resolve.'
 sources:
 - https://kubernetes.io/docs/concepts/services-networking/service/
 - https://kubernetes.io/docs/concepts/services-networking/ingress/
@@ -70,8 +71,8 @@ prepare:
   timeout: 130
 checks:
 - id: routing-service
-  title: ClusterIP DNS and real application traffic work
-  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  title: The dispatch Service reaches Dispatch inside the cluster
+  explanation: A request to http://dispatch:8080 from inside the cluster must reach a Dispatch Pod.
   command:
     args:
     - python
@@ -83,10 +84,13 @@ checks:
   json_path:
   - service
   expected: 'true'
-  diagnostic: Compare Service selectors, EndpointSlices, target ports, and the application listener.
+  diagnostic: A request to the dispatch Service failed. Check its selector matches the Pods’ labels (kubectl
+    get pods --show-labels) and its targetPort is 8080, where Dispatch listens. kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch shows what it selected.
 - id: routing-endpoints
-  title: EndpointSlices identify the owned ready API Pods
-  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  title: The Service’s endpoints are exactly the two Dispatch Pods
+  explanation: The dispatch Service’s EndpointSlices must list the two ready Dispatch API Pods and nothing
+    else.
   command:
     args:
     - python
@@ -98,10 +102,13 @@ checks:
   json_path:
   - endpoints
   expected: 'true'
-  diagnostic: Inspect the specific request path from the client through the Service to the application.
+  diagnostic: The dispatch Service’s endpoints are not exactly the two Dispatch API Pods. Compare kubectl
+    get endpointslices -l kubernetes.io/service-name=dispatch with kubectl get pods -l app=dispatch -o
+    wide, and check the Service selector.
 - id: routing-tls
-  title: Ingress serves Dispatch over certificate-validated TLS
-  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  title: HTTPS to dispatch.test passes certificate checks and reaches Dispatch
+  explanation: A request to https://dispatch.test must be trusted, match the hostname, and be routed to
+    Dispatch by the Ingress.
   command:
     args:
     - python
@@ -113,8 +120,10 @@ checks:
   json_path:
   - tls
   expected: 'true'
-  diagnostic: Inspect ingress class, backend port, host, and TLS Secret. Verify with the supplied certificate;
-    do not use --insecure.
+  diagnostic: 'The HTTPS request failed. Run the curl command from the lesson and read its error: a certificate
+    error points at the Ingress’s tls secretName, which should be dispatch-tls; a 404 or 502 points at
+    the rule’s backend, which should be Service dispatch port 8080. kubectl describe ingress dispatch
+    shows both.'
 capabilities:
 - docker
 - kind

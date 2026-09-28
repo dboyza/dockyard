@@ -45,11 +45,11 @@ A runtime pass alone is not a teaching-quality result.
 | m09-secrets | Completed without solutions | Revised | Added Secret creation, stringData, and why defaultMode shows as 292. FailedMount event named the missing key as described; passed. A check during rollout returned stale, whose message was misleading and is now explained. |
 | m09-identities | Completed without solutions | Revised | Lesson required a request with the Pod's own token but never showed one; added and verified (200, 403, 403). Added kubectl create serviceaccount, role, rolebinding, and auth can-i --as. Passed. |
 | m09-mission | Completed without solutions | Revised | Fixed five planted faults across both namespaces; preview needed a rollout restart for its changed environment value, as taught. Passed. |
-| m10-services | Pending | Pending |  |
-| m10-ingress | Pending | Pending |  |
-| m10-gateway | Pending | Pending |  |
-| m10-mission | Pending | Pending |  |
-| i06-service-selector | Pending | Pending |  |
+| m10-services | Completed without solutions | Revised | Added a Service type comparison, the three port fields, jsonpath, and kubectl expose. EndpointSlice port changed from 9090 to 8080 as described; all three paths verified; passed. |
+| m10-ingress | Completed without solutions | Revised | Explained certificate trust, hostname checks, --resolve, and TLS Secrets; added kubectl create ingress, whose output matched the lesson YAML. Passed. |
+| m10-gateway | Completed without solutions | Revised | Explained GatewayClass, Gateway, HTTPRoute ownership and conditions. A missing parent Gateway leaves no Parents status at all, which the lesson now explains. Passed with 404 for the unmatched host. |
+| m10-mission | Completed without solutions | Revised | Fixed four independent faults and verified each path with its own request; passed. |
+| i06-service-selector | Completed without solutions | Revised | Diagnosed the extra release-channel selector key from labels and an empty EndpointSlice; the Service was changed live, so kubectl edit is now taught. Passed with a completed job. |
 | m11-claims | Pending | Pending |  |
 | m11-statefulsets | Pending | Pending |  |
 | m11-backup | Pending | Pending |  |

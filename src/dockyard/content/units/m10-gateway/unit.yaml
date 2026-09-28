@@ -2,15 +2,15 @@ id: m10-gateway
 revision: 1
 module: 10
 order: 3
-title: Separate gateways from application routes
-summary: Inspect attachment, resolved references, and host routing through Gateway API.
+title: Routing with Gateway API
+summary: Attach an HTTPRoute to its Gateway, fix its backend, and prove it only answers for its own hostname.
 kind: lesson
 runtime: kubernetes
 minutes: 40
 outcomes:
-- Explain GatewayClass, Gateway, and HTTPRoute ownership.
-- Diagnose route attachment using current status conditions.
-- Verify matching and unmatched hostnames with actual requests.
+- Explain what GatewayClass, Gateway, and HTTPRoute are each for.
+- Use status conditions to find a broken attachment or backend.
+- Test both a matching and a non-matching hostname.
 prerequisites:
 - m10-ingress
 objectives:
@@ -20,18 +20,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: An HTTPRoute has valid YAML but refers to a nonexistent parent Gateway. What should you investigate
+  question: An HTTPRoute’s YAML is valid but names a Gateway that does not exist. What should you check
     first?
   options:
-  - Its parent attachment and status conditions.
-  - The application container image cache.
-  - The number of database rows.
+  - Its parentRefs and status conditions.
+  - The container image.
+  - The database.
   correct: 0
-  explanation: A route cannot carry traffic through a Gateway to which it has not attached.
+  explanation: A route cannot carry traffic until it is attached to a Gateway, and its status says whether
+    it is.
 hints:
-- Inspect parentRefs and the parent status conditions before changing the application.
-- Use parent dispatch-gateway and backend Service dispatch port 8080.
-- Keep the explicit hostname and test both matching and unmatched Host headers.
+- 'kubectl describe httproute dispatch: look at parentRefs and the conditions under Status.'
+- The parent should be dispatch-gateway, and the backend Service dispatch on port 8080.
+- 'Fix both in gateway.yaml, apply it, then test gateway.dispatch.test and unmatched.dispatch.test with
+  curl -H ''Host: ...''.'
 sources:
 - https://kubernetes.io/docs/concepts/services-networking/service/
 - https://kubernetes.io/docs/concepts/services-networking/ingress/
@@ -71,8 +73,8 @@ prepare:
   timeout: 130
 checks:
 - id: routing-service
-  title: ClusterIP DNS and real application traffic work
-  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  title: The dispatch Service reaches Dispatch inside the cluster
+  explanation: A request to http://dispatch:8080 from inside the cluster must reach a Dispatch Pod.
   command:
     args:
     - python
@@ -84,10 +86,13 @@ checks:
   json_path:
   - service
   expected: 'true'
-  diagnostic: Compare Service selectors, EndpointSlices, target ports, and the application listener.
+  diagnostic: A request to the dispatch Service failed. Check its selector matches the Pods’ labels (kubectl
+    get pods --show-labels) and its targetPort is 8080, where Dispatch listens. kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch shows what it selected.
 - id: routing-endpoints
-  title: EndpointSlices identify the owned ready API Pods
-  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  title: The Service’s endpoints are exactly the two Dispatch Pods
+  explanation: The dispatch Service’s EndpointSlices must list the two ready Dispatch API Pods and nothing
+    else.
   command:
     args:
     - python
@@ -99,10 +104,13 @@ checks:
   json_path:
   - endpoints
   expected: 'true'
-  diagnostic: Inspect the specific request path from the client through the Service to the application.
+  diagnostic: The dispatch Service’s endpoints are not exactly the two Dispatch API Pods. Compare kubectl
+    get endpointslices -l kubernetes.io/service-name=dispatch with kubectl get pods -l app=dispatch -o
+    wide, and check the Service selector.
 - id: routing-gateway
-  title: The accepted HTTPRoute carries real host-routed traffic
-  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  title: The HTTPRoute is attached and carries traffic
+  explanation: The route must be Accepted with ResolvedRefs on dispatch-gateway, the Gateway must be Programmed,
+    and a request for gateway.dispatch.test must reach Dispatch.
   command:
     args:
     - python
@@ -114,10 +122,13 @@ checks:
   json_path:
   - gateway
   expected: 'true'
-  diagnostic: Inspect Gateway and HTTPRoute status conditions, parentRefs, hostnames, and backend references.
+  diagnostic: 'The Gateway path does not work yet. Run kubectl describe httproute dispatch and read the
+    conditions under Status > Parents: a missing parent means parentRefs should name dispatch-gateway;
+    ResolvedRefs False means the backendRefs Service or port is wrong (Service dispatch, port 8080).'
 - id: routing-host-boundary
-  title: An unmatched hostname does not reach the application
-  explanation: Verify actual Service routing or a controller-programmed route with live traffic.
+  title: An unmatched hostname gets a 404
+  explanation: A request for unmatched.dispatch.test must not reach Dispatch, showing the route matches
+    only its own hostname.
   command:
     args:
     - python
@@ -129,7 +140,8 @@ checks:
   json_path:
   - host_boundary
   expected: 'true'
-  diagnostic: Inspect the specific request path from the client through the Service to the application.
+  diagnostic: A request for unmatched.dispatch.test did not return 404. Check the HTTPRoute lists only
+    gateway.dispatch.test under hostnames, with no wildcard, and that no other route catches every hostname.
 capabilities:
 - docker
 - kind

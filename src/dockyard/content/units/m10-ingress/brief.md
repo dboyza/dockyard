@@ -1,10 +1,11 @@
-# Restore the TLS route
+## Fix the HTTPS route to Dispatch
 
-The Ingress selects a missing TLS Secret and sends traffic to a nonexistent Service port.
-The prepared Secret `dispatch-tls` contains the practice certificate for `dispatch.test`.
+The Ingress points at a TLS Secret that does not exist and at a Service port nothing listens on.
+The Secret `dispatch-tls` already holds the practice certificate for `dispatch.test`.
 
-Repair `ingress.yaml` to use that Secret and Service `dispatch` port 8080 with a Prefix route for `/`.
-Keep ingress class `traefik` and the supplied secure entrypoint annotation.
-Apply the change, inspect controller and resource status, and send the certificate-validated curl request from the example.
-Do not use `--insecure` or replace the application response with a static page.
-A passing check requires an actual Dispatch response over the validated TLS connection.
+1. Inspect the Ingress, its class, and the Secret.
+2. Fix `ingress.yaml` so it uses `dispatch-tls` and sends `/` (Prefix) to Service `dispatch` on port 8080. Keep class `traefik` and the supplied annotations.
+3. Apply it and run the certificate-checked curl command from Understand.
+4. Choose **Check work**.
+
+Do not use `--insecure`, and do not replace Dispatch with a static page: Check work needs a real Dispatch response over a verified connection.

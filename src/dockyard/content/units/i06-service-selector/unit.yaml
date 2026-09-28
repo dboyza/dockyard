@@ -2,15 +2,15 @@ id: i06-service-selector
 revision: 1
 module: 10
 order: 90
-title: Every API Pod is ready but the Service has no endpoints
-summary: A release-label change leaves two ready replicas and working Pod addresses, while requests to
-  the stable Service stop connecting.
+title: Every API Pod is ready, but the Service reaches none of them
+summary: After a label change, both API Pods are healthy but requests to their Service fail.
 kind: incident
 runtime: kubernetes
 minutes: 35
 outcomes:
-- Diagnose the reported boundary from live evidence.
-- Restore useful behavior while preserving the original state and operating constraints.
+- Use EndpointSlices and labels to find why a Service selects no Pods.
+- Explain how a selector with several labels matches Pods.
+- Reconnect the Service without losing data, and confirm with a real job.
 prerequisites:
 - m10-mission
 objectives:
@@ -20,18 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation would establish recovery?
+  question: Both Pods are ready and answer directly, but the Service fails. Where should you look first?
   options:
-  - A fresh end-to-end request succeeds and the original data remains.
-  - The latest command exited zero.
-  - A replacement Pod exists.
+  - The Service’s EndpointSlices and selector.
+  - The database logs.
+  - The container image.
   correct: 0
-  explanation: Recovery requires useful behavior and the stated preservation constraints.
+  explanation: Healthy Pods that the Service cannot reach point at how the Service chooses Pods, not at
+    the Pods themselves.
 hints:
-- Compare the Service selector with every label on the ready Pods.
-- 'A Service selector is a conjunction: each listed key must match.'
-- Remove the stale release-channel requirement or align the workload labels while retaining the stable
-  app boundary, then test a fresh job through the Service.
+- Compare the Service’s selector with the labels on the ready Pods (kubectl get pods --show-labels).
+- A Pod must have every label in the selector. Which one is missing?
+- Remove the stale extra key from the Service selector, or add that label to the Deployment’s Pod template,
+  then submit a job through the Service.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
 - https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
@@ -61,9 +62,9 @@ prepare:
   timeout: 360
 checks:
 - id: incident-preserved
-  title: The original namespace, database claim, and stored job remain
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The original namespace, database storage, and job are still there
+  explanation: The fix must not replace the namespace or database claim, or lose the job stored before
+    the incident.
   command:
     args:
     - python
@@ -75,12 +76,11 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The original namespace, the database’s data-db-0 claim, or the original job is gone. If
+    they were deleted or replaced, reset the lab and repair it in place instead.
 - id: incident-available
-  title: Two API replicas are available
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: Two API copies are available
+  explanation: The dispatch Deployment must have two ready copies.
   command:
     args:
     - python
@@ -92,12 +92,12 @@ checks:
   json_path:
   - available
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The API does not have two available copies. Run kubectl get deployment dispatch and kubectl
+    describe pods -l app=dispatch.
 - id: incident-route
-  title: The Service reaches exactly the two ready API backends
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The Service reaches exactly the two API Pods
+  explanation: The dispatch Service must select exactly the two ready API Pods, and a request through
+    it must reach Dispatch.
   command:
     args:
     - python
@@ -109,12 +109,12 @@ checks:
   json_path:
   - route
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: 'The Service still does not reach exactly the two API Pods. Compare its selector (kubectl
+    get service dispatch -o yaml) with the Pod labels (kubectl get pods --show-labels): every key in the
+    selector must be on the Pods.'
 - id: incident-workflow
-  title: A fresh job completes and PostgreSQL contains its result
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: A new job is completed and saved
+  explanation: Dockyard submits a real job through the API and checks PostgreSQL stores the worker’s result.
   command:
     args:
     - python
@@ -126,12 +126,10 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: A new job was not completed. Check the workers are running and read kubectl logs deployment/worker.
 - id: incident-contract
-  title: The repaired workload retains its probe or memory contract
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The API’s health checks are unchanged
+  explanation: The fix must leave the API’s startup, liveness, and readiness probes as they were.
   command:
     args:
     - python
@@ -143,8 +141,8 @@ checks:
   json_path:
   - contract
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The API’s probes changed. It should still use /startupz, /healthz, and /readyz on port 8080.
+    Fix the selector or labels without editing the probes.
 capabilities:
 - docker
 - kind

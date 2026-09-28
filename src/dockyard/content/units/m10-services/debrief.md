@@ -1,12 +1,8 @@
-# Debrief: Trace Services from DNS to real traffic
+## Each path adds a layer
 
-Service DNS, endpoint selection, NodePort exposure, and LoadBalancer addressing each add a different part of the request path.
-The EndpointSlice evidence connects the selected backends to the owned ready API Pods rather than to an unrelated responder.
+A ClusterIP Service works inside the cluster, a NodePort adds a port on each node, and a LoadBalancer adds an outside address.
+Each of them still depends on the same two things: selecting the right Pods, and sending traffic to the port they really listen on.
 
-## Explain your result
-
-Explain why a successful loopback NodePort request does not demonstrate that the private LoadBalancer address works.
-
-## Transfer beyond this lab
-
-The external client in this lab is outside Kubernetes on a private network, not a public internet client or a cloud load balancer.
+Check your understanding:
+Why does a working NodePort request not prove the LoadBalancer address works?
+A Service has endpoints but every request times out. Which setting would you check first?

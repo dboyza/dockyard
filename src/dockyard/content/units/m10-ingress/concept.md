@@ -1,28 +1,84 @@
-# An HTTP route needs a controller
+## Route web traffic by name and path
 
-Ingress describes HTTP host and path routing to Services.
-The resource does not forward traffic by itself; an ingress controller watches it and configures a working proxy.
-IngressClass identifies the intended controller, which matters when a cluster has more than one implementation.
-This lab supplies Traefik so the exercise focuses on route behavior rather than controller installation.
+A LoadBalancer Service gives you one address per Service.
+Real sites usually want one entry point that sends `shop.example.com` to one app and `api.example.com/v2` to another, over HTTPS.
+**Ingress** describes that: rules that route HTTP requests to Services by hostname and path.
 
-TLS is negotiated before the HTTP request is routed.
-The client must trust the certificate and verify that it names the requested hostname.
-SNI communicates the requested hostname during TLS negotiation; the later HTTP Host header participates in route selection.
-An HTTPS response obtained with `--insecure` does not establish the certificate identity contract.
+An Ingress is only a set of rules.
+Something must read them and actually proxy traffic: an **ingress controller**.
+This lab runs the **Traefik** controller for you.
+An **IngressClass** names a controller, and `ingressClassName` in an Ingress says which controller should handle it.
+Without a controller, an Ingress is accepted and does nothing.
 
-## Worked example
+## An Ingress, piece by piece
 
-```sh
-kubectl describe ingress dispatch
-kubectl get ingressclass traefik
-kubectl describe secret dispatch-tls
-curl --noproxy '*' --fail --cacert "$DOCKYARD_TLS_CERT" --resolve "dispatch.test:$DOCKYARD_TLS_PORT:127.0.0.1" "https://dispatch.test:$DOCKYARD_TLS_PORT/healthz"
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dispatch
+spec:
+  ingressClassName: traefik
+  tls:
+  - hosts: [dispatch.test]
+    secretName: dispatch-tls
+  rules:
+  - host: dispatch.test
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dispatch
+            port:
+              number: 8080
 ```
 
-The lab creates a self-signed practice certificate outside the workspace and trusts it only for this request.
-No system trust store or DNS configuration is changed.
-`--resolve` directs this hostname and port to loopback while preserving hostname verification and SNI.
-A production certificate lifecycle would also need issuance, renewal, protection of private keys, and operational monitoring.
+- `rules` match a hostname and a path, and send matching requests to a Service and port.
+- `pathType: Prefix` matches `/` and everything under it; `Exact` matches only that exact path.
+- `tls` tells the controller which Secret holds the certificate for which hostnames. That Secret has the special type `kubernetes.io/tls`, with `tls.crt` and `tls.key` keys.
 
-Ingress supports a stable, widely deployed API but does not receive the same extensibility as Gateway API.
-The next lesson separates infrastructure ownership from application route ownership with that newer model.
+You can also create one with a single command:
+
+```sh
+kubectl create ingress demo --class=traefik --rule="dispatch.test/*=dispatch:8080,tls=dispatch-tls" --dry-run=client -o yaml
+```
+
+## What HTTPS actually checks
+
+When you connect over HTTPS, before any web page is exchanged, the server shows a **certificate**.
+Your client checks two things:
+
+1. It was issued by someone the client **trusts**.
+2. It is for the **hostname** you asked for.
+
+If either check fails, curl refuses to continue.
+`--insecure` skips both checks.
+That makes the connection encrypted, but you no longer know who you are talking to, so never use it to “fix” a certificate problem.
+
+This lab made a practice certificate for `dispatch.test` and saved it at `$DOCKYARD_TLS_CERT`.
+Your computer does not know that hostname, so the test uses two curl options:
+
+```sh
+curl --noproxy '*' --fail --cacert "$DOCKYARD_TLS_CERT" \
+  --resolve "dispatch.test:$DOCKYARD_TLS_PORT:127.0.0.1" \
+  "https://dispatch.test:$DOCKYARD_TLS_PORT/healthz"
+```
+
+- `--cacert` tells curl to trust this one practice certificate, for this request only.
+- `--resolve` says “for this request, `dispatch.test` means 127.0.0.1”, without changing your computer’s settings. curl still checks the certificate is for `dispatch.test`.
+- `--noproxy '*'` stops any proxy settings on your computer from getting in the way.
+
+## Inspecting it
+
+```sh
+kubectl get ingressclass
+kubectl describe ingress dispatch
+kubectl describe secret dispatch-tls
+```
+
+`describe ingress` shows each rule and the backend it resolves to; a backend that points at a missing Service or port shows up here.
+
+Ingress is stable and very widely used.
+The next lesson introduces **Gateway API**, its newer, more flexible successor, which the CKA now also covers.

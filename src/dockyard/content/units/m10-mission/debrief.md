@@ -1,12 +1,8 @@
-# Debrief: Publish Dispatch through verified local routes
+## One application, four front doors
 
-The combined route exercise demonstrates several distinct exposure mechanisms against the same working application.
-TLS success does not substitute for LoadBalancer reachability, and a programmed Gateway does not substitute for the unmatched-host negative check.
+Each path had its own fault, and each needed its own test.
+A working internal Service did not mean the certificate, the load balancer address, or the Gateway route worked.
 
-## Explain your result
-
-Write one reproducible request for each exposure path and record the trust or routing property that it demonstrates.
-
-## Transfer beyond this lab
-
-Keep the lab’s private-network and loopback reachability limits visible when translating the runbook to a public deployment.
+Check your understanding:
+Write down one command for each path that you could rerun tomorrow to check it still works.
+Which of these paths would a user on the internet actually use in a real deployment, and what would it need that this lab does not have?

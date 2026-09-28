@@ -47,6 +47,19 @@ It exits with status 1 when there are differences, which is normal.
 
 After a real `apply`, remember that acceptance is not the same as success: `kubectl rollout status` tells you when the new Pods are actually running.
 
+## Editing a live object
+
+Sometimes an object was created by hand and has no file, or you just need a quick change.
+`kubectl edit` opens the live object in a text editor and applies your change when you save and close:
+
+```sh
+KUBE_EDITOR=nano kubectl edit service dispatch
+```
+
+`KUBE_EDITOR=nano` picks the editor for this one command; without it, kubectl uses your `EDITOR` setting, or `vi` if none is set.
+If your edit is invalid, kubectl reopens the file with an error message at the top.
+Remember that a live edit leaves your workspace files out of date, so prefer editing the file and applying it when one exists.
+
 ## API versions change over time
 
 Every manifest starts with `apiVersion` and `kind`.

@@ -1,14 +1,13 @@
-# Restore four independent paths
+## Restore all four paths to Dispatch
 
-Dispatch itself is running, but its internal Service targets the wrong port, the LoadBalancer selects no application Pods, and both ingress and Gateway routes have broken references.
-Repair `platform.yaml`, `loadbalancer.yaml`, `ingress.yaml`, and `gateway.yaml`.
-Keep the supplied names, explicit hostnames, listener ports, and TLS Secret identity.
-Apply the manifests and verify all paths with actual traffic.
+The internal Service targets the wrong port, the LoadBalancer selects no Pods, and both the Ingress and the Gateway route have broken references.
+Fix `platform.yaml`, `loadbalancer.yaml`, `ingress.yaml`, and `gateway.yaml`, keeping the supplied names, hostnames, ports, and TLS Secret.
 
-The internal DNS destination must reach the owned Dispatch Pods.
-The LoadBalancer must allocate a real private-network address and carry a request from the supplied Docker client.
-HTTPS for `dispatch.test` must validate the supplied certificate and reach Dispatch.
-HTTP for `gateway.dispatch.test` must use an accepted, resolved HTTPRoute, while an unmatched hostname returns 404.
+When you are done:
 
-Write a short incident note describing each fault and the observation that proved its repair.
-Use an independent retake after any reference-assisted attempt to demonstrate the complete diagnosis without revealed answers.
+- `http://dispatch:8080` from inside the cluster reaches Dispatch.
+- The LoadBalancer has an address and answers a request from the Docker-network client.
+- HTTPS to `dispatch.test` passes certificate checks and reaches Dispatch.
+- `gateway.dispatch.test` reaches Dispatch through an accepted route, and an unmatched hostname returns 404.
+
+Write a short note describing each fault and the request that proved its fix.

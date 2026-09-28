@@ -1,11 +1,9 @@
-# Incident report
+## Reconnect the Service to its Pods
 
-A release-label change leaves two ready replicas and working Pod addresses, while requests to the stable Service stop connecting.
+Make the existing `dispatch` Service reach exactly the two ready Dispatch API Pods again.
 
-Restore the existing stable Service to exactly the two ready Dispatch API replicas.
-Retain the Service name and port, the database claim, and the original job.
-Show a fresh request that completes through the API and worker.
-Do not hand-author EndpointSlices or bypass the Service with a Pod address.
+- Keep the Service’s name and port, the database’s storage, and the original job.
+- Do not write EndpointSlices by hand, and do not point clients at a Pod IP instead of the Service.
+- Submit a new job through the Service and confirm a worker completes it.
 
-Write a short account of the first discriminating observation, the repair, and a regression check.
-Use the debrief as a self-review rubric; prose is not automatically graded.
+In your notes, record the first observation that pointed at the cause, your fix, and a check you could run to catch this after future releases.

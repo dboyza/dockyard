@@ -1,9 +1,12 @@
-# Attach and verify the application route
+## Attach the route and test it
 
-The supplied HTTPRoute names a Gateway that does not exist and a backend Service port that is not exposed.
-Repair `gateway.yaml` while preserving hostname `gateway.dispatch.test`, Gateway `dispatch-gateway`, and the supplied listener.
-Apply the file, inspect current Gateway and route conditions, and test a real request with the matching Host header.
-Then test `unmatched.dispatch.test` and verify it returns 404 instead of reaching Dispatch.
+The HTTPRoute names a Gateway that does not exist, and sends traffic to a Service port that is not open.
 
-Do not add a wildcard hostname or a catch-all route to make one request pass.
-Explain why the HTTPRoute's parent attachment and its backend reference are separate relationships.
+1. Inspect the Gateway and the HTTPRoute’s status conditions.
+2. Fix `gateway.yaml` so the route attaches to `dispatch-gateway` and sends traffic to Service `dispatch` on port 8080. Keep the hostname `gateway.dispatch.test` and the existing listener.
+3. Apply it and check the route’s conditions are now `True` and current.
+4. Test `gateway.dispatch.test`, which should reach Dispatch, and `unmatched.dispatch.test`, which should return 404.
+5. Choose **Check work**.
+
+Do not add a wildcard hostname or a catch-all route.
+In your notes, explain why the route’s parent and its backend are separate links.
