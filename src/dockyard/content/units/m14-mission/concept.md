@@ -1,12 +1,20 @@
-# One owner for each environment and each desired field
+## Three tools, three owners
 
-Development is rendered from the Kustomize overlay in namespace dispatch.
-Staging is installed from the local Helm chart in namespace staging.
-The development WorkerPool controller owns its generated worker Deployment.
-These ownership boundaries keep packaging tools from overwriting one another's resources.
+This mission uses all three packaging tools from the module at once, each owning a different part:
 
-The development overlay currently requests the wrong count and environment.
-The staging release has a bad zero-replica revision, and the supplied WorkerPool controller is stopped.
-Repair source intent, recover the actual release, and prove that controller reconciliation resumes.
-All three systems must converge to their intended observable behavior.
-A rendered manifest, a release marked deployed, or an existing CRD alone is insufficient evidence.
+- **Kustomize** owns the development environment in namespace `dispatch`.
+- **Helm** owns the staging environment in namespace `staging`.
+- The **WorkerPool controller** owns development’s worker Deployment.
+
+Keeping each object under one owner matters: if two tools manage the same object, each overwrites the other’s changes.
+
+Right now, all three are broken:
+the development overlay has the wrong replica count and environment, the staging release is on a bad revision, and the WorkerPool controller is stopped.
+Fix each at its source, then check the running result, not just the files.
+
+There are no step-by-step commands; everything you need is in the three lessons.
+
+## Working on your own
+
+Try it without hints first.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.

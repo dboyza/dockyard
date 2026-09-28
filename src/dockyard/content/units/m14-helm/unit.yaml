@@ -2,15 +2,15 @@ id: m14-helm
 revision: 1
 module: 14
 order: 2
-title: Operate a versioned Helm release
-summary: Recover a bad values change with actual Helm release history.
+title: Helm releases and rollbacks
+summary: Roll a Helm release back from a bad revision and fix the values that caused it.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Distinguish charts, values, rendered resources, and releases.
-- Inspect release history and recover an earlier working revision.
-- Keep concrete credentials outside the portable chart source.
+- Explain charts, values, releases, and revisions.
+- Use helm history, get values, rollback, and upgrade --install.
+- Keep passwords out of a chart’s source.
 prerequisites:
 - m14-kustomize
 objectives:
@@ -20,17 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A bad Helm revision sets replicas to zero. Can the release still be deployed?
+  question: A Helm revision sets replicas to 0. Can Helm still report it as deployed?
   options:
-  - Yes; the declared zero-replica state can satisfy its readiness conditions.
-  - No; Helm always proves business-level availability.
-  - No; Helm refuses all zero-replica Deployments.
+  - Yes. Zero ready of zero requested passes Helm’s wait.
+  - No. Helm checks the app really serves.
+  - No. Helm refuses zero replicas.
   correct: 0
-  explanation: Release status is not a substitute for testing the intended service behavior.
+  explanation: Helm checks the objects reached their declared state. It cannot know zero replicas is a
+    mistake.
 hints:
-- Compare the declared source with the live object before changing unrelated resources.
-- Use the supplied renderers and scoped namespace; wait for a current-generation ready state.
-- Review the worked commands in the concept, then inspect the measured evidence for each remaining criterion.
+- helm history dispatch -n staging shows which revision was healthy.
+- 'Use helm rollback dispatch 1 -n staging --wait, then set api.replicas: 2 and environment: staging in
+  values-practice.yaml.'
+- Check helm get values dispatch -n staging, kubectl get pods -n staging, and Dispatch’s /config.
 sources:
 - https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
 - https://helm.sh/docs/intro/using_helm/
@@ -62,8 +64,9 @@ prepare:
   timeout: 360
 checks:
 - id: packaging-release
-  title: Helm values and the live staging application are healthy
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The staging Helm release is healthy with the right values
+  explanation: The latest staging revision must be deployed, both Helm’s values and values-practice.yaml
+    must say 2 replicas and environment staging, and Dispatch in staging must report staging.
   command:
     args:
     - python
@@ -75,10 +78,12 @@ checks:
   json_path:
   - release
   expected: 'true'
-  diagnostic: Compare chart values, deployed release values, replicas, and the staging /config response.
+  diagnostic: 'The staging release is not right yet. Check helm history dispatch -n staging, helm get
+    values dispatch -n staging, and values-practice.yaml: both must have api.replicas 2 and environment
+    staging. Then check kubectl get pods -n staging.'
 - id: packaging-rollback
-  title: Release history records recovery from the failed values change
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: Helm history shows the rollback
+  explanation: After the failed revision, the history must contain a revision created by helm rollback.
   command:
     args:
     - python
@@ -90,7 +95,8 @@ checks:
   json_path:
   - rollback
   expected: 'true'
-  diagnostic: Use Helm history and rollback to recover the healthy revision; keep its history.
+  diagnostic: No rollback revision was found. Use helm rollback dispatch 1 -n staging --wait rather than
+    reinstalling or scaling by hand, then check helm history dispatch -n staging.
 capabilities:
 - docker
 - kind

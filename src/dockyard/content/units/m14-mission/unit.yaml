@@ -2,15 +2,15 @@ id: m14-mission
 revision: 1
 module: 14
 order: 4
-title: Package repeatable Dispatch environments
-summary: Combine development overlays, a staging Helm release, and reconciled workers.
+title: 'Mission: three tools, three environments'
+summary: Fix a Kustomize overlay, a Helm release, and an operator, each owning its own part of Dispatch.
 kind: mission
 runtime: kubernetes
 minutes: 65
 outcomes:
-- Keep environment-specific changes out of shared sources.
-- Recover a staging release while preserving development.
-- Demonstrate operator-owned workers and drift reconciliation.
+- Fix each environment at its own source of truth.
+- Recover a Helm release without disturbing development.
+- Show operator-owned workers processing jobs.
 prerequisites:
 - m14-operators
 objectives:
@@ -20,17 +20,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which change preserves ownership while making a lasting managed worker count change?
+  question: How should you make a lasting change to the number of operator-managed workers?
   options:
-  - Edit the WorkerPool desired count.
-  - Repeatedly scale its generated Deployment against the controller.
-  - Delete all release history.
+  - Edit the WorkerPool.
+  - Scale the generated Deployment by hand.
+  - Delete the Helm history.
   correct: 0
-  explanation: Change the source reconciled by the responsible controller.
+  explanation: Change the source the controller reconciles from; manual edits to what it generates are
+    undone.
 hints:
-- Compare the declared source with the live object before changing unrelated resources.
-- Use the supplied renderers and scoped namespace; wait for a current-generation ready state.
-- Review the worked commands in the concept, then inspect the measured evidence for each remaining criterion.
+- 'Take each environment separately: dispatch (Kustomize), staging (Helm), and the WorkerPool controller.'
+- The overlay needs 2 replicas and development; Helm needs a rollback to revision 1 and fixed values;
+  the controller needs 1 replica.
+- After fixing all three, restart the development API, run python operator-proof.py, and check /config
+  in both namespaces.
 sources:
 - https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
 - https://helm.sh/docs/intro/using_helm/
@@ -62,8 +65,9 @@ prepare:
   timeout: 360
 checks:
 - id: packaging-overlay
-  title: Rendered development overlay and running application agree
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The development overlay and the running app agree
+  explanation: The rendered development overlay must give Dispatch two replicas and environment development
+    in namespace dispatch, and the running Pods must report that environment.
   command:
     args:
     - python
@@ -75,10 +79,13 @@ checks:
   json_path:
   - overlay
   expected: 'true'
-  diagnostic: Render the development overlay, repair replicas and environment, then restart the API.
+  diagnostic: Development does not match yet. Run kubectl kustomize kustomize/overlays/development and
+    check the dispatch replicas (2) and the ConfigMap environment (development). Apply it, then run kubectl
+    rollout restart deployment/dispatch so the Pods pick up the new environment value.
 - id: packaging-release
-  title: Helm values and the live staging application are healthy
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The staging Helm release is healthy with the right values
+  explanation: The latest staging revision must be deployed, both Helm’s values and values-practice.yaml
+    must say 2 replicas and environment staging, and Dispatch in staging must report staging.
   command:
     args:
     - python
@@ -90,10 +97,12 @@ checks:
   json_path:
   - release
   expected: 'true'
-  diagnostic: Compare chart values, deployed release values, replicas, and the staging /config response.
+  diagnostic: 'The staging release is not right yet. Check helm history dispatch -n staging, helm get
+    values dispatch -n staging, and values-practice.yaml: both must have api.replicas 2 and environment
+    staging. Then check kubectl get pods -n staging.'
 - id: packaging-rollback
-  title: Release history records recovery from the failed values change
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: Helm history shows the rollback
+  explanation: After the failed revision, the history must contain a revision created by helm rollback.
   command:
     args:
     - python
@@ -105,10 +114,12 @@ checks:
   json_path:
   - rollback
   expected: 'true'
-  diagnostic: Use Helm history and rollback to recover the healthy revision; keep its history.
+  diagnostic: No rollback revision was found. Use helm rollback dispatch 1 -n staging --wait rather than
+    reinstalling or scaling by hand, then check helm history dispatch -n staging.
 - id: packaging-extension
-  title: Validated WorkerPool owns two available managed workers
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The WorkerPool is Ready and owns two workers
+  explanation: The WorkerPool CRD must keep its schema, the pool must ask for 2 replicas with a current
+    Ready condition, and it must own dispatch-workers with two available Pods.
   command:
     args:
     - python
@@ -120,11 +131,13 @@ checks:
   json_path:
   - extension
   expected: 'true'
-  diagnostic: Inspect CRD schema, controller availability, WorkerPool generation, and Deployment owner
-    UID.
+  diagnostic: The WorkerPool is not Ready or its workers are missing. Check kubectl get deployment workerpool-controller
+    (it needs one ready replica) and kubectl logs deployment/workerpool-controller, then kubectl get workerpool
+    dispatch -o yaml for its status and conditions.
 - id: packaging-reconciliation
-  title: The controller repaired real generated-workload drift
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The controller repaired a manual change
+  explanation: operator-proof.py must have recorded the generated Deployment being scaled down and the
+    controller restoring it.
   command:
     args:
     - python
@@ -136,10 +149,11 @@ checks:
   json_path:
   - reconciliation
   expected: 'true'
-  diagnostic: Run operator-proof.py after the controller and two managed workers are ready.
+  diagnostic: No successful drift repair is recorded. Once the WorkerPool is Ready, run python operator-proof.py
+    and read its output.
 - id: packaging-workers
-  title: Operator-owned workers complete a unique Dispatch job
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The operator’s workers finish a new job
+  explanation: Dockyard submits a real job and checks it is completed by one of the WorkerPool’s Pods.
   command:
     args:
     - python
@@ -151,7 +165,8 @@ checks:
   json_path:
   - workers
   expected: 'true'
-  diagnostic: Keep the ordinary workers at zero and inspect managed-worker logs and dependencies.
+  diagnostic: The job was not completed by an operator-owned worker. Check kubectl get pods -l app=worker,
+    and that the ordinary worker Deployment is still at zero replicas while dispatch-workers has two.
 capabilities:
 - docker
 - kind

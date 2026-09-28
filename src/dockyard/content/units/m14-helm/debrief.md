@@ -1,12 +1,7 @@
-# Debrief: Operate a versioned Helm release
+## Release history as a safety net
 
-A chart turns values and templates into Kubernetes objects, while a Helm release records the deployed instance and its revisions.
-A rendered chart can be valid yet fail rollout because scheduling, admission, or runtime dependencies remain unsatisfied.
+The rollback restored a working revision without erasing the bad one, and fixing the values file stops the mistake returning on the next upgrade.
 
-## Explain your result
-
-Which observation connects the supplied value to the live process rather than only to template output?
-
-## Transfer beyond this lab
-
-Treat chart upgrades as application changes with reviewed values, readiness evidence, and a compatible rollback path.
+Check your understanding:
+Why did Helm call the zero-replica revision “deployed”?
+What is the difference between `helm template` and `helm install --dry-run`, and when would you use each?

@@ -1,12 +1,7 @@
-# Debrief: Extend the API with a reconciled WorkerPool
+## Your own object type, reconciled
 
-A custom resource extends the API vocabulary, and a running controller is responsible for reconciling that declared intent.
-The WorkerPool object alone cannot create useful workers without the corresponding controller and its required authority.
+The CRD taught the API a new word, the WorkerPool said what you wanted, and the controller made it happen, and kept it that way when the Deployment was changed by hand.
 
-## Explain your result
-
-Trace one change from the custom resource to the managed workload and explain how status differs from the requested specification.
-
-## Transfer beyond this lab
-
-Production operators need bounded privileges, repeatable reconciliation, and failure reporting that survives retries.
+Check your understanding:
+Follow one change from `kubectl edit workerpool dispatch` to new worker Pods.
+Why is a status that says Ready not trustworthy if its `observedGeneration` is lower than the object’s `generation`?

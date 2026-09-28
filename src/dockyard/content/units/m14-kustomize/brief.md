@@ -1,9 +1,11 @@
-# Repair development at the overlay
+## Fix the development overlay
 
-Inspect the shared base and render the development overlay.
-Its replica transform is zero and its environment patch says broken.
-Repair only the development overlay to request two API replicas and environment development.
-Keep namespace dispatch and the base reusable.
-Apply the rendered overlay, restart the API to pick up changed environment variables, and wait for rollout.
-Check the actual application configuration as well as the Deployment and ConfigMap.
-Render the supplied staging example for comparison, but do not apply it in this exercise.
+The development overlay sets Dispatch to zero replicas and patches its environment to `broken`.
+
+1. Render the development overlay and compare it with the base.
+2. Fix only `kustomize/overlays/development/kustomization.yaml`: two API replicas and environment `development`. Keep namespace `dispatch`, and leave the base alone.
+3. Render and apply it with the command from Understand, then restart the API and wait for the rollout.
+4. Check the Deployment, the ConfigMap, and Dispatch’s own `/config` response.
+5. Choose **Check work**.
+
+Render the staging overlay too, to compare, but do not apply it.

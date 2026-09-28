@@ -66,10 +66,10 @@ A runtime pass alone is not a teaching-quality result.
 | m13-autoscaling | Completed without solutions | Revised | Added HPA YAML, kubectl autoscale, utilization arithmetic, conditions, PDB YAML, and kubectl create pdb. HPA showed 517% (258m) of a 50m request and scaled to four; passed. |
 | m13-mission | Completed without solutions | Revised | After resume the metrics API stayed unavailable because kind nodes changed addresses and kubelet certificate requests were never approved; resume now restores them, and wait-scale.py waits instead of crashing. Drain recorded 41 samples with no failures; passed. |
 | i10-worker-memory | Completed without solutions | Revised | Last State showed OOMKilled with exit 137 and a 64Mi limit; raised to 192Mi with a 128Mi request; passed. |
-| m14-kustomize | Pending | Pending |  |
-| m14-helm | Pending | Pending |  |
-| m14-operators | Pending | Pending |  |
-| m14-mission | Pending | Pending |  |
+| m14-kustomize | Completed without solutions | Revised | Replaced placeholder hints; added kustomization fields, JSON patches, generators, and apply -k. Rendered overlay and /config matched after restart; passed. |
+| m14-helm | Completed without solutions | Revised | Replaced placeholder hints; added the full Helm command set including repositories. helm get values printed the practice password, so the lesson now warns about it and explains keeping secrets out of values. Rollback created revision 3; passed. |
+| m14-operators | Completed without solutions | Revised | Replaced placeholder hints; explained CRDs, custom resources, controllers, generations, and ownership. The brief wrongly assumed dispatch-workers existed before the controller ran; corrected. Drift repaired in 3.4 seconds; passed. |
+| m14-mission | Completed without solutions | Revised | Fixed overlay, Helm release, and controller independently; both environments reported the right environment; passed. |
 | m15-observation | Pending | Pending |  |
 | m15-alerts | Pending | Pending |  |
 | m15-slo | Pending | Pending |  |

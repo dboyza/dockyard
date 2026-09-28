@@ -1,12 +1,7 @@
-# Debrief: Package repeatable Dispatch environments
+## Clear ownership, reproducible environments
 
-Reusable configuration, a versioned release, and a reconciled extension provide different forms of packaging and automation.
-The mission requires the resulting workload behavior, so the presence of chart files or custom resource definitions is only an intermediate observation.
+Each environment came back from its own source: an overlay, a Helm release, and a custom resource.
+Because no object had two owners, none of the fixes undid another.
 
-## Explain your result
-
-Explain which changes belong in environment values, which belong in shared templates, and which require controller logic.
-
-## Transfer beyond this lab
-
-Keep the source interfaces small enough that another operator can render, inspect, and reproduce the intended deployment.
+Check your understanding:
+Which changes belong in environment values or overlays, which in shared templates, and which need controller logic?

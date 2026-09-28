@@ -2,15 +2,15 @@ id: m14-kustomize
 revision: 1
 module: 14
 order: 1
-title: Compose environment overlays
-summary: Render a reusable base with deliberate environment-specific differences.
+title: Environment overlays with Kustomize
+summary: Fix a development overlay that changes a shared base, and check the running result.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Render a Kustomize base and overlay before applying it.
-- Separate namespace, replica, and configuration transformations.
-- Compare rendered intent with live application behavior.
+- Write a kustomization with resources, namespace, replicas, and patches.
+- Render an overlay before applying it.
+- Check that a configuration change reached the running application.
 prerequisites:
 - m13-mission
 objectives:
@@ -20,18 +20,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A ConfigMap environment value changes in an applied overlay. What updates the running process?
+  question: An overlay changes a ConfigMap value that Dispatch reads as an environment variable. What
+    makes Dispatch use it?
   options:
-  - Replacing its Pod so the container reads the new environment.
-  - Only rendering the overlay again.
-  - Reading the ConfigMap with kubectl get.
+  - Restarting the Pods so the containers start with the new value.
+  - Rendering the overlay again.
+  - Running kubectl get configmap.
   correct: 0
-  explanation: Environment variables are captured at container startup; mounted configuration has different
-    update semantics.
+  explanation: Environment variables are read when a container starts, so the Pods must be replaced.
 hints:
-- Compare the declared source with the live object before changing unrelated resources.
-- Use the supplied renderers and scoped namespace; wait for a current-generation ready state.
-- Review the worked commands in the concept, then inspect the measured evidence for each remaining criterion.
+- Run kubectl kustomize kustomize/overlays/development and look at the dispatch replicas and the ConfigMap’s
+  environment.
+- In the development kustomization.yaml, the replicas count should be 2 and the patch value development.
+- Apply with kubectl kustomize ... | python render.py - | kubectl apply -f -, then kubectl rollout restart
+  deployment/dispatch.
 sources:
 - https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
 - https://helm.sh/docs/intro/using_helm/
@@ -63,8 +65,9 @@ prepare:
   timeout: 360
 checks:
 - id: packaging-overlay
-  title: Rendered development overlay and running application agree
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The development overlay and the running app agree
+  explanation: The rendered development overlay must give Dispatch two replicas and environment development
+    in namespace dispatch, and the running Pods must report that environment.
   command:
     args:
     - python
@@ -76,7 +79,9 @@ checks:
   json_path:
   - overlay
   expected: 'true'
-  diagnostic: Render the development overlay, repair replicas and environment, then restart the API.
+  diagnostic: Development does not match yet. Run kubectl kustomize kustomize/overlays/development and
+    check the dispatch replicas (2) and the ConfigMap environment (development). Apply it, then run kubectl
+    rollout restart deployment/dispatch so the Pods pick up the new environment value.
 capabilities:
 - docker
 - kind

@@ -2,15 +2,15 @@ id: m14-operators
 revision: 1
 module: 14
 order: 3
-title: Extend the API with a reconciled WorkerPool
-summary: Connect a validated custom resource to a running namespaced controller.
+title: Custom resources and operators
+summary: Start a controller for a custom WorkerPool type and watch it repair manual changes.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Distinguish a CRD schema, custom resource, and controller.
-- Trace resource ownership and status generations.
-- Observe an operator repairing manual replica drift.
+- Explain the roles of a CRD, a custom resource, and a controller.
+- Read a custom resource’s status, generation, and ownership.
+- Watch an operator restore its desired state after drift.
 prerequisites:
 - m14-helm
 objectives:
@@ -20,18 +20,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A WorkerPool requests two replicas but someone scales its generated Deployment to zero. What
-    should a working controller do?
+  question: A WorkerPool asks for two workers, but someone scales its Deployment to zero. What should
+    the controller do?
   options:
-  - Restore two replicas from the WorkerPool intent.
-  - Change the WorkerPool to zero automatically.
-  - Stop reconciling permanently.
+  - Restore two workers.
+  - Change the WorkerPool to zero.
+  - Stop managing it.
   correct: 0
-  explanation: The custom resource is the declared source of truth for the generated workload.
+  explanation: The WorkerPool is the source of truth, so the controller brings the Deployment back in
+    line with it.
 hints:
-- Compare the declared source with the live object before changing unrelated resources.
-- Use the supplied renderers and scoped namespace; wait for a current-generation ready state.
-- Review the worked commands in the concept, then inspect the measured evidence for each remaining criterion.
+- kubectl get deployment workerpool-controller shows why nothing is reconciling.
+- Set the controller’s replicas to 1 in operator.yaml.
+- Apply it with python render.py operator.yaml | kubectl apply -f -, wait for the WorkerPool to be Ready,
+  then run python operator-proof.py.
 sources:
 - https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
 - https://helm.sh/docs/intro/using_helm/
@@ -63,8 +65,9 @@ prepare:
   timeout: 360
 checks:
 - id: packaging-extension
-  title: Validated WorkerPool owns two available managed workers
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The WorkerPool is Ready and owns two workers
+  explanation: The WorkerPool CRD must keep its schema, the pool must ask for 2 replicas with a current
+    Ready condition, and it must own dispatch-workers with two available Pods.
   command:
     args:
     - python
@@ -76,11 +79,13 @@ checks:
   json_path:
   - extension
   expected: 'true'
-  diagnostic: Inspect CRD schema, controller availability, WorkerPool generation, and Deployment owner
-    UID.
+  diagnostic: The WorkerPool is not Ready or its workers are missing. Check kubectl get deployment workerpool-controller
+    (it needs one ready replica) and kubectl logs deployment/workerpool-controller, then kubectl get workerpool
+    dispatch -o yaml for its status and conditions.
 - id: packaging-reconciliation
-  title: The controller repaired real generated-workload drift
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The controller repaired a manual change
+  explanation: operator-proof.py must have recorded the generated Deployment being scaled down and the
+    controller restoring it.
   command:
     args:
     - python
@@ -92,10 +97,11 @@ checks:
   json_path:
   - reconciliation
   expected: 'true'
-  diagnostic: Run operator-proof.py after the controller and two managed workers are ready.
+  diagnostic: No successful drift repair is recorded. Once the WorkerPool is Ready, run python operator-proof.py
+    and read its output.
 - id: packaging-workers
-  title: Operator-owned workers complete a unique Dispatch job
-  explanation: Inspect rendered intent, ownership, runtime behavior, and release evidence.
+  title: The operator’s workers finish a new job
+  explanation: Dockyard submits a real job and checks it is completed by one of the WorkerPool’s Pods.
   command:
     args:
     - python
@@ -107,7 +113,8 @@ checks:
   json_path:
   - workers
   expected: 'true'
-  diagnostic: Keep the ordinary workers at zero and inspect managed-worker logs and dependencies.
+  diagnostic: The job was not completed by an operator-owned worker. Check kubectl get pods -l app=worker,
+    and that the ordinary worker Deployment is still at zero replicas while dispatch-workers has two.
 capabilities:
 - docker
 - kind

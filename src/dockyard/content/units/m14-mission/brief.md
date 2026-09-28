@@ -1,12 +1,10 @@
-# Make both environments reproducible
+## Make both environments reproducible
 
-Repair the development overlay to two API replicas and environment development.
-Render and apply it, then restart the API to refresh its ConfigMap environment.
-Recover the staging Helm release using its healthy revision and fix the practice values to two replicas and environment staging.
-Restore the WorkerPool controller to one replica while keeping the ordinary development worker Deployment at zero.
-Wait for the pool's two managed workers and run the drift rehearsal.
+- **Development**: fix the overlay to two API replicas and environment `development`, apply it, and restart the API.
+- **Staging**: roll the Helm release back to its healthy revision, and fix `values-practice.yaml` to two replicas and environment `staging`.
+- **Workers**: start the WorkerPool controller with one replica, keep the ordinary development `worker` Deployment at zero, wait for the pool’s two workers, and run `python operator-proof.py`.
 
-Inspect the actual application environment in both namespaces and prove job processing by the operator-owned workers.
-Keep staging's release history and database claim.
-Do not apply Kustomize's staging example over Helm-owned resources.
-Write a handoff note naming each source of truth, the recovered Helm revision, and the worker ownership chain.
+Check both namespaces’ `/config` responses and that the operator’s workers process a job.
+Keep staging’s release history and database storage, and do not apply the Kustomize staging overlay over Helm’s objects.
+
+Write a handoff note naming each environment’s source of truth, the Helm revision you recovered, and the chain from WorkerPool to worker Pods.

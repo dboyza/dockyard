@@ -1,12 +1,8 @@
-# Debrief: Compose environment overlays
+## A small overlay, a big effect
 
-The overlay changes a reusable base through an explicit rendering step, and the applied application shows whether that rendered configuration is effective.
-Editing a patch file is insufficient when the patch selects the wrong resource or the rendered output is never applied.
+The base stayed untouched; the overlay changed just the replica count and one setting for development.
+Rendering showed what would change, and `/config` showed the running application really picked it up.
 
-## Explain your result
-
-Compare the base, the rendered overlay, and the running consumer, identifying where the intended environment value first differs.
-
-## Transfer beyond this lab
-
-Keep environment-specific changes small and review rendered output as part of a release process.
+Check your understanding:
+Where would you add a `namePrefix` so that only staging’s objects get a `staging-` prefix?
+Why did the API need a restart after the environment value changed?
