@@ -1,16 +1,11 @@
-# Incident report
+## Let new Pods pull the release again
 
-The release was published successfully, but newly created API Pods cannot retrieve it after a credential rotation.
-Inspect the pull events and repair the workload's registry identity.
-The registry authority is in `registry.txt`; its current local username is `learner` and the password is supplied in the lab-only `DOCKYARD_REGISTRY_PASSWORD` environment variable.
-Do not paste the password into a runbook or shell command argument.
-A program can construct the Secret in memory and send it to kubectl over standard input.
+Find out why new API Pods cannot pull the image, and fix it.
 
-Retain registry authentication and the published `dispatch:incident` release.
-Restore two ready API replicas with imagePullPolicy Always and complete a fresh persisted job.
-Keep the namespace, original database claim, and stored job.
-The validator launches a separate short-lived Pod using the workload pull identity and checks its actual execution.
-Preloading a local image, disabling authentication, or switching back to the non-registry image does not meet this contract.
+- The registry address is in `registry.txt`. The username is `learner`, and the current password is in the `DOCKYARD_REGISTRY_PASSWORD` variable. Refer to the variable; do not type or copy the password itself.
+- Keep the registry’s authentication on, and keep the published `dispatch:incident` release.
+- Get two ready API replicas with `imagePullPolicy: Always`, and complete a new job.
+- Keep the namespace, the database’s storage, and its stored job.
 
-Record how you distinguished an absent image, an unreachable registry, and a rejected credential.
-Use the debrief as a self-review rubric.
+Loading the image onto the nodes directly, turning off authentication, or switching to a non-registry image does not count.
+In your notes, record how you told apart a missing image, an unreachable registry, and a rejected login.

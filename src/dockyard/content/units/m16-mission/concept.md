@@ -1,15 +1,22 @@
-# Release ownership crosses several independent systems
+## The whole delivery chain
 
-The local source repository, pipeline, registry, Flux source artifact, desired-state directory, and running process each establish a different fact.
-A tested image that never reached the registry cannot be pulled by a fresh node.
-A pushed image that no Git commit selects does not change the desired release.
-A fetched commit with suspended reconciliation does not update a workload.
-A successful apply still needs workload health and application behavior checks.
+A release passes through several systems, and each proves one thing:
 
-Use the supplied Dispatch checkpoint to connect those boundaries without broadening the deployer's permissions.
-Keep source intent, tested image identity, promotion history, and observed recovery consistent.
-Document the remaining local compromises: unauthenticated private HTTP, shared practice dependencies, unsigned evidence, and a small single-node capacity budget.
+- The pipeline shows the image passed its tests.
+- The registry shows the image can be pulled.
+- A Git commit shows which image each environment should run.
+- Flux shows that commit was applied.
+- The running application shows it actually works.
 
-For an independent handoff, describe a release by its source revision and immutable artifact reference, then name the observations that show it is serving correctly.
-A useful incident note also records what failed, whether the previous release remained available, how the source was repaired, and which check would catch recurrence.
-The note is for your own review; the checker grades runtime behavior and history rather than keywords in prose.
+A break anywhere stops the release, and a success at one step says nothing about the next.
+
+In this mission, the test gate has been bypassed and both environments are suspended.
+Repair them, publish a tested release, and demonstrate the full cycle from the promotion lesson.
+The supplied helper scripts are there to use, but work out what is wrong at each step yourself before running them.
+
+Be honest about this setup’s shortcuts in your notes: an unauthenticated local registry, shared practice dependencies, unsigned evidence files, and a small single-node cluster.
+
+## Working on your own
+
+Try it without hints first.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.

@@ -1,12 +1,7 @@
-# Debrief: Deliver Dispatch from local Git
+## A delivery process someone else can run
 
-The complete delivery path connects a validated artifact, registry identity, Git declaration, and actual reconciliation.
-Each boundary has its own failure mode, so a successful build or a green repository status cannot stand in for the final client response.
+Tested images, recorded digests, Git history, Flux status, and the running service now all agree, and each step can be checked on its own.
 
-## Explain your result
-
-Reconstruct the artifact and commit identities that led to the running release, then explain how you would recover a failed promotion.
-
-## Transfer beyond this lab
-
-The local registry and Git service teach the mechanism without claiming the availability or trust guarantees of a production delivery system.
+Check your understanding:
+Starting from a running Pod, work back to the commit and pipeline run that produced it.
+How would you recover if a promotion to staging failed in the middle of the night?

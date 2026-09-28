@@ -1,12 +1,7 @@
-# Debrief: Promote and recover a declared release
+## History you can trust
 
-Promotion changes the declared release, while recovery restores a known working declaration and waits for the resulting behavior.
-A reverted commit is not the end of recovery until the reconciler and the application have both converged.
+The same tested digest moved from development to staging, a bad candidate failed without taking staging down, and a revert commit restored the good declaration.
 
-## Explain your result
-
-Explain how you distinguished an unapplied repository change from an applied release that failed readiness.
-
-## Transfer beyond this lab
-
-Review data compatibility and external dependencies before treating Git reversion as a complete production rollback.
+Check your understanding:
+How did you tell apart a change Flux had not applied yet from one it applied that then failed?
+Why is reverting in Git not a complete rollback if the bad release had changed the database?

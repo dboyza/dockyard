@@ -1,23 +1,28 @@
-# Publication follows a successful candidate test
+## Only publish what passed its tests
 
-A delivery pipeline is a repeatable sequence with explicit failure gates.
-The supplied pipeline builds the Dispatch image, runs real HTTP contract tests inside that image, publishes it to the app-owned registry, and records the registry's content digest.
-A nonzero test exit must stop publication.
-A successful build alone proves neither API behavior nor dependency readiness.
-These fast contract tests cover the health response and invalid-request rejection; the final cluster check separately exercises a real database-backed job.
+A **delivery pipeline** is an automated sequence that turns source code into something you can deploy: build it, test it, publish it.
+The important word is **gate**: a failed step must stop everything after it.
+A build that succeeds proves only that the image was assembled, not that the application inside works.
+
+## This lab’s pipeline
+
+`pipeline.py` does four things in order:
+
+1. Builds the Dispatch image.
+2. Runs real HTTP tests, `test_release.py`, inside that image. The test container has no network access and runs as the image’s ordinary user.
+3. Pushes the image to this lab’s registry.
+4. Records the registry’s **digest** for the image, plus fingerprints of the source files, in `release.json`.
+
+Each step checks the previous one’s exit status and stops on failure.
+But `pipeline.json` has a switch, `run_tests`, and it is currently `false`: the tests are skipped and anything that builds gets published.
 
 ```sh
-python -m json.tool pipeline.json
+cat pipeline.json
 python pipeline.py
 python -m json.tool release.json
 ```
 
-The pipeline script uses subprocess exit status to stop on a failed build, test, or push.
-Its run_tests setting is deliberately visible so you can diagnose an accidentally bypassed gate.
-The test container has no external network and runs as the image's non-root user.
-The HTTP server binds its own loopback interface inside that container.
-
-For a different service, a minimal shell gate would look like this:
+The same idea in a plain shell script, for a different service, looks like this:
 
 ```sh
 set -eu
@@ -27,17 +32,34 @@ docker tag report-service:candidate "$PRIVATE_REGISTRY/report-service:reviewed"
 docker push "$PRIVATE_REGISTRY/report-service:reviewed"
 ```
 
-The assignment keeps its supplied tests and repairs the gate, rather than changing what a passing test means.
-The checker independently runs the packaged HTTP tests against the actual published image and compares the recorded source hashes with the current build inputs.
-A tag is a convenient name for publication, while the resulting digest is the immutable deployment input.
-Local pipeline records are useful reproducibility evidence, not signed supply-chain attestations.
+`set -eu` makes the script stop at the first failing command, so a failing test means nothing gets pushed.
 
-The registry accepts unauthenticated HTTP on an assigned loopback port and the owned Docker bridge.
-This is a local learning compromise, not a production registry configuration.
-The lab changes containerd mirror files only inside its owned cluster nodes.
-It does not change Docker Desktop trust settings or send an image to an external registry.
+## Prove the gate really stops things
 
-The pipeline labels each published artifact with its release version and lab identity.
-This records release provenance and gives the published image a distinct configuration identity from the locally imported practice image.
-Kubernetes 1.35 verifies access to previously pulled images by identity and repository; importing one alias does not authorize every alias of an image pulled elsewhere.
-The lab preserves that credential verification behavior.
+Do not just trust that the gate works; see it fail.
+Copy the tests, break one assertion in the copy, and run both against the published image:
+
+```sh
+IMAGE=$(python -c "import json; print(json.load(open('release.json'))['image'])")
+docker run --rm -i --network=none "$IMAGE" python - < test_release.py; echo "exit $?"
+cp test_release.py broken_test.py
+docker run --rm -i --network=none "$IMAGE" python - < broken_test.py; echo "exit $?"
+rm broken_test.py
+```
+
+`python -` runs a script read from input, and `< file` supplies the file, so the tests run inside the image without copying anything into it.
+Before the second run, edit `broken_test.py` so one `assertEqual` expects a wrong value.
+The first run should end with `OK` and exit 0; the second should report `FAIL` and exit 1.
+Leave `test_release.py` itself unchanged: `release.json` records its fingerprint, and changing it would make the published release out of date.
+
+## Tags, digests, and records
+
+A tag such as `:reviewed` is a label that can be moved later.
+The digest recorded in `release.json` names the exact content that passed the tests, so later steps deploy by digest.
+These local records are useful for reproducing what happened; they are not signed proof of where the image came from, which real supply chains add.
+
+## Local shortcuts
+
+The practice registry uses plain HTTP on a local port and inside the cluster’s Docker network, with no password.
+That is acceptable for a disposable local lab, and never for a real registry.
+Dockyard configures the cluster’s nodes to trust it without changing Docker Desktop’s own settings.

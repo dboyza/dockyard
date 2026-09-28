@@ -2,14 +2,15 @@ id: m16-promotion
 revision: 2
 module: 16
 order: 3
-title: Promote and recover a declared release
-summary: Observe drift repair, digest promotion, and Git-based rollback.
+title: Promotion and rollback through Git
+summary: Promote one tested image to staging, then recover a bad release with git revert.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Promote one tested digest across release targets.
-- Recover a failed candidate without rewriting history.
+- Promote the exact tested digest between environments.
+- Recover with a new revert commit instead of rewriting history.
+- Check each commit against the running cluster.
 prerequisites:
 - m16-gitops
 objectives:
@@ -19,17 +20,17 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Why can kubectl rollout undo be temporary while GitOps remains active?
+  question: With GitOps running, why is kubectl rollout undo only a temporary fix?
   options:
-  - The controller can reapply the unchanged faulty Git declaration.
-  - Git automatically rewrites the previous commit.
-  - A digest changes whenever a Pod restarts.
+  - Flux reapplies the bad version still declared in Git.
+  - Git rewrites the previous commit.
+  - Digests change on every restart.
   correct: 0
-  explanation: Repair the desired state in Git so future reconciliation preserves the recovery.
+  explanation: The controller keeps applying what Git says, so the fix has to be in Git.
 hints:
-- Inspect the earliest failing boundary before changing a later system.
-- Compare the test gate, Git source revision, suspend state, and current controller conditions.
-- Use the supplied wait and rehearsal helpers after repairing the source; inspect their actual evidence.
+- Read delivery-proof.py first so you know what it will change.
+- Run python gitops.py wait before the rehearsal so both environments start Ready.
+- Run python delivery-proof.py, then inspect each commit with git -C delivery show.
 sources:
 - https://docs.docker.com/reference/cli/docker/image/push/
 - https://git-scm.com/docs/git-revert
@@ -62,8 +63,9 @@ prepare:
   timeout: 420
 checks:
 - id: delivery-pipeline
-  title: The published image passes its gate and independent HTTP contract
-  explanation: Compare real artifact, commit, controller, and application observations.
+  title: The published image passed its tests
+  explanation: release.json must record a tested release whose digest matches the registry, the tests
+    must pass again against that exact image, and its source fingerprints must match the current files.
   command:
     args:
     - python
@@ -75,11 +77,13 @@ checks:
   json_path:
   - pipeline
   expected: 'true'
-  diagnostic: Enable the unchanged candidate tests, run the pipeline, and compare current build inputs
-    with release.json.
+  diagnostic: 'The published release is untested or out of date. Check run_tests is true in pipeline.json
+    and run python pipeline.py again. If you edited source files or tests after publishing, the fingerprints
+    in release.json no longer match: publish again.'
 - id: delivery-reconciliation
-  title: Local and remote Git revisions match healthy Flux-applied releases
-  explanation: Compare real artifact, commit, controller, and application observations.
+  title: Git and Flux agree on a healthy release
+  explanation: The delivery repository must be clean and pushed, Flux must have fetched that commit, and
+    both environments must be Ready and running the image by digest.
   command:
     args:
     - python
@@ -91,11 +95,13 @@ checks:
   json_path:
   - reconciliation
   expected: 'true'
-  diagnostic: Inspect suspend, source path, remote branch, Ready conditions, and lastAppliedRevision for
-    both targets.
+  diagnostic: Git, Flux, and the cluster do not agree yet. Check git -C delivery status (commit and push
+    any changes), then kubectl get kustomizations.kustomize.toolkit.fluxcd.io -n flux-system for suspend
+    and Ready, and run python gitops.py wait.
 - id: delivery-identity
-  title: The deployer can manage Dispatch Deployments without Secret or system access
-  explanation: Compare real artifact, commit, controller, and application observations.
+  title: Flux’s deployer has only the access it needs
+  explanation: dispatch-deployer must be able to update Deployments in dispatch, but not read Secrets
+    or change kube-system.
   command:
     args:
     - python
@@ -107,10 +113,12 @@ checks:
   json_path:
   - identity
   expected: 'true'
-  diagnostic: Retain the scoped deployer Role and serviceAccountName in both Flux Kustomizations.
+  diagnostic: The deployer’s permissions are wrong. Check with kubectl auth can-i patch deployments --as=system:serviceaccount:flux-system:dispatch-deployer
+    -n dispatch, and the same for get secrets and for -n kube-system. Keep its Role narrow.
 - id: delivery-workflow
-  title: The delivered API completes a real database-backed job
-  explanation: Compare real artifact, commit, controller, and application observations.
+  title: The delivered API finishes a real job
+  explanation: Dockyard submits a job through the delivered API and checks the database stores the worker’s
+    result.
   command:
     args:
     - python
@@ -122,10 +130,12 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the delivered API, worker, PostgreSQL, and Redis before retrying a real job.
+  diagnostic: A new job was not completed. Check the delivered API and worker Pods are ready with kubectl
+    get pods, and read their logs.
 - id: delivery-drift
-  title: Flux repaired an observed live replica change
-  explanation: Compare real artifact, commit, controller, and application observations.
+  title: Flux undid a manual change
+  explanation: delivery-evidence.json must show the development Deployment being scaled by hand and Flux
+    restoring the declared count.
   command:
     args:
     - python
@@ -137,11 +147,12 @@ checks:
   json_path:
   - drift
   expected: 'true'
-  diagnostic: Run the inspected rehearsal with active Flux reconciliation and preserve its generation
-    evidence.
+  diagnostic: No drift repair is recorded. Once both environments are Ready, run python delivery-proof.py
+    and read delivery-evidence.json.
 - id: delivery-promotion
-  title: Staging selected the exact digest already validated in development
-  explanation: Compare real artifact, commit, controller, and application observations.
+  title: Staging runs the digest tested in development
+  explanation: The promotion must move the exact dispatch-3 digest from development to staging in its
+    own commit.
   command:
     args:
     - python
@@ -153,10 +164,13 @@ checks:
   json_path:
   - promotion
   expected: 'true'
-  diagnostic: Promote the already tested dispatch-3 digest from development in a separate staging commit.
+  diagnostic: Staging is not running the digest that was tested in development. Compare the image digests
+    in git -C delivery log -p for both environments, and rerun python delivery-proof.py after fixing earlier
+    steps.
 - id: delivery-rollback
-  title: A new Git revert recovered an actual failed image pull
-  explanation: Compare real artifact, commit, controller, and application observations.
+  title: A git revert recovered a real failed pull
+  explanation: The history must contain a bad candidate that failed with ErrImagePull or ImagePullBackOff,
+    followed by a new revert commit that restored the working release.
   command:
     args:
     - python
@@ -168,7 +182,8 @@ checks:
   json_path:
   - rollback
   expected: 'true'
-  diagnostic: Observe the failed candidate pull, revert its Git commit, and wait for the recovery revision.
+  diagnostic: The failed candidate or its revert is missing. Recovery must be a new commit made with git
+    revert, not a reset or a kubectl rollout undo. Check git -C delivery log and rerun python delivery-proof.py.
 capabilities:
 - docker
 - kind

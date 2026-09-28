@@ -1,8 +1,10 @@
-# Hand off a recoverable local delivery workflow
+## Hand over a working, reversible delivery process
 
-A publication gate has been bypassed and both release targets are suspended.
-Repair the pipeline and source reconciliation, publish a tested release, and establish current healthy controller revisions.
-Demonstrate drift repair, promotion of the same tested dispatch-3 digest, a real failed candidate pull, and recovery through a new Git revert commit.
-The supplied helpers are available for inspection and use, but diagnose each boundary yourself before running them.
-Keep the deployer scoped to Dispatch Deployments and preserve the independent database credential.
-Write DELIVERY-NOTES.md explaining the chain of evidence, the failed candidate's actual user impact, and how a future operator would repeat or reverse a release.
+1. Turn the pipeline’s test gate back on and publish a tested release.
+2. Resume both environments in Flux and confirm they apply the current commit and become Ready.
+3. Show Flux repairing manual drift, the same `dispatch-3` digest promoted to staging, a real failed pull of a bad candidate, and recovery with a new `git revert` commit.
+4. Choose **Check work**.
+
+Keep the deployer’s permissions limited to Dispatch Deployments, and keep the database password out of Git.
+
+Write `DELIVERY-NOTES.md` explaining the chain of evidence from test to running Pod, what users actually experienced during the failed candidate, and how someone would repeat or reverse a release.

@@ -1,16 +1,25 @@
-# Promote the same artifact and repair the source of truth
+## Promote what you tested, and roll back through Git
 
-Promotion changes which environment selects an already tested digest.
-Rebuilding a supposedly identical image for staging weakens that guarantee because the new build may contain different inputs.
-This lab has separate development and staging Deployments in one practice namespace, sharing supplied dependencies to fit local resources.
-They are separate release targets, not a production tenant-isolation design.
+**Promotion** means moving a release from one environment to the next, for example from development to staging.
+The safe way is to promote the *exact same image*, by digest, that passed testing in the earlier environment.
+Rebuilding it for staging would create a new image that might differ in ways nobody tested.
 
-The supplied delivery-proof.py performs an inspectable rehearsal using ordinary Git, Docker, kubectl, and Flux operations.
-It first scales the development Deployment to zero and observes Flux restore the declared count.
-It then builds and tests dispatch-3, commits that digest to development, waits for readiness, and promotes exactly that digest to staging in a separate commit.
-It finally commits an unavailable staging image digest, observes an actual ErrImagePull or ImagePullBackOff condition, and uses git revert to create a new recovery commit.
+In this lab, development and staging are two separate Deployments in one namespace, sharing the database and queue to save resources.
+That is a practice shortcut, not how you would separate real environments.
 
-For a different environment, the manual rollback sequence would be:
+## The rehearsal
+
+The supplied `delivery-proof.py` walks through a whole release cycle using ordinary Git, Docker, kubectl, and Flux commands.
+Read it before running it. It:
+
+1. Scales the development Deployment to zero by hand, and watches Flux restore it from Git.
+2. Builds and tests release `dispatch-3`, commits its digest for development, and waits for it to be ready.
+3. Promotes that same digest to staging in a separate commit.
+4. Commits a staging image that does not exist, watches the rollout fail with `ErrImagePull` or `ImagePullBackOff`, then recovers with `git revert`.
+
+It puts Git back in order even if a step fails, and saves what happened in `delivery-evidence.json`.
+
+## Rolling back the GitOps way
 
 ```sh
 git -C delivery log --oneline -5
@@ -19,15 +28,15 @@ git -C delivery push origin main
 kubectl get kustomizations.kustomize.toolkit.fluxcd.io -n flux-system
 ```
 
-A revert records an inverse change in a new commit while preserving history.
-Resetting a live Deployment with kubectl rollout undo changes the cluster but leaves the faulty Git declaration intact, so the controller can reapply it.
-Inspect the failed source commit, recovery commit, controller revision, and actual running process before calling recovery complete.
+`git revert` makes a *new* commit that undoes an earlier one, so history keeps both the mistake and the fix.
+With GitOps, `kubectl rollout undo` is only temporary: Git still declares the bad version, and Flux will apply it again on its next pass.
+Always fix the declaration in Git.
 
-The supplied rehearsal restores Git in a finally block after introducing the bad candidate.
-The existing healthy staging replica may continue serving during the failed rollout because maxUnavailable is zero.
-An image-pull failure therefore establishes a failed candidate rollout, not necessarily a complete service outage.
-The evidence file records that distinction through the failed Pod identity and reason.
+Because staging’s rolling update keeps `maxUnavailable: 0`, its existing healthy Pod keeps serving while the bad candidate fails to pull.
+So a failed pull here means a failed rollout, not necessarily an outage; the evidence file records which Pod failed and why.
 
-Read delivery-proof.py before running it, then inspect delivery-evidence.json alongside git show and live Kubernetes state.
-Local evidence files can be edited and are not tamper-proof certifications.
-The checker additionally validates the actual commit ancestry, changed image declarations, remote branch, controller revisions, and working service.
+## Checking the result yourself
+
+Do not take the script’s last message as the result.
+Look at each commit with `git -C delivery show`, the controllers’ applied revisions, and the running Pods’ images.
+The evidence file is a local record anyone could edit; Check work verifies the real commit history, the remote branch, Flux’s status, and the running service.

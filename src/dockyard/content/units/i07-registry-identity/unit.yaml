@@ -3,14 +3,14 @@ revision: 1
 module: 16
 order: 90
 title: The release exists but new Pods cannot pull it
-summary: The local registry contains the release, while replacement API Pods remain in image-pull backoff
-  after a credential rotation.
+summary: The release is in the registry, but after a password rotation new API Pods cannot pull it.
 kind: incident
 runtime: kubernetes
 minutes: 40
 outcomes:
-- Diagnose the reported boundary from live evidence.
-- Restore useful behavior while preserving the original state and operating constraints.
+- Read a pull error to tell a missing image, an unreachable registry, and a rejected login apart.
+- Create a docker-registry pull Secret for the exact registry address.
+- Restore Pods that pull with fresh credentials, and confirm with a real job.
 prerequisites:
 - m16-mission
 objectives:
@@ -21,18 +21,22 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation would establish recovery?
+  question: New Pods show ImagePullBackOff with “unauthorized”. The image exists and the registry is reachable.
+    What is wrong?
   options:
-  - A fresh end-to-end request succeeds and the original data remains.
-  - The latest command exited zero.
-  - A replacement Pod exists.
+  - The pull credentials are wrong or missing.
+  - The image was never pushed.
+  - The registry is down.
   correct: 0
-  explanation: Recovery requires useful behavior and the stated preservation constraints.
+  explanation: “unauthorized” means the registry answered and refused the login, so the image and network
+    are fine.
 hints:
-- Compare the exact registry authority, image reference, Pod events, and imagePullSecrets namespace.
+- Read the Events in kubectl describe pod for a new API Pod, and note which Secret the Deployment lists
+  under imagePullSecrets.
 - The registry is reachable and the image exists. The workload Secret contains an expired practice identity.
-- Create a kubernetes.io/dockerconfigjson Secret for the exact authority in registry.txt using learner
-  and DOCKYARD_REGISTRY_PASSWORD, then retry the rollout with Always pull policy.
+- Run kubectl create secret docker-registry with --docker-server set to the address in registry.txt, --docker-username=learner,
+  and --docker-password="$DOCKYARD_REGISTRY_PASSWORD", using --dry-run=client -o yaml | kubectl apply
+  -f - to replace the old one, then restart the API.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
 - https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
@@ -62,9 +66,9 @@ prepare:
   timeout: 360
 checks:
 - id: incident-preserved
-  title: The original namespace, database claim, and stored job remain
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The original namespace, database storage, and job are still there
+  explanation: The fix must not replace the namespace or database claim, or lose the job stored before
+    the incident.
   command:
     args:
     - python
@@ -75,12 +79,11 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The original namespace, the database’s data-db-0 claim, or the original job is gone. If
+    they were deleted or replaced, reset the lab and repair it in place instead.
 - id: incident-available
-  title: Two API replicas are available
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: Two API copies are available
+  explanation: The dispatch Deployment must have two ready copies pulled from the registry.
   command:
     args:
     - python
@@ -91,12 +94,11 @@ checks:
   json_path:
   - available
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The API does not have two available copies. Run kubectl describe pod on a new API Pod and
+    read the pull error in its Events.
 - id: incident-route
-  title: The Service reaches exactly the two ready API backends
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The Service reaches exactly the two API Pods
+  explanation: The dispatch Service must select exactly the two ready API Pods.
   command:
     args:
     - python
@@ -107,12 +109,11 @@ checks:
   json_path:
   - route
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The Service does not reach the two API Pods yet. They only join once they pull their image
+    and become ready.
 - id: incident-workflow
-  title: A fresh job completes and PostgreSQL contains its result
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: A new job is completed and saved
+  explanation: Dockyard submits a real job and checks PostgreSQL stores the worker’s result.
   command:
     args:
     - python
@@ -123,12 +124,11 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: A new job was not completed. Check the workers are running and read kubectl logs deployment/worker.
 - id: incident-contract
-  title: A fresh Pod authenticates and executes the private registry release
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: A fresh Pod can pull and run the private release
+  explanation: A new Pod using the workload’s pull Secret must pull dispatch:incident from the authenticated
+    registry and run it, with authentication still required.
   command:
     args:
     - python
@@ -139,8 +139,9 @@ checks:
   json_path:
   - contract
   expected: 'true'
-  diagnostic: Keep registry authentication and Always pull policy; repair the workload identity for the
-    exact registry authority.
+  diagnostic: 'A fresh Pod still cannot pull the release with the workload’s credentials. Check the registry-pull
+    Secret is type kubernetes.io/dockerconfigjson, for the exact address in registry.txt, with user learner
+    and the current password, and that the Deployment still uses imagePullPolicy: Always.'
 capabilities:
 - docker
 - kind

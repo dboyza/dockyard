@@ -2,14 +2,15 @@ id: m16-pipeline
 revision: 2
 module: 16
 order: 1
-title: Gate a local image publication
-summary: Build, test, and publish an immutable Dispatch artifact.
+title: A test gate before publishing
+summary: Turn a pipeline’s test gate back on so only tested images are published.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Make a failing candidate test stop publication.
-- Inspect the actual registry digest and build inputs.
+- Make a failing test stop an image from being published.
+- Record and read the published image’s digest.
+- Prove a gate works by making it fail on purpose.
 prerequisites:
 - m15-mission
 objectives:
@@ -19,17 +20,17 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: The candidate HTTP test exits nonzero. What should the pipeline do next?
+  question: The candidate’s tests fail. What should the pipeline do?
   options:
-  - Stop before publishing the candidate.
-  - Push first and inspect the test later.
-  - Treat a successful image build as a passing test.
+  - Stop before publishing.
+  - Publish, then look at the tests later.
+  - Treat a successful build as a pass.
   correct: 0
-  explanation: A failed gate must prevent publication; a build alone does not establish the HTTP contract.
+  explanation: A gate exists to stop untested or failing work reaching the registry.
 hints:
-- Inspect the earliest failing boundary before changing a later system.
-- Compare the test gate, Git source revision, suspend state, and current controller conditions.
-- Use the supplied wait and rehearsal helpers after repairing the source; inspect their actual evidence.
+- Read pipeline.json and find where pipeline.py checks it.
+- Set run_tests to true.
+- Run python pipeline.py and read release.json.
 sources:
 - https://docs.docker.com/reference/cli/docker/image/push/
 - https://git-scm.com/docs/git-revert
@@ -62,8 +63,9 @@ prepare:
   timeout: 420
 checks:
 - id: delivery-pipeline
-  title: The published image passes its gate and independent HTTP contract
-  explanation: Compare real artifact, commit, controller, and application observations.
+  title: The published image passed its tests
+  explanation: release.json must record a tested release whose digest matches the registry, the tests
+    must pass again against that exact image, and its source fingerprints must match the current files.
   command:
     args:
     - python
@@ -75,8 +77,9 @@ checks:
   json_path:
   - pipeline
   expected: 'true'
-  diagnostic: Enable the unchanged candidate tests, run the pipeline, and compare current build inputs
-    with release.json.
+  diagnostic: 'The published release is untested or out of date. Check run_tests is true in pipeline.json
+    and run python pipeline.py again. If you edited source files or tests after publishing, the fingerprints
+    in release.json no longer match: publish again.'
 capabilities:
 - docker
 - kind

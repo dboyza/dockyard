@@ -74,11 +74,11 @@ A runtime pass alone is not a teaching-quality result.
 | m15-alerts | Completed without solutions | Revised | Explained buckets, the fast-read fraction, and pending versus firing, leaving the slow-fraction step to the learner. Alert fired at 72% good and cleared at 95%; passed. |
 | m15-slo | Completed without solutions | Revised | Measuring right after a resume recorded connection failures instead of slow reads and failed the check silently; measure-slo.py now warns and the lesson waits for the rollout first. Passed with 0/20 before and 20/20 after. |
 | m15-mission | Completed without solutions | Revised | Measured first, fixed scraping, dashboard, alert, and delay independently; alert rehearsal and after window passed. |
-| m16-pipeline | Pending | Pending |  |
-| m16-gitops | Pending | Pending |  |
-| m16-promotion | Pending | Pending |  |
-| m16-mission | Pending | Pending |  |
-| i07-registry-identity | Pending | Pending |  |
+| m16-pipeline | Completed without solutions | Revised | Replaced placeholder hints; the lesson asked learners to prove the gate fails without showing how, so it now gives the verified command to run tests inside the image and warns not to edit the fingerprinted test file. Passed. |
+| m16-gitops | Completed without solutions | Revised | Explained GitRepository versus Flux Kustomization, status fields, suspension, and the scoped deployer. Both environments applied HEAD; passed. |
+| m16-promotion | Completed without solutions | Revised | Rehearsal produced the described commits ending in a revert after ImagePullBackOff; passed. |
+| m16-mission | Completed without solutions | Revised | Re-enabled the gate, resumed Flux, and completed promotion and revert independently; passed. |
+| i07-registry-identity | Completed without solutions | Revised | Pull error ended in 401 Unauthorized as taught; fixed with kubectl create secret docker-registry referring to the password variable. A resumed lab moved the registry to a new random port and failed the check; the fixture now uses a fixed assigned port. Passed. |
 | m17-rbac | Completed in initial review | Revised in initial review | See teaching-review.md. |
 | m17-network | Pending | Pending |  |
 | m17-contexts | Pending | Pending |  |

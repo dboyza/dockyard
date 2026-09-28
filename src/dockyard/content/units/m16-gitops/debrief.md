@@ -1,12 +1,7 @@
-# Debrief: Reconcile a local Git declaration
+## From commit to running Pods
 
-The reconciler reads the declared state from the local Git source and applies it to the owned cluster.
-Changing a live object directly can therefore be temporary when the committed declaration still requests something else.
+Once resumed, Flux applied the repository’s current commit to both environments, using an identity limited to what that job needs.
 
-## Explain your result
-
-Trace a commit through source retrieval, reconciliation, and the resulting workload, identifying where each status is observed.
-
-## Transfer beyond this lab
-
-Protect repository write access as deployment authority and keep secrets out of committed application declarations.
+Check your understanding:
+Follow one commit from `git push` to new Pods, and name where you would see each step’s status.
+You scale a Flux-managed Deployment with `kubectl scale`. What happens a minute later, and why?
