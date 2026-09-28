@@ -1,12 +1,8 @@
-# Debrief: Recover a failed rolling release
+## Two places to fix
 
-The failed revision remains in rollout history while the running application returns to the stable image.
-Available capacity and actual responses explain whether the rolling-update strategy protected service during the attempted change.
+`rollout undo` restored the running Deployment; editing `platform.yaml` stopped the next apply from breaking it again.
+Because the update could not remove old Pods until new ones were ready, users kept being served throughout.
 
-## Explain your result
-
-What observation would tell you to stop promotion even if the new Pods were Running?
-
-## Transfer beyond this lab
-
-An application image rollback cannot undo an incompatible database migration, so design schema changes and rollback conditions together.
+Check your understanding:
+With four replicas, `maxSurge: 1` and `maxUnavailable: 1`, what is the most Pods that can exist, and the fewest that must be available, during an update?
+New Pods are Running but their readiness probe fails. Should you continue the rollout?

@@ -2,15 +2,16 @@ id: i05-readiness-port
 revision: 1
 module: 12
 order: 90
-title: Startup succeeds but the new API replicas never become ready
-summary: After a port-label cleanup, both API processes finish startup and answer direct health requests,
-  but the public Service has no usable backends.
+title: The API starts, but never becomes ready
+summary: After a port-name cleanup, both API Pods start and answer directly, but never become ready for
+  the Service.
 kind: incident
 runtime: kubernetes
 minutes: 35
 outcomes:
-- Diagnose the reported boundary from live evidence.
-- Restore useful behavior while preserving the original state and operating constraints.
+- Use probe events to tell startup, readiness, and dependency failures apart.
+- Explain how a named probe port is resolved.
+- Restore readiness without weakening the probes, and confirm with a real job.
 prerequisites:
 - m12-mission
 objectives:
@@ -20,13 +21,15 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation would establish recovery?
+  question: Startup passes and direct requests work, but readiness fails with connection refused. What
+    is the most likely cause?
   options:
-  - A fresh end-to-end request succeeds and the original data remains.
-  - The latest command exited zero.
-  - A replacement Pod exists.
+  - The readiness probe is aimed at a port nothing listens on.
+  - The database is down.
+  - The image is missing.
   correct: 0
-  explanation: Recovery requires useful behavior and the stated preservation constraints.
+  explanation: Connection refused means nothing answered at that port at all. A database problem would
+    give an answer saying not ready.
 hints:
 - Compare startup, readiness, Pod events, and the named container ports.
 - A named HTTP probe port resolves against the target container, not the Service.
@@ -61,9 +64,9 @@ prepare:
   timeout: 360
 checks:
 - id: incident-preserved
-  title: The original namespace, database claim, and stored job remain
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The original namespace, database storage, and job are still there
+  explanation: The fix must not replace the namespace or database claim, or lose the job stored before
+    the incident.
   command:
     args:
     - python
@@ -75,12 +78,11 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The original namespace, the database’s data-db-0 claim, or the original job is gone. If
+    they were deleted or replaced, reset the lab and repair it in place instead.
 - id: incident-available
-  title: Two API replicas are available
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: Two API copies are available
+  explanation: The dispatch Deployment must have two ready copies.
   command:
     args:
     - python
@@ -92,12 +94,12 @@ checks:
   json_path:
   - available
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The API Pods are still not ready. Run kubectl describe pod -l app=dispatch and read the
+    readiness probe line and its failure events.
 - id: incident-route
-  title: The Service reaches exactly the two ready API backends
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The Service reaches exactly the two API Pods
+  explanation: Once ready, both API Pods must appear in the dispatch Service’s endpoints, and a request
+    through it must reach Dispatch.
   command:
     args:
     - python
@@ -109,12 +111,11 @@ checks:
   json_path:
   - route
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: The Service does not reach the two API Pods yet. They only join its endpoints once their
+    readiness probe passes; check kubectl get endpointslices -l kubernetes.io/service-name=dispatch.
 - id: incident-workflow
-  title: A fresh job completes and PostgreSQL contains its result
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: A new job is completed and saved
+  explanation: Dockyard submits a real job through the API and checks PostgreSQL stores the worker’s result.
   command:
     args:
     - python
@@ -126,12 +127,11 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: A new job was not completed. Check the workers are running and read kubectl logs deployment/worker.
 - id: incident-contract
-  title: The repaired workload retains its probe or memory contract
-  explanation: Observe actual resource identities, controller state, application traffic, and retained
-    data.
+  title: The probes still check the right things
+  explanation: Startup must stay on /startupz, liveness on /healthz, and readiness on /readyz, with readiness
+    reaching the real listener on port 8080.
   command:
     args:
     - python
@@ -143,8 +143,8 @@ checks:
   json_path:
   - contract
   expected: 'true'
-  diagnostic: Inspect Pod events, effective workload configuration, Service endpoints, and the fresh request
-    path against the incident contract.
+  diagnostic: A probe changed path, or readiness still does not reach port 8080. If readiness uses a port
+    name, check which containerPort that name belongs to in the api container’s ports list.
 capabilities:
 - docker
 - kind

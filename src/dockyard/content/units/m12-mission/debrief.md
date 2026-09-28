@@ -1,12 +1,8 @@
-# Debrief: Ship and recover a safe application release
+## A release you can explain
 
-This release combines healthy serving, distinct probe semantics, preserved rollout capacity, and verified release selection.
-The retained failed revision and working stable response provide evidence of recovery rather than a claim that the failure never happened.
+The stable release is serving, its probes mean what they say, updates keep capacity, and the candidate can be tested on its own.
+The failed revision is still in the history, as evidence of what happened.
 
-## Explain your result
-
-Write promotion and rollback conditions in terms of readiness, actual client traffic, preserved data, and observed release identity.
-
-## Transfer beyond this lab
-
-The local result demonstrates the mechanism, not zero downtime under arbitrary production load.
+Check your understanding:
+Write your promotion and rollback conditions in terms you can observe: readiness, real requests, and data.
+A candidate wrote data the old version cannot read. Why is switching traffic back not enough?

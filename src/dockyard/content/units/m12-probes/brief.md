@@ -1,10 +1,12 @@
-# End the warmup restart loop
+## Stop the restart loop
 
-The starter has no startup probe, uses dependency readiness for liveness, and uses process health for readiness.
-Repair the API container in `platform.yaml` with startup `/startupz`, liveness `/healthz`, and readiness `/readyz`, all on port 8080.
-Give startup at least thirty seconds of failure budget and preserve the supplied twelve-second warmup.
-Keep a twenty-second or longer termination grace period.
-Apply the manifest and wait for two stable replicas to become available.
+The API has no startup probe, uses `/readyz` for liveness, and `/healthz` for readiness, so it restarts before it can finish warming up.
 
-Run `python termination-proof.py`, inspect `kubectl logs termination-proof`, and confirm a successful process exit after the termination event.
-Explain why a healthy HTTP process waiting on a failed database should leave ready endpoints without being repeatedly restarted.
+1. Watch the Pods and their events to see the restart loop.
+2. In `platform.yaml`, give the `api` container a startup probe on `/startupz`, liveness on `/healthz`, and readiness on `/readyz`, all on port 8080.
+3. Give the startup probe at least thirty seconds of budget. Keep the twelve-second warmup, and a `terminationGracePeriodSeconds` of twenty or more.
+4. Run `sh run.sh` and wait for two stable replicas.
+5. Run `python termination-proof.py`, then `kubectl logs termination-proof`, and confirm a clean exit.
+6. Choose **Check work**.
+
+In your notes, explain why an API that is running but cannot reach its database should stop getting traffic, but not be restarted.

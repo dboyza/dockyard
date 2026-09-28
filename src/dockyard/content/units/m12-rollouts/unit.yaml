@@ -2,15 +2,15 @@ id: m12-rollouts
 revision: 1
 module: 12
 order: 2
-title: Recover a failed rolling release
-summary: Read rollout history and restore available capacity with a bounded update strategy.
+title: Rolling updates and rollbacks
+summary: Recover from a release with a broken image, keep capacity during updates, and fix the file too.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Inspect Deployment generations, ReplicaSets, and rollout conditions.
-- Calculate the availability budget from maxUnavailable and maxSurge.
-- Recover a failed image change and reconcile the desired manifest.
+- Read rollout status, history, and ReplicaSets.
+- Work out what maxSurge and maxUnavailable allow.
+- Roll back with kubectl rollout undo and keep your manifest in step.
 prerequisites:
 - m12-probes
 objectives:
@@ -20,19 +20,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: rollout undo repairs the live Deployment, but the local manifest still names the bad image.
-    What happens on the next apply?
+  question: rollout undo fixed the live Deployment, but platform.yaml still names the bad image. What
+    happens on the next apply?
   options:
-  - The bad desired image can be reintroduced.
-  - Undo automatically rewrites every local manifest.
-  - Kubernetes ignores future applies after rollback.
+  - The bad image comes back.
+  - Undo already fixed the file.
+  - Kubernetes ignores the apply.
   correct: 0
-  explanation: Live history and the source manifest are separate state that must be reconciled.
+  explanation: Rollback changes only the live object. The file still describes the broken release until
+    you edit it.
 hints:
-- Inspect rollout history and the image in each ReplicaSet before deleting anything.
-- Restore the original DOCKYARD_IMAGE and configure maxUnavailable 0, maxSurge 1.
-- Apply the corrected source, wait for two available replicas, and leave prior ReplicaSets available for
-  inspection.
+- kubectl rollout history deployment/dispatch and kubectl get rs -o wide show each revision’s image.
+- Use kubectl rollout undo deployment/dispatch, and put ${DOCKYARD_IMAGE} back in platform.yaml.
+- 'Set maxUnavailable: 0 and maxSurge: 1, apply the rendered file, and wait for two available replicas.'
 sources:
 - https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 - https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
@@ -63,8 +63,8 @@ prepare:
   timeout: 360
 checks:
 - id: release-available
-  title: Two stable replicas serve the expected healthy release
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Two stable copies serve release 1
+  explanation: The dispatch Deployment must have two available Pods, each answering with release dispatch-release-1.
   command:
     args:
     - python
@@ -76,10 +76,13 @@ checks:
   json_path:
   - available
   expected: 'true'
-  diagnostic: Inspect rollout status, Pod events, image names, and the live /healthz response.
+  diagnostic: The stable Deployment does not have two healthy copies of release 1. Run kubectl get pods
+    -l app=dispatch,track=stable and kubectl describe pod on any that are not ready. ErrImageNeverPull
+    or ImagePullBackOff means the image name is wrong; frequent RESTARTS usually mean a probe problem.
 - id: release-probes
-  title: Startup, liveness, and readiness have distinct working contracts
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Each probe checks the right thing
+  explanation: The API needs startup on /startupz with at least 30 seconds of budget, liveness on /healthz,
+    readiness on /readyz, a grace period of 20 seconds or more, and both Pods started and ready.
   command:
     args:
     - python
@@ -91,10 +94,13 @@ checks:
   json_path:
   - probes
   expected: 'true'
-  diagnostic: Use /startupz for startup, /healthz for liveness, and /readyz for dependency-aware readiness.
+  diagnostic: 'The probes are not set up as required. Check the api container: startupProbe path /startupz
+    with periodSeconds × failureThreshold of at least 30, livenessProbe /healthz, readinessProbe /readyz,
+    all on port 8080, and terminationGracePeriodSeconds of at least 20.'
 - id: release-rollout
-  title: Rolling updates preserve available capacity
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Updates keep full capacity
+  explanation: The rolling update must allow no unavailable Pods and one extra Pod, so two copies keep
+    serving throughout an update.
   command:
     args:
     - python
@@ -106,10 +112,12 @@ checks:
   json_path:
   - rollout
   expected: 'true'
-  diagnostic: Keep two replicas and configure maxUnavailable 0 with maxSurge 1.
+  diagnostic: 'The rolling update settings are not right. Under spec.strategy.rollingUpdate, set maxUnavailable:
+    0 and maxSurge: 1, then apply.'
 - id: release-history
-  title: A failed release is retained in history while the stable image is restored
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: The failed release is still in the history
+  explanation: The ReplicaSet for the broken image must still exist, scaled to zero, while the stable
+    image serves again.
   command:
     args:
     - python
@@ -121,7 +129,9 @@ checks:
   json_path:
   - history
   expected: 'true'
-  diagnostic: Inspect ReplicaSets and rollout history; restore the original pinned application image.
+  diagnostic: 'The failed ReplicaSet is missing or still running Pods. Run kubectl get replicasets -l
+    app=dispatch,track=stable -o wide. If you deleted and recreated the Deployment, its history is gone:
+    reset the lab and use kubectl rollout undo or kubectl set image instead.'
 capabilities:
 - docker
 - kind

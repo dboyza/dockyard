@@ -2,15 +2,15 @@ id: m12-strategies
 revision: 1
 module: 12
 order: 3
-title: Compare stable and candidate releases
-summary: Run a small canary and verify a preview Service before promotion.
+title: Canary and blue-green releases
+summary: Run a canary next to the stable release and give it a preview Service of its own.
 kind: lesson
 runtime: kubernetes
 minutes: 45
 outcomes:
-- Keep stable and candidate controllers disjoint while intentionally sharing a Service.
-- Verify both release identities and a candidate-only preview path.
-- Distinguish replica-based canaries from precise traffic weighting and blue-green switching.
+- Run stable and canary Deployments whose selectors do not overlap.
+- Route a preview Service to the canary only and check each release.
+- Explain canary, blue-green, and why Pod counts are not exact traffic weights.
 prerequisites:
 - m12-rollouts
 objectives:
@@ -20,19 +20,18 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Two stable Pods and one canary Pod share a Service. Does that guarantee exactly one third
-    of HTTP requests reaches the canary?
+  question: Two stable Pods and one canary share a Service. Does exactly a third of requests reach the
+    canary?
   options:
-  - No; endpoint counts do not guarantee exact request-level weighting.
-  - Yes; Kubernetes enforces a strict three-request rotation.
-  - No traffic can reach a Service with more than one Deployment.
+  - No, it is only roughly a third.
+  - Yes, Kubernetes rotates strictly.
+  - No traffic reaches the canary.
   correct: 0
-  explanation: Connection reuse and routing behavior can produce a different request distribution.
+  explanation: Services balance connections, and clients reuse connections, so the split is approximate.
 hints:
-- Inspect the candidate replica count and the preview Service track selector.
-- Run one candidate replica and select track=canary in dispatch-preview.
-- Keep the primary Service on app=dispatch and verify the distinct release strings from stable and candidate
-  Pods.
+- Check the canary Deployment’s replicas and the preview Service’s selector.
+- 'Set the canary to replicas: 1, and make dispatch-preview select track: canary.'
+- Run sh run.sh, then compare the releases returned by dispatch and dispatch-preview.
 sources:
 - https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 - https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
@@ -63,8 +62,8 @@ prepare:
   timeout: 360
 checks:
 - id: release-available
-  title: Two stable replicas serve the expected healthy release
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Two stable copies serve release 1
+  explanation: The dispatch Deployment must have two available Pods, each answering with release dispatch-release-1.
   command:
     args:
     - python
@@ -76,10 +75,13 @@ checks:
   json_path:
   - available
   expected: 'true'
-  diagnostic: Inspect rollout status, Pod events, image names, and the live /healthz response.
+  diagnostic: The stable Deployment does not have two healthy copies of release 1. Run kubectl get pods
+    -l app=dispatch,track=stable and kubectl describe pod on any that are not ready. ErrImageNeverPull
+    or ImagePullBackOff means the image name is wrong; frequent RESTARTS usually mean a probe problem.
 - id: release-probes
-  title: Startup, liveness, and readiness have distinct working contracts
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Each probe checks the right thing
+  explanation: The API needs startup on /startupz with at least 30 seconds of budget, liveness on /healthz,
+    readiness on /readyz, a grace period of 20 seconds or more, and both Pods started and ready.
   command:
     args:
     - python
@@ -91,10 +93,13 @@ checks:
   json_path:
   - probes
   expected: 'true'
-  diagnostic: Use /startupz for startup, /healthz for liveness, and /readyz for dependency-aware readiness.
+  diagnostic: 'The probes are not set up as required. Check the api container: startupProbe path /startupz
+    with periodSeconds × failureThreshold of at least 30, livenessProbe /healthz, readinessProbe /readyz,
+    all on port 8080, and terminationGracePeriodSeconds of at least 20.'
 - id: release-canary
-  title: Stable and candidate Pods coexist behind the shared Service
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Stable and canary Pods share the main Service
+  explanation: One canary Pod must serve dispatch-release-2, and the main dispatch Service must reach
+    all three Pods.
   command:
     args:
     - python
@@ -106,11 +111,12 @@ checks:
   json_path:
   - canary
   expected: 'true'
-  diagnostic: Start one candidate replica, keep two stable replicas, and let the primary Service select
-    both tracks.
+  diagnostic: The canary is not running alongside the stable Pods. Check kubectl get deployment dispatch-canary
+    (it needs one ready replica) and kubectl get endpointslices -l kubernetes.io/service-name=dispatch
+    (it needs three addresses). The main Service should select only app=dispatch.
 - id: release-preview
-  title: The preview Service reaches only the candidate release
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: The preview Service reaches only the canary
+  explanation: dispatch-preview must have exactly the canary Pod as its endpoint and return dispatch-release-2.
   command:
     args:
     - python
@@ -122,7 +128,9 @@ checks:
   json_path:
   - preview
   expected: 'true'
-  diagnostic: Select track=canary for dispatch-preview and verify release dispatch-release-2.
+  diagnostic: 'dispatch-preview does not reach only the canary. Check its selector with kubectl get service
+    dispatch-preview -o yaml: it should select track=canary, and kubectl get endpointslices -l kubernetes.io/service-name=dispatch-preview
+    should list one address.'
 capabilities:
 - docker
 - kind

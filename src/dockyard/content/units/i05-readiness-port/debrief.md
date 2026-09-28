@@ -1,6 +1,9 @@
-# Recovery review
+## Compare your diagnosis
 
-The process had started successfully; the readiness request was sent to the wrong port.
-A failed readiness probe removes a backend without requiring the healthy process to restart.
-A correct repair retains the readiness dependency check and restores Service traffic.
-Explain which observation ruled out a slow startup and which observation ruled out a database failure.
+The startup probe passed, so Dispatch had started.
+The readiness probe used a port name that now pointed at a port where nothing listened, so every readiness check got “connection refused” and the Pods were never added to the Service.
+Pointing readiness back at the real listener on 8080 fixed it while keeping the database check in place.
+
+Check your understanding:
+Which observation ruled out slow startup, and which ruled out a database problem?
+Why were the Pods not restarted, even though readiness kept failing?

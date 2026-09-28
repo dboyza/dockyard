@@ -1,12 +1,8 @@
-# Debrief: Compare stable and candidate releases
+## Stable, candidate, and a way to tell them apart
 
-The shared Service selects both stable and candidate Pods, while the preview Service selects only the candidate release.
-Release responses establish which artifact the client reached rather than relying on desired image fields alone.
+The main Service spread traffic across stable and canary Pods, while the preview Service reached only the canary.
+The release each one reported showed which version you were really talking to.
 
-## Explain your result
-
-Explain why the ratio of stable to candidate Pods is not an exact traffic-weighting guarantee.
-
-## Transfer beyond this lab
-
-Use a routing system with explicit traffic policy when a production release requires controlled request proportions or consistent user cohorts.
+Check your understanding:
+How would you switch this setup to blue-green instead?
+What exactly would you do to abort the canary, and to promote it?

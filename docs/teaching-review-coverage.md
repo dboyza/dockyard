@@ -55,11 +55,11 @@ A runtime pass alone is not a teaching-quality result.
 | m11-backup | Completed without solutions | Revised | Observed two source rows and zero restored rows from the schema-only dump; fixed and restored onto a separate claim; passed. |
 | m11-mission | Completed without solutions | Revised | Fixed retention and the dump independently; records restored on a separate PV; passed. |
 | i08-pending-claim | Completed without solutions | Revised | Claim events said it waited for the Pod; Pod events showed a node selector mismatch (cold versus warm). Moved the archiver to the warm tier; claim bound; passed. |
-| m12-probes | Pending | Pending |  |
-| m12-rollouts | Pending | Pending |  |
-| m12-strategies | Pending | Pending |  |
-| m12-mission | Pending | Pending |  |
-| i05-readiness-port | Pending | Pending |  |
+| m12-probes | Completed without solutions | Revised | Added probe fields, budget arithmetic, exec and tcpSocket probes, and graceful termination. Observed the liveness restart loop as described. An accidental duplicate livenessProbe key silently won and the new diagnostic caught it; the lesson and YAML primer now warn about duplicate keys. Passed. |
+| m12-rollouts | Completed without solutions | Revised | Added maxSurge and maxUnavailable arithmetic, set image, history, undo --to-revision, pause, and change-cause. The draft wrongly said old Pods kept serving; the starter's maxUnavailable 2 caused a full outage, which the lesson now explains. Passed. |
+| m12-strategies | Completed without solutions | Revised | Explained canary, preview, blue-green, and approximate traffic splitting. Three endpoints and a release-2 preview response observed; passed. |
+| m12-mission | Completed without solutions | Revised | Fixed image, probes, update budget, canary, and preview independently; termination proof clean; passed. |
+| i05-readiness-port | Completed without solutions | Revised | Probe events showed readiness on the metrics port name resolving to 9090 with connection refused. EndpointSlices list unready addresses, which the incident now explains. Passed. |
 | exam-ckad-a | Pending | Pending |  |
 | m13-resources | Pending | Pending |  |
 | m13-placement | Pending | Pending |  |

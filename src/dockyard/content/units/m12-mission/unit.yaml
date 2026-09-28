@@ -2,15 +2,15 @@ id: m12-mission
 revision: 1
 module: 12
 order: 4
-title: Ship and recover a safe application release
-summary: 'Capstone: repair availability, process health, and a controlled candidate rollout.'
+title: 'Mission: a safe release'
+summary: Fix the stable release, its probes and update settings, then preview a candidate beside it.
 kind: mission
 runtime: kubernetes
 minutes: 65
 outcomes:
-- Repair compound rollout and probe faults using observed evidence.
-- Verify stable and candidate routing without sacrificing the known release.
-- Document release, abort, rollback, and data-recovery boundaries.
+- Fix several release problems one at a time using evidence.
+- Check stable and candidate routing without risking the stable release.
+- Write promotion, rollback, and data recovery steps.
 prerequisites:
 - m12-strategies
 objectives:
@@ -20,20 +20,20 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A candidate serves healthy HTTP responses but writes data incompatible with the stable version.
-    Is switching traffic back sufficient recovery?
+  question: A candidate writes data the stable version cannot read. Is sending traffic back to stable
+    enough?
   options:
-  - No; application rollback cannot automatically reverse incompatible data changes.
-  - Yes; Service selectors restore all database state.
-  - Yes; readiness guarantees schema compatibility.
+  - No. Rolling back the image does not undo data changes.
+  - Yes. Service selectors restore the database.
+  - Yes. Readiness guarantees compatibility.
   correct: 0
-  explanation: Release planning must account for state compatibility and independently verified recovery.
+  explanation: Releases must plan for data compatibility and a tested restore, because traffic switches
+    cannot rewrite data.
 hints:
-- Recover stable image and health behavior before expanding candidate traffic.
-- Use the three distinct probe paths, a zero-unavailable rolling budget, and a candidate-only preview
-  selector.
-- Verify both release identities, run the termination proof, and write the rollback and data-recovery
-  boundaries explicitly.
+- Fix the stable image and its probes before touching the candidate.
+- Use the three probe paths, maxUnavailable 0 with maxSurge 1, and a preview selector of track=canary.
+- Check both releases through their Services, run the termination proof, and write the rollback and data
+  recovery steps.
 sources:
 - https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 - https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
@@ -64,8 +64,8 @@ prepare:
   timeout: 360
 checks:
 - id: release-available
-  title: Two stable replicas serve the expected healthy release
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Two stable copies serve release 1
+  explanation: The dispatch Deployment must have two available Pods, each answering with release dispatch-release-1.
   command:
     args:
     - python
@@ -77,10 +77,13 @@ checks:
   json_path:
   - available
   expected: 'true'
-  diagnostic: Inspect rollout status, Pod events, image names, and the live /healthz response.
+  diagnostic: The stable Deployment does not have two healthy copies of release 1. Run kubectl get pods
+    -l app=dispatch,track=stable and kubectl describe pod on any that are not ready. ErrImageNeverPull
+    or ImagePullBackOff means the image name is wrong; frequent RESTARTS usually mean a probe problem.
 - id: release-probes
-  title: Startup, liveness, and readiness have distinct working contracts
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Each probe checks the right thing
+  explanation: The API needs startup on /startupz with at least 30 seconds of budget, liveness on /healthz,
+    readiness on /readyz, a grace period of 20 seconds or more, and both Pods started and ready.
   command:
     args:
     - python
@@ -92,10 +95,13 @@ checks:
   json_path:
   - probes
   expected: 'true'
-  diagnostic: Use /startupz for startup, /healthz for liveness, and /readyz for dependency-aware readiness.
+  diagnostic: 'The probes are not set up as required. Check the api container: startupProbe path /startupz
+    with periodSeconds × failureThreshold of at least 30, livenessProbe /healthz, readinessProbe /readyz,
+    all on port 8080, and terminationGracePeriodSeconds of at least 20.'
 - id: release-rollout
-  title: Rolling updates preserve available capacity
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Updates keep full capacity
+  explanation: The rolling update must allow no unavailable Pods and one extra Pod, so two copies keep
+    serving throughout an update.
   command:
     args:
     - python
@@ -107,10 +113,11 @@ checks:
   json_path:
   - rollout
   expected: 'true'
-  diagnostic: Keep two replicas and configure maxUnavailable 0 with maxSurge 1.
+  diagnostic: 'The rolling update settings are not right. Under spec.strategy.rollingUpdate, set maxUnavailable:
+    0 and maxSurge: 1, then apply.'
 - id: release-termination
-  title: The supplied application handles SIGTERM and exits cleanly
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Dispatch shuts down cleanly on SIGTERM
+  explanation: The termination-proof Pod must receive SIGTERM, log it, and exit with code 0.
   command:
     args:
     - python
@@ -122,10 +129,13 @@ checks:
   json_path:
   - termination
   expected: 'true'
-  diagnostic: Run termination-proof.py and inspect the completed proof Pod and its termination log.
+  diagnostic: The termination proof has not shown a clean exit yet. Run python termination-proof.py after
+    the API is healthy, then kubectl logs termination-proof and kubectl get pod termination-proof. Its
+    exit code should be 0.
 - id: release-canary
-  title: Stable and candidate Pods coexist behind the shared Service
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: Stable and canary Pods share the main Service
+  explanation: One canary Pod must serve dispatch-release-2, and the main dispatch Service must reach
+    all three Pods.
   command:
     args:
     - python
@@ -137,11 +147,12 @@ checks:
   json_path:
   - canary
   expected: 'true'
-  diagnostic: Start one candidate replica, keep two stable replicas, and let the primary Service select
-    both tracks.
+  diagnostic: The canary is not running alongside the stable Pods. Check kubectl get deployment dispatch-canary
+    (it needs one ready replica) and kubectl get endpointslices -l kubernetes.io/service-name=dispatch
+    (it needs three addresses). The main Service should select only app=dispatch.
 - id: release-preview
-  title: The preview Service reaches only the candidate release
-  explanation: Compare controller state, process behavior, and actual release responses.
+  title: The preview Service reaches only the canary
+  explanation: dispatch-preview must have exactly the canary Pod as its endpoint and return dispatch-release-2.
   command:
     args:
     - python
@@ -153,7 +164,9 @@ checks:
   json_path:
   - preview
   expected: 'true'
-  diagnostic: Select track=canary for dispatch-preview and verify release dispatch-release-2.
+  diagnostic: 'dispatch-preview does not reach only the canary. Check its selector with kubectl get service
+    dispatch-preview -o yaml: it should select track=canary, and kubectl get endpointslices -l kubernetes.io/service-name=dispatch-preview
+    should list one address.'
 capabilities:
 - docker
 - kind

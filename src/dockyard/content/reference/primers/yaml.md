@@ -31,6 +31,9 @@ YAML guesses the type of unquoted values.
 `2` is a number, `true` is a yes/no value, and `1.0` would become a number too, which is why the example quotes `"1.0"` to keep it as text.
 When in doubt, quote values that must stay as text.
 
+A key must appear only once in each mapping.
+If you accidentally write the same key twice, such as two `livenessProbe:` entries in one container, most tools keep only the last one without any warning.
+
 Lists can also be written on one line in square brackets: `[python, worker.py]` means the same as a two-item list.
 
 ## Valid is not the same as working

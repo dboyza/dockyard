@@ -1,31 +1,77 @@
-# Three questions deserve three signals
+## Three health questions, three probes
 
-Startup asks whether initialization has completed.
-While a startup probe has not succeeded, Kubernetes postpones the container's readiness and liveness probes.
-This gives slow initialization an explicit bounded budget instead of forcing a large permanent liveness delay.
-Dispatch deliberately warms up for twelve seconds and exposes `/startupz` for this local initialization state.
+Kubernetes can check on a container regularly and act on the answer.
+Each check is called a **probe**, and there are three kinds, each asking a different question:
 
-Liveness asks whether restarting this process is an appropriate recovery action.
-Dispatch's `/healthz` checks that its HTTP process can respond without depending on PostgreSQL or Redis.
-Using dependency-aware readiness as liveness can restart every API Pod during a database outage while doing nothing to repair the database.
-Readiness asks whether the process should receive application traffic now.
-Dispatch's `/readyz` checks warmup and both dependencies, so an unready Pod is removed from ready Service endpoints without necessarily being restarted.
+| Probe | Question | If it fails |
+| --- | --- | --- |
+| **startup** | Has the app finished starting? | Keep waiting, up to a limit; then restart the container. The other probes do not run until this one succeeds. |
+| **liveness** | Is the process stuck beyond saving? | Restart the container. |
+| **readiness** | Should this Pod get traffic right now? | Remove the Pod from its Services’ endpoints until it passes again. Nothing is restarted. |
 
-## Worked example
+Choosing the right check for each is what matters.
+Dispatch offers three addresses built for this:
+
+- `/startupz` succeeds once Dispatch has finished warming up. In this lab that takes twelve seconds.
+- `/healthz` succeeds whenever the process can answer at all, without checking the database or queue.
+- `/readyz` succeeds only when Dispatch has warmed up *and* can reach PostgreSQL and Redis.
+
+The classic mistake is using a dependency check such as `/readyz` for liveness.
+If the database goes down, every API Pod fails liveness and restarts over and over, and none of that fixes the database.
+Readiness is the right place for dependency checks: the Pods stop receiving traffic, then come back by themselves when the database recovers.
+
+## Probe settings
+
+```yaml
+startupProbe:
+  httpGet:
+    path: /startupz
+    port: 8080
+  periodSeconds: 2
+  failureThreshold: 15
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  periodSeconds: 5
+  failureThreshold: 3
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8080
+  periodSeconds: 2
+```
+
+- `periodSeconds` is how often the probe runs.
+- `failureThreshold` is how many failures in a row count as failed.
+- `timeoutSeconds` is how long one attempt may take (default one second).
+- `initialDelaySeconds` waits before the first attempt. With a startup probe you rarely need it.
+
+A startup probe’s **budget** is `periodSeconds × failureThreshold`: here 2 × 15 = 30 seconds to finish starting.
+Set it from how long the app really takes, with some margin.
+
+The starter already has a `livenessProbe` and a `readinessProbe`: change those in place rather than adding new ones.
+If a key appears twice in the same YAML mapping, most tools silently keep only the last one, so an extra `livenessProbe` further down would quietly win.
+
+Besides `httpGet`, a probe can use `exec` to run a command in the container (success means exit code 0), or `tcpSocket` to check a port accepts connections.
+
+## Watch it happen
 
 ```sh
-kubectl describe pod -l app=dispatch,track=stable
 kubectl get pods -l app=dispatch,track=stable -w
+kubectl describe pod -l app=dispatch,track=stable
 kubectl logs deployment/dispatch -c api --previous
 kubectl get endpointslices -l kubernetes.io/service-name=dispatch
 ```
 
-A failed startup or liveness probe can restart a container after its failure threshold.
-A failed readiness probe affects traffic eligibility.
-Set budgets from observed startup and recovery behavior, rather than copying a short timeout everywhere.
+In this starter, liveness uses `/readyz`, which fails during warmup, so containers restart before they finish starting: the RESTARTS column keeps climbing.
+`describe pod` shows events such as “Liveness probe failed”.
+`logs --previous` shows the output of the container before its last restart.
 
-During Pod termination, the grace period includes shutdown work such as a preStop hook if one is configured.
-The process must handle SIGTERM and finish before forced termination becomes necessary.
-The supplied `termination-proof.py` starts a separate disposable application Pod, sends SIGTERM to its process, and checks the exit.
-It avoids interrupting the two application replicas merely to demonstrate process handling.
-The lab does not claim that this small server drains arbitrary long-running production workloads.
+## Stopping gracefully
+
+When a Pod is deleted, Kubernetes sends its containers SIGTERM, waits up to `terminationGracePeriodSeconds` (default 30), then kills whatever is still running.
+A `preStop` hook, if configured, runs first and counts against that time.
+Dispatch handles SIGTERM and exits cleanly.
+
+The workspace’s `termination-proof.py` starts a separate throwaway Dispatch Pod, stops it, and checks it exited cleanly, so your two real API Pods are not interrupted.

@@ -1,12 +1,7 @@
-# Debrief: Separate startup, readiness, and liveness
+## The right signal for each decision
 
-Startup, readiness, and liveness answer different questions and trigger different controller behavior.
-The real endpoint observations and clean SIGTERM exit connect those policies to the supplied process rather than just to fields in a manifest.
+The startup probe gave Dispatch time to warm up, liveness only restarts a genuinely stuck process, and readiness keeps traffic away while dependencies are unavailable.
 
-## Explain your result
-
-Why can a dependency outage justify withholding traffic while restarting the process repeatedly makes the outage harder to recover from?
-
-## Transfer beyond this lab
-
-Choose probe thresholds from measured startup and failure behavior instead of copying the local lab timings into production.
+Check your understanding:
+Why does putting a database check in the liveness probe make a database outage worse?
+Your app takes up to 50 seconds to start. Write a startup probe with a period of 5 seconds that allows for that.

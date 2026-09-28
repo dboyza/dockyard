@@ -1,10 +1,10 @@
-# Restore the known release and its update budget
+## Recover from a broken release
 
-Inspect the failed image and the prior ReplicaSet before making changes.
-Recover the Deployment using rollout undo or an equivalent explicit image repair.
-Update `platform.yaml` to use `${DOCKYARD_IMAGE}` and configure maxUnavailable 0 with maxSurge 1.
-Render and apply the corrected manifest, then wait for two available stable replicas and query the live release.
+1. Look at the rollout history and the ReplicaSets, and find which image each one uses.
+2. Bring the live Deployment back to the working release, with `kubectl rollout undo` or by setting the image yourself.
+3. Fix `platform.yaml` to use `${DOCKYARD_IMAGE}` again, with `maxUnavailable: 0` and `maxSurge: 1`.
+4. Apply it with `python render.py platform.yaml | kubectl apply -f -`, wait for two available replicas, and check the release Dispatch reports.
+5. Choose **Check work**.
 
-Retain the failed ReplicaSet in history so the difference remains inspectable.
-Do not delete and recreate the entire Deployment to erase the evidence.
-Record which command recovered live state and which edit prevented the broken release from returning on the next apply.
+Leave the failed ReplicaSet in the history, and do not delete and recreate the Deployment.
+In your notes, say which command fixed the live Deployment and which edit stops the broken image coming back.

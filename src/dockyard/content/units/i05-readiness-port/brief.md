@@ -1,11 +1,9 @@
-# Incident report
+## Get the API Pods ready again
 
-After a port-label cleanup, both API processes finish startup and answer direct health requests, but the public Service has no usable backends.
+Make both API Pods Ready, so the existing `dispatch` Service reaches them and jobs can be submitted.
 
-Restore two ready API replicas and actual job submission through the existing Service.
-Keep startup on `/startupz`, liveness on `/healthz`, and dependency-aware readiness on `/readyz`.
-Preserve the database claim and its original job.
-Do not disable probes or publish unready addresses to make the endpoint list look healthy.
+- Keep startup on `/startupz`, liveness on `/healthz`, and readiness on `/readyz`.
+- Keep the database’s storage and its original job.
+- Do not remove the probes, or make the Service send traffic to unready Pods.
 
-Write a short account of the first discriminating observation, the repair, and a regression check.
-Use the debrief as a self-review rubric; prose is not automatically graded.
+In your notes, record the first observation that pointed at the cause, your fix, and a check you could run after future changes to catch it.
