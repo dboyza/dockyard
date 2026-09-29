@@ -205,8 +205,8 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: 'Something from before the exam was deleted or recreated. Change existing objects in place
-    instead of recreating them. Lesson: m11-claims.'
+  diagnostic: 'Something from before the exam is missing, or the database is not running, so the stored
+    job could not be read. Change existing objects in place instead of recreating them. Lesson: m11-claims.'
 - id: exam-sidecar
   title: The init container and log sidecar work together
   explanation: Pod audit-tail needs init container seed and containers producer and tailer sharing an

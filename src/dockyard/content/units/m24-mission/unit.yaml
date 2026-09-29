@@ -87,9 +87,9 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Something from before the incident is missing or was replaced. Fix the existing objects
-    with small changes instead of deleting and recreating them or rebuilding the cluster; if that already
-    happened, reset the lab.
+  diagnostic: Something from before the incident is missing or was replaced, or the database is not running,
+    so the stored row could not be read. Fix the existing objects with small changes instead of deleting
+    and recreating them or rebuilding the cluster; if that already happened, reset the lab.
 - id: handoff-outage
   title: The first control-plane node’s API server and etcd are still stopped
   explanation: This mission is about working through the outage, so the stopped components must stay stopped.

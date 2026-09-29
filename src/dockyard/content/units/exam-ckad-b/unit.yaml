@@ -213,8 +213,8 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: 'Something from before the exam was deleted or recreated. Change existing objects in place.
-    Lesson: m11-backup.'
+  diagnostic: 'Something from before the exam is missing, or the database is not running, so the stored
+    job could not be read. Change existing objects in place. Lesson: m11-backup.'
 - id: exam-routing
   title: Each Service reaches only its own release
   explanation: Service preview must select exactly the ready preview-api Pods and Service dispatch exactly

@@ -73,8 +73,9 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Something from before the fault is missing or was replaced. Recover in place instead of
-    recreating the database, claim, or cluster; if they were replaced, reset the lab.
+  diagnostic: Something from before the fault is missing or was replaced, or the database is not running,
+    so the stored row could not be read. Recover in place instead of recreating the database, claim, or
+    cluster; if they were replaced, reset the lab.
 - id: infrastructure-csi
   title: The original CSI volume is attached and mounted on the worker
   explanation: The database must use its original claim and PV, with the same driver and volume handle,

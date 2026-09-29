@@ -186,8 +186,8 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Something from before the exam was deleted or recreated. Upgrade and repair in place instead
-    of rebuilding.
+  diagnostic: Something from before the exam is missing, or the database is not running, so the stored
+    job could not be read. Check db-0 is running, and upgrade and repair in place instead of rebuilding.
 - id: exam-workflow
   title: A new job completes and is saved
   explanation: A job sent from the frontend must be processed by a worker and saved in PostgreSQL.

@@ -75,9 +75,9 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Something from before the fault is missing or was replaced. A ConfigMap recreated from YAML
-    has a new UID and does not count; bring back the original from the etcd snapshot. If nodes or the
-    cluster were rebuilt, reset the lab.
+  diagnostic: Something from before the fault is missing or was replaced, or the database is not running,
+    so the stored row could not be read. A ConfigMap recreated from YAML has a new UID and does not count;
+    bring back the original from the etcd snapshot. If nodes or the cluster were rebuilt, reset the lab.
 - id: recovery-components
   title: The kubelet and all four control-plane components are running
   explanation: On the control-plane node the kubelet service must be active, containers for etcd, the

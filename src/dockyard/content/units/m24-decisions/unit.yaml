@@ -75,9 +75,9 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Something from before the incident is missing or was replaced. Fix the existing objects
-    with small changes instead of deleting and recreating them or rebuilding the cluster; if that already
-    happened, reset the lab.
+  diagnostic: Something from before the incident is missing or was replaced, or the database is not running,
+    so the stored row could not be read. Fix the existing objects with small changes instead of deleting
+    and recreating them or rebuilding the cluster; if that already happened, reset the lab.
 - id: handoff-capacity
   title: The API fits the agreed replica, resource, and disruption budget
   explanation: The API must run 2 to 4 available copies with total requests within 1 CPU and 512 MiB,

@@ -70,9 +70,9 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Something from before maintenance is missing or was replaced. Maintenance must change the
-    existing cluster, not rebuild it; if objects were deleted or the cluster was recreated, reset the
-    lab and try again.
+  diagnostic: Something from before maintenance is missing or was replaced, or the database is not running,
+    so the stored row could not be read. Maintenance must change the existing cluster, not rebuild it;
+    if objects were deleted or the cluster was recreated, reset the lab and try again.
 - id: maintenance-renewed
   title: The API server serves the renewed certificate
   explanation: A new, verified TLS connection to the API must receive a certificate with a new serial

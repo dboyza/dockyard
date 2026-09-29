@@ -70,9 +70,9 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Something from before maintenance is missing or was replaced. Maintenance must change the
-    existing cluster, not rebuild it; if objects were deleted or the cluster was recreated, reset the
-    lab and try again.
+  diagnostic: Something from before maintenance is missing or was replaced, or the database is not running,
+    so the stored row could not be read. Maintenance must change the existing cluster, not rebuild it;
+    if objects were deleted or the cluster was recreated, reset the lab and try again.
 - id: maintenance-upgrade
   title: The API server, control plane, and kubelets are all on 1.35.8
   explanation: kubectl get --raw=/version, the control-plane component images, and every node’s kubelet
