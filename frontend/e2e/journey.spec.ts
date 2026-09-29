@@ -140,7 +140,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await expect(page.getByRole('button', { name: 'Reveal hint 1' })).toBeVisible();
   }
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('reconciliation');
-  await page.getByRole('button', { name: /Let a controller maintain the application/ }).click();
+  await page.getByRole('button', { name: /Let Kubernetes keep Dispatch running/ }).click();
   await expect(page.getByRole('complementary', { name: 'Before you begin' })).toContainText('This lesson builds on');
   await expect(page.getByRole('button', { name: 'How to read YAML', exact: false })).toBeVisible();
   const model = page.getByRole('region', { name: 'Explore reconciliation' });
@@ -154,7 +154,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('m11-claims');
-  await page.getByRole('button', { name: /Connect claims to durable database storage/ }).click();
+  await page.getByRole('button', { name: /Persistent storage with claims/ }).click();
   const storage = page.getByRole('region', { name: 'Explore storage lifetimes' });
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await storage.getByRole('button', { name: 'Remove workload' }).click();
@@ -171,10 +171,10 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('m08-mission');
-  await page.getByRole('button', { name: /Mission: process work and prove maintenance/ }).click();
+  await page.getByRole('button', { name: /Mission: every workload doing its job/ }).click();
   await expect(page.locator('.metadata')).toContainText('Review needed');
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('m13-mission');
-  await page.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ }).click();
+  await page.getByRole('button', { name: /Mission: drain a worker without an outage/ }).click();
   await page.getByRole('tab', { name: 'Evidence' }).click();
   await page.getByText('Measured state', { exact: true }).click();
   await expect(page.locator('details[open]')).toContainText('dispatch-fixture-a');
@@ -187,8 +187,8 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await page.getByRole('textbox', { name: 'Search glossary' }).fill('quorum');
   await expect(page.locator('.glossary-term')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'Quorum', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Keep the API writable through a control-plane outage', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep the API writable through a control-plane outage');
+  await page.getByRole('button', { name: 'High availability: keep the API working through an outage', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('High availability: keep the API working through an outage');
   const quorum = page.getByRole('region', { name: 'Explore API routing and etcd quorum' });
   await quorum.getByRole('button', { name: 'Try a fresh write' }).click();
   await expect(quorum.getByRole('status')).toContainText('Write failed at the endpoint');
@@ -205,11 +205,11 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await page.getByRole('button', { name: 'Quorum', exact: true }).click();
   await expect(page.getByRole('textbox', { name: 'Search glossary' })).toHaveValue('Quorum');
   await page.getByRole('button', { name: 'Return to your lesson' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep the API writable through a control-plane outage');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('High availability: keep the API working through an outage');
   await page.getByRole('button', { name: 'Open reference desk' }).click();
   await page.setViewportSize({ width: 480, height: 1000 });
   await page.getByRole('combobox', { name: 'Foundation primer' }).selectOption('yaml');
-  await expect(page.getByRole('heading', { name: 'Read YAML as a data structure' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Reading YAML' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await navigateTo(page, 'Troubleshooting');
@@ -232,7 +232,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await navigateTo(page, 'Review practice');
   await expect(page.getByRole('heading', { name: 'Come back and try it again.' })).toBeVisible();
   const dueReviews = page.getByRole('region', { name: 'Activities due for review' });
-  await expect(dueReviews.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ })).toBeVisible();
+  await expect(dueReviews.getByRole('button', { name: /Mission: drain a worker without an outage/ })).toBeVisible();
   await expect(dueReviews.getByText('The lesson revision changed; earlier evidence remains in your record.')).toBeVisible();
   await page.screenshot({ path: path.join(root, '.artifacts/review-wide.png'), fullPage: true });
   await page.setViewportSize({ width: 480, height: 1000 });
@@ -241,21 +241,21 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   for (const label of await page.locator('.unitmeta > span').all()) {
     expect(await label.evaluate(element => element.getBoundingClientRect().height <= parseFloat(getComputedStyle(element).lineHeight) + 1)).toBe(true);
   }
-  await expect(dueReviews.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ }).locator('.unitmeta')).toHaveText('65 min');
-  await dueReviews.getByRole('button', { name: /Keep Dispatch available through worker maintenance/ }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Keep Dispatch available through worker maintenance');
+  await expect(dueReviews.getByRole('button', { name: /Mission: drain a worker without an outage/ }).locator('.unitmeta')).toHaveText('65 min');
+  await dueReviews.getByRole('button', { name: /Mission: drain a worker without an outage/ }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Mission: drain a worker without an outage');
   await page.setViewportSize({ width: 1440, height: 1000 });
   await navigateTo(page, 'Find your starting point');
   await expect(page.getByRole('heading', { name: 'Find a good place to start.' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Placement benchmarks' }).locator('article')).toHaveCount(4);
-  await expect(page.locator('.placement-recommendation')).toContainText('Container engineering');
+  await expect(page.locator('.placement-recommendation')).toContainText('Containers and Docker');
   await expect(page.locator('.topbar')).toContainText('Find your starting point');
   await page.screenshot({ path: path.join(root, '.artifacts/placement-wide.png'), fullPage: true });
   await page.setViewportSize({ width: 480, height: 1000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: path.join(root, '.artifacts/placement-narrow.png'), fullPage: true });
-  await page.getByRole('button', { name: 'Try the benchmark' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Capstone: deliver and recover Dispatch');
+  await page.getByRole('button', { name: 'Try the mission' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Capstone: fix, ship, and recover Dispatch');
   expect(failures).toEqual([]);
   // Keep the browser and its SSE connection open while verifying foreground shutdown.
   const stopped = once(server, 'exit');

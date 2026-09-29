@@ -89,11 +89,11 @@ print(s.store.note('m01-processes'))
   await navigateTo(page, 'Lab manager');
   await page.getByRole('button', { name: 'Inspect cache', exact: true }).click();
   const cache = page.getByRole('region', { name: 'Dependency cache' });
-  await expect(cache).toContainText('5 / 5');
+  await expect(cache).toContainText('4 / 4');
   await page.getByRole('button', { name: 'Prefetch dependencies', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Inspect cache', exact: true })).toBeEnabled({ timeout: 30000 });
   await cache.getByText('Readiness for each selected activity').click();
-  await expect(cache.locator('.cache-activities article')).toHaveCount(5);
+  await expect(cache.locator('.cache-activities article')).toHaveCount(4);
   for (const width of [1440, 480]) {
     await page.setViewportSize({ width, height: 1000 });
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
