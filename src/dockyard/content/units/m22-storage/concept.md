@@ -1,17 +1,21 @@
-## A bound claim is one stage of the path
+## Following a volume all the way to the disk
 
-This chapter's Dispatch checkpoint uses a real CSI-provisioned PostgreSQL volume.
-The external provisioner creates a PV and records a driver-owned volume handle.
-The attacher coordinates a VolumeAttachment when attachment is required, and the node-side driver exposes the filesystem to kubelet for the Pod's mount.
-A bound PVC does not establish that the selected node has a usable driver or can access the underlying data.
+In the storage module, a claim was Bound and the job was done.
+With real storage drivers there are more steps, and each can fail on its own.
+Kubernetes talks to storage through the **Container Storage Interface (CSI)**:
 
-The pinned hostpath CSI reference driver runs on the worker guest.
-It stores data locally on that worker and is intended for learning and testing.
-It does not provide shared storage, automatic replication, or a production high-availability database.
-The StorageClass uses WaitForFirstConsumer so provisioning can take consumer placement into account, and Retain prevents automatic backing-volume deletion when a claim is removed.
-Neither setting makes local data portable.
+1. A **provisioner** creates the volume when a claim needs one, and records a **volume handle**, the driver’s own ID for it.
+2. An **attacher** connects the volume to the chosen node, recorded as a **VolumeAttachment**.
+3. The **node plugin**, running on that node, mounts it so the kubelet can give it to the Pod.
 
-## Worked example: inspect the whole storage chain
+A Bound claim only proves step 1.
+
+This lab uses the **hostpath CSI driver**, a reference driver that stores data in a folder on the worker.
+It is meant for learning: the data exists only on that one worker, with no sharing or replication.
+Its StorageClass uses `WaitForFirstConsumer`, so the volume is created where the Pod is scheduled, and `Retain`, so deleting the claim does not delete the data.
+Neither of those makes the data able to move to another node.
+
+## Worked example: inspect the whole chain
 
 ```sh
 kubectl get pod db-0 -o wide
@@ -23,26 +27,31 @@ kubectl get volumeattachments
 kubectl get pods -n dockyard-storage-system
 ```
 
-Follow the PVC's `spec.volumeName` to the PV, then inspect `spec.csi.driver`, `volumeHandle`, and any node affinity.
-Compare that information with the Pod's selector, scheduler events, and the node's CSI registration.
-The driver process and the filesystem data reside on the worker; merely giving the control plane the same label would not move either one.
+Follow the claim’s `spec.volumeName` to its PV, then look at the PV’s `spec.csi.driver`, `volumeHandle`, and node affinity.
+Compare that with where the database Pod is trying to run and what its events say.
+`csinodes` shows which nodes have the driver registered.
 
-## The deliberate placement failure
+## What is broken
 
-The database was healthy and a sentinel row was written before its StatefulSet was changed to select the control plane.
-Its replacement Pod cannot use the existing worker-local CSI volume correctly from that placement.
-Keep the original claim and volume; recreating them would abandon the evidence that maintenance preserved data.
-Repair the workload's placement to select a node capable of using the original storage.
-A matching node selector or equivalent required node affinity can express that constraint.
+The database was healthy, and a known row was written.
+Then its StatefulSet was changed to run on the control-plane node, where the driver and the data are not.
+The replacement `db-0` cannot use its volume there.
 
-StatefulSet rolling updates can remain stalled on an unhealthy replacement Pod after the template is repaired.
-After verifying the repaired template, delete only the failed `db-0` Pod to let its controller recreate it from that template.
-Deleting a Pod is different from deleting its PVC or underlying PV.
-Wait for the database rollout and then the dependent API and workers.
+Fix the StatefulSet so the database is placed on the worker again, with a `nodeSelector` or required node affinity.
+Keep the original claim and volume; replacing them would lose the data.
 
-## Prove the original bytes remain useful
+A StatefulSet can stay stuck on a broken Pod even after you fix its template.
+Once the template is right, delete only the failed `db-0` Pod so its controller recreates it:
 
-The assessment checks the original claim and PV identities, CSI driver and volume handle, node registration, an attached VolumeAttachment, and the readable/writable PostgreSQL mount.
-It then checks the pre-failure SQL sentinel and completes a fresh Dispatch transaction.
-A replacement empty database can satisfy a TCP probe, but it cannot satisfy those continuity checks.
-Record the specific layer that prevented service and the storage redundancy the reference driver does not provide.
+```sh
+kubectl delete pod db-0
+kubectl rollout status statefulset/db
+```
+
+Deleting the Pod does not touch the claim or the volume.
+Then wait for the API and workers to become ready.
+
+## Proving the data survived
+
+Check work confirms the claim and PV are the originals, with the same driver and volume handle, that the volume is attached and mounted on the worker, that the known row is still there, and that a new job completes.
+An empty new database could answer a connection, but it would fail those checks.

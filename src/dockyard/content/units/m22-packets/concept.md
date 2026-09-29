@@ -1,17 +1,23 @@
-## Readiness is not a packet trace
+## Ready nodes, but lost packets
 
-Both nodes can remain Ready while packets between their Pods are dropped.
-Kubelet heartbeats use the node network to reach the API, while this Calico profile carries cross-node Pod packets inside VXLAN over UDP port 4789.
-Those paths have different addresses, protocols, and failure points.
-The node network is `192.168.104.0/24`; Pod addresses come from `10.244.0.0/16`.
-Keep the ranges separate when interpreting routes.
+Two nodes can both show Ready while traffic between their Pods is silently dropped.
+That is because node health and Pod traffic travel differently:
 
-Dispatch API and database workloads run on the worker.
-The trusted frontend client runs on the control plane, so its requests cross the guest boundary.
-The browser's endpoint terminates on the worker and can appear healthy while that separate frontend path fails.
-A successful local health request therefore cannot prove cross-node connectivity.
+- The kubelet reports to the API server over the **node network**, `192.168.104.0/24`.
+- Pod-to-Pod traffic between nodes is wrapped by Calico in **VXLAN** packets: ordinary UDP packets on port **4789** between the node addresses, carrying the Pod packet inside. Pod addresses come from `10.244.0.0/16`.
 
-## Worked example: move from identity to the path
+Block UDP 4789 and the nodes stay Ready, but Pods on different nodes can no longer reach each other.
+
+## This lab
+
+Dispatch’s API and database run on the worker.
+The trusted frontend client runs on the control plane, so its requests must cross between the machines.
+The dashboard you open in the browser connects straight to the worker, so it can look fine while the frontend’s path is broken.
+
+Someone has added a firewall rule on the control-plane VM that drops UDP port 4789.
+It is an **iptables** rule in the `raw` table’s `PREROUTING` chain, the very first place incoming packets are checked, and it carries the comment `dockyard-$DOCKYARD_LAB-vxlan`.
+
+## Worked example: find the path, then the rule
 
 ```sh
 kubectl get nodes -o wide
@@ -21,28 +27,26 @@ limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" ip -d link show vxlan.cal
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo iptables -t raw -nvL PREROUTING --line-numbers
 ```
 
-Identify the frontend node, destination Pod IP, and underlying worker address before interpreting a counter.
-A direct HTTP request to the destination Pod IP removes DNS and Service translation from that particular test.
-A request to the Service name adds both those dependencies back.
-Use `/healthz` for process reachability and `/readyz` or a fresh job for dependency readiness.
-They answer different questions.
+- The first three show which node each piece runs on and the API Pod’s IP address.
+- `ip -d link show vxlan.calico` shows Calico’s VXLAN interface exists; it existing is not proof traffic flows.
+- `iptables -t raw -nvL PREROUTING --line-numbers` lists the rules with packet counters (`-v`) and line numbers. Try a cross-node request and run it again: a counter that rises on a DROP rule is your evidence.
 
-## The injected boundary
+Testing at different layers tells you different things:
 
-This fixture adds one raw-table PREROUTING rule on the control-plane guest that drops UDP destination port 4789.
-This early hook observes the outer UDP packet before subsequent tunnel processing.
-Its comment is `dockyard-$DOCKYARD_LAB-vxlan`.
-The rule does not remove the Calico interface or stop kubelet, so resource status alone can be misleading.
-Observe its packet counter while trying cross-node traffic and compare that evidence with the interface, route, and application observations.
+- A request straight to the API **Pod IP** tests packet delivery alone, without DNS or Services.
+- A request to the **Service name** adds DNS and Service routing back in.
+- `/healthz` shows the process answers; `/readyz` or a real job also tests its dependencies.
 
-Remove only the identified rule, using its exact match specification or a freshly inspected rule position.
-Never flush the guest's entire firewall: Calico and Kubernetes depend on other rules in the same system.
-For an exact deletion, use the same protocol, destination port, comment match, and DROP target with `iptables -t raw -D PREROUTING`.
-The supplied lab identifiers keep the operation confined to this attempt's own guest and injected rule.
+## Remove only that rule
 
-## Prove useful connectivity
+Delete exactly the rule you found, either by its line number from a fresh listing or by repeating its full match with `-D`:
 
-The assessment reaches an actual API Pod IP from the trusted frontend on the other node.
-It also creates a new diagnostic Service, resolves its fresh DNS name, and checks its new ClusterIP route.
-Finally, the normal application path must complete and persist a new job while retaining the original state.
-An interface existing or a policy object looking plausible is only supporting evidence, not the operational outcome.
+```sh
+sudo iptables -t raw -D PREROUTING -p udp --dport 4789 -m comment --comment "dockyard-$DOCKYARD_LAB-vxlan" -j DROP
+```
+
+Never flush the whole firewall with `iptables -F`: Calico and kube-proxy rely on many other rules in the same tables.
+
+## Prove it works
+
+Check work sends a request from the frontend to an API Pod IP on the worker, creates a fresh Service and checks its DNS name and ClusterIP, and runs a real job, while confirming the original data is still there.

@@ -1,12 +1,7 @@
-# Debrief: Trace the packet before blaming the Pod
+## Follow the packet, not the status
 
-A direct cross-node Pod request separates basic packet delivery from DNS and Service forwarding.
-The newly created Service and a fresh application transaction add independent observations of those higher-level paths.
+Both nodes were Ready the whole time; the dropped VXLAN packets only showed up in a firewall counter and in failed cross-node requests.
 
-## Explain your result
-
-When the Pod IP works but the ClusterIP fails, which parts of the network have already been demonstrated and which remain suspect?
-
-## Transfer beyond this lab
-
-Trace the packet across explicit boundaries before replacing workloads or changing application settings that cannot repair the failed layer.
+Check your understanding:
+If a request to the Pod IP works but one to the Service name fails, which parts of the path have you already proved?
+Why would flushing the whole firewall be a dangerous fix?

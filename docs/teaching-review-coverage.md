@@ -101,10 +101,10 @@ A runtime pass alone is not a teaching-quality result.
 | m21-upgrade | Completed without solutions | Revised | Rewrote with the full control-plane-first order and the apt hold pattern. Followed the lesson exactly from v1.34.12 to v1.35.8; passed. |
 | m21-certificates | Completed without solutions | Revised | Explained why the running server needs a restart and why deleting the mirror Pod does not help. Serial changed under the same issuer; passed. |
 | m21-mission | Completed without solutions | Revised | Completed the upgrade independently with a handoff; passed. |
-| m22-packets | Pending | Pending |  |
-| m22-dns | Pending | Pending |  |
-| m22-storage | Pending | Pending |  |
-| m22-mission | Pending | Pending |  |
+| m22-packets | Completed without solutions | Revised | Explained VXLAN and the raw PREROUTING rule plainly; fixed a hint that pointed at INPUT rules. The DROP counter showed 72 packets; deleting the exact rule restored traffic; passed. |
+| m22-dns | Completed without solutions | Revised | Separated CoreDNS and kube-proxy, added how to rebuild the Corefile ConfigMap and kubectl set image for the DaemonSet, and explained dnsPolicy, which the mission needs but no lesson taught. Passed. |
+| m22-storage | Completed without solutions | Revised | Explained the CSI chain plainly; csinodes and PV affinity showed the worker-only driver as described; recovered by fixing placement and recreating db-0; passed. |
+| m22-mission | Completed without solutions | Revised | Fixed ip_forward, dnsPolicy, and database placement independently; passed. |
 | m23-etcd | Pending | Pending |  |
 | m23-static-pods | Pending | Pending |  |
 | m23-api | Pending | Pending |  |

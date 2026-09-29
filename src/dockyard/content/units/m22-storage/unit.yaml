@@ -2,16 +2,16 @@ id: m22-storage
 revision: 1
 module: 22
 order: 3
-title: Recover a CSI volume with incompatible workload placement
-summary: Follow a claim through provisioning, attachment, and a node-local mount.
+title: CSI storage and node placement
+summary: Recover a database whose Pod was moved away from its node-local CSI volume.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 45
 outcomes:
-- Distinguish PVC binding, CSI controller attachment, node registration, and filesystem mount.
-- Diagnose a database Pod whose placement conflicts with its existing CSI storage.
-- Recover the original volume and stored data without recreating the claim.
+- Follow a volume from claim to PV, attachment, and mount.
+- Explain why a Bound claim is not proof the storage is usable.
+- Fix placement and recover the original data without recreating the claim.
 prerequisites:
 - m22-dns
 objectives:
@@ -28,7 +28,8 @@ prediction:
   - Only the display name of the claim.
   - Proof that a new empty claim should replace it.
   correct: 0
-  explanation: Driver registration, attachment, placement, and access to the actual backing data.
+  explanation: Bound only means a volume exists. The driver, attachment, placement, and the data’s location
+    decide whether a Pod can use it.
 hints:
 - Follow the claim to its CSI PV and compare the volume's usable node with the database Pod selector.
 - The hostpath driver and original data remain on the worker; changing placement does not move storage.
@@ -59,9 +60,9 @@ prepare:
   timeout: 360
 checks:
 - id: infrastructure-preserved
-  title: Original cluster and stored application state remain intact
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: The original cluster and its data are still there
+  explanation: The cluster’s identities, the original database claim and volume, and the row stored before
+    the fault must all be the originals.
   command:
     args:
     - python
@@ -72,12 +73,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: Something from before the fault is missing or was replaced. Recover in place instead of
+    recreating the database, claim, or cluster; if they were replaced, reset the lab.
 - id: infrastructure-csi
-  title: The original CSI volume is attached and mounted by the worker database
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: The original CSI volume is attached and mounted on the worker
+  explanation: The database must use its original claim and PV, with the same driver and volume handle,
+    attached and mounted on the worker where the driver is registered.
   command:
     args:
     - python
@@ -88,12 +89,13 @@ checks:
   json_path:
   - csi
   expected: 'true'
-  diagnostic: Inspect the csi evidence; an unavailable dependency can prevent verification without proving
-    data was deleted.
+  diagnostic: The database is not using its original volume on the worker. Compare kubectl get pod db-0
+    -o wide with the PV’s node affinity, fix the StatefulSet’s placement, and if the rollout is stuck
+    delete only the failed db-0 Pod. Never delete the claim or PV.
 - id: infrastructure-workflow
-  title: A fresh browser and cross-node Dispatch transaction completes
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: A job from the frontend completes across the nodes
+  explanation: A real job from the frontend must cross to the worker, be processed, and be saved in the
+    database.
   command:
     args:
     - python
@@ -104,8 +106,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: A job did not complete. Fix the lower layers first (packets, DNS, routing, storage), then
+    wait for the database, API, and workers to be ready and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

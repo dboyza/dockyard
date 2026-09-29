@@ -2,16 +2,16 @@ id: m22-mission
 revision: 1
 module: 22
 order: 4
-title: Recover Dispatch across network, resolver, and storage boundaries
-summary: Independently locate three infrastructure faults and preserve the original data.
+title: 'Mission: network, DNS, and storage recovery'
+summary: Find three infrastructure faults and restore Dispatch with its original data.
 kind: mission
 runtime: linux
 nodes: 2
 minutes: 60
 outcomes:
-- Form and test a layered hypothesis using host, DNS, and CSI evidence.
-- Restore real cross-node traffic and the original database mount.
-- Hand off the observed recovery and the remaining local-storage limitations.
+- Test network, DNS, and storage layers separately.
+- Restore cross-node traffic and the original database mount.
+- Hand over the recovery and the storage’s remaining limits.
 prerequisites:
 - m22-storage
 objectives:
@@ -30,7 +30,7 @@ prediction:
   - All YAML files have matching indentation.
   - The browser opened successfully.
   correct: 0
-  explanation: The original data remains and a new cross-node application transaction completes.
+  explanation: Only intact original data and a new job crossing the nodes show real recovery.
 hints:
 - Separate host forwarding, the frontend resolver policy, and the database storage chain.
 - Inspect net.ipv4.ip_forward on the worker, dnsPolicy on trusted-client, and database placement relative
@@ -62,9 +62,9 @@ prepare:
   timeout: 360
 checks:
 - id: infrastructure-preserved
-  title: Original cluster and stored application state remain intact
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: The original cluster and its data are still there
+  explanation: The cluster’s identities, the original database claim and volume, and the row stored before
+    the fault must all be the originals.
   command:
     args:
     - python
@@ -75,12 +75,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: Something from before the fault is missing or was replaced. Recover in place instead of
+    recreating the database, claim, or cluster; if they were replaced, reset the lab.
 - id: infrastructure-packets
-  title: A frontend on the control plane reaches an API Pod IP on the worker
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: The frontend reaches an API Pod across nodes
+  explanation: A request from the trusted frontend on the control plane must reach an API Pod’s IP on
+    the worker directly, without DNS or a Service.
   command:
     args:
     - python
@@ -91,12 +91,13 @@ checks:
   json_path:
   - packets
   expected: 'true'
-  diagnostic: Inspect the packets evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: Traffic between the nodes is still blocked. Check where the frontend and API Pods run with
+    -o wide, then look for rules dropping UDP 4789 with sudo iptables -t raw -nvL PREROUTING on each VM,
+    and that net.ipv4.ip_forward is 1 on the worker.
 - id: infrastructure-dns
-  title: A newly created Service name resolves to its actual ClusterIP
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: A new Service name resolves to its ClusterIP
+  explanation: Dockyard creates a new Service and checks its full DNS name, resolved from the trusted
+    frontend, returns that Service’s real ClusterIP.
   command:
     args:
     - python
@@ -107,12 +108,13 @@ checks:
   json_path:
   - dns
   expected: 'true'
-  diagnostic: Inspect the dns evidence; an unavailable dependency can prevent verification without proving
-    data was deleted.
+  diagnostic: The new Service name did not resolve correctly. Check the Corefile in kubectl get configmap
+    coredns -n kube-system -o yaml answers for cluster.local, that CoreDNS is running, and that the frontend
+    Pod uses dnsPolicy ClusterFirst.
 - id: infrastructure-proxy
-  title: Both proxy agents are ready and the new ClusterIP reaches an API process
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: kube-proxy is ready on both nodes and routes a new Service
+  explanation: kube-proxy must be ready on every node, and the new Service’s ClusterIP must reach an API
+    process.
   command:
     args:
     - python
@@ -123,12 +125,13 @@ checks:
   json_path:
   - proxy
   expected: 'true'
-  diagnostic: Inspect the proxy evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: kube-proxy is not ready everywhere, or the new ClusterIP does not route. Run kubectl get
+    pods -n kube-system -l k8s-app=kube-proxy -o wide and read the events of any that are not running;
+    check the DaemonSet’s image.
 - id: infrastructure-csi
-  title: The original CSI volume is attached and mounted by the worker database
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: The original CSI volume is attached and mounted on the worker
+  explanation: The database must use its original claim and PV, with the same driver and volume handle,
+    attached and mounted on the worker where the driver is registered.
   command:
     args:
     - python
@@ -139,12 +142,13 @@ checks:
   json_path:
   - csi
   expected: 'true'
-  diagnostic: Inspect the csi evidence; an unavailable dependency can prevent verification without proving
-    data was deleted.
+  diagnostic: The database is not using its original volume on the worker. Compare kubectl get pod db-0
+    -o wide with the PV’s node affinity, fix the StatefulSet’s placement, and if the rollout is stuck
+    delete only the failed db-0 Pod. Never delete the claim or PV.
 - id: infrastructure-workflow
-  title: A fresh browser and cross-node Dispatch transaction completes
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: A job from the frontend completes across the nodes
+  explanation: A real job from the frontend must cross to the worker, be processed, and be saved in the
+    database.
   command:
     args:
     - python
@@ -155,8 +159,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: A job did not complete. Fix the lower layers first (packets, DNS, routing, storage), then
+    wait for the database, API, and workers to be ready and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

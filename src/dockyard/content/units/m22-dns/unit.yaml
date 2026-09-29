@@ -2,16 +2,16 @@ id: m22-dns
 revision: 1
 module: 22
 order: 2
-title: Distinguish name resolution from Service programming
-summary: Repair CoreDNS and the agents that program new Service routes.
+title: CoreDNS and kube-proxy
+summary: Fix a CoreDNS domain mistake and a broken kube-proxy rollout, and test with a new Service.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 45
 outcomes:
-- Trace DNS queries separately from ClusterIP forwarding.
-- Repair a cluster-zone mismatch and a broken kube-proxy rollout.
-- Verify newly created Service names and routes rather than relying on stale kernel rules.
+- Explain the separate jobs of CoreDNS and kube-proxy.
+- Fix the Corefile’s cluster domain and a DaemonSet image.
+- Prove recovery with a newly created Service.
 prerequisites:
 - m22-packets
 objectives:
@@ -27,7 +27,8 @@ prediction:
   - Every future Service will work.
   - CoreDNS no longer matters.
   correct: 0
-  explanation: Existing kernel routes can remain; test a newly created Service too.
+  explanation: Routes set up earlier can outlive kube-proxy, so only a new Service tests whether it is
+    working.
 hints:
 - Inspect the CoreDNS zone and the desired/running kube-proxy images separately.
 - The fixture retained the original CoreDNS text, and kube-proxy v1.35.8 is already cached.
@@ -58,9 +59,9 @@ prepare:
   timeout: 240
 checks:
 - id: infrastructure-preserved
-  title: Original cluster and stored application state remain intact
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: The original cluster and its data are still there
+  explanation: The cluster’s identities, the original database claim and volume, and the row stored before
+    the fault must all be the originals.
   command:
     args:
     - python
@@ -71,12 +72,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: Something from before the fault is missing or was replaced. Recover in place instead of
+    recreating the database, claim, or cluster; if they were replaced, reset the lab.
 - id: infrastructure-packets
-  title: A frontend on the control plane reaches an API Pod IP on the worker
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: The frontend reaches an API Pod across nodes
+  explanation: A request from the trusted frontend on the control plane must reach an API Pod’s IP on
+    the worker directly, without DNS or a Service.
   command:
     args:
     - python
@@ -87,12 +88,13 @@ checks:
   json_path:
   - packets
   expected: 'true'
-  diagnostic: Inspect the packets evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: Traffic between the nodes is still blocked. Check where the frontend and API Pods run with
+    -o wide, then look for rules dropping UDP 4789 with sudo iptables -t raw -nvL PREROUTING on each VM,
+    and that net.ipv4.ip_forward is 1 on the worker.
 - id: infrastructure-dns
-  title: A newly created Service name resolves to its actual ClusterIP
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: A new Service name resolves to its ClusterIP
+  explanation: Dockyard creates a new Service and checks its full DNS name, resolved from the trusted
+    frontend, returns that Service’s real ClusterIP.
   command:
     args:
     - python
@@ -103,12 +105,13 @@ checks:
   json_path:
   - dns
   expected: 'true'
-  diagnostic: Inspect the dns evidence; an unavailable dependency can prevent verification without proving
-    data was deleted.
+  diagnostic: The new Service name did not resolve correctly. Check the Corefile in kubectl get configmap
+    coredns -n kube-system -o yaml answers for cluster.local, that CoreDNS is running, and that the frontend
+    Pod uses dnsPolicy ClusterFirst.
 - id: infrastructure-proxy
-  title: Both proxy agents are ready and the new ClusterIP reaches an API process
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: kube-proxy is ready on both nodes and routes a new Service
+  explanation: kube-proxy must be ready on every node, and the new Service’s ClusterIP must reach an API
+    process.
   command:
     args:
     - python
@@ -119,12 +122,13 @@ checks:
   json_path:
   - proxy
   expected: 'true'
-  diagnostic: Inspect the proxy evidence; an unavailable dependency can prevent verification without proving
-    data was deleted.
+  diagnostic: kube-proxy is not ready everywhere, or the new ClusterIP does not route. Run kubectl get
+    pods -n kube-system -l k8s-app=kube-proxy -o wide and read the events of any that are not running;
+    check the DaemonSet’s image.
 - id: infrastructure-workflow
-  title: A fresh browser and cross-node Dispatch transaction completes
-  explanation: Compare live packet, DNS, Service, storage, and application behavior with the required
-    boundary.
+  title: A job from the frontend completes across the nodes
+  explanation: A real job from the frontend must cross to the worker, be processed, and be saved in the
+    database.
   command:
     args:
     - python
@@ -135,8 +139,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow evidence; an unavailable dependency can prevent verification without
-    proving data was deleted.
+  diagnostic: A job did not complete. Fix the lower layers first (packets, DNS, routing, storage), then
+    wait for the database, API, and workers to be ready and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

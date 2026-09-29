@@ -1,16 +1,24 @@
-## A Service name and its route are different mechanisms
+## Two different jobs: naming and routing
 
-CoreDNS answers queries for Kubernetes Service names by observing API objects.
-Kube-proxy observes Service and EndpointSlice state and programs each node's data plane.
-A DNS response can contain the correct ClusterIP while connections to that IP fail.
-Conversely, an old ClusterIP route can continue forwarding after the agent that programmed it stops.
-Always identify which layer your test actually exercises.
+When a Pod connects to `dispatch:8080`, two separate systems are involved:
 
-This fixture contains two faults: the CoreDNS Kubernetes plugin serves the wrong cluster zone, and kube-proxy's rollout selects an unavailable local image.
-The new image cannot start, but existing kernel rules can outlive the old process.
-A test against only a familiar Service can therefore miss the second failure.
+1. **CoreDNS** turns the name into the Service’s ClusterIP. It reads Services from the API.
+2. **kube-proxy**, running on every node, programs the node’s networking so traffic to that ClusterIP reaches one of the Service’s Pods.
 
-## Worked example: inspect each control loop
+Either can fail on its own.
+DNS can return the right IP while nothing routes it; and routes kube-proxy already set up keep working after it stops, until something changes.
+
+## This lab
+
+Two things are broken:
+
+- CoreDNS is configured for the wrong **cluster domain**, so names ending in `cluster.local` are not answered.
+- kube-proxy’s DaemonSet was changed to an image that does not exist, so its new Pods cannot start.
+
+Because old routes survive, an existing Service may still work.
+That is why you test with a **brand-new** Service, which needs a running kube-proxy to route it.
+
+## Worked example: check each system
 
 ```sh
 kubectl get configmap coredns -n kube-system -o yaml
@@ -20,24 +28,39 @@ kubectl get pods -n kube-system -l k8s-app=kube-proxy -o wide
 kubectl get endpointslices -l kubernetes.io/service-name=dispatch
 ```
 
-Compare the configured Kubernetes zone with the `cluster.local` suffix used by workload resolvers.
-The fixture saved the original CoreDNS text in `Corefile.original` before introducing the mismatch.
-Use it as a configuration comparison, then restore the intended zone and restart CoreDNS so the correction is observed promptly.
-CoreDNS can run successfully while serving the wrong zone; a Running status is insufficient.
+CoreDNS’s settings live in the `coredns` ConfigMap, in a file called the **Corefile**.
+Its `kubernetes` line names the cluster domain it answers for; it should be `cluster.local`.
+The lab saved the original as `Corefile.original` in your workspace so you can compare.
+You can fix it with `kubectl edit configmap coredns -n kube-system`, or rebuild it from the saved file:
 
-Inspect kube-proxy's desired image and each Pod's events separately.
-The reference version for this cluster is `registry.k8s.io/kube-proxy:v1.35.8`, already cached by native cluster bootstrap.
-Repair the DaemonSet's image and wait for its rollout on both nodes.
-Changing the host's kubectl binary cannot repair a guest data-plane agent.
+```sh
+kubectl create configmap coredns -n kube-system --from-file=Corefile=Corefile.original --dry-run=client -o yaml | kubectl apply -f -
+```
 
-## Test new state, not only old state
+kubectl may warn about a missing “last-applied-configuration” annotation the first time; that is harmless.
+After fixing the ConfigMap, run `kubectl rollout restart deployment/coredns -n kube-system` so CoreDNS picks it up quickly.
+CoreDNS can be Running while answering for the wrong domain, so its status alone proves nothing.
 
-Use a newly named diagnostic Service so the route cannot simply be left over from before the failure.
-Resolve the new name from the trusted frontend, compare the answer with the Service's actual ClusterIP, and request that numeric address separately.
-If DNS fails but the numeric address works, investigate the resolver path.
-If DNS succeeds but the numeric address fails, inspect endpoints and Service programming before rewriting the Corefile again.
+For kube-proxy, compare the DaemonSet’s image with what its Pods report in their events.
+The correct image is `registry.k8s.io/kube-proxy:v1.35.8`, already cached on the nodes:
 
-The assessment creates and removes its own uniquely named Service selecting the existing API Pods.
-For this isolated network diagnostic it publishes not-ready addresses and requests `/healthz`, so a database-readiness failure does not masquerade as a missing packet route.
-That temporary probe does not change the readiness behavior of the learner's real Dispatch Service.
-A separate fresh job check still requires the complete application, database, and queue to function.
+```sh
+kubectl set image daemonset/kube-proxy -n kube-system kube-proxy=registry.k8s.io/kube-proxy:v1.35.8
+kubectl rollout status daemonset/kube-proxy -n kube-system
+```
+
+## Which resolver a Pod uses
+
+Each Pod’s `dnsPolicy` decides where its DNS questions go.
+`ClusterFirst`, the normal setting for Pods, sends them to CoreDNS, so Service names work.
+Confusingly, `Default` means “use the node’s own resolver”, which knows nothing about Services.
+You can see a Pod’s settings with `kubectl exec POD -- cat /etc/resolv.conf`.
+
+## Test new state
+
+Create a new test Service, look up its name from the trusted frontend, compare the answer with the Service’s real ClusterIP, and request that IP directly:
+
+- DNS fails but the IP works: look at CoreDNS.
+- DNS works but the IP fails: look at kube-proxy and the endpoints.
+
+Check work does exactly this with a temporary Service of its own, using `/healthz` so a database problem cannot be mistaken for a routing problem, and then runs a real job.

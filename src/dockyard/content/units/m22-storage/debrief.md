@@ -1,12 +1,8 @@
-# Debrief: Recover a CSI volume with incompatible workload placement
+## Bound is not the same as usable
 
-The original CSI volume must be attached and mounted by the database on a compatible worker, with its data still intact.
-A Bound claim can coexist with an attachment or placement failure, so claim phase alone cannot establish storage use.
+The claim was Bound the whole time; the problem was running the database on a node that could not reach its data.
+Putting it back on the worker let the original volume attach and mount, with its data intact.
 
-## Explain your result
-
-Trace the workload’s selected node, driver registration, attachment, mount, and preserved database row to identify the actual failed boundary.
-
-## Transfer beyond this lab
-
-Production CSI behavior depends on the storage provider’s topology and access modes; the local hostpath driver demonstrates mechanisms rather than remote-storage durability.
+Check your understanding:
+Which step in the CSI chain would have failed if the driver were not registered on the worker?
+Why could you delete the `db-0` Pod safely, but not its claim?

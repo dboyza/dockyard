@@ -1,12 +1,7 @@
-# Debrief: Distinguish name resolution from Service programming
+## Names and routes, checked separately
 
-Resolving a newly created Service name proves a current DNS observation instead of relying on an old cached answer.
-The returned ClusterIP and a request through it distinguish successful name resolution from successful Service programming.
+CoreDNS answers for `cluster.local` again, and kube-proxy is running on both nodes, which the brand-new Service proved.
 
-## Explain your result
-
-How would your diagnosis change if the name resolved correctly but the returned address could not carry a request?
-
-## Transfer beyond this lab
-
-Inspect resolver configuration, transport reachability, and backing Service state separately when diagnosing intermittent production DNS symptoms.
+Check your understanding:
+A name resolves to the right IP, but connecting to that IP fails. Which system do you look at, and why?
+Where is CoreDNS’s configuration stored, and how do you make it take effect?
