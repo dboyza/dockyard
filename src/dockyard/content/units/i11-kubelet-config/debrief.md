@@ -1,6 +1,11 @@
-# Recovery review
+## Compare your diagnosis
 
-The kubelet could not parse the supplied shutdownGracePeriod duration.
-Repairing the value and restarting that service restored the original node agent.
-The check requires the existing Node identities and actual Ready conditions, then checks useful control-plane and application behavior.
-Explain why deleting the Node or running kubeadm reset would be a disproportionate response to this evidence.
+The worker's kubelet configuration had `shutdownGracePeriod: invalid-duration`.
+That is not a length of time, so the kubelet refused to start, and the node stopped reporting.
+The kubelet's journal named the field and the parse error directly.
+Setting a valid duration, such as `0s`, and restarting the kubelet brought the same node back to `Ready`.
+
+Check your understanding:
+Why did the node show `NotReady` even though some of its containers were still running?
+Why would deleting and rejoining the node have been a bigger change than the problem needed?
+How could someone test a kubelet configuration change on one node before rolling it out to all of them?

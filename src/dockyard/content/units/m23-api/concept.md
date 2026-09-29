@@ -1,42 +1,71 @@
-## The tool can depend on the broken component
+## When kubectl cannot help
 
-Kubectl requires a reachable API server for most of its work.
-Repeatedly asking it for cluster events cannot diagnose an API process that fails before becoming ready.
-Move to the recorded primary guest and inspect systemd, the CRI runtime, and static manifests there.
-Those paths do not require a working Kubernetes API.
+kubectl does almost everything by talking to the API server.
+If the API server itself is broken, kubectl can only tell you it cannot connect, and running it again and again teaches you nothing new.
+You need to go below the API, to the control-plane node, and use tools that do not depend on it: `systemctl`, `journalctl`, `crictl`, and the static Pod manifests.
 
-This fixture changes the API server's etcd endpoint from local port 2379 to unused port 2399.
-The API process cannot establish its datastore connection even though the etcd member still runs.
-Do not rebuild the cluster or weaken TLS verification to repair an endpoint typo.
-The original certificates, etcd data, and worker application volume remain intact.
+The API server depends on etcd.
+It finds etcd through its `--etcd-servers` flag, and connects using certificates given by `--etcd-cafile`, `--etcd-certfile`, and `--etcd-keyfile`.
+If any of those are wrong, the API server starts, fails to reach its database, and exits, over and over.
 
-## Worked example: follow the failed dependency
+In this lab someone changed the API server's etcd address.
+etcd itself is still running normally.
+
+## Read the error message carefully
+
+Different problems produce different errors, and each points to a different fix:
+
+| Error contains | Likely meaning |
+| --- | --- |
+| `connection refused` | Nothing is listening at that address and port: a wrong address, or the service is down. |
+| `certificate signed by unknown authority`, `x509` | The TLS certificates do not match: a wrong CA or certificate path. |
+| `Unauthorized`, `Forbidden` | The connection works, but the credentials or permissions are wrong. |
+| `no such host` | A name that does not resolve. |
+
+Fix what the evidence points to.
+Never switch off certificate checking or rebuild the cluster to get past an error like these.
+
+## Worked example: follow the failure
 
 ```sh
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo crictl ps -a --name kube-apiserver
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo crictl ps --name etcd
-limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo cat /etc/kubernetes/manifests/kube-apiserver.yaml
+```
+
+`crictl ps -a` includes stopped containers, so you can see the API server's recent failed attempts.
+Read the log of the most recent one:
+
+```sh
+limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo crictl logs --tail=30 CONTAINER_ID
+```
+
+The newest container is listed first.
+Its log lines are long; the useful part is at the end, for example `dial tcp 127.0.0.1:PORT: connect: connection refused`.
+If the newest log only shows `Shutting down` messages, the kubelet is still replacing the old API server; wait a minute and look again.
+Then compare the two sides:
+
+```sh
+limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo grep etcd-servers /etc/kubernetes/manifests/kube-apiserver.yaml
+limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo grep listen-client-urls /etc/kubernetes/manifests/etcd.yaml
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo ss -lntp
 ```
 
-Use `sudo crictl logs CONTAINER_ID` on a recent failed API container to inspect its connection error.
-Compare the `--etcd-servers` argument with etcd's listening address in its own manifest.
-A refused connection differs from a certificate verification failure or an authorization denial.
-Repair the dependency actually supported by the evidence.
+The first shows where the API server is looking; the second shows where etcd listens; `ss -lntp` lists the ports really open on the node.
+If `crictl` shows no API server container at all, check the kubelet's log with `journalctl -u kubelet` instead; a manifest with a YAML mistake is rejected before any container starts.
 
-Write the corrected API manifest to a temporary file outside the watched directory and atomically replace the active file.
-Correct the endpoint to `https://127.0.0.1:2379`; retain its existing CA and client-certificate arguments.
-Kubelet reconciles the changed static Pod without needing the API to be healthy first.
-Allow that reconciliation to finish before judging the repair.
+## Repair
 
-## Separate recovery claims
+Edit `/etc/kubernetes/manifests/kube-apiserver.yaml` so `--etcd-servers` points at the port etcd really uses, `https://127.0.0.1:2379`.
+Change nothing else; the certificate flags are correct.
+If you edit a copy first, keep it outside the manifests directory and then move it into place.
 
-`kubectl get --raw=/readyz` establishes the API's readiness endpoint responds.
-A new scheduler assignment establishes another control-plane action.
-Original object UIDs distinguish recovery from replacement, and an actual persisted job checks the application boundary.
-The assessment combines these observations rather than equating an open TCP port with a recovered cluster.
+The kubelet sees the changed file and starts a new API server container.
+Give it a minute before deciding whether the fix worked.
 
-The supplied `python wait-control-plane.py` helper retries a read and a write against the recovering API, then observes a fresh scheduler assignment before deleting its disposable Pod.
-Its source is available in the workspace so you can inspect the exact observations.
-The scheduler may need longer to recover its watches and leadership than the API needs to answer a readiness request.
-You may perform equivalent explicit checks yourself.
+## Check it properly
+
+- `kubectl get --raw=/readyz` shows the API server says it is ready.
+- A new Pod getting a node shows the scheduler and API are working together; `python wait-control-plane.py` waits for exactly that.
+- A new Dispatch job completing shows the application works end to end.
+
+Check work looks at all of these, and also checks the original nodes, namespace, and database row are still the same ones, so a rebuilt cluster would not pass.

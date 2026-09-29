@@ -2,16 +2,16 @@ id: m23-static-pods
 revision: 1
 module: 23
 order: 2
-title: Recover the reconciler and its static workload
-summary: Separate kubelet lifecycle from the files that define static control-plane Pods.
+title: Static Pods and a stopped kubelet
+summary: Put a missing scheduler manifest back, start the kubelet, and show new Pods are scheduled.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 45
 outcomes:
-- Diagnose a stopped kubelet through systemd and journal evidence.
-- Restore a missing static scheduler manifest without creating a duplicate definition.
-- Verify new scheduling rather than relying on workloads that already run.
+- Explain how the kubelet runs static Pods from files on the node.
+- Diagnose a stopped kubelet with systemctl and journalctl.
+- Show recovery with a new Pod being scheduled, not with old Pods still running.
 prerequisites:
 - m23-etcd
 objectives:
@@ -21,19 +21,22 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation distinguishes restored API state from a replacement object?
+  question: The scheduler has stopped, but all existing Pods are still running. What happens to a new
+    Pod?
   options:
-  - The original UID returns and fresh control-plane work succeeds.
-  - A similarly named object exists.
-  - An old application process is still running.
+  - It stays Pending with no node.
+  - It starts on the control-plane node.
+  - The API refuses to create it.
   correct: 0
-  explanation: A restored UID establishes original object identity; new work verifies useful control-plane
-    behavior.
+  explanation: The API stores the new Pod, but only the scheduler assigns it a node. Existing Pods already
+    have a node, so they keep running.
 hints:
-- Separate host service state, static manifests, runtime processes, and API observations.
-- Inspect recent CRI logs and each component dependency before changing configuration.
-- Use the preceding worked procedure, restore original configuration and snapshot state where needed,
-  and verify new scheduling and jobs.
+- Inside the control-plane VM, check systemctl status kubelet and list /etc/kubernetes/manifests; a healthy
+  control plane has four files there.
+- The scheduler’s manifest was moved to /var/lib/dockyard/recovery/. The kubelet needs to be running to
+  act on it.
+- Move the file back into /etc/kubernetes/manifests, run sudo systemctl start kubelet, then run python
+  wait-control-plane.py in the lab terminal.
 sources:
 - https://etcd.io/docs/v3.6/op-guide/recovery/
 - https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
@@ -57,8 +60,9 @@ prepare:
   timeout: 180
 checks:
 - id: recovery-preserved
-  title: Original namespace, nodes, sentinel identity, and database row survive
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The original cluster, sentinel, and database row are still there
+  explanation: The namespace, Node objects, and maintenance-sentinel ConfigMap must have their original
+    UIDs, and the database row stored before the fault must still exist.
   command:
     args:
     - python
@@ -70,10 +74,13 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved evidence and the relevant host, API, or application boundary.
+  diagnostic: Something from before the fault is missing or was replaced. A ConfigMap recreated from YAML
+    has a new UID and does not count; bring back the original from the etcd snapshot. If nodes or the
+    cluster were rebuilt, reset the lab.
 - id: recovery-components
-  title: Kubelet and all four control-plane processes run behind a ready API
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The kubelet and all four control-plane components are running
+  explanation: On the control-plane node the kubelet service must be active, containers for etcd, the
+    API server, the controller manager, and the scheduler must be running, and the API must report ready.
   command:
     args:
     - python
@@ -85,10 +92,13 @@ checks:
   json_path:
   - components
   expected: 'true'
-  diagnostic: Inspect the components evidence and the relevant host, API, or application boundary.
+  diagnostic: Part of the control plane is not running. Inside the control-plane VM check systemctl status
+    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a; read sudo crictl
+    logs for any component that keeps exiting.
 - id: recovery-scheduled
-  title: A fresh Pod receives a real scheduler assignment
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A brand-new Pod is scheduled onto a node
+  explanation: Dockyard creates a fresh Pod with no node chosen and checks the scheduler assigns it one
+    within a few seconds, then deletes it.
   command:
     args:
     - python
@@ -100,10 +110,13 @@ checks:
   json_path:
   - scheduled
   expected: 'true'
-  diagnostic: Inspect the scheduled evidence and the relevant host, API, or application boundary.
+  diagnostic: A new Pod was not given a node. Check the scheduler is running with sudo crictl ps --name
+    kube-scheduler on the control-plane node and that its manifest is in /etc/kubernetes/manifests; if
+    it has just restarted, run python wait-control-plane.py and check again.
 - id: recovery-workflow
-  title: A new browser and cross-node Dispatch transaction completes
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A new job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must cross the nodes, be processed, and
+    be saved in the database.
   command:
     args:
     - python
@@ -115,7 +128,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow evidence and the relevant host, API, or application boundary.
+  diagnostic: A job did not complete. Get the control plane healthy first, then run sh bootstrap.sh to
+    wait for Dispatch to recover and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl
@@ -129,12 +143,11 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
-- Runtime outcomes and original identities are assessed, not shell history.
+- Any way of restoring the file and starting the service is accepted.
+- The running processes and a new scheduling decision are checked, not your shell history.
 failure_modes:
-- A replacement object with matching contents has a different identity.
-- Existing running containers do not prove reconciliation or new scheduling.
-- An etcd backup does not contain application persistent-volume contents.
+- Deleting a mirror Pod with kubectl does not change the static Pod on the node.
+- Pods that were already running do not show the scheduler works.
 starter_failure_checks:
 - recovery-components
 - recovery-scheduled

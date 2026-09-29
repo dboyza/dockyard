@@ -105,12 +105,12 @@ A runtime pass alone is not a teaching-quality result.
 | m22-dns | Completed without solutions | Revised | Separated CoreDNS and kube-proxy, added how to rebuild the Corefile ConfigMap and kubectl set image for the DaemonSet, and explained dnsPolicy, which the mission needs but no lesson taught. Passed. |
 | m22-storage | Completed without solutions | Revised | Explained the CSI chain plainly; csinodes and PV affinity showed the worker-only driver as described; recovered by fixing placement and recreating db-0; passed. |
 | m22-mission | Completed without solutions | Revised | Fixed ip_forward, dnsPolicy, and database placement independently; passed. |
-| m23-etcd | Pending | Pending |  |
-| m23-static-pods | Pending | Pending |  |
-| m23-api | Pending | Pending |  |
-| m23-mission | Pending | Pending |  |
-| i12-deleted-state | Pending | Pending |  |
-| i11-kubelet-config | Pending | Pending |  |
+| m23-etcd | Completed without solutions | Revised | Rewrote around UIDs, snapshot contents, and why the revision bump matters; added the exam form of etcdctl and etcdutl. Followed the lesson exactly: snapshot at revision 1105, sentinel restored with its original UID; passed. |
+| m23-static-pods | Completed without solutions | Revised | Explained static and mirror Pods and how to create one. The API still showed the scheduler Running while the kubelet was stopped, now taught. The suggested test Pod was refused by restricted Pod Security in dispatch; the lesson now uses -n default, verified. Passed. |
+| m23-api | Completed without solutions | Revised | Added an error-message table and how to read crictl logs. The newest log first showed only shutdown lines while the kubelet replaced the old container; the lesson now says to wait. The log then showed connection refused on 2399; passed. |
+| m23-mission | Completed without solutions | Revised | Replaced the copied prediction and module-wide hints. Recovered in a different order from the reference (etcd restore while the API was down, then the API and scheduler) to confirm order is flexible; passed. |
+| i12-deleted-state | Completed without solutions | Revised | Rewrote as an incident brief with the rollback trade-off. Restored into a differently named directory; rollout status succeeded before controllers caught up and the first check was stale. Added a note; the recheck passed. |
+| i11-kubelet-config | Completed without solutions | Revised | Rewrote as an incident brief. The journal named the invalid duration; setting 30s, a different value from the reference, passed. |
 | m24-triage | Pending | Pending |  |
 | m24-decisions | Pending | Pending |  |
 | m24-handoff | Pending | Pending |  |

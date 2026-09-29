@@ -2,16 +2,16 @@ id: m23-api
 revision: 1
 module: 23
 order: 3
-title: Diagnose an unavailable API from the host
-summary: Use process logs and dependency endpoints when kubectl is no longer a useful starting point.
+title: Troubleshoot an API server that will not start
+summary: Use crictl and container logs on the node to fix an API server that cannot reach etcd.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 45
 outcomes:
-- Separate client connectivity, API process startup, TLS identity, and etcd reachability.
-- Diagnose and repair a wrong static API dependency endpoint using host-side evidence.
-- Verify readiness, fresh scheduling, and application state after API recovery.
+- Explain why kubectl cannot diagnose a broken API server.
+- Read a failed control-plane container’s log with crictl.
+- Tell apart connection, certificate, and permission errors, and fix only what the evidence shows.
 prerequisites:
 - m23-static-pods
 objectives:
@@ -21,19 +21,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation distinguishes restored API state from a replacement object?
+  question: 'The API server’s log says it cannot connect to etcd: connection refused. What is most likely?'
   options:
-  - The original UID returns and fresh control-plane work succeeds.
-  - A similarly named object exists.
-  - An old application process is still running.
+  - It is using the wrong address or port, or etcd is not running.
+  - Its certificates have expired.
+  - Your kubectl user lacks permission.
   correct: 0
-  explanation: A restored UID establishes original object identity; new work verifies useful control-plane
-    behavior.
+  explanation: Connection refused means nothing answered at that address and port. Certificate problems
+    mention x509, and permission problems happen only after a connection works.
 hints:
-- Separate host service state, static manifests, runtime processes, and API observations.
-- Inspect recent CRI logs and each component dependency before changing configuration.
-- Use the preceding worked procedure, restore original configuration and snapshot state where needed,
-  and verify new scheduling and jobs.
+- Inside the control-plane VM, run sudo crictl ps -a --name kube-apiserver and read the newest container’s
+  log with sudo crictl logs.
+- Compare --etcd-servers in kube-apiserver.yaml with --listen-client-urls in etcd.yaml, and check open
+  ports with sudo ss -lntp.
+- Change --etcd-servers to https://127.0.0.1:2379 in /etc/kubernetes/manifests/kube-apiserver.yaml, leave
+  the certificate flags alone, and run python wait-control-plane.py.
 sources:
 - https://etcd.io/docs/v3.6/op-guide/recovery/
 - https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
@@ -57,8 +59,9 @@ prepare:
   timeout: 180
 checks:
 - id: recovery-preserved
-  title: Original namespace, nodes, sentinel identity, and database row survive
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The original cluster, sentinel, and database row are still there
+  explanation: The namespace, Node objects, and maintenance-sentinel ConfigMap must have their original
+    UIDs, and the database row stored before the fault must still exist.
   command:
     args:
     - python
@@ -70,10 +73,13 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved evidence and the relevant host, API, or application boundary.
+  diagnostic: Something from before the fault is missing or was replaced. A ConfigMap recreated from YAML
+    has a new UID and does not count; bring back the original from the etcd snapshot. If nodes or the
+    cluster were rebuilt, reset the lab.
 - id: recovery-components
-  title: Kubelet and all four control-plane processes run behind a ready API
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The kubelet and all four control-plane components are running
+  explanation: On the control-plane node the kubelet service must be active, containers for etcd, the
+    API server, the controller manager, and the scheduler must be running, and the API must report ready.
   command:
     args:
     - python
@@ -85,10 +91,13 @@ checks:
   json_path:
   - components
   expected: 'true'
-  diagnostic: Inspect the components evidence and the relevant host, API, or application boundary.
+  diagnostic: Part of the control plane is not running. Inside the control-plane VM check systemctl status
+    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a; read sudo crictl
+    logs for any component that keeps exiting.
 - id: recovery-scheduled
-  title: A fresh Pod receives a real scheduler assignment
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A brand-new Pod is scheduled onto a node
+  explanation: Dockyard creates a fresh Pod with no node chosen and checks the scheduler assigns it one
+    within a few seconds, then deletes it.
   command:
     args:
     - python
@@ -100,10 +109,13 @@ checks:
   json_path:
   - scheduled
   expected: 'true'
-  diagnostic: Inspect the scheduled evidence and the relevant host, API, or application boundary.
+  diagnostic: A new Pod was not given a node. Check the scheduler is running with sudo crictl ps --name
+    kube-scheduler on the control-plane node and that its manifest is in /etc/kubernetes/manifests; if
+    it has just restarted, run python wait-control-plane.py and check again.
 - id: recovery-workflow
-  title: A new browser and cross-node Dispatch transaction completes
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A new job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must cross the nodes, be processed, and
+    be saved in the database.
   command:
     args:
     - python
@@ -115,7 +127,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow evidence and the relevant host, API, or application boundary.
+  diagnostic: A job did not complete. Get the control plane healthy first, then run sh bootstrap.sh to
+    wait for Dispatch to recover and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl
@@ -129,12 +142,11 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
-- Runtime outcomes and original identities are assessed, not shell history.
+- Any editor is accepted, as long as certificate checking stays in place.
+- The running control plane and a new scheduling decision are checked, not your shell history.
 failure_modes:
-- A replacement object with matching contents has a different identity.
-- Existing running containers do not prove reconciliation or new scheduling.
-- An etcd backup does not contain application persistent-volume contents.
+- An open port does not show the API server is ready.
+- Turning off certificate checks or rebuilding the cluster hides the real fault.
 starter_failure_checks:
 - recovery-components
 - recovery-scheduled

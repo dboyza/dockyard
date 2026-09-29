@@ -2,17 +2,16 @@ id: i11-kubelet-config
 revision: 1
 module: 23
 order: 90
-title: A worker becomes NotReady after a node configuration edit
-summary: The control-plane API remains available, but a worker stops reporting readiness after a kubelet
-  configuration change.
+title: A worker goes NotReady after a kubelet settings change
+summary: After someone edits the worker’s kubelet settings, the node stops reporting Ready.
 kind: incident
 runtime: linux
 nodes: 2
 minutes: 50
 outcomes:
-- Distinguish a failed node agent from a healthy control plane.
-- Repair a kubelet parsing failure using its service journal.
-- Preserve node identity and verify readiness, fresh scheduling, and recovered application work.
+- Tell a failed node agent apart from a failed control plane.
+- Find a kubelet configuration error in its journal and fix it.
+- Recover the same node without deleting or rejoining it.
 prerequisites:
 - m23-mission
 objectives:
@@ -32,10 +31,11 @@ prediction:
   explanation: Node readiness depends on kubelet reports; existing containers can outlive a node-agent
     failure.
 hints:
-- Compare the worker Node conditions with control-plane API health.
-- Inspect systemctl status kubelet and journalctl -u kubelet on the recorded worker, then locate its configuration.
-- Repair shutdownGracePeriod as a valid duration, restart kubelet, and wait for the node and application
-  workloads to recover.
+- 'Compare kubectl get nodes with kubectl get --raw=/readyz: which part is unhealthy?'
+- Inside the worker VM, read systemctl status kubelet and sudo journalctl -u kubelet -n 30; the log names
+  the setting it cannot read.
+- Give shutdownGracePeriod in /var/lib/kubelet/config.yaml a valid duration such as 0s, restart the kubelet,
+  and wait for the node and Dispatch to recover.
 sources:
 - https://kubernetes.io/docs/tasks/administer-cluster/kubelet-config-file/
 - https://kubernetes.io/docs/tasks/debug/debug-cluster/
@@ -58,8 +58,9 @@ prepare:
   timeout: 240
 checks:
 - id: recovery-preserved
-  title: Original namespace, nodes, sentinel identity, and database row survive
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The original cluster, sentinel, and database row are still there
+  explanation: The namespace, Node objects, and maintenance-sentinel ConfigMap must have their original
+    UIDs, and the database row stored before the fault must still exist.
   command:
     args:
     - python
@@ -71,10 +72,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved evidence and the relevant host, API, or application boundary.
+  diagnostic: Something from before the incident is missing or was replaced. Repair the existing worker
+    instead of deleting, resetting, or rejoining it; if that already happened, reset the lab.
 - id: recovery-components
-  title: Kubelet and all four control-plane processes run behind a ready API
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The kubelet and all four control-plane components are running
+  explanation: On the control-plane node the kubelet service must be active, containers for etcd, the
+    API server, the controller manager, and the scheduler must be running, and the API must report ready.
   command:
     args:
     - python
@@ -86,10 +89,13 @@ checks:
   json_path:
   - components
   expected: 'true'
-  diagnostic: Inspect the components evidence and the relevant host, API, or application boundary.
+  diagnostic: Part of the control plane is not running. Inside the control-plane VM check systemctl status
+    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a; read sudo crictl
+    logs for any component that keeps exiting.
 - id: recovery-scheduled
-  title: A fresh Pod receives a real scheduler assignment
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A brand-new Pod is scheduled onto a node
+  explanation: Dockyard creates a fresh Pod with no node chosen and checks the scheduler assigns it one
+    within a few seconds, then deletes it.
   command:
     args:
     - python
@@ -101,10 +107,13 @@ checks:
   json_path:
   - scheduled
   expected: 'true'
-  diagnostic: Inspect the scheduled evidence and the relevant host, API, or application boundary.
+  diagnostic: A new Pod was not given a node. Check the scheduler is running with sudo crictl ps --name
+    kube-scheduler on the control-plane node and that its manifest is in /etc/kubernetes/manifests; if
+    it has just restarted, run python wait-control-plane.py and check again.
 - id: recovery-workflow
-  title: A new browser and cross-node Dispatch transaction completes
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A new job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must cross the nodes, be processed, and
+    be saved in the database.
   command:
     args:
     - python
@@ -116,10 +125,11 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow evidence and the relevant host, API, or application boundary.
+  diagnostic: A job did not complete. Wait for the worker to be Ready, then check kubectl rollout status
+    for the database, API, and workers, and read kubectl logs deployment/worker.
 - id: incident-recovered
-  title: The original worker reports Ready with an active kubelet
-  explanation: Use current host and API evidence, not a similarly named replacement.
+  title: The original worker is Ready with a running kubelet
+  explanation: The worker’s kubelet service must be active, and both original nodes must report Ready.
   command:
     args:
     - python
@@ -131,7 +141,9 @@ checks:
   json_path:
   - incident
   expected: 'true'
-  diagnostic: Recheck the original node agent or original API object identity after the targeted recovery.
+  diagnostic: The worker is not Ready yet. Inside the worker VM, read sudo journalctl -u kubelet -n 30
+    for the setting it cannot parse, fix that value in /var/lib/kubelet/config.yaml, then sudo systemctl
+    restart kubelet and watch kubectl get nodes.
 capabilities:
 - docker
 - limactl
@@ -145,10 +157,10 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
-- Runtime outcomes and original identities are assessed, not shell history.
+- Any editor is accepted, as long as the same node recovers.
+- The node’s status and a new job are checked, not your shell history.
 failure_modes:
-- Node Ready can precede application restart completion after a VM resume.
-- Resetting or rejoining can discard identity without repairing invalid configuration.
+- A node can report Ready shortly before its application Pods have restarted.
+- Resetting or rejoining a node discards it without fixing the setting.
 starter_failure_checks:
 - incident-recovered

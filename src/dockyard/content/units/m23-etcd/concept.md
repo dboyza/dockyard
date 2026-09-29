@@ -1,17 +1,29 @@
-## Two databases, two recovery boundaries
+## What etcd holds, and what it does not
 
-Etcd stores Kubernetes API state, including object identities, desired configuration, and Secrets.
-PostgreSQL stores Dispatch jobs in the worker's persistent volume.
-An etcd snapshot does not copy the contents of that application volume.
-Recovering a Deployment definition cannot restore a deleted database row.
-This exercise preserves a real job independently and requires both boundaries to survive.
+**etcd** is the database behind the Kubernetes API.
+Every object you have created, every Deployment, Service, ConfigMap, and Secret, is stored there.
+If etcd's data is lost, the cluster forgets everything it was told to run.
+Backing it up and restoring it is a core CKA task.
 
-A valid backup also needs a restore rehearsal.
-Here you will take a live snapshot, inspect it, remove one original ConfigMap, and restore its original UID from the snapshot.
-Recreating a ConfigMap with the same name and text will produce a different UID and will not pass.
-The cluster is disposable and owned by this lesson; do not apply this procedure to another environment.
+An etcd backup is called a **snapshot**: a single file holding the whole database at one moment.
+It is important to be clear about what a snapshot does *not* hold.
+Dispatch's jobs live in PostgreSQL, on a volume on the worker.
+An etcd snapshot remembers that the database's StatefulSet and claim exist, but not the rows inside the database.
+Application data needs its own backups, like the ones you practised in module 11.
 
-## Worked example: get below the API
+## Identity: why "the same name" is not enough
+
+Every Kubernetes object gets a **UID**, a unique ID assigned when it is created.
+If you delete a ConfigMap and create a new one with the same name and contents, it gets a new UID: it is a different object that looks the same.
+A real restore brings back the original object, with its original UID.
+
+In this lab you will take a snapshot, then delete an original ConfigMap called `maintenance-sentinel`, and bring it back from the snapshot.
+Recreating it by hand would give it a new UID and would not pass.
+
+## Worked example: find etcd on the node
+
+etcd runs as a static Pod on the control-plane node.
+Open a shell there and look at it:
 
 ```sh
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE"
@@ -19,47 +31,105 @@ sudo crictl ps --name '^etcd$'
 sudo cat /etc/kubernetes/manifests/etcd.yaml
 ```
 
-The static manifest shows the member name, peer URL, TLS paths, and host directory mounted at `/var/lib/etcd`.
-Use the running etcd container's ID with `sudo crictl exec ID etcdctl`.
-A host CRI connection continues to work when kubectl cannot reach the API.
-Use endpoint `https://127.0.0.1:2379`, CA `/etc/kubernetes/pki/etcd/ca.crt`, and the existing server certificate/key paths for this isolated local exercise.
-Do not print or export private keys.
-Production backup identities and permissions deserve a separate least-privilege design.
+The manifest shows the settings you will need:
 
-Run `etcdctl snapshot save /var/lib/etcd/dockyard-recovery.db` with those TLS flags, then inspect it using `etcdutl snapshot status /var/lib/etcd/dockyard-recovery.db -w json`.
-The first command contacts the live server; the second examines the saved file.
-Keep the file in the private guest because it contains cluster state and credentials.
-Back in the host lab shell, `python -m dockyard.fixtures.recovery stage-loss` verifies the snapshot is readable, records its revision, and deletes only the original sentinel ConfigMap.
-Confirm `kubectl get configmap maintenance-sentinel -n default` no longer finds it.
+- `--name`, the member's name, which is the node's hostname;
+- `--initial-advertise-peer-urls`, the address other members would use to reach it;
+- `--cert-file`, `--key-file`, and `--trusted-ca-file`, the certificates it uses;
+- the `hostPath` volume that puts the node's `/var/lib/etcd` directory inside the container.
 
-## Restore into a separate directory
+## Take a snapshot
 
-Use `etcdutl snapshot restore`, not `etcdctl`, for the pinned etcd 3.6 generation.
-Supply a new output directory `/var/lib/etcd/dockyard-restored`, the actual member name, and the peer URL from the manifest.
-Set `--initial-cluster=MEMBER=PEER_URL` and `--initial-advertise-peer-urls=PEER_URL` for this single-member topology.
-The restore verifies the snapshot hash by default; do not bypass that integrity check.
-The currently running member can supply the tools while the offline restore writes a separate, unused directory.
-Do not overwrite its active data directory.
+`etcdctl` is etcd's command-line client.
+etcd only accepts clients that present a trusted certificate, so every command needs the CA and a client certificate and key.
+On an exam machine `etcdctl` is often installed on the node itself.
+In this lab it is inside the etcd container, so you run it with `crictl exec`, still inside the control-plane VM:
 
-Use `--bump-revision=1000000000 --mark-compacted` for this lab.
-The revision advance prevents older restored revisions from being mistaken for current state; compaction invalidates watches so controllers relist.
-The bump is a deliberate allowance for this small exercise, not a universal production sizing rule.
-Restoration creates new etcd membership while retaining Kubernetes object identities from the snapshot.
+```sh
+sudo crictl exec ETCD_CONTAINER_ID etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  snapshot save /var/lib/etcd/dockyard-recovery.db
+```
 
-Save the old manifest outside `/etc/kubernetes/manifests`.
-Atomically change only the etcd volume's host `path: /var/lib/etcd` to the restored directory.
-Leave the container mount path and its `--data-dir` unchanged: the host mount now presents the restored data there.
-Kubelet will replace the static etcd container and the API will be briefly unavailable.
-Do not store a second active manifest or backup YAML in the watched directory.
+Older guides put `ETCDCTL_API=3` in front of `etcdctl`; it selects the current version of the client's commands, which is already the default in current etcd releases.
+Because `/var/lib/etcd` is mounted from the node, the snapshot file ends up on the node's disk.
 
-## Establish recovery with new work
+Next, check the file with `etcdutl`, a tool that works on etcd files directly rather than talking to a running server:
 
-Wait for the private API's `/readyz`, inspect the original sentinel UID, and verify that a fresh Pod receives a scheduler assignment.
-Then complete a new Dispatch job and check that the earlier database sentinel still exists.
-The assessment compares original identities, the recorded snapshot revision, the live etcd revision, new scheduling, and actual application behavior.
-It does not award recovery credit for a snapshot file merely existing.
+```sh
+sudo crictl exec ETCD_CONTAINER_ID etcdutl snapshot status /var/lib/etcd/dockyard-recovery.db -w table
+```
 
-The supplied `python wait-control-plane.py` helper retries a read and a write against the recovering API, then observes a fresh scheduler assignment before deleting its disposable Pod.
-Its source is available in the workspace so you can inspect the exact observations.
-The scheduler may need longer to recover its watches and leadership than the API needs to answer a readiness request.
-You may perform equivalent explicit checks yourself.
+It shows the snapshot's **revision**, a counter that etcd increases with every change, and how many keys it holds.
+The snapshot contains Secrets and credentials, so keep it inside the VM and never copy it into your notes.
+
+## Lose something
+
+Leave the VM and, in the lab terminal, run:
+
+```sh
+python -m dockyard.fixtures.recovery stage-loss
+kubectl get configmap maintenance-sentinel -n default
+```
+
+The helper checks that your snapshot is readable, records its revision, and deletes the original `maintenance-sentinel`.
+The `get` now reports it is not found.
+
+## Restore into a new directory
+
+Restoring never overwrites the directory etcd is using.
+Instead, `etcdutl snapshot restore` writes a complete new data directory from the snapshot, and you then point etcd at it.
+Back inside the control-plane VM:
+
+```sh
+sudo crictl exec ETCD_CONTAINER_ID etcdutl snapshot restore /var/lib/etcd/dockyard-recovery.db \
+  --data-dir=/var/lib/etcd/dockyard-restored \
+  --name=MEMBER_NAME \
+  --initial-cluster=MEMBER_NAME=PEER_URL \
+  --initial-advertise-peer-urls=PEER_URL \
+  --bump-revision=1000000000 --mark-compacted
+```
+
+Replace `MEMBER_NAME` and `PEER_URL` with the `--name` and `--initial-advertise-peer-urls` values from the manifest, so the restored member matches the running configuration.
+Older guides use `etcdctl snapshot restore`; current etcd moved that job to `etcdutl`.
+
+The last two flags matter for Kubernetes.
+Restoring rewinds etcd's revision counter to the snapshot's.
+Controllers remember the last revision they saw, and a rewound counter could make them trust out-of-date information.
+`--bump-revision` moves the counter far ahead of anything they saw, and `--mark-compacted` tells them the old history is gone, so they re-read everything from scratch.
+The size of the bump here is chosen for this small lab, not a production rule.
+
+## Point etcd at the restored data
+
+Copy the manifest somewhere outside the manifests directory first, such as `/var/lib/dockyard/etcd-before-restore.yaml`.
+Then edit `/etc/kubernetes/manifests/etcd.yaml` and change only the `hostPath` of the data volume:
+
+```yaml
+  - hostPath:
+      path: /var/lib/etcd/dockyard-restored
+      type: DirectoryOrCreate
+    name: etcd-data
+```
+
+Leave the container's `mountPath` and its `--data-dir` flag unchanged: the container still sees its data at the same place, but it is now the restored directory.
+The kubelet notices the changed manifest and restarts etcd, and the API is unavailable for a short while.
+Never keep a backup copy of a manifest in `/etc/kubernetes/manifests`; the kubelet would try to run it too.
+
+## Check that it really recovered
+
+Back in the lab terminal, run `python wait-control-plane.py`.
+It retries until the API answers a read and a write and the scheduler places a fresh test Pod, then removes that Pod; its source is in the workspace if you want to see exactly what it does.
+Then:
+
+```sh
+kubectl get configmap maintenance-sentinel -n default -o jsonpath='{.metadata.uid}'
+kubectl get nodes
+```
+
+Restored objects briefly show the status they had in the snapshot, so give controllers a minute to catch up before trusting what `kubectl get` reports.
+
+Check work compares the sentinel's UID with the original, checks etcd's revision jumped ahead and the old revision is compacted, schedules a new Pod, and sends a new Dispatch job.
+It also checks the database row written before the snapshot is still there, which shows the application data was never part of this restore.

@@ -2,17 +2,16 @@ id: m23-etcd
 revision: 1
 module: 23
 order: 1
-title: Recover deleted Kubernetes state from a verified snapshot
-summary: Take, inspect, restore, and validate a real etcd snapshot without confusing it with a database
-  backup.
+title: Back up and restore etcd
+summary: Take an etcd snapshot, lose an object, and bring back the original from the snapshot.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 45
 outcomes:
-- Create and inspect a live etcd snapshot using authenticated local access.
-- Restore original Kubernetes object identities with a revision bump and watch compaction.
-- Prove control-plane writes and independent application-data continuity after recovery.
+- Save and inspect an etcd snapshot with etcdctl and etcdutl.
+- Restore a snapshot into a new directory and point etcd at it.
+- Explain why a restored object keeps its UID and why the database needs separate backups.
 prerequisites:
 - m22-mission
 objectives:
@@ -22,19 +21,22 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation distinguishes restored API state from a replacement object?
+  question: You delete a ConfigMap and recreate it from the same YAML. Is it the original object?
   options:
-  - The original UID returns and fresh control-plane work succeeds.
-  - A similarly named object exists.
-  - An old application process is still running.
+  - No. It gets a new UID; only a restore brings back the original.
+  - Yes, because the name and contents match.
+  - Yes, if you recreate it within a minute.
   correct: 0
-  explanation: A restored UID establishes original object identity; new work verifies useful control-plane
-    behavior.
+  explanation: Every object gets a new UID when it is created. Matching name and data make a look-alike,
+    not the original.
 hints:
-- Separate host service state, static manifests, runtime processes, and API observations.
-- Inspect recent CRI logs and each component dependency before changing configuration.
-- Use the preceding worked procedure, restore original configuration and snapshot state where needed,
-  and verify new scheduling and jobs.
+- Inside the control-plane VM, find the etcd container with sudo crictl ps --name etcd, and read the certificate
+  paths, --name, and --initial-advertise-peer-urls in /etc/kubernetes/manifests/etcd.yaml.
+- Run etcdctl through sudo crictl exec with --endpoints=https://127.0.0.1:2379 and the --cacert, --cert,
+  and --key paths, then run the stage-loss helper from the lab terminal.
+- Restore with etcdutl snapshot restore into --data-dir=/var/lib/etcd/dockyard-restored, adding the member
+  name, peer URL, --bump-revision=1000000000, and --mark-compacted, then change only the etcd-data hostPath
+  in the manifest.
 sources:
 - https://etcd.io/docs/v3.6/op-guide/recovery/
 - https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
@@ -58,8 +60,9 @@ prepare:
   timeout: 180
 checks:
 - id: recovery-preserved
-  title: Original namespace, nodes, sentinel identity, and database row survive
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The original cluster, sentinel, and database row are still there
+  explanation: The namespace, Node objects, and maintenance-sentinel ConfigMap must have their original
+    UIDs, and the database row stored before the fault must still exist.
   command:
     args:
     - python
@@ -71,10 +74,13 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved evidence and the relevant host, API, or application boundary.
+  diagnostic: Something from before the fault is missing or was replaced. A ConfigMap recreated from YAML
+    has a new UID and does not count; bring back the original from the etcd snapshot. If nodes or the
+    cluster were rebuilt, reset the lab.
 - id: recovery-components
-  title: Kubelet and all four control-plane processes run behind a ready API
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The kubelet and all four control-plane components are running
+  explanation: On the control-plane node the kubelet service must be active, containers for etcd, the
+    API server, the controller manager, and the scheduler must be running, and the API must report ready.
   command:
     args:
     - python
@@ -86,10 +92,13 @@ checks:
   json_path:
   - components
   expected: 'true'
-  diagnostic: Inspect the components evidence and the relevant host, API, or application boundary.
+  diagnostic: Part of the control plane is not running. Inside the control-plane VM check systemctl status
+    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a; read sudo crictl
+    logs for any component that keeps exiting.
 - id: recovery-scheduled
-  title: A fresh Pod receives a real scheduler assignment
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A brand-new Pod is scheduled onto a node
+  explanation: Dockyard creates a fresh Pod with no node chosen and checks the scheduler assigns it one
+    within a few seconds, then deletes it.
   command:
     args:
     - python
@@ -101,10 +110,13 @@ checks:
   json_path:
   - scheduled
   expected: 'true'
-  diagnostic: Inspect the scheduled evidence and the relevant host, API, or application boundary.
+  diagnostic: A new Pod was not given a node. Check the scheduler is running with sudo crictl ps --name
+    kube-scheduler on the control-plane node and that its manifest is in /etc/kubernetes/manifests; if
+    it has just restarted, run python wait-control-plane.py and check again.
 - id: recovery-restored
-  title: The original object returns under an advanced etcd revision
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The original objects came back from the snapshot
+  explanation: The deleted objects must have their original UIDs, etcd’s revision must be far ahead of
+    the snapshot’s, and the snapshot’s old revision must be marked compacted.
   command:
     args:
     - python
@@ -116,10 +128,13 @@ checks:
   json_path:
   - restored
   expected: 'true'
-  diagnostic: Inspect the restored evidence and the relevant host, API, or application boundary.
+  diagnostic: The restore is not in place. Restore the snapshot with etcdutl snapshot restore into a new
+    --data-dir, including --bump-revision=1000000000 --mark-compacted, then change the data hostPath in
+    /etc/kubernetes/manifests/etcd.yaml to that directory and wait for the API.
 - id: recovery-workflow
-  title: A new browser and cross-node Dispatch transaction completes
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A new job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must cross the nodes, be processed, and
+    be saved in the database.
   command:
     args:
     - python
@@ -131,7 +146,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow evidence and the relevant host, API, or application boundary.
+  diagnostic: A job did not complete. Get the control plane healthy first, then run sh bootstrap.sh to
+    wait for Dispatch to recover and read kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl
@@ -145,11 +161,12 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
-- Runtime outcomes and original identities are assessed, not shell history.
+- Any editor or method for changing the manifest is accepted, as long as the data volume points at the
+  restored directory.
+- The results in the cluster are checked, not your shell history.
 failure_modes:
-- A replacement object with matching contents has a different identity.
-- Existing running containers do not prove reconciliation or new scheduling.
-- An etcd backup does not contain application persistent-volume contents.
+- An object recreated from YAML has a new UID.
+- Pods that were already running do not show that the control plane can do new work.
+- An etcd snapshot does not contain the database’s rows.
 starter_failure_checks:
 - recovery-restored

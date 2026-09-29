@@ -2,17 +2,17 @@ id: i12-deleted-state
 revision: 1
 module: 23
 order: 90
-title: A broad cleanup removes original API objects
-summary: The database remains intact, but an accidental API cleanup removes the trusted frontend and its
-  recovery sentinel. A verified pre-incident snapshot is available.
+title: A cleanup deletes objects that were still needed
+summary: An overly broad cleanup deletes the trusted frontend and a marker ConfigMap. A snapshot from
+  just before is available.
 kind: incident
 runtime: linux
 nodes: 2
 minutes: 50
 outcomes:
-- Plan a bounded control-plane recovery from host and snapshot evidence.
-- Recover the original missing object while preserving application data.
-- Produce a handoff that separates observation, repair, and remaining recovery risks.
+- Decide when an etcd restore is the right tool, and what else it rolls back.
+- Restore original objects from a snapshot while keeping the application’s data.
+- Confirm the restored frontend works with a new job.
 prerequisites:
 - m23-mission
 objectives:
@@ -22,19 +22,22 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Which observation distinguishes restored API state from a replacement object?
+  question: You restore etcd from a snapshot taken an hour ago. What happens to a Role someone created
+    30 minutes ago?
   options:
-  - The original UID returns and fresh control-plane work succeeds.
-  - A similarly named object exists.
-  - An old application process is still running.
+  - It disappears, because the whole API rolls back to the snapshot.
+  - It stays, because restores only bring back deleted objects.
+  - It is merged with the restored objects.
   correct: 0
-  explanation: A restored UID establishes original object identity; new work verifies useful control-plane
-    behavior.
+  explanation: An etcd restore replaces the whole API state with the snapshot. Anything created or changed
+    after it is lost.
 hints:
-- Separate surviving persistent-volume data from missing API objects.
-- Inspect the verified snapshot and original object-identity requirements before choosing a restore procedure.
-- Restore into a separate data directory with revision bump and compaction, switch the etcd static manifest,
-  and verify original identities plus fresh work.
+- Check what is missing with kubectl get deployment -n frontend and kubectl get configmap -n default;
+  the database is fine.
+- The objects must keep their original UIDs, so reapplying YAML will not do. Use the snapshot at /var/lib/etcd/dockyard-recovery.db
+  on the control-plane node.
+- Restore into a new directory with --bump-revision=1000000000 --mark-compacted, switch etcd’s data hostPath
+  to it, run python wait-control-plane.py, and wait for the frontend rollout.
 sources:
 - https://etcd.io/docs/v3.6/op-guide/recovery/
 - https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
@@ -58,8 +61,9 @@ prepare:
   timeout: 240
 checks:
 - id: recovery-preserved
-  title: Original namespace, nodes, sentinel identity, and database row survive
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The original cluster, sentinel, and database row are still there
+  explanation: The namespace, Node objects, and maintenance-sentinel ConfigMap must have their original
+    UIDs, and the database row stored before the fault must still exist.
   command:
     args:
     - python
@@ -71,10 +75,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved evidence and the relevant host, API, or application boundary.
+  diagnostic: The original sentinel or cluster identity is missing. Objects recreated by hand have new
+    UIDs; restore them from the snapshot. If the nodes or database were rebuilt, reset the lab.
 - id: recovery-components
-  title: Kubelet and all four control-plane processes run behind a ready API
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The kubelet and all four control-plane components are running
+  explanation: On the control-plane node the kubelet service must be active, containers for etcd, the
+    API server, the controller manager, and the scheduler must be running, and the API must report ready.
   command:
     args:
     - python
@@ -86,10 +92,13 @@ checks:
   json_path:
   - components
   expected: 'true'
-  diagnostic: Inspect the components evidence and the relevant host, API, or application boundary.
+  diagnostic: Part of the control plane is not running. Inside the control-plane VM check systemctl status
+    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a; read sudo crictl
+    logs for any component that keeps exiting.
 - id: recovery-scheduled
-  title: A fresh Pod receives a real scheduler assignment
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A brand-new Pod is scheduled onto a node
+  explanation: Dockyard creates a fresh Pod with no node chosen and checks the scheduler assigns it one
+    within a few seconds, then deletes it.
   command:
     args:
     - python
@@ -101,10 +110,13 @@ checks:
   json_path:
   - scheduled
   expected: 'true'
-  diagnostic: Inspect the scheduled evidence and the relevant host, API, or application boundary.
+  diagnostic: A new Pod was not given a node. Check the scheduler is running with sudo crictl ps --name
+    kube-scheduler on the control-plane node and that its manifest is in /etc/kubernetes/manifests; if
+    it has just restarted, run python wait-control-plane.py and check again.
 - id: recovery-restored
-  title: The original object returns under an advanced etcd revision
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: The original objects came back from the snapshot
+  explanation: The deleted objects must have their original UIDs, etcd’s revision must be far ahead of
+    the snapshot’s, and the snapshot’s old revision must be marked compacted.
   command:
     args:
     - python
@@ -116,10 +128,13 @@ checks:
   json_path:
   - restored
   expected: 'true'
-  diagnostic: Inspect the restored evidence and the relevant host, API, or application boundary.
+  diagnostic: The restore is not in place. Restore the snapshot with etcdutl snapshot restore into a new
+    --data-dir, including --bump-revision=1000000000 --mark-compacted, then change the data hostPath in
+    /etc/kubernetes/manifests/etcd.yaml to that directory and wait for the API.
 - id: recovery-workflow
-  title: A new browser and cross-node Dispatch transaction completes
-  explanation: Observe actual recovery outcomes against the original private state record.
+  title: A new job from the frontend completes
+  explanation: A real job submitted from the trusted frontend must cross the nodes, be processed, and
+    be saved in the database.
   command:
     args:
     - python
@@ -131,10 +146,12 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow evidence and the relevant host, API, or application boundary.
+  diagnostic: A job did not complete. Get the control plane healthy first, then run sh bootstrap.sh to
+    wait for Dispatch to recover and read kubectl logs deployment/worker.
 - id: incident-recovered
-  title: The deleted frontend returns with its original Deployment UID and available replica
-  explanation: Use current host and API evidence, not a similarly named replacement.
+  title: The frontend Deployment is back with its original UID
+  explanation: The trusted-client Deployment in the frontend namespace must have its original UID and
+    at least one available replica.
   command:
     args:
     - python
@@ -146,7 +163,9 @@ checks:
   json_path:
   - incident
   expected: 'true'
-  diagnostic: Recheck the original node agent or original API object identity after the targeted recovery.
+  diagnostic: The original frontend Deployment is not back. Reapplying YAML creates a new UID; restore
+    the snapshot at /var/lib/etcd/dockyard-recovery.db instead, then wait for kubectl rollout status deployment/trusted-client
+    -n frontend.
 capabilities:
 - docker
 - limactl
@@ -160,12 +179,12 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
-- Runtime outcomes and original identities are assessed, not shell history.
+- Any editor or restore directory name is accepted, as long as etcd’s current data is not overwritten.
+- The original UIDs and a new job are checked, not your shell history.
 failure_modes:
-- A replacement object with matching contents has a different identity.
-- Existing running containers do not prove reconciliation or new scheduling.
-- An etcd backup does not contain application persistent-volume contents.
+- An object recreated from YAML has a new UID.
+- An etcd restore rolls back every API change made after the snapshot.
+- An etcd snapshot does not contain the database’s rows.
 starter_failure_checks:
 - incident-recovered
 - recovery-preserved

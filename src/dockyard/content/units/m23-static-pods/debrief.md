@@ -1,12 +1,16 @@
-# Debrief: Recover the reconciler and its static workload
+## What you did
 
-The kubelet reconciles the static manifest into a running control-plane process without waiting for a Deployment controller.
-A fresh scheduler assignment shows that scheduling recovered, whereas an old running Pod could survive while the scheduler remained unavailable.
+You found two separate faults below the API: a stopped kubelet and a static Pod manifest in the wrong place.
+With the file back and the kubelet running, the kubelet started the scheduler from its manifest, with no Deployment or controller involved.
+A new Pod getting a node showed the scheduler was really working, which old running Pods could never show.
 
-## Explain your result
+## Check your understanding
 
-Which host observation identified the missing static workload, and which new API observation demonstrated that it was useful after restart?
+- Which command showed you the scheduler's file was missing, and which showed the kubelet was stopped?
+- Why does deleting a control-plane Pod with kubectl not restart it the way you might expect?
+- How would you run your own static Pod on a worker node?
 
-## Transfer beyond this lab
+## Beyond this lab
 
-When the API is unhealthy, preserve access to host service logs, runtime inspection, and the authoritative static manifests.
+When the API is down, the node's own tools, `systemctl`, `journalctl`, `crictl`, and the manifest files, are what you have left.
+Make sure you can always reach your control-plane nodes directly.

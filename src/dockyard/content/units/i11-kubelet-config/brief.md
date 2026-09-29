@@ -1,11 +1,8 @@
-# Incident report
+## Get the worker Ready again
 
-A worker stopped reporting Ready shortly after a kubelet configuration edit.
-The API and control-plane processes remain available.
-Restore the original worker's agent and readiness without resetting or rejoining it.
-Preserve both node UIDs, the namespace, sentinel, and stored application data.
-Demonstrate fresh scheduling and a completed Dispatch job after the node reports Ready.
+- Bring the worker's kubelet back so the node reports `Ready`.
+- Keep the same nodes: do not delete, reset, or rejoin the worker.
+- Keep the namespace, the `maintenance-sentinel` ConfigMap, and the database's data.
+- After the node is Ready, show that a new Pod gets scheduled and a new Dispatch job completes.
 
-Use the guest journal and configuration as evidence.
-Record the invalid field and why a process restart without a configuration repair would repeat the failure.
-The debrief is a self-review rubric.
+In your notes, record the log line that pointed at the cause, the setting you changed, and why restarting the kubelet without changing it would fail again.
