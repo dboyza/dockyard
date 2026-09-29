@@ -45,8 +45,8 @@ export function PlacementPage({ model }: { model: Workbench }) {
           <h2>{next?.title || "Keep practising."}</h2>
           <p>
             {next
-              ? "You have not yet passed this part’s mission without in-app help, or it is due for review. Try the mission if the topic feels familiar, or start with its first lesson."
-              : "Your recorded benchmarks are current. Use incidents, timed practice, and scheduled review to find the next useful challenge."}
+              ? "You haven’t passed this part’s mission on your own yet, or it is due for review. Try the mission if the topic feels familiar, or start with its first lesson."
+              : "You’ve passed every placement mission on your own. Incidents, practice exams, and review keep your skills fresh."}
           </p>
           <div className="button-row">
             {next ? (
@@ -55,7 +55,7 @@ export function PlacementPage({ model }: { model: Workbench }) {
                   className="primary"
                   onClick={() => void openLesson(next.unit_id)}
                 >
-                  Try the benchmark <ArrowRight size={16} />
+                  Try the mission <ArrowRight size={16} />
                 </button>
                 <button onClick={() => void openLesson(next.start_unit)}>
                   Start the phase
@@ -73,17 +73,17 @@ export function PlacementPage({ model }: { model: Workbench }) {
       <section className="panel">
         <h2>How to use the result</h2>
         <p className="muted">
-          Choose any benchmark, prepare its actual lab, and attempt the mission
-          from its outcome brief. Hints and references are available whenever
-          you need them. Supported practice is useful evidence of learning, but
-          it does not skip a phase here.
+          Pick a mission from a part of the course you already know, prepare its
+          lab, and try it. Hints and the reference solution are there if you
+          need them, but a pass with help does not count as placing out of that
+          part.
         </p>
         <p className="muted">
-          Only an independent pass for the current revision, before its review
-          date, counts toward this recommendation. A failed check or an updated
-          lesson brings that part of the course back into view. Use Independent
-          retake if you previously opened support. The recommendation is
-          advisory and does not certify every objective in a phase.
+          A part counts as placed only when you pass its mission on your own and
+          it is not due for review. If you later fail a check, or the lesson is
+          updated, that part comes back into view. If you opened help earlier,
+          use Independent retake for a fresh try. This is a suggestion, not a
+          guarantee that you know every topic in that part.
         </p>
       </section>
       <section aria-label="Placement benchmarks" className="placement-grid">
@@ -93,7 +93,7 @@ export function PlacementPage({ model }: { model: Workbench }) {
               <span className="eyebrow">PHASE 0{index + 1}</span>
               {item.demonstrated && (
                 <span className="placement-current">
-                  <CheckCircle2 size={15} /> Current evidence
+                  <CheckCircle2 size={15} /> Passed on your own
                 </span>
               )}
             </div>
@@ -110,13 +110,13 @@ export function PlacementPage({ model }: { model: Workbench }) {
             </p>
             <div className="button-row">
               <button onClick={() => void openLesson(item.unit_id)}>
-                Open benchmark <ArrowRight size={16} />
+                Open mission <ArrowRight size={16} />
               </button>
               <button
                 className="text-button"
                 onClick={() => void openLesson(item.start_unit)}
               >
-                Review foundations
+                Start with the lessons
               </button>
             </div>
           </article>

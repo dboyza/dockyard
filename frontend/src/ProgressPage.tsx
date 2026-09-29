@@ -55,8 +55,8 @@ export function ProgressPage({ model }: { model: Workbench }) {
           units.filter((unit) => state.progress[unit.id]).map(unitRow)
         ) : (
           <p className="muted">
-            Your first observation starts here. Open a lesson, run its lab, and
-            check the result.
+            Nothing here yet. Open a lesson, prepare its lab, and check your
+            work.
           </p>
         )}
       </section>

@@ -1,34 +1,34 @@
 [
   {
     "id": "containers",
-    "title": "Container engineering",
+    "title": "Containers and Docker",
     "unit_id": "m06-mission",
     "start_unit": "m01-processes",
-    "summary": "Diagnose and deliver the containerized Dispatch system with persistent data, networking, and a hardened image.",
-    "reason": "This benchmark exercises a complete Docker system rather than a command-recognition quiz."
+    "summary": "Run, network, store, and ship the Docker version of Dispatch, including a hardened image.",
+    "reason": "A real Docker mission rather than a quiz: if you pass it on your own, you can skip ahead to Kubernetes."
   },
   {
     "id": "applications",
-    "title": "Kubernetes application development",
+    "title": "Kubernetes applications",
     "unit_id": "m12-mission",
     "start_unit": "m07-reconciliation",
-    "summary": "Operate the application through configuration, storage, routing, safe rollouts, and distinct health probes.",
-    "reason": "Successful container work does not by itself establish Kubernetes application skills."
+    "summary": "Run Dispatch on Kubernetes with configuration, storage, routing, safe rollouts, and health probes.",
+    "reason": "Knowing Docker well does not mean you know Kubernetes yet; this mission checks the CKAD-style skills."
   },
   {
     "id": "platform",
     "title": "Platform engineering and security",
     "unit_id": "m18-mission",
     "start_unit": "m13-resources",
-    "summary": "Integrate delivery, observability, capacity, and least-privilege security around the evolving application.",
-    "reason": "The benchmark requires useful application behavior while preserving the intended operational boundaries."
+    "summary": "Add delivery, monitoring, capacity limits, and least-privilege security around Dispatch.",
+    "reason": "Dispatch must keep working while the security and operating rules hold."
   },
   {
     "id": "operations",
     "title": "Cluster administration",
     "unit_id": "m24-mission",
     "start_unit": "m19-runtime",
-    "summary": "Recover and hand off the native cluster with retained state, a controlled release, and explicit operating decisions.",
-    "reason": "This is an advanced four-VM benchmark. Start it only when you want to assess the administration phase."
+    "summary": "Keep a real multi-node kubeadm cluster running through an outage, then hand it over.",
+    "reason": "An advanced mission on four VMs. Try it when you want to test the CKA-style administration skills."
   }
 ]
