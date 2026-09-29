@@ -2,6 +2,7 @@
 
 Eight tasks, each with its weight, on this lab's two-node kubeadm cluster.
 Do task 3, the scheduler, first: draining and upgrading need a working scheduler.
+Do task 7, the disruption budget, after the upgrade.
 Use the existing nodes; do not reset, rejoin, or rebuild them.
 
 ## 1. Upgrade the cluster to 1.35.8 (25%)
@@ -13,7 +14,7 @@ Upgrade this kubeadm cluster from 1.34.12 to 1.35.8: kubeadm, the control plane,
 - Keep the package holds on kubeadm, kubelet, and kubectl.
 - Both original nodes must end up Ready and schedulable.
 
-Finish task 3 before you start.
+Finish task 3 before you start, and create task 7's disruption budget only after the upgrade.
 
 ## 2. Renew the API server certificate (10%)
 
@@ -63,6 +64,7 @@ The API can no longer reach its Redis queue, Service `queue` on TCP port 6379, b
 Create PodDisruptionBudget `dispatch-maintenance` in namespace `dispatch` that selects both stable API Pods.
 With two healthy replicas, it must allow exactly one voluntary disruption.
 Keep both API replicas running and available at the end.
+Create it after the task 1 upgrade: on this cluster both API Pods run on the one worker, so while it is drained they have nowhere else to go, and the budget would stop the drain from finishing.
 
 ## 8. Keep the application working (10%)
 

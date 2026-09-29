@@ -9,5 +9,6 @@ Common gaps in this exam:
 - a renewed certificate file does nothing until the API server restarts and serves it;
 - fixing a NetworkPolicy by allowing everything loses the marks for the rules that should still deny traffic;
 - a PodDisruptionBudget must allow exactly the disruptions asked for; check `ALLOWED DISRUPTIONS`.
+- a disruption budget blocks a drain when the evicted Pods have no other node to move to; with one worker, plan the order of maintenance and budgets.
 
 For each task you missed, work through the lesson it links to, then try a fresh attempt without help.
