@@ -225,7 +225,7 @@ export function ExamsPage({ model }: { model: Workbench }) {
                 Submit attempt
               </button>
               <button
-                className="text-button"
+                className="text-button danger"
                 disabled={!!busy || attempt.state !== "active"}
                 onClick={() => confirm(true)}
               >

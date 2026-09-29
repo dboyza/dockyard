@@ -87,6 +87,7 @@ export function LabsPage({ model }: { model: Workbench }) {
                   {item.state === "stopped" ? "Resume" : "Stop"}
                 </button>
                 <button
+                  className="danger"
                   disabled={!!busy}
                   onClick={() => void perform("clean", false, item.unit_id)}
                 >

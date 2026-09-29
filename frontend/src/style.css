@@ -18,6 +18,7 @@
   --green-soft: #2ea04326;
   --red: #f85149;
   --red-soft: #f8514926;
+  --red-strong: #b62324;
   --amber: #d29922;
   --amber-soft: #bb800926;
   --code: #010409;
@@ -51,6 +52,7 @@
   --green-soft: #1a7f371a;
   --red: #d1242f;
   --red-soft: #d1242f1a;
+  --red-strong: #a40e26;
   --amber: #9a6700;
   --amber-soft: #9a67001a;
   --code: #f6f8fa;
@@ -1347,11 +1349,42 @@ pre {
 .assessment-summary {
   display: flex;
   align-items: flex-start;
-  gap: 13px;
-  margin-bottom: 25px;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+}
+.assessment-summary > svg {
+  margin-top: 2px;
+}
+.assessment-summary.pass {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+.assessment-summary.fail {
+  border-color: var(--red);
+  background: var(--red-soft);
+}
+.assessment-summary.fail > svg {
+  color: var(--red);
+}
+.assessment-summary.blocked,
+.assessment-summary.stale {
+  border-color: var(--amber);
+  background: var(--amber-soft);
+}
+.assessment-summary.blocked > svg,
+.assessment-summary.stale > svg {
+  color: var(--amber);
 }
 .assessment-summary h2 {
-  font-size: 21px;
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+.assessment-summary p:last-child {
+  margin-bottom: 0;
 }
 .assessment-summary.pass > svg {
   color: var(--green);
@@ -2222,20 +2255,41 @@ pre {
 }
 .reference-index {
   display: grid;
-  gap: 8px;
+  gap: 2px;
   min-width: 0;
+  align-self: start;
+  position: sticky;
+  top: 80px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
 }
 .reference-index button {
   display: grid;
   text-align: left;
-  gap: 9px;
-  padding: 18px;
+  gap: 2px;
+  padding: 10px 12px;
+  min-height: 0;
   height: auto;
   white-space: normal;
+  border: 0;
+  background: transparent;
+  font-weight: 400;
+}
+.reference-index button .eyebrow {
+  margin: 0;
+  font-size: 11px;
+}
+.reference-index button strong {
+  font-size: 14px;
+}
+.reference-index button:hover {
+  background: var(--surface-hover);
 }
 .reference-index button.selected {
-  border-color: var(--accent);
   background: var(--surface-alt);
+  box-shadow: inset 3px 0 var(--blue);
 }
 .reference-article {
   min-width: 0;
@@ -2920,4 +2974,43 @@ button:not(.text-button)[aria-pressed="true"] {
   background: none;
   border-color: transparent;
   color: var(--ink);
+}
+.evidence-card.pass {
+  border-color: transparent;
+  background: none;
+  padding: 6px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+}
+.evidence-card.pass > details {
+  margin-top: 4px;
+}
+.evidence-card.fail {
+  border-color: var(--red);
+  border-left-width: 3px;
+}
+.evidence-card.blocked,
+.evidence-card.stale {
+  border-color: var(--amber);
+  border-left-width: 3px;
+}
+.prose :not(pre) > code {
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .prose :not(pre) > code {
+    white-space: normal;
+  }
+}
+button.danger:not(.text-button) {
+  color: var(--red);
+}
+button.danger:not(.text-button):hover:not(:disabled) {
+  background: var(--red-strong);
+  border-color: var(--red-strong);
+  color: #fff;
+}
+.text-button.danger {
+  color: var(--red);
 }

@@ -103,7 +103,11 @@ export function LessonPage({ model }: { model: Workbench }) {
           </span>
           <span>
             <Container size={14} />
-            {lesson.runtime}
+            {lesson.runtime === "docker"
+              ? "Docker"
+              : lesson.runtime === "linux"
+                ? "Linux VMs"
+                : "Kubernetes"}
           </span>
           <span>
             <Circle size={12} />
@@ -420,7 +424,10 @@ export function LessonPage({ model }: { model: Workbench }) {
                           Number(b.status === "pass"),
                       )
                       .map((item) => (
-                        <article className="evidence-card" key={item.criterion}>
+                        <article
+                          className={`evidence-card ${item.status}`}
+                          key={item.criterion}
+                        >
                           <div className="evidence-title">
                             <span className={`status-label ${item.status}`}>
                               {item.status === "pass"
@@ -457,7 +464,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                       ))}
                     {assessment.status === "pass" && (
                       <section className="debrief">
-                        <h3>Connect what you observed</h3>
+                        <div className="eyebrow">Debrief</div>
                         <Markdown>{lesson.debrief}</Markdown>
                         <p className="small muted">
                           Try answering without looking back at the lesson. If
