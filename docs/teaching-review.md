@@ -114,4 +114,5 @@ On 2026-09-28, after the course-wide review:
 - A real timed CKAD attempt, submitted while Pods were still rolling, was scored after the fix instead of being invalidated.
 
 The full runtime curriculum audit, which starts every fixture, and the exam browser suite, which needs a separately prepared exam profile, were not rerun.
-No reference solution scripts or grading predicates changed in this review, apart from the exam grading retry.
+Grading predicates did not change, apart from the exam grading retry.
+Some starter, checkpoint, fixture, and Compose files did change, as recorded in the ledger, and each affected activity passed its walkthrough, but the full runtime audit should be rerun before a release.
