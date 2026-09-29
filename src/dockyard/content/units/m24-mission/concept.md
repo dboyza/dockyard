@@ -1,27 +1,51 @@
-## Independent operating contract
+## The capstone
 
-Dispatch runs on a three-control-plane, one-worker cluster.
-The primary API server and etcd member are deliberately stopped, but the other two voters retain quorum.
-The private endpoint routes incorrectly, the application route selects the wrong track, the worker process is scaled away, and inventory access is overbroad.
-Recover useful operation while leaving the primary outage in place.
-Do not remove its etcd member or rebuild the cluster to make the symptoms disappear.
+This is the last mission of the course, and it brings together what you have learned about clusters, workloads, and operations.
 
-Meet the capacity and disruption constraints taught in this chapter: two to four available API replicas, aggregate requests within one CPU and 512 MiB, aggregate memory limits within 1 GiB, and a stable-API disruption budget protecting one available replica.
-Restore the inventory identity's allowed Pod reads and denied privileged operations.
-Keep original namespace, node, and sentinel identities and the pre-existing PostgreSQL row.
+Dispatch runs on a cluster with **three control-plane nodes and one worker**.
+The first control-plane node has lost its API server and its etcd member, and they must **stay stopped**: the point is to show the cluster keeps working while one of its three control-plane nodes is down.
+Do not restart them, remove the etcd member, or rebuild the cluster.
 
-## Deliver a verifiable handoff
+Since the outage, several other things have gone wrong:
 
-Use the terminal to inspect, plan, repair, and verify each boundary.
-The assessment independently observes the stopped primary components, both surviving voting endpoints, a fresh API write through the repaired endpoint, workload capacity, real token authorization, and a complete new job.
-Repairing only the load balancer is insufficient.
-Restarting the primary is also insufficient: this exercise asks you to demonstrate operation through its outage.
+- kubectl cannot reach the cluster through its usual address;
+- users say Dispatch does not work;
+- the API is running fewer copies than agreed;
+- the inventory tool has more access than it needs.
 
-Write `handoff.md` describing failure symptoms, supporting observations, your repair order, and commands that reproduce the final verification.
-Explain the remaining single application worker, local database volume, and API load-balancer placement as explicit availability limitations.
-Distinguish surviving an API member outage from full end-to-end infrastructure high availability.
-Include recovery and escalation conditions without embedding credentials or raw snapshot data.
-Use the self-review rubric to assess the reasoning in your handoff after runtime checks pass.
+## The design to restore
 
-Build the final Dispatch release with `VERSION` set to `dispatch-handoff-v1`, transfer its image into these guests, and roll both the API and worker onto that built artifact.
-Verify the running release rather than changing only the workspace file.
+- The cluster's API address is the load balancer on the worker, which should send traffic to the control-plane nodes that are actually running. The m20 HA lesson showed how to check and regenerate its configuration.
+- The two surviving etcd members keep quorum, and all three memberships stay registered.
+- The Dispatch Service sends requests to the stable API Pods, and at least one worker processes jobs.
+- The API meets the budget from the decisions lesson: 2 to 4 copies, total requests of at most 1 CPU and 512 MiB, total memory limits of at most 1 GiB, and a PDB named `dispatch-operations` for `app: dispatch, track: stable` that keeps at least one available.
+- `dispatch-reader` can list Pods in `dispatch` and nothing more.
+
+## Ship the handoff release
+
+Finally, release a new version of Dispatch:
+
+1. Put `dispatch-handoff-v1` in the workspace's `VERSION` file.
+2. Run `python build.py`. It builds the image with Docker and copies it into every VM.
+3. The image name does not change, so restart both Deployments to pick up the new build: `kubectl rollout restart deployment/dispatch deployment/worker`, then wait for both rollouts.
+
+Check work asks each running API and worker Pod which version it has, so editing the file without rebuilding and restarting is not enough.
+
+## Working on your own
+
+Try it without hints first.
+Hints and the reference solution are available, but using them marks this attempt as practice with help.
+Test each layer before you change it, and fix what the evidence shows.
+
+## Your handoff
+
+In `handoff.md`, write for the next person on call:
+
+- each symptom and the observation that explained it;
+- the order you fixed things in;
+- commands to check the final state, with what each should show;
+- what this cluster can now survive, and what it still cannot: the single worker, the database's local volume, and the load balancer running on that same worker;
+- when to escalate, for example if a second control-plane node fails.
+
+Keep credentials, kubeconfigs, and snapshot data out of it.
+Check work tests the cluster; the handoff is for you to compare with the debrief.

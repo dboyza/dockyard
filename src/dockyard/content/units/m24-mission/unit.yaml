@@ -2,17 +2,17 @@ id: m24-mission
 revision: 1
 module: 24
 order: 4
-title: Operate and hand off Dispatch through a control-plane outage
-summary: Combine HA routing, application repair, operating budgets, and least privilege in an independent
-  capstone.
+title: 'Capstone: run Dispatch through a control-plane outage'
+summary: With one of three control-plane nodes down, restore the API address, the application, its budgets
+  and access, and ship a release.
 kind: mission
 runtime: linux
 nodes: 4
 minutes: 90
 outcomes:
-- Recover useful application work while a real primary API and etcd member remain unavailable.
-- Retain quorum, preserve original state, and meet explicit workload and permission constraints.
-- Produce an evidence-backed operational handoff with clear remaining failure boundaries.
+- Keep a highly available cluster working while one control-plane node stays down.
+- Combine routing, workload, budget, and access fixes, and ship a new build.
+- Write a handoff that is honest about what the system still cannot survive.
 prerequisites:
 - m24-handoff
 objectives:
@@ -25,21 +25,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Old API Pods still answer health checks while the new revision cannot start. Which claim
-    is supported?
+  question: One of three etcd members is down. Can the cluster still accept changes?
   options:
-  - Some availability remains; release convergence needs separate evidence.
-  - The requested release completed.
-  - Database recovery is therefore verified.
+  - Yes. Two of three is still a majority.
+  - No. etcd needs every member.
+  - Only reads work until the member returns.
   correct: 0
-  explanation: Availability, release convergence, authorization, and data recovery require different
-    observations.
+  explanation: etcd needs a majority (quorum). Two of three members is a majority, so writes still succeed;
+    losing a second would stop them.
 hints:
-- Trace the exact requested outcome through independent host, API, routing, identity, and workload boundaries.
-- Compare actual selectors, replicas, rollout revisions, and permission outcomes with the stated operating
-  constraints.
-- Use the preceding scoped repairs and observe fresh work; preserve original data and document what
-  the evidence does not establish.
+- 'Start with the API address: look at /etc/haproxy/haproxy.cfg on the worker and compare it with the
+  control-plane nodes that are running.'
+- Regenerate the load balancer configuration with python -m dockyard.native lb-config. Then repeat the
+  triage and decisions lessons’ checks on the application.
+- Fix HAProxy, the Service selector, the worker count, the Role, the API copies, and the PDB; then set
+  VERSION, run python build.py, and restart both Deployments.
 sources:
 - https://v1-35.docs.kubernetes.io/docs/tasks/debug/debug-application/
 - https://v1-35.docs.kubernetes.io/docs/tasks/run-application/configure-pdb/
@@ -73,8 +73,9 @@ prepare:
   timeout: 150
 checks:
 - id: handoff-preserved
-  title: Original cluster identities and pre-incident database row survive
-  explanation: Verify the stated operational outcome from live evidence.
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, and maintenance-sentinel ConfigMap must have their original
+    UIDs, and the database row stored before the incident must still exist.
   command:
     args:
     - python
@@ -86,10 +87,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved boundary and its actual observations before changing another layer.
+  diagnostic: Something from before the incident is missing or was replaced. Fix the existing objects
+    with small changes instead of deleting and recreating them or rebuilding the cluster; if that already
+    happened, reset the lab.
 - id: handoff-outage
-  title: The original primary API and etcd member remain stopped
-  explanation: Verify the stated operational outcome from live evidence.
+  title: The first control-plane node’s API server and etcd are still stopped
+  explanation: This mission is about working through the outage, so the stopped components must stay stopped.
   command:
     args:
     - python
@@ -101,10 +104,12 @@ checks:
   json_path:
   - outage
   expected: 'true'
-  diagnostic: Inspect the outage boundary and its actual observations before changing another layer.
+  diagnostic: 'The first control-plane node’s API server or etcd is running again. Move their manifests
+    back out of /etc/kubernetes/manifests on that node: the mission must be completed without them.'
 - id: handoff-quorum
-  title: Both surviving voting endpoints remain healthy with three memberships
-  explanation: Verify the stated operational outcome from live evidence.
+  title: The two surviving etcd members are healthy, and all three remain members
+  explanation: Dockyard asks each surviving etcd member for its health, and checks the cluster still lists
+    all three members.
   command:
     args:
     - python
@@ -116,10 +121,11 @@ checks:
   json_path:
   - quorum
   expected: 'true'
-  diagnostic: Inspect the quorum boundary and its actual observations before changing another layer.
+  diagnostic: Quorum is not as required. Do not remove the stopped member. If a surviving member is unhealthy,
+    check its etcd container with sudo crictl ps and sudo crictl logs on that control-plane VM.
 - id: handoff-endpoint
-  title: The private endpoint accepts a fresh API write, read, and delete
-  explanation: Verify the stated operational outcome from live evidence.
+  title: The cluster’s API address accepts a new change
+  explanation: Through the load-balanced API address, Dockyard creates, reads, and deletes a ConfigMap.
   command:
     args:
     - python
@@ -131,10 +137,14 @@ checks:
   json_path:
   - endpoint
   expected: 'true'
-  diagnostic: Inspect the endpoint boundary and its actual observations before changing another layer.
+  diagnostic: Requests through the cluster’s API address still fail. Check /etc/haproxy/haproxy.cfg on
+    the worker lists the control-plane nodes that are running, regenerate it with python -m dockyard.native
+    lb-config if needed, validate with sudo haproxy -c -f /etc/haproxy/haproxy.cfg, and reload HAProxy.
 - id: handoff-capacity
-  title: Healthy API replicas fit declared resource and disruption budgets
-  explanation: Verify the stated operational outcome from live evidence.
+  title: The API fits the agreed replica, resource, and disruption budget
+  explanation: The API must run 2 to 4 available copies with total requests within 1 CPU and 512 MiB,
+    total memory limits within 1 GiB, limits at least their requests, and a dispatch-operations PDB for
+    app=dispatch,track=stable that keeps one available.
   command:
     args:
     - python
@@ -146,10 +156,15 @@ checks:
   json_path:
   - capacity
   expected: 'true'
-  diagnostic: Inspect the capacity boundary and its actual observations before changing another layer.
+  diagnostic: 'The API is outside the budget. Check kubectl get deployment dispatch for 2 to 4 available
+    copies, multiply its per-container requests and limits by the replica count, and check kubectl get
+    pdb dispatch-operations -o yaml selects app: dispatch and track: stable with minAvailable 1, minAvailable
+    50%, or maxUnavailable 1.'
 - id: handoff-identity
-  title: The real inventory identity reads only the intended Pods and cannot mutate workloads
-  explanation: Verify the stated operational outcome from live evidence.
+  title: The inventory account can read Pods and nothing more
+  explanation: Using the inventory Pod’s own token, listing Pods in dispatch must be allowed, and reading
+    Secrets or Pods in another namespace refused. dispatch-reader must also be unable to create Pods,
+    patch Deployments, or create RoleBindings.
   command:
     args:
     - python
@@ -161,10 +176,13 @@ checks:
   json_path:
   - identity
   expected: 'true'
-  diagnostic: Inspect the identity boundary and its actual observations before changing another layer.
+  diagnostic: 'dispatch-reader has the wrong access. Look at kubectl get role dispatch-pod-reader -o yaml:
+    it should have one rule allowing get, list, and watch on pods in the core group (""). Keep the existing
+    ServiceAccount and RoleBinding, then test with kubectl auth can-i ... --as=system:serviceaccount:dispatch:dispatch-reader.'
 - id: handoff-workflow
-  title: A fresh browser and cross-node job completes and persists
-  explanation: Verify the stated operational outcome from live evidence.
+  title: A new job from the browser and the frontend completes
+  explanation: Real jobs submitted through the lab’s Dispatch port and from the trusted frontend on another
+    node must be processed and saved in the database.
   command: &id001
     args:
     - python
@@ -176,17 +194,21 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow boundary and its actual observations before changing another layer.
+  diagnostic: 'A job did not complete. Follow the request step by step: check kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch lists API Pods, then submit a job and, if it stays queued,
+    check kubectl get deployment worker and kubectl logs deployment/worker.'
 - id: handoff-release
-  title: Every running API and worker uses the built handoff release
-  explanation: Verify the stated operational outcome from live evidence.
+  title: Every API and worker Pod runs the dispatch-handoff-v1 build
+  explanation: Dockyard asks each running API and worker Pod which version it contains, and the rollout
+    must have finished.
   command: *id001
   expectation: json
   json_path:
   - release
   expected: 'true'
-  diagnostic: Build Dispatch with VERSION dispatch-handoff-v1, transfer the image, and replace API and
-    worker Pods.
+  diagnostic: Some Pods are not running the new build. Put dispatch-handoff-v1 in VERSION, run python
+    build.py to build and copy the image, then kubectl rollout restart deployment/dispatch deployment/worker
+    and wait for both rollouts.
 capabilities:
 - docker
 - limactl
@@ -200,13 +222,12 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent scoped repairs, valid images, resource quantities, and least-privilege rules are accepted.
-- Handoff reasoning uses an explicit self-review rubric; shell history and prose are not automatically
-  graded.
+- Any safe order and any equivalent small fixes are accepted.
+- The cluster’s state, real authorization results, and new jobs are checked; the handoff is for self-review.
 failure_modes:
-- Existing availability can conceal a stalled rollout.
-- An API voting majority does not provide application-worker or storage redundancy.
-- Broad permissions can keep a workload functional while violating its access boundary.
+- Restarting the stopped node hides whether the cluster can survive the outage.
+- Surviving a control-plane outage does not make the single worker or its volume redundant.
+- Editing VERSION without rebuilding and restarting does not change the running release.
 starter_failure_checks:
 - handoff-endpoint
 - handoff-capacity

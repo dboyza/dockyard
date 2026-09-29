@@ -1,9 +1,17 @@
 # Operating handoff
 
-I compared actual endpoint selection, workload revisions, and dependent worker capacity before changing the environment.
-I used scoped configuration corrections and observed the resulting rollout and a complete new Dispatch transaction.
-The private cluster and original database row were preserved.
-Use kubectl get deployments, kubectl get pdb, and a fresh application job to repeat the workload verification.
-Inspect inventory permissions with its actual identity, not the administrator session.
-A Deployment rollback cannot restore PostgreSQL data or revoke leaked credentials.
-The single application worker and local database volume remain failure boundaries even when the API voting majority survives.
+## Symptom and evidence
+
+- Dispatch requests failed. `kubectl get endpointslices -l kubernetes.io/service-name=dispatch` listed no endpoints, and the Service selected `track: retired` while the API Pods are labelled `track: stable`.
+- After fixing the route, new jobs stayed `queued`. `kubectl get deployment worker` showed 0 replicas.
+
+## Repair and verification
+
+- `kubectl patch service dispatch` to select `track: stable`; the EndpointSlice then listed both API Pods.
+- `kubectl scale deployment/worker --replicas=1`, then `kubectl rollout status deployment/worker`.
+- A new job reached `done`, and the job stored before the incident is still in the database.
+
+## Recovery boundaries and next actions
+
+Nothing in the database or queue was changed.
+Find out who changed the selector and the worker count, and why, before closing the incident.

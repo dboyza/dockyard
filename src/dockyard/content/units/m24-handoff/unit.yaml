@@ -2,17 +2,17 @@ id: m24-handoff
 revision: 1
 module: 24
 order: 3
-title: Recover a rollout and write an executable handoff
-summary: Distinguish a functioning old revision from a completed release and preserve reproducible operating
-  instructions.
+title: Finish a stuck rollout and write a handoff
+summary: Spot a release that never finished while old Pods kept serving, fix it, and write a handoff someone
+  else can follow.
 kind: lesson
 runtime: linux
 nodes: 2
 minutes: 40
 outcomes:
-- Detect a stalled rollout even while old replicas still serve requests.
-- Recover to a valid release and verify convergence rather than mere availability.
-- Document scoped commands, expected observations, rollback boundaries, and data-recovery limitations.
+- Read a Deployment’s desired, up-to-date, available, and total counts.
+- Recover a stuck rollout with rollout undo or set image.
+- Write a handoff with check commands, expected results, and the limits of a rollback.
 prerequisites:
 - m24-decisions
 objectives:
@@ -22,21 +22,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: Old API Pods still answer health checks while the new revision cannot start. Which claim
-    is supported?
+  question: Old API Pods still pass health checks, but the new version cannot start. Has the release finished?
   options:
-  - Some availability remains; release convergence needs separate evidence.
-  - The requested release completed.
-  - Database recovery is therefore verified.
+  - No. The service is still up, but the rollout is stuck.
+  - Yes, because health checks pass.
+  - Yes, once one new Pod exists.
   correct: 0
-  explanation: Availability, release convergence, authorization, and data recovery require different
-    observations.
+  explanation: With maxUnavailable 0, old Pods keep serving while new ones fail. Only matching desired,
+    up-to-date, and available counts show a finished rollout.
 hints:
-- Trace the exact requested outcome through independent host, API, routing, identity, and workload boundaries.
-- Compare actual selectors, replicas, rollout revisions, and permission outcomes with the stated operating
-  constraints.
-- Use the preceding scoped repairs and observe fresh work; preserve original data and document what
-  the evidence does not establish.
+- Run kubectl rollout status deployment/dispatch --timeout=20s and kubectl get deployment dispatch -o
+  wide.
+- kubectl describe pod on the stuck Pod names the image it cannot find; kubectl rollout history lists
+  earlier revisions.
+- Run kubectl rollout undo deployment/dispatch, or kubectl set image deployment/dispatch api=$DOCKYARD_IMAGE,
+  and wait for the rollout.
 sources:
 - https://v1-35.docs.kubernetes.io/docs/tasks/debug/debug-application/
 - https://v1-35.docs.kubernetes.io/docs/tasks/run-application/configure-pdb/
@@ -62,8 +62,9 @@ prepare:
   timeout: 240
 checks:
 - id: handoff-preserved
-  title: Original cluster identities and pre-incident database row survive
-  explanation: Verify the stated operational outcome from live evidence.
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, and maintenance-sentinel ConfigMap must have their original
+    UIDs, and the database row stored before the incident must still exist.
   command:
     args:
     - python
@@ -75,10 +76,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the preserved boundary and its actual observations before changing another layer.
+  diagnostic: Something from before the incident is missing or was replaced. Fix the existing objects
+    with small changes instead of deleting and recreating them or rebuilding the cluster; if that already
+    happened, reset the lab.
 - id: handoff-rollout
-  title: Desired, updated, available, and total API replicas converge
-  explanation: Verify the stated operational outcome from live evidence.
+  title: The API rollout has finished
+  explanation: The Deployment’s desired, up-to-date, available, and total replica counts must all match.
   command:
     args:
     - python
@@ -90,10 +93,13 @@ checks:
   json_path:
   - rollout
   expected: 'true'
-  diagnostic: Inspect the rollout boundary and its actual observations before changing another layer.
+  diagnostic: The rollout has not finished. Run kubectl rollout status deployment/dispatch and kubectl
+    get pods -l app=dispatch, read the stuck Pod’s events with kubectl describe pod, then use kubectl
+    rollout undo deployment/dispatch or set a working image.
 - id: handoff-workflow
-  title: A fresh browser and cross-node job completes and persists
-  explanation: Verify the stated operational outcome from live evidence.
+  title: A new job from the browser and the frontend completes
+  explanation: Real jobs submitted through the lab’s Dispatch port and from the trusted frontend on another
+    node must be processed and saved in the database.
   command:
     args:
     - python
@@ -105,7 +111,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the workflow boundary and its actual observations before changing another layer.
+  diagnostic: 'A job did not complete. Follow the request step by step: check kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch lists API Pods, then submit a job and, if it stays queued,
+    check kubectl get deployment worker and kubectl logs deployment/worker.'
 capabilities:
 - docker
 - limactl
@@ -119,12 +127,10 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent scoped repairs, valid images, resource quantities, and least-privilege rules are accepted.
-- Handoff reasoning uses an explicit self-review rubric; shell history and prose are not automatically
-  graded.
+- Rolling back or setting any working image is accepted.
+- The Deployment’s counts and a new job are checked, not your shell history; the handoff is for self-review.
 failure_modes:
-- Existing availability can conceal a stalled rollout.
-- An API voting majority does not provide application-worker or storage redundancy.
-- Broad permissions can keep a workload functional while violating its access boundary.
+- Passing health checks can hide a stuck rollout.
+- A rollback does not undo database changes or replace leaked credentials.
 starter_failure_checks:
 - handoff-rollout

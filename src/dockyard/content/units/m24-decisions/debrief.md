@@ -1,12 +1,17 @@
-# Debrief: Balance capacity, disruption, and access
+## What you did
 
-Resource and disruption budgets constrain the available repair choices, while the inventory account must retain only its intended read authority.
-The application transaction proves those constraints still permit useful work, and the preserved marker proves continuity of earlier data.
+You scaled the API back to a number of copies you had checked against the budget, added a disruption budget that lets maintenance evict one copy at a time, and narrowed the inventory account back to reading Pods.
+The new job showed these limits still leave room for useful work.
 
-## Explain your result
+Full access would have kept the inventory tool working, but anyone who got hold of its token could then have read Secrets or changed workloads.
+"It still works" is not the same as "it is safe".
 
-Explain the tradeoff you made between capacity, disruption, and access without treating a wider permission or removed budget as a harmless shortcut.
+## Check your understanding
 
-## Transfer beyond this lab
+- With 3 copies, what are the total CPU requests and memory limits?
+- What would a PDB with `minAvailable: 2` do to a node drain with only two copies?
+- Why test permissions with the account's own identity rather than your administrator account?
 
-Operational decisions should state their assumptions and remaining risk so the next operator can recognize when those assumptions no longer hold.
+## Beyond this lab
+
+Write down the assumptions behind each limit, such as expected load and which failures you are protecting against, so the next person knows when to revisit them.

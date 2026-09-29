@@ -1,44 +1,81 @@
-## Work from constraints instead of larger numbers
+## Decisions come with limits
 
-This environment has one application worker and small control-plane guests.
-Two API replicas improve process-level rollout continuity, but both still depend on the same worker and database volume.
-Do not describe that placement as protection against losing the worker.
-A production capacity decision would also require measured demand, failure-domain placement, and database recovery targets.
+Operating a system means making choices within limits: how much CPU and memory you may use, how much disruption users can tolerate, and who is allowed to do what.
+This lesson turns three such limits into Kubernetes settings you can check.
 
-For this exercise, run two to four API replicas with positive CPU and memory requests.
-The API's aggregate requests must stay at or below one CPU and 512 MiB; aggregate memory limits must stay at or below 1 GiB.
-Every container limit must be at least its corresponding request.
-These are explicit lab operating constraints, not estimates of production demand.
-The checkpoint's existing per-container requests and limits already fit two replicas.
+Someone has "helped" by scaling the API down to one copy and giving the inventory tool full access to everything in the namespace.
+Your job is to bring both back within the limits below.
 
-## Worked example: calculate before scaling
+## Limit 1: CPU and memory
+
+The team has set these limits for the Dispatch API, across all its copies together:
+
+- between 2 and 4 copies (replicas);
+- total CPU **requests** of at most 1 CPU, and total memory requests of at most 512 MiB;
+- total memory **limits** of at most 1 GiB;
+- every container's limit at least as large as its request.
+
+Remember the difference:
+the **request** is what the scheduler reserves on a node for the container, and the **limit** is the most it may use before it is throttled (CPU) or killed (memory).
+
+### Worked example: do the sums before scaling
 
 ```sh
-kubectl get deployment dispatch -o yaml
-kubectl describe node "lima-$DOCKYARD_WORKER"
-kubectl get pdb
+kubectl get deployment dispatch -o jsonpath='{.spec.template.spec.containers[0].resources}'; echo
 ```
 
-Use the actual Kubernetes node name from `kubectl get nodes`; in this native profile it has a `lima-` prefix.
-For example, two replicas requesting 100m CPU and 64Mi each request 200m and 128Mi in total.
-A 256Mi memory limit per replica permits 512Mi in aggregate.
-Scheduling considers requests; the memory limit constrains a running container and can produce an OOM termination.
-Neither number is a substitute for observing demand.
+Each API container requests `25m` CPU and `32Mi` memory, with limits of `300m` CPU and `192Mi` memory.
+`m` means thousandths of a CPU, so `25m` is 0.025 CPU.
+With 2 copies: requests are 50m CPU and 64 MiB, and memory limits total 384 MiB.
+With 4 copies: 100m CPU and 128 MiB requested, 768 MiB of memory limits.
+Both fit, so the existing settings work with anything from 2 to 4 copies.
+A fifth copy would still fit the requests, but it is outside the 2 to 4 range the team agreed.
 
-Create `dispatch-operations`, a PodDisruptionBudget selecting the stable Dispatch API Pods and protecting at least one available replica.
-For this exercise use `minAvailable: 1`, `minAvailable: 50%`, or `maxUnavailable: 1` with two replicas.
-A disruption budget constrains voluntary evictions; it does not prevent crashes or guarantee that a rollout, node failure, or database remains available.
-Wait for the requested API replicas to converge and become available.
+These numbers are the team's rules for this lab, not measurements.
+In real life you would base them on how much the application actually uses, with `kubectl top` and monitoring.
 
-## Permissions are part of the operating budget
+Two copies also do not protect against losing the worker node: both run there, next to the database's volume.
+They help during a rolling update or when one Pod crashes.
 
-The inventory Deployment uses the `dispatch-reader` service account.
-It needs to list Pods in `dispatch`, not read Secrets, modify Deployments, or create RoleBindings.
-The fixture replaces its namespaced Role with wildcard access and scales the API down to one replica.
-Restore the intended Role from `identity.yaml` or author equivalent least-privilege rules.
-Keep the existing identity and RoleBinding so the real workload exercises the repair.
+## Limit 2: how much disruption is allowed
 
-The assessment uses the inventory Pod's mounted token and verified cluster TLS to perform real API requests.
-It expects allowed Pod reads and denied Secret and cross-namespace reads, then checks mutation permissions separately.
-A plausible-looking Role is supporting evidence; observed authorization establishes the requested boundary.
-Complete a fresh Dispatch transaction after tightening access.
+A **PodDisruptionBudget (PDB)** limits *voluntary* disruptions, such as `kubectl drain`, to keep enough copies running.
+It does not prevent crashes or node failures.
+
+Create a PDB named `dispatch-operations` that selects the stable API Pods, `app: dispatch` and `track: stable`, and keeps at least one available.
+Any of `minAvailable: 1`, `minAvailable: 50%`, or `maxUnavailable: 1` does that with two copies.
+The quickest way is the imperative command:
+
+```sh
+kubectl create pdb dispatch-operations --selector=app=dispatch,track=stable --min-available=1
+kubectl get pdb dispatch-operations
+```
+
+With two ready copies, `ALLOWED DISRUPTIONS` should show 1.
+
+## Limit 3: least privilege
+
+The `inventory` Deployment runs as the `dispatch-reader` ServiceAccount.
+All it needs is to list Pods in the `dispatch` namespace.
+It must not read Secrets, change Deployments, or create RoleBindings.
+Its Role, `dispatch-pod-reader`, has been changed to allow everything.
+
+Look at the Role and test what the account can do:
+
+```sh
+kubectl get role dispatch-pod-reader -o yaml
+kubectl auth can-i list pods --as=system:serviceaccount:dispatch:dispatch-reader
+kubectl auth can-i get secrets --as=system:serviceaccount:dispatch:dispatch-reader
+kubectl auth can-i patch deployments --as=system:serviceaccount:dispatch:dispatch-reader
+```
+
+The correct Role is in `identity.yaml`.
+That file contains a `${DOCKYARD_IMAGE}` placeholder, so apply it with `python render.py identity.yaml | kubectl apply -f -`.
+You can also edit the Role yourself: it needs one rule allowing `get`, `list`, and `watch` on `pods` in the core API group (`""`).
+Keep the same ServiceAccount and RoleBinding, so the real inventory Pod uses your fix.
+
+Check work goes further than `auth can-i`: it uses the inventory Pod's own token to call the API, expecting Pods to be allowed, and Secrets and other namespaces refused.
+
+## Finish
+
+Scale the API to your chosen number of copies, wait for `kubectl rollout status deployment/dispatch`, and confirm a new job still completes.

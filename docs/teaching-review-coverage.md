@@ -111,9 +111,9 @@ A runtime pass alone is not a teaching-quality result.
 | m23-mission | Completed without solutions | Revised | Replaced the copied prediction and module-wide hints. Recovered in a different order from the reference (etcd restore while the API was down, then the API and scheduler) to confirm order is flexible; passed. |
 | i12-deleted-state | Completed without solutions | Revised | Rewrote as an incident brief with the rollback trade-off. Restored into a differently named directory; rollout status succeeded before controllers caught up and the first check was stale. Added a note; the recheck passed. |
 | i11-kubelet-config | Completed without solutions | Revised | Rewrote as an incident brief. The journal named the invalid duration; setting 30s, a different value from the reference, passed. |
-| m24-triage | Pending | Pending |  |
-| m24-decisions | Pending | Pending |  |
-| m24-handoff | Pending | Pending |  |
-| m24-mission | Pending | Pending |  |
+| m24-triage | Completed without solutions | Revised | Rewrote around a five-step triage loop. The lesson never said how to submit a job in native labs; added curl commands for $DOCKYARD_PORT, verified: empty reply with the wrong selector, then a job stayed queued until the worker was scaled. Passed. |
+| m24-decisions | Completed without solutions | Revised | Added the real request and limit sums and kubectl create pdb. Passed with alternatives: 3 copies, an imperative PDB, and a hand-patched Role instead of identity.yaml. |
+| m24-handoff | Completed without solutions | Revised | Explained the four rollout counts and ErrImageNeverPull, verified in the lab. Passed with kubectl set image $DOCKYARD_IMAGE instead of rollout undo; rewrote the reference handoff as a usable example. |
+| m24-mission | Completed without solutions | Revised | Replaced the fault list with symptoms and the design to restore, and explained build.py. Passed with 4 API copies, a maxUnavailable PDB, and 2 workers; 5 copies failed the budget check with a clear message. Corrected how lb-config and HAProxy health checks route around the stopped node. |
 | exam-cka-a | Pending | Pending |  |
 | exam-cka-b | Pending | Pending |  |

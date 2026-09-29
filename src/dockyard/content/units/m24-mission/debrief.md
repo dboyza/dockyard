@@ -1,12 +1,19 @@
-# Debrief: Operate and hand off Dispatch through a control-plane outage
+## Compare your recovery
 
-The final capstone keeps the original primary API and etcd member stopped while the surviving quorum accepts new writes and Dispatch completes new persistent work.
-The running API and workers also use the built handoff release, so editing VERSION without deploying the resulting artifact would leave the mission incomplete.
+The load balancer was sending API traffic only to the stopped control-plane node.
+Regenerating its configuration with `python -m dockyard.native lb-config` listed all three control-plane nodes; HAProxy's health checks then skipped the stopped one and sent traffic to the two that were running, while their etcd members kept quorum.
+The application had the faults from the triage lesson, a Service selecting `track: retired` and the worker scaled to zero, plus the decisions lesson's single API copy and wide-open Role.
+The release step showed the difference between changing a file and running a new build.
 
-## Explain your result
+Your order may differ, but the load balancer usually comes first, because nothing else can be changed until kubectl reaches the API.
 
-Connect the surviving voting members, usable endpoint, narrow inventory authority, resource budgets, and observed release identity in your final operational handoff.
+## Check your understanding
 
-## Transfer beyond this lab
+- Why could the cluster accept changes with one of three etcd members down, and what would happen if a second failed?
+- Which parts of this system are still single points of failure?
+- If you rolled back the release, what would and would not go back to how it was?
 
-Your portfolio preserves infrastructure and evidence of these mechanisms; it does not remove the shared-host failure domain or replace an independently protected production recovery plan.
+## Beyond this lab
+
+You have now built, broken, and repaired a real Kubernetes cluster from the node up.
+The course's practice exams are the next step: timed tasks in the style of the CKA and CKAD.

@@ -1,9 +1,27 @@
 # Operating handoff
 
-I compared actual endpoint selection, workload revisions, and dependent worker capacity before changing the environment.
-I used scoped configuration corrections and observed the resulting rollout and a complete new Dispatch transaction.
-The private cluster and original database row were preserved.
-Use kubectl get deployments, kubectl get pdb, and a fresh application job to repeat the workload verification.
-Inspect inventory permissions with its actual identity, not the administrator session.
-A Deployment rollback cannot restore PostgreSQL data or revoke leaked credentials.
-The single application worker and local database volume remain failure boundaries even when the API voting majority survives.
+## Symptom and evidence
+
+Context: this lab's cluster, namespace `dispatch`.
+`kubectl rollout status deployment/dispatch` timed out.
+`kubectl get deployment dispatch` showed 2 desired, 1 up to date, 2 available, 3 total.
+The new Pod was stuck with `ErrImageNeverPull`; its events named an image tag ending in `-missing`, which does not exist.
+The two old Pods were still serving.
+
+## Repair and verification
+
+`kubectl rollout undo deployment/dispatch` returned to the previous revision.
+
+To check:
+
+- `kubectl rollout status deployment/dispatch` should report `successfully rolled out`. If it times out, look at the newest Pod's events.
+- `kubectl get deployment dispatch` should show the same number for desired, up to date, and available.
+- `kubectl get pods -l app=dispatch` should show only Running, Ready Pods.
+- A new job should reach `done`.
+
+## Recovery boundaries and next actions
+
+The rollback only changed the Deployment; it would not undo database changes or replace leaked credentials.
+Roll back again if a new release leaves `rollout status` waiting for more than a few minutes; ask for help if the previous revision also fails.
+The API runs on one worker next to the database's volume, so losing that node would still stop Dispatch.
+Find out where the `-missing` image name came from before trying the release again.

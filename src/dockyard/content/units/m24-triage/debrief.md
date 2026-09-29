@@ -1,12 +1,17 @@
-# Debrief: Triage with a bounded evidence loop
+## Compare your triage
 
-The incident is resolved when the original identities and pre-incident row remain and a fresh browser-to-worker job completes.
-The handoff should explain why the selected observations supported a particular repair rather than merely listing successful commands.
+There were two separate faults.
+The Service selected `track: retired`, a label no running Pod had, so requests went nowhere even though the API Pods were healthy.
+With the route fixed, jobs were accepted but stayed `queued`, because the worker Deployment had been scaled to zero.
+Neither fix alone was enough, and the second fault only showed once the first was fixed.
 
-## Explain your result
+## Check your understanding
 
-Name a plausible alternative hypothesis, the observation that ruled it out, and the smallest change that addressed the remaining cause.
+- Which observation told you the API Pods were healthy but unreachable?
+- What else could make jobs stay `queued`, and how would you tell those causes apart?
+- Why is re-running a setup script a risky way to fix a shared system?
 
-## Transfer beyond this lab
+## Beyond this lab
 
-In a production incident, preserve the same evidence discipline while making urgency, impact, and authority to act explicit.
+In a real incident, also say out loud who is affected, how urgent it is, and whether you are allowed to make the change.
+Keep your notes as you go; they are the start of the handoff.

@@ -1,12 +1,15 @@
-# Debrief: Recover a rollout and write an executable handoff
+## What you did
 
-Desired, updated, available, and total replica counts converge after the rollout is repaired.
-A fresh application result establishes that the converged workload is useful, while the written handoff explains how another operator can reproduce the diagnosis.
+The new image did not exist, so the new Pod could never start, while the old Pods kept serving.
+Health checks alone would have said everything was fine; the Deployment's counts and `rollout status` showed the release had not finished.
+Rolling back, or setting a working image, let the rollout complete, and a new job showed the API was useful again.
 
-## Explain your result
+## Check your understanding
 
-Can someone identify the original symptom, inspect the affected revision, repeat the validation, and recognize rollback conditions using your document alone?
+- Which column in `kubectl get deployment` first showed that the release had not finished?
+- What would have happened with `maxUnavailable: 1` instead of `0`?
+- Could someone use your handoff alone to repeat your checks and recognise when to roll back?
 
-## Transfer beyond this lab
+## Beyond this lab
 
-Keep reproducible commands and observations in the handoff, but exclude credentials and avoid claiming availability guarantees beyond what you measured.
+Most teams set `progressDeadlineSeconds` and alert when a Deployment reports `Progressing=False`, so a stuck release is noticed without anyone watching a terminal.
