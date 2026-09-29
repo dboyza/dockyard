@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING
@@ -13,6 +14,10 @@ from dockyard.store import BusyError, timestamp
 
 if TYPE_CHECKING:
     from dockyard.service import Service
+
+# Pods from a last-minute rollout can still be stopping at submission; let them settle.
+SETTLE_CHECKS = 4
+SETTLE_SECONDS = 15.0
 
 
 def weighted_score(exam: Exam, assessment: Assessment) -> tuple[float, dict[str, float]]:
@@ -212,9 +217,13 @@ class Exams:
                 "No score was assigned.",
             )
         try:
-            observed = Assessment.model_validate(
-                self.service.perform(attempt.unit_id, "check", exam_submission=True)
-            )
+            for remaining in range(SETTLE_CHECKS - 1, -1, -1):
+                observed = Assessment.model_validate(
+                    self.service.perform(attempt.unit_id, "check", exam_submission=True)
+                )
+                if observed.status != CheckStatus.STALE or not remaining:
+                    break
+                time.sleep(SETTLE_SECONDS)
             score, tasks = weighted_score(self.definition(attempt.exam_id), observed)
         except (RuntimeError, ValueError) as error:
             return self.invalidate(

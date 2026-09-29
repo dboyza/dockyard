@@ -1,56 +1,70 @@
 # Native cluster maintenance assessment
 
-Recover the scheduler before starting maintenance.
-The timer covers all eight outcomes in the same existing cluster.
+Eight tasks, each with its weight, on this lab's two-node kubeadm cluster.
+Do task 3, the scheduler, first: draining and upgrading need a working scheduler.
+Use the existing nodes; do not reset, rejoin, or rebuild them.
 
-## 1. Upgrade the existing cluster in place (25%)
+## 1. Upgrade the cluster to 1.35.8 (25%)
 
-Upgrade the existing kubeadm cluster from 1.34.12 to 1.35.8, including the API server, control-plane components, kubeadm, and both kubelets.
-The verified target packages can be staged with `python -m dockyard.native stage-upgrade`.
-Retain both original Node objects and the existing namespace and data.
-Drain and maintain nodes in a safe order, return both to Ready and schedulable, and preserve package holds.
-Recover the scheduler before starting this maintenance.
+Upgrade this kubeadm cluster from 1.34.12 to 1.35.8: kubeadm, the control plane, and the kubelet on both nodes.
 
-## 2. Renew the served API certificate (10%)
+- `python -m dockyard.native stage-upgrade` copies the 1.35.8 packages into each VM; it does not install them.
+- Drain each node before upgrading its kubelet, and uncordon it afterwards.
+- Keep the package holds on kubeadm, kubelet, and kubectl.
+- Both original nodes must end up Ready and schedulable.
 
-Renew the primary API serving certificate under the existing cluster CA and make the API actually serve the renewed certificate.
-A changed certificate file alone is insufficient.
-Do not replace the cluster CA, disable TLS verification, or rebuild the cluster.
+Finish task 3 before you start.
 
-## 3. Recover the missing static scheduler (10%)
+## 2. Renew the API server certificate (10%)
 
-The kube-scheduler manifest was moved out of the kubelet manifest directory to `/var/lib/dockyard/maintenance-exam/kube-scheduler.yaml` on the primary guest.
-Restore the intended static component and establish a fresh scheduler assignment.
-Keep the API, controller manager, etcd, and primary kubelet running.
-Complete this recovery before draining or upgrading nodes.
+Renew the API server's serving certificate on the control-plane node, signed by the existing cluster CA.
+The running API server must actually serve the new certificate; a renewed file on disk is not enough.
+Do not replace the CA or turn off certificate checking.
 
-## 4. Grant release automation a narrow scale capability (10%)
+## 3. Bring back the scheduler (10%)
 
-Grant ServiceAccount `release-operator` in namespace `dispatch` get and list on Deployments, and get, patch, and update on the deployments/scale subresource in that namespace.
-It must not read Secrets, create Pods, or delete Deployments.
-Verify effective authorization for allowed and denied operations.
+The scheduler's static Pod manifest was moved out of `/etc/kubernetes/manifests` to `/var/lib/dockyard/maintenance-exam/kube-scheduler.yaml` on the control-plane node.
 
-## 5. Repair the stable release selector (10%)
+- Put it back so the scheduler runs again.
+- Keep the other control-plane components and the kubelet running.
 
-Remove the erroneous retired-release selector from Service `dispatch` while preserving its API selector and port 8080.
-The Service must have exactly the two ready API backends and serve the real application health response to the trusted frontend.
-Do not enable publishNotReadyAddresses or bypass the Service.
+A new Pod must be scheduled onto a node.
+Do this before tasks 1 and 7.
 
-## 6. Repair dependency egress without widening trust (15%)
+## 4. Allow an automation account to scale Deployments (10%)
 
-Restore the API's TCP connection to the existing Redis queue on 6379.
-Keep trusted frontend access, deny the untrusted frontend and outside namespace, and retain denial of unrelated API egress.
-Preserve database and worker paths and both TCP and UDP DNS.
-Do not disable policy enforcement or replace the network policies with an allow-all rule.
+ServiceAccount `release-operator` exists in namespace `dispatch`.
+In that namespace, give it:
 
-## 7. Protect one available API during voluntary disruption (10%)
+- `get` and `list` on Deployments;
+- `get`, `patch`, and `update` on the `deployments/scale` subresource.
 
-Create PodDisruptionBudget `dispatch-maintenance` in namespace `dispatch` selecting both stable API replicas.
-With two healthy replicas, permit exactly one voluntary disruption and preserve at least one available API replica.
-Keep both replicas deployed and available for the final observation.
+It must not be able to read Secrets, create Pods, or delete, patch, or update Deployments themselves.
+Check with `kubectl auth can-i`.
 
-## 8. Prove operational continuity after maintenance (10%)
+## 5. Fix the Service selector (10%)
 
-Keep the original namespace, both Node UIDs, maintenance sentinel UID and value, and seeded database row.
-Demonstrate a fresh browser-ready response and a new cross-node Dispatch job that completes with the expected result in PostgreSQL.
-Existing old application responses alone do not establish the final recovery contract.
+Service `dispatch` has an extra selector, `release: retired`, that no Pod matches.
+
+- Remove it, keeping the rest of the selector and port 8080.
+- The Service must send traffic to exactly the two ready API Pods, and the frontend must get the API's real `/healthz` response through it.
+- Do not use `publishNotReadyAddresses` or bypass the Service.
+
+## 6. Fix a NetworkPolicy without opening it up (15%)
+
+The API can no longer reach its Redis queue, Service `queue` on TCP port 6379, because of a NetworkPolicy change.
+
+- Restore that connection.
+- Keep everything else the policies allow and deny: the trusted frontend allowed, the untrusted frontend and other namespaces denied, other API egress denied, and database, worker, and DNS (TCP and UDP) traffic allowed.
+- Do not remove the policies or replace them with an allow-all rule.
+
+## 7. Protect the API during maintenance (10%)
+
+Create PodDisruptionBudget `dispatch-maintenance` in namespace `dispatch` that selects both stable API Pods.
+With two healthy replicas, it must allow exactly one voluntary disruption.
+Keep both API replicas running and available at the end.
+
+## 8. Keep the application working (10%)
+
+At the end, the original namespace, both Node objects, the `maintenance-sentinel` ConfigMap, and the stored job must still be there.
+A new Dispatch job sent from the frontend must complete and be saved in PostgreSQL.

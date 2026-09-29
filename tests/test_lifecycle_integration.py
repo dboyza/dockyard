@@ -133,7 +133,9 @@ def test_interrupted_cli_reports_interruption_and_recovers_on_retry():
     import sys
     import tempfile
 
-    with tempfile.TemporaryDirectory(prefix="dy-interrupt-", dir=host.temporary_root()) as temporary:
+    with tempfile.TemporaryDirectory(
+        prefix="dy-interrupt-", dir=host.temporary_root()
+    ) as temporary:
         profile = Path(temporary)
         service = Service(profile)
         endpoint = service._docker_endpoint()

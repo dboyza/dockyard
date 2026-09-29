@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +13,21 @@ from dockyard.models import Exam, Unit
 from dockyard.workspace import safe_relative
 
 CONTENT = Path(__file__).parent / "content"
+TASK_HEADING = re.compile(r"^## (\d+)\. (.+) \((\d+)%\)$", re.MULTILINE)
+
+
+def attach_task_briefs(exam: dict[str, Any], brief: str) -> None:
+    """Take each exam task's title and text from its numbered section of the exam brief."""
+    headings = list(TASK_HEADING.finditer(brief))
+    tasks = exam["tasks"]
+    if len(headings) != len(tasks):
+        raise ValueError(f"Exam {exam['id']} brief needs one numbered section per task.")
+    for index, (task, heading) in enumerate(zip(tasks, headings, strict=True)):
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(brief)
+        if int(heading[1]) != index + 1 or int(heading[3]) != task["weight"]:
+            raise ValueError(f"Exam {exam['id']} brief section {index + 1} does not match.")
+        task["title"] = heading[2]
+        task["brief"] = brief[heading.end() : end].strip()
 
 
 class Catalog:
@@ -54,6 +70,9 @@ class Catalog:
         self.exams: dict[str, Exam] = {}
         if exam_path.exists():
             for item in json.loads(exam_path.read_text()):
+                if item["unit_id"] not in self.units:
+                    raise ValueError(f"Exam {item['id']} points to an unknown unit.")
+                attach_task_briefs(item, self.units[item["unit_id"]].brief)
                 exam = Exam.model_validate(item)
                 if exam.id in self.exams:
                     raise ValueError("Duplicate exam identity.")

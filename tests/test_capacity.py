@@ -28,21 +28,23 @@ def test_host_budget_is_exclusive_across_profiles_until_recorded_lab_stops(tmp_p
     monkeypatch.setattr("dockyard.capacity.registry_directory", lambda: tmp_path / "registry")
     first, second = Service(tmp_path / "first"), Service(tmp_path / "second")
     active, waiting = lab(first, "one"), lab(second, "two", state="absent")
-    with cluster_lease(first, active):
-        with pytest.raises(BusyError):
-            with cluster_lease(second, waiting):
-                pytest.fail("A simultaneous second cluster acquired the host lock")
-    with pytest.raises(BusyError, match="Another Dockyard profile"):
-        with cluster_lease(second, waiting):
-            pytest.fail("A running cluster lost its lease after preparation completed")
+    with cluster_lease(first, active), pytest.raises(BusyError), cluster_lease(second, waiting):
+        pytest.fail("A simultaneous second cluster acquired the host lock")
+    with (
+        pytest.raises(BusyError, match="Another Dockyard profile"),
+        cluster_lease(second, waiting),
+    ):
+        pytest.fail("A running cluster lost its lease after preparation completed")
     active.state = "stopped"
     first.store.save_lab(active)
     with cluster_lease(second, waiting):
         waiting.state = "ready"
         second.store.save_lab(waiting)
-    with pytest.raises(BusyError, match="Another Dockyard profile"):
-        with cluster_lease(first, active):
-            pytest.fail("Resume bypassed the active cluster budget")
+    with (
+        pytest.raises(BusyError, match="Another Dockyard profile"),
+        cluster_lease(first, active),
+    ):
+        pytest.fail("Resume bypassed the active cluster budget")
     assert first.store.lab(active.unit_id).state == "stopped"
 
 

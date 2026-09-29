@@ -3,21 +3,20 @@ revision: 1
 module: 24
 order: 100
 title: Native cluster operations assessment
-summary: Eight native kubeadm operations tasks spanning backup, authorization, DNS, local storage, scheduling,
-  Helm, and host networking.
+summary: 'A timed CKA-style practice exam: eight operations tasks on a real two-node kubeadm cluster.'
 kind: exam
 runtime: linux
 nodes: 2
 minutes: 120
 outcomes:
-- Capture and inspect a live etcd backup
-- Provide a limited incident observer
-- Recover cluster-name resolution for the client
-- Recover the existing database volume placement
-- Run one observation agent on every native node
-- Place the batch audit on its dedicated worker
-- Install the operations report with a Helm override
-- Recover useful cross-node application traffic
+- Back up etcd
+- Create a limited observer role
+- Fix DNS for the frontend
+- Move the database back to its volume
+- Run an agent on every node
+- Place the batch audit on the batch worker
+- Install a Helm chart with a value override
+- Restore traffic between the nodes
 prerequisites:
 - m24-mission
 objectives:
@@ -32,20 +31,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What makes a completed practice score useful for review?
+  question: What does a practice exam score tell you?
   options:
-  - Recorded runtime outcomes tied to task requirements.
-  - The number of commands typed.
-  - A claim that the score guarantees certification.
+  - How many of these tasks worked when time was up.
+  - Whether you will pass the real exam.
+  - How many commands you typed.
   correct: 0
-  explanation: The score reports observed outcomes and directs review; it is not an official certification
-    result.
+  explanation: The score comes from checking the final state of each task. It shows where to practise
+    next; it cannot predict a real exam result.
 hints:
-- Separate a healthy API from the failing node agent or missing API objects.
-- Read the worker service journal and its configuration, or inspect the supplied snapshot and original
-  recovery contract.
-- Repair the invalid kubelet duration without resetting the node; for state loss, restore the verified
-  snapshot with revision bump and compaction, then verify original identities and fresh work.
+- Hints are not available during the exam. Afterwards, open each task's results to see what was checked.
+- For each task you missed, compare the live objects with the task text using kubectl get -o yaml and
+  kubectl describe.
+- Work through the lessons linked from each missed task, then try a fresh attempt without help.
 sources:
 - https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/
 - https://etcd.io/docs/v3.6/op-guide/recovery/
@@ -67,8 +65,9 @@ prepare:
   timeout: 180
 checks:
 - id: exam-backup
-  title: Capture and inspect a live etcd backup
-  explanation: Observe the real native cluster outcome against original identities.
+  title: A valid etcd snapshot was saved
+  explanation: /var/lib/etcd/operations-a.db must be a valid snapshot taken after the exam started, with
+    keys and an integrity hash.
   command:
     args:
     - python
@@ -79,10 +78,12 @@ checks:
   json_path:
   - backup
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review etcdctl snapshot save with --cacert, --cert, and --key, and etcdutl snapshot status.
+    Lesson: m23-etcd.'
 - id: exam-rbac
-  title: Provide a limited incident observer
-  explanation: Observe the real native cluster outcome against original identities.
+  title: incident-observer has exactly the requested access
+  explanation: In dispatch it must be able to get, list, and watch Pods and get Pod logs, and must not
+    read Secrets, create or delete Pods, or update Deployments.
   command:
     args:
     - python
@@ -93,10 +94,12 @@ checks:
   json_path:
   - rbac
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review a Role with a pods/log rule, a RoleBinding to a ServiceAccount, and kubectl auth
+    can-i --as. Lesson: m17-rbac.'
 - id: exam-dns
-  title: Recover cluster-name resolution for the client
-  explanation: Observe the real native cluster outcome against original identities.
+  title: The frontend resolves the Service name again
+  explanation: From trusted-client, dispatch.dispatch.svc.cluster.local must resolve to the Service’s
+    ClusterIP.
   command:
     args:
     - python
@@ -107,10 +110,10 @@ checks:
   json_path:
   - dns
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review dnsPolicy ClusterFirst. Lesson: m22-dns.'
 - id: exam-storage
-  title: Recover the existing database volume placement
-  explanation: Observe the real native cluster outcome against original identities.
+  title: The database runs on the worker with its original volume
+  explanation: db-0 must be ready on the worker, using its original claim and volume.
   command:
     args:
     - python
@@ -121,10 +124,12 @@ checks:
   json_path:
   - storage
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review nodeSelector, tolerations for a NoSchedule taint, and deleting a stuck StatefulSet
+    Pod so it is recreated with the new template. Lessons: m13-placement and m22-storage.'
 - id: exam-preserved
-  title: Recover the existing database volume placement
-  explanation: Observe the real native cluster outcome against original identities.
+  title: The original cluster and data are still there
+  explanation: The namespace, both Node objects, the maintenance-sentinel ConfigMap, and the stored job
+    must be the originals.
   command:
     args:
     - python
@@ -135,10 +140,11 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: Something from before the exam was deleted or recreated. Repair in place instead of rebuilding.
 - id: exam-agents
-  title: Run one observation agent on every native node
-  explanation: Observe the real native cluster outcome against original identities.
+  title: node-observer runs one ready Pod on each node
+  explanation: DaemonSet node-observer must have one ready Pod on each of the two nodes, running Python
+    as its main process.
   command:
     args:
     - python
@@ -149,10 +155,12 @@ checks:
   json_path:
   - agents
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review DaemonSet tolerations for control-plane and custom taints, and the restricted Pod
+    Security settings; kubectl describe daemonset shows why Pods were not created. Lesson: m13-placement.'
 - id: exam-placement
-  title: Place the batch audit on its dedicated worker
-  explanation: Observe the real native cluster outcome against original identities.
+  title: batch-audit runs on the batch worker
+  explanation: One available batch-audit Pod must run on the worker, selected by dockyard.io/pool=batch
+    and tolerating dockyard.io/batch=true:NoSchedule, with the worker’s taint still in place.
   command:
     args:
     - python
@@ -163,10 +171,11 @@ checks:
   json_path:
   - placement
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review nodeSelector and tolerations. Lesson: m13-placement.'
 - id: exam-chart
-  title: Install the operations report with a Helm override
-  explanation: Observe the real native cluster outcome against original identities.
+  title: The Helm release is deployed with the production value
+  explanation: Release operations-report must be deployed in dispatch, and its app must return production
+    from /environment.
   command:
     args:
     - python
@@ -177,10 +186,10 @@ checks:
   json_path:
   - chart
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review helm install with --set or a values file, and helm status. Lesson: m14-helm.'
 - id: exam-transport
-  title: Recover useful cross-node application traffic
-  explanation: Observe the real native cluster outcome against original identities.
+  title: Traffic crosses from the control plane to the worker
+  explanation: net.ipv4.ip_forward must be 1 on the worker, and the frontend must reach the dispatch Service.
   command:
     args:
     - python
@@ -191,10 +200,10 @@ checks:
   json_path:
   - transport
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review sysctl net.ipv4.ip_forward on the worker. Lessons: m22-packets and m22-mission.'
 - id: exam-workflow
-  title: Recover useful cross-node application traffic
-  explanation: Observe the real native cluster outcome against original identities.
+  title: A new job completes and is saved
+  explanation: A job sent through Dispatch must be processed by a worker and saved in PostgreSQL.
   command:
     args:
     - python
@@ -205,7 +214,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Inspect the named task boundary using host, API, and application evidence.
+  diagnostic: 'Review the database placement and cross-node traffic tasks first; the job needs both. Lesson:
+    m22-mission.'
 capabilities:
 - docker
 - limactl
@@ -220,12 +230,11 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
-- Runtime outcomes and original identities are assessed, not shell history.
+- Any method that produces the requested final state is accepted.
+- Only the final state of the cluster is checked, not your commands.
 failure_modes:
-- A replacement object with matching contents has a different identity.
-- Existing running containers do not prove reconciliation or new scheduling.
-- An etcd backup does not contain application persistent-volume contents.
+- A healthy process alone does not show a working request path or a finished job.
+- Recreating an object gives it a new identity, which does not count as keeping the original.
 starter_failure_checks:
 - exam-backup
 - exam-rbac

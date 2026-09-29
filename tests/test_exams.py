@@ -1,6 +1,5 @@
 """Timed practice must persist deadlines and refuse misleading scores."""
 
-import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -186,3 +185,48 @@ def test_deadline_monitor_submits_without_a_browser_and_blocks_reused_fixture(
         service.shutdown()
         worker.join(3)
     assert not worker.is_alive()
+
+
+def test_exam_task_text_comes_from_numbered_brief_sections():
+    from dockyard.catalog import Catalog, attach_task_briefs
+
+    catalog = Catalog()
+    for exam in catalog.exams.values():
+        brief = catalog.units[exam.unit_id].brief
+        for number, task in enumerate(exam.tasks, start=1):
+            assert f"## {number}. {task.title} ({task.weight}%)" in brief
+            assert task.brief and task.brief in brief
+    exam = {"id": "x", "tasks": [{"weight": 60}, {"weight": 40}]}
+    with pytest.raises(ValueError, match="one numbered section per task"):
+        attach_task_briefs(exam, "## 1. Only task (60%)\n\nDo it.\n")
+    with pytest.raises(ValueError, match="does not match"):
+        attach_task_briefs(exam, "## 1. First (60%)\n\nA.\n\n## 2. Second (30%)\n\nB.\n")
+
+
+def test_final_check_waits_for_a_settling_environment(tmp_path, monkeypatch):
+    service, exam, lab = prepared(tmp_path)
+    attempt = service.exams.start(exam.id)
+    stale = evidence(exam, lab).model_copy(update={"status": CheckStatus.STALE})
+    results = [stale, stale, evidence(exam, lab)]
+    monkeypatch.setattr("dockyard.exams.time.sleep", lambda seconds: None)
+    monkeypatch.setattr(service, "perform", lambda *a, **k: results.pop(0).model_dump(mode="json"))
+    finished = service.exams.finish(attempt.id)
+    assert finished.state == "finished" and finished.score == 65
+    assert results == []
+
+
+def test_environment_that_never_settles_is_invalidated(tmp_path, monkeypatch):
+    service, exam, lab = prepared(tmp_path)
+    attempt = service.exams.start(exam.id)
+    stale = evidence(exam, lab).model_copy(update={"status": CheckStatus.STALE})
+    calls = []
+    monkeypatch.setattr("dockyard.exams.time.sleep", lambda seconds: None)
+
+    def assess(*args, **kwargs):
+        calls.append(args)
+        return stale.model_dump(mode="json")
+
+    monkeypatch.setattr(service, "perform", assess)
+    finished = service.exams.finish(attempt.id)
+    assert finished.state == "invalidated" and finished.score is None
+    assert len(calls) == 4

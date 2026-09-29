@@ -31,6 +31,29 @@ kubectl set image deployment/dispatch api=NEW_IMAGE
 
 `api` is the container’s name inside the Pod template.
 
+## Getting a new image into the cluster
+
+A node can only run an image it can get.
+In a real cluster, nodes **pull** images from a registry, so you build, push to the registry, then change the Deployment.
+
+This lab’s kind cluster works offline instead.
+Its Deployments use `imagePullPolicy: Never`, which means “only use an image already on the node”, so you copy images into the nodes yourself with `kind load`:
+
+```sh
+docker build --build-arg BASE_IMAGE="$DOCKYARD_PYTHON_IMAGE" -t "$DOCKYARD_IMAGE-v2" .
+kind load docker-image "$DOCKYARD_IMAGE-v2" --name "$DOCKYARD_CLUSTER"
+kubectl set image deployment/dispatch api="$DOCKYARD_IMAGE-v2"
+```
+
+- `$DOCKYARD_PYTHON_IMAGE` is the Python base image the Dockerfile’s `ARG BASE_IMAGE` expects.
+- `$DOCKYARD_IMAGE` is the lab’s current Dispatch image name; adding `-v2` gives the new build its own tag.
+- `$DOCKYARD_CLUSTER` is the name of this lab’s kind cluster.
+
+A new tag makes the change visible to the Deployment, so `set image` starts a rolling update.
+If you rebuild under the *same* tag instead, the Deployment sees no change; run `kubectl rollout restart deployment/dispatch` to make it start new Pods from the new build.
+The practice exams expect you to do this.
+Try it only after this lab passes: a new revision changes the rollout history the lab checks.
+
 ## Watching and reversing a rollout
 
 ```sh

@@ -81,6 +81,7 @@ Task weights total 100 and permit partial credit where an assessed task has mult
 Browser reload does not reset the deadline.
 The running workbench grades at expiry even when the browser is closed.
 If the workbench process is unavailable at the deadline, or infrastructure prevents reliable grading, the attempt is invalidated without assigning a score.
+If Pods are still starting or stopping when you submit, grading waits and checks again for up to about a minute before deciding the environment is too unsettled to score.
 Keep the workbench process running during timed practice.
 Hints and reference reveals are unavailable during an active timed attempt.
 Use Independent retake before starting another timer on an already assessed or supported fixture.

@@ -3,19 +3,19 @@ revision: 1
 module: 12
 order: 100
 title: Dispatch release assessment
-summary: An original eight-task application release assessment with explicit weighted outcomes.
+summary: 'A timed CKAD-style practice exam: eight tasks on building, configuring, and running Dispatch.'
 kind: exam
 runtime: kubernetes
 minutes: 120
 outcomes:
-- Build the release artifact
-- Consume the accepted configuration
-- Separate health signals
+- Build and run the release image
+- Configure the release from a ConfigMap
+- Configure health probes
 - Schedule a release audit
-- Recover the stable request path
-- Persist the report workspace
-- Connect initialization and log observation
-- Constrain an audit endpoint
+- Fix the Service
+- Give the reporter persistent storage
+- Create a Pod with an init container and a log sidecar
+- Restrict access with a NetworkPolicy
 prerequisites:
 - m18-mission
 objectives:
@@ -31,18 +31,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What makes a completed practice score useful for review?
+  question: What does a practice exam score tell you?
   options:
-  - Recorded runtime outcomes tied to task requirements.
-  - The number of commands typed.
-  - A claim that the score guarantees certification.
+  - How many of these tasks worked when time was up.
+  - Whether you will pass the real exam.
+  - How many commands you typed.
   correct: 0
-  explanation: The score reports observed outcomes and directs review; it is not an official certification
-    result.
+  explanation: The score comes from checking the final state of each task. It shows where to practise
+    next; it cannot predict a real exam result.
 hints:
-- Review the task outcomes and inspect the affected controller, process, and request path.
-- Compare effective runtime state with the named object and persistence constraints.
-- After submission, use the task report and reference to plan a fresh independent attempt.
+- Hints are not available during the exam. Afterwards, open each task's results to see what was checked.
+- For each task you missed, compare the live objects with the task text using kubectl get -o yaml and
+  kubectl describe.
+- Work through the lessons linked from each missed task, then try a fresh attempt without help.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
 - https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
@@ -72,8 +73,9 @@ prepare:
   timeout: 420
 checks:
 - id: exam-image
-  title: Both API replicas execute the nonroot accepted release
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: Both API Pods run the new release as a non-root user
+  explanation: Each of the two API Pods must report release dispatch-exam-a, and its api container must
+    not run as user 0.
   command:
     args:
     - python
@@ -85,11 +87,12 @@ checks:
   json_path:
   - image
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review Dockerfile CMD and USER, the build and kind load steps, and the image in Deployment
+    dispatch. Lessons: m02-multistage (images and users) and m12-rollouts (getting a new image into the
+    cluster).'
 - id: exam-configuration
-  title: The ConfigMap reaches actual process and mounted-file configuration
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: The API reports the configured environment and banner
+  explanation: Each API Pod’s /config must return environment assessment and banner Dispatch release accepted.
   command:
     args:
     - python
@@ -101,11 +104,12 @@ checks:
   json_path:
   - configuration
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review how ConfigMap dispatch-settings reaches the Pod as an environment variable and a
+    mounted file, and that environment variables only change when Pods restart. Lesson: m09-configmaps.'
 - id: exam-probes
-  title: Health probes preserve distinct working responsibilities
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: The startup, liveness, and readiness probes are correct
+  explanation: The api container needs a startup probe on /startupz allowing at least 30 seconds, liveness
+    on /healthz, readiness on /readyz, and both Pods must be ready.
   command:
     args:
     - python
@@ -117,11 +121,12 @@ checks:
   json_path:
   - probes
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review which endpoint each probe type should use and how failureThreshold times periodSeconds
+    sets the startup allowance. Lesson: m12-probes.'
 - id: exam-schedule
-  title: The UTC nonoverlapping schedule produces a successful real audit Job
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: The CronJob is scheduled correctly and its test Job succeeded
+  explanation: release-audit must use schedule 17 2 * * *, timeZone UTC, concurrencyPolicy Forbid, and
+    not be suspended; Job release-audit-proof must be created from it, complete, and log release dispatch-exam-a.
   command:
     args:
     - python
@@ -133,11 +138,11 @@ checks:
   json_path:
   - schedule
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review cron syntax, timeZone, concurrencyPolicy, and kubectl create job --from=cronjob/NAME.
+    Lesson: m08-jobs.'
 - id: exam-route
-  title: The stable Service reaches exactly the ready API replicas
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: Service dispatch reaches exactly the two ready API Pods
+  explanation: The Service must keep port 8080 and its endpoints must be exactly the two ready API Pods.
   command:
     args:
     - python
@@ -149,11 +154,12 @@ checks:
   json_path:
   - route
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review how a Service’s port and targetPort map to the container port, and check the EndpointSlice.
+    Lesson: m10-services.'
 - id: exam-workflow
-  title: A fresh job completes with an independently stored result
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: A new job completes and is saved
+  explanation: A job sent through the Service must be processed by a worker and have the same result stored
+    in PostgreSQL.
   command:
     args:
     - python
@@ -165,11 +171,12 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review the request path from Service to API to worker to database; fix the route first,
+    then check the workers’ logs. Lesson: m10-services.'
 - id: exam-storage
-  title: The original reports claim supports a second consumer read
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: The reporter uses the original reports claim
+  explanation: Deployment reporter must mount the original reports claim at /archive, and a file written
+    there must be readable from a second Pod using the same claim.
   command:
     args:
     - python
@@ -181,11 +188,12 @@ checks:
   json_path:
   - storage
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review replacing an emptyDir volume with a persistentVolumeClaim volume in a Deployment.
+    Lesson: m11-claims.'
 - id: exam-preserved
-  title: The original namespace, database claim, and seeded row survive
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: The original namespace, database claim, and stored job are still there
+  explanation: The dispatch namespace, the database’s claim, and the job stored before the exam must be
+    the originals.
   command:
     args:
     - python
@@ -197,11 +205,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Something from before the exam was deleted or recreated. Change existing objects in place
+    instead of recreating them. Lesson: m11-claims.'
 - id: exam-sidecar
-  title: A completed init and a running producer feed fresh data to the tailer log
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: The init container and log sidecar work together
+  explanation: Pod audit-tail needs init container seed and containers producer and tailer sharing an
+    emptyDir at /shared; a new line appended through producer must appear in the tailer log.
   command:
     args:
     - python
@@ -213,11 +222,12 @@ checks:
   json_path:
   - sidecar
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review initContainers, shared emptyDir volumes, and a sidecar that follows a file. Lesson:
+    m08-patterns.'
 - id: exam-network
-  title: The intended client connects and the outsider is denied
-  explanation: Observe the actual stated task outcome in the original exam environment.
+  title: Only the audit reader can reach the audit target
+  explanation: From audit-reader a connection to an audit-target Pod on TCP 8080 must succeed, and from
+    audit-outsider it must be refused.
   command:
     args:
     - python
@@ -229,8 +239,7 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: Review this task brief and inspect its live resources and process behavior before a fresh
-    attempt.
+  diagnostic: 'Review NetworkPolicy ingress rules with a podSelector for role: audit-reader. Lesson: m17-network.'
 capabilities:
 - docker
 - kind
@@ -244,9 +253,11 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent scoped repairs are accepted when the observed outcomes and explicit budgets hold.
+- Any method that produces the requested final state is accepted.
+- Only the final state of the cluster is checked, not your commands.
 failure_modes:
-- Healthy process state alone does not demonstrate a working request path or completed background job.
+- A healthy process alone does not show a working request path or a finished job.
+- Recreating an object gives it a new identity, which does not count as keeping the original.
 starter_failure_checks:
 - exam-image
 - exam-configuration

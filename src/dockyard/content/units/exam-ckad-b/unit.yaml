@@ -3,19 +3,18 @@ revision: 1
 module: 18
 order: 101
 title: Dispatch delivery assessment
-summary: Eight original delivery tasks covering immutable artifacts, process configuration, controlled
-  releases, and durable data.
+summary: 'A timed CKAD-style practice exam: eight tasks on delivering images, configuration, and traffic.'
 kind: exam
 runtime: kubernetes
 minutes: 120
 outcomes:
-- Pin the accepted private artifact
-- Restore dependency access and remove the API token
-- Fit the workers into a deliberate resource budget
-- Apply production metadata through Kustomize
-- Recover a controlled preview rollout
-- Recover the report listener
-- Restore the accepted report into its existing claim
+- Deploy the approved image by digest
+- Fix the database password path and remove the API token
+- Set worker resources
+- Finish a Kustomize overlay
+- Fix the preview Deployment
+- Fix the report listener
+- Restore a report into its volume
 - Separate stable and preview traffic
 prerequisites:
 - m18-mission
@@ -33,18 +32,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What makes a completed practice score useful for review?
+  question: What does a practice exam score tell you?
   options:
-  - Recorded runtime outcomes tied to task requirements.
-  - The number of commands typed.
-  - A claim that the score guarantees certification.
+  - How many of these tasks worked when time was up.
+  - Whether you will pass the real exam.
+  - How many commands you typed.
   correct: 0
-  explanation: The score reports observed outcomes and directs review; it is not an official certification
-    result.
+  explanation: The score comes from checking the final state of each task. It shows where to practise
+    next; it cannot predict a real exam result.
 hints:
-- Review the task outcomes and inspect the affected controller, process, and request path.
-- Compare effective runtime state with the named object and persistence constraints.
-- After submission, use the task report and reference to plan a fresh independent attempt.
+- Hints are not available during the exam. Afterwards, open each task's results to see what was checked.
+- For each task you missed, compare the live objects with the task text using kubectl get -o yaml and
+  kubectl describe.
+- Work through the lessons linked from each missed task, then try a fresh attempt without help.
 sources:
 - https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/
 - https://kubernetes.io/docs/concepts/containers/images/
@@ -74,8 +74,9 @@ prepare:
   timeout: 420
 checks:
 - id: exam-digest
-  title: Pin the accepted private artifact
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: Both API Pods run the approved image by digest
+  explanation: Both API containers must use REGISTRY/dispatch@DIGEST for dispatch:incident, with imagePullPolicy
+    Always, and the registry login must still work.
   command:
     args:
     - python
@@ -86,10 +87,12 @@ checks:
   json_path:
   - digest
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review how to look up a digest in a registry and deploy by digest, and how pull Secrets
+    work. Lessons: m06-registry and i07-registry-identity.'
 - id: exam-credential
-  title: Restore dependency access and remove the API token
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: The API reads its password and has no ServiceAccount token
+  explanation: Both API Pods must report ready, set automountServiceAccountToken to false, and have no
+    token file mounted.
   command:
     args:
     - python
@@ -100,10 +103,11 @@ checks:
   json_path:
   - credential
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review DB_PASSWORD_FILE against the mounted Secret’s path and key, and automountServiceAccountToken
+    in the Pod spec. Lesson: m09-secrets and m09-identities.'
 - id: exam-workflow
-  title: Restore dependency access and remove the API token
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: A new job completes and is saved
+  explanation: A job sent through Service dispatch must be processed by a worker and saved in PostgreSQL.
   command:
     args:
     - python
@@ -114,10 +118,13 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review the API’s readiness first; it cannot save jobs without its database password. Lesson:
+    m09-secrets.'
 - id: exam-resources
-  title: Fit the workers into a deliberate resource budget
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: Two workers run within the resource limits
+  explanation: Two available workers, each with a CPU request above zero and a limit of at most 500m,
+    a memory request of at least 32Mi, a memory limit of at most 256Mi, requests no larger than limits,
+    and the limit applied to the running container.
   command:
     args:
     - python
@@ -128,10 +135,12 @@ checks:
   json_path:
   - resources
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review requests and limits and how they appear in the container’s cgroup. Lesson: m13-resources.'
 - id: exam-overlay
-  title: Apply production metadata through Kustomize
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: The production overlay configures metadata-reader
+  explanation: kubectl kustomize release/overlays/production must generate the ConfigMap with environment
+    production and release dispatch-approved-b, and the live metadata-reader must use it and serve both
+    values.
   command:
     args:
     - python
@@ -142,10 +151,12 @@ checks:
   json_path:
   - overlay
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review configMapGenerator with behavior: merge in an overlay, and kubectl apply -k. Lesson:
+    m14-kustomize.'
 - id: exam-preview
-  title: Recover a controlled preview rollout
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: The preview Deployment runs two ready replicas with a safe rollout
+  explanation: preview-api must have two available Pods serving dispatch-preview-b, with maxUnavailable
+    0 and maxSurge 1.
   command:
     args:
     - python
@@ -156,10 +167,11 @@ checks:
   json_path:
   - preview
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review kubectl set image and the rollingUpdate settings. Lessons: m12-rollouts and m12-strategies.'
 - id: exam-listener
-  title: Recover the report listener
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: The report listener answers through its Service
+  explanation: report-listener must set PORT to 8090, Service reports must map port 8080 to 8090, and
+    a request to http://reports:8080/ must succeed.
   command:
     args:
     - python
@@ -170,10 +182,11 @@ checks:
   json_path:
   - listener
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review environment variables in a Deployment and Service targetPort. Lesson: m10-services.'
 - id: exam-archive
-  title: Restore the accepted report into its existing claim
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: The report is restored into the original claim
+  explanation: report-cache must mount the original report-cache claim at /archive, and /archive/report.json
+    must match report-backup.json byte for byte.
   command:
     args:
     - python
@@ -184,10 +197,12 @@ checks:
   json_path:
   - archive
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review copying a file into a Pod’s volume, for example with kubectl cp or kubectl exec
+    -i. Lesson: m11-backup.'
 - id: exam-preserved
-  title: Restore the accepted report into its existing claim
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: The original namespace, database claim, and stored job are still there
+  explanation: The dispatch namespace, the database’s claim, and the job stored before the exam must be
+    the originals.
   command:
     args:
     - python
@@ -198,10 +213,12 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Something from before the exam was deleted or recreated. Change existing objects in place.
+    Lesson: m11-backup.'
 - id: exam-routing
-  title: Separate stable and preview traffic
-  explanation: Verify actual delivery behavior and the original task identities.
+  title: Each Service reaches only its own release
+  explanation: Service preview must select exactly the ready preview-api Pods and Service dispatch exactly
+    the stable Pods, and each must return its own release.
   command:
     args:
     - python
@@ -212,7 +229,7 @@ checks:
   json_path:
   - routing
   expected: 'true'
-  diagnostic: Review this task outcome and its live process, configuration, or persistence boundary.
+  diagnostic: 'Review Service selectors and labels, and check both EndpointSlices. Lesson: m12-strategies.'
 capabilities:
 - docker
 - kind
@@ -227,9 +244,11 @@ images:
 - busybox
 - registry
 alternatives:
-- Equivalent scoped repairs are accepted when the observed outcomes and explicit budgets hold.
+- Any method that produces the requested final state is accepted.
+- Only the final state of the cluster is checked, not your commands.
 failure_modes:
-- Healthy process state alone does not demonstrate a working request path or completed background job.
+- A healthy process alone does not show a working request path or a finished job.
+- Recreating an object gives it a new identity, which does not count as keeping the original.
 starter_failure_checks:
 - exam-digest
 - exam-credential

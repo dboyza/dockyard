@@ -83,6 +83,7 @@ Each activity owns its concept, task, debrief, prediction, progressive hints, st
 Its optional checkpoint inherits a supplied application scaffold; individual source overrides stay explicit.
 Use an independent mission to assess prior teaching and a distinct incident fault to assess diagnosis.
 Keep explanations ahead of the prerequisites used by a task.
+An exam's task titles and text come from its unit's `brief.md`, one `## N. Title (W%)` section per task in `exams.json` order; `exams.json` holds only weights, criteria, and remediation.
 
 Change an activity revision when its learning contract or grading behavior changes after release.
 Preserve older attempts as historical evidence and require reassessment for the new revision.

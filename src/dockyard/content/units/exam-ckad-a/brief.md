@@ -1,61 +1,77 @@
 # Dispatch release assessment
 
-Complete the eight weighted tasks in the exam workspace.
-Use the ordinary external terminal and retain the supplied application source and seeded state.
+Eight tasks, each with its weight.
+Everything is in namespace `dispatch` unless a task says otherwise.
+Keep the existing application code, the database and its claim, and the job already stored in it.
 
-## 1. Build the release artifact (20%)
+## 1. Build and run the release image (20%)
 
-Build the supplied application as release `dispatch-exam-a` using the workspace VERSION file.
-Repair its Dockerfile so the ordinary image entry point runs the API as a nonroot user.
-Load the resulting image into this owned kind cluster and run two Dispatch API replicas from it.
-Preserve the supplied API and worker application behavior.
-You may use a new local image tag or replace the existing practice tag and deliberately restart the workload.
+The workspace `VERSION` file already says `dispatch-exam-a`.
 
-## 2. Consume the accepted configuration (10%)
+- Fix the workspace `Dockerfile` so the image starts the API normally and runs it as a non-root user.
+- Build the image, load it into this lab's kind cluster, and run Deployment `dispatch` with two replicas of it.
 
-Make both API replicas report environment `assessment` and banner `Dispatch release accepted` through their actual `/config` endpoint.
-Use the existing `dispatch-settings` ConfigMap as the environment and mounted-file source.
-Do not change the supplied application code to hard-code these values.
+You may use a new tag, or rebuild the existing tag and restart the Deployment.
 
-## 3. Separate health signals (15%)
+## 2. Configure the release from a ConfigMap (10%)
 
-Keep a startup probe on `/startupz` with at least a 30-second failure budget, liveness on `/healthz`, and dependency-aware readiness on `/readyz`.
-Use the actual API listener on 8080.
-The released replicas must finish startup and report their database and queue ready.
+Both API replicas must report environment `assessment` and banner `Dispatch release accepted` from their `/config` endpoint.
+
+- The API reads the environment from an environment variable and the banner from a mounted file, both from ConfigMap `dispatch-settings`.
+- Change the configuration, not the application code.
+
+## 3. Configure health probes (15%)
+
+For the `api` container in Deployment `dispatch`, on port 8080:
+
+- a startup probe on `/startupz` that allows at least 30 seconds before failing (`failureThreshold` × `periodSeconds` ≥ 30);
+- a liveness probe on `/healthz`;
+- a readiness probe on `/readyz`.
+
+Both replicas must finish starting up and report ready.
 
 ## 4. Schedule a release audit (10%)
 
-Configure CronJob `release-audit` for 02:17 every day in UTC, prevent overlapping executions, and leave it unsuspended.
-Its supplied command requests the live Service health endpoint.
-Create Job `release-audit-proof` from this CronJob and demonstrate successful completion with the `dispatch-exam-a` release in its output.
+Update CronJob `release-audit`:
 
-## 5. Recover the stable request path (15%)
+- run at 02:17 every day, with `timeZone` set to UTC;
+- never run two audits at the same time;
+- not suspended.
 
-Retain Service `dispatch` on port 8080 and restore its route to exactly the two ready API backends.
-A fresh submitted job must complete in a worker and have the same result stored in PostgreSQL.
-Do not bypass the Service with a Pod address or publish unready backends.
+Then create Job `release-audit-proof` from the CronJob.
+It must complete successfully, and its log must show release `dispatch-exam-a`.
 
-## 6. Persist the report workspace (10%)
+## 5. Fix the Service (15%)
 
-Mount the original `reports` ReadWriteOnce claim at `/archive` in Deployment `reporter`.
-The existing emptyDir mount does not meet the persistence requirement.
-Keep one running reporter and the original claim identity.
-A fresh file written through that mount must be readable from a second consumer of the same claim.
-Also preserve the original Dispatch namespace, database claim, and seeded job.
+Service `dispatch` must keep port 8080 and send traffic to exactly the two ready API Pods.
 
-## 7. Connect initialization and log observation (10%)
+- A new job submitted through the Service must be processed by a worker and saved in PostgreSQL.
+- Do not bypass the Service or make it include Pods that are not ready.
 
-Create Pod `audit-tail` with init container `seed` and ordinary containers `producer` and `tailer`.
-All three must share an emptyDir mounted at `/shared`.
-The init container writes `release audit ready` into `/shared/events` before completing successfully.
-The producer appends `dispatch-exam-a` and remains running.
-The tailer emits the file's existing and newly appended lines to its own container log.
-Use the supplied Python image and keep both ordinary containers running.
-The observer will append a fresh marker from the producer and require it to appear in the tailer's log.
+## 6. Give the reporter persistent storage (10%)
 
-## 8. Constrain an audit endpoint (10%)
+Deployment `reporter` mounts an `emptyDir` at `/archive`.
 
-Restrict ingress to the `audit-target` Pods on TCP 8080 to Pods in the same namespace with `role: audit-reader`.
-The supplied `audit-reader` must connect and `audit-outsider` must be denied.
-Keep the target and both clients running; a stopped client does not establish a denied connection.
-Do not change the clients' labels or replace their processes with a fabricated success response.
+- Mount the existing PersistentVolumeClaim `reports` at `/archive` instead.
+- Keep one running reporter, and keep the same claim; do not create a new one.
+
+A file written to `/archive` must be readable by another Pod that mounts the same claim.
+Also keep the namespace, the database's claim, and the job stored in it.
+
+## 7. Create a Pod with an init container and a log sidecar (10%)
+
+Create Pod `audit-tail` with an `emptyDir` volume mounted at `/shared` in all three containers.
+Use the Dispatch image, `$DOCKYARD_IMAGE` with `imagePullPolicy: Never`, which includes Python; Check work runs Python inside `producer`.
+
+- init container `seed` writes the line `release audit ready` to `/shared/events`, then exits successfully;
+- container `producer` appends the line `dispatch-exam-a` to `/shared/events` and keeps running;
+- container `tailer` prints `/shared/events` to its log, including lines added later, and keeps running.
+
+Check work will append a new line through `producer` and expect it to appear in the `tailer` log.
+
+## 8. Restrict access with a NetworkPolicy (10%)
+
+Only Pods in `dispatch` labelled `role: audit-reader` may connect to the `audit-target` Pods on TCP port 8080.
+
+- The existing `audit-reader` Pod must still connect, and `audit-outsider` must be refused.
+- Keep all three Deployments running and do not change their labels or commands.

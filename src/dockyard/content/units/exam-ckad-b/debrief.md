@@ -1,6 +1,13 @@
-# Delivery review
+## Reviewing your attempt
 
-An immutable image identity, a ready application, and a working Service establish different parts of delivery.
-Review the evidence for each task and explain which observation ruled out a misleading healthy-looking resource.
-A ConfigMap existing does not establish consumption, and a retained claim does not establish restored file contents.
-Use the remediation links before a fresh independent attempt.
+Open each task in the results to see what Dockyard checked and what it found.
+A task can earn part of its marks when some of its checks pass.
+
+Common gaps in this exam:
+
+- a digest is only pinned if the Pods actually run `REGISTRY/dispatch@sha256:...`, not just a tag;
+- a Kustomize overlay only counts once it is applied and the running Pods use the generated ConfigMap;
+- a claim that still exists is not the same as a file restored into it byte for byte;
+- two Services can both "work" while sending traffic to the wrong Pods, so check each one's endpoints.
+
+For each task you missed, work through the lesson it links to, then try a fresh attempt without help.

@@ -1,60 +1,77 @@
 # Dispatch delivery assessment
 
-Complete the eight weighted outcomes while preserving the stable application and its data.
+Eight tasks, each with its weight.
+Everything is in namespace `dispatch` unless a task says otherwise.
+Keep the stable application, its database and claim, and the job already stored in it.
 
-## 1. Pin the accepted private artifact (15%)
+## 1. Deploy the approved image by digest (15%)
 
-The private registry and its pull credential are healthy.
-Resolve the tested `dispatch:incident` image in the registry named in `registry.txt` and pin both stable API replicas to its immutable manifest digest.
-Keep authenticated pull resolution with imagePullPolicy Always.
-The actual running release must remain the supplied stable application.
-Use the lab's DOCKYARD_REGISTRY_PASSWORD only for this owned registry; do not publish credentials.
+The private registry and its pull Secret are working.
+The registry address is in `registry.txt`; the username is `learner`, and the password is in the variable `DOCKYARD_REGISTRY_PASSWORD`.
 
-## 2. Restore dependency access and remove the API token (15%)
+- Find the digest of image `dispatch:incident` in that registry.
+- Set both replicas of Deployment `dispatch` to that image by digest (`REGISTRY/dispatch@sha256:...`), keeping `imagePullPolicy: Always`.
 
-Repair the stable API's projected database credential path so its dependency-aware readiness succeeds.
-The correct existing Secret is mounted at `/var/run/dispatch` with a `password` key.
-Disable automatic service-account token mounting for these application Pods, which do not call the Kubernetes API.
-A fresh Dispatch job must complete through the stable Service and persist its result.
+Use the password only through the variable, for example with `docker login --password-stdin`, and never paste it into files, manifests, or notes.
 
-## 3. Fit the workers into a deliberate resource budget (10%)
+## 2. Fix the database password path and remove the API token (15%)
 
-Run two available workers with positive CPU requests no larger than their limits, and CPU limits of at most 500m per worker.
-Use memory requests of at least 32Mi, requests no larger than limits, and memory limits of at most 256Mi.
-The running containers must have the effective cgroup memory limit.
-Do not replace the supplied worker process or scale it away.
+The API reads its database password from the file named in its `DB_PASSWORD_FILE` environment variable.
+The correct Secret is already mounted at `/var/run/dispatch`, with the password under key `password`.
 
-## 4. Apply production metadata through Kustomize (10%)
+- Point the API at the right file so its `/readyz` reports ready.
+- The API never calls the Kubernetes API, so stop Kubernetes mounting a ServiceAccount token into its Pods.
 
-Complete `release/overlays/production` so the rendered configuration and live `metadata-reader` consume environment `production` and release `dispatch-approved-b`.
-Keep the base reusable and use an overlay ConfigMap generator merge for the production values.
-Apply the overlay, preserving its generated ConfigMap reference in the workload.
-The reader must serve both values from its mounted files.
+A new job sent through Service `dispatch` must complete and be saved.
 
-## 5. Recover a controlled preview rollout (15%)
+## 3. Set worker resources (10%)
 
-Repair Deployment `preview-api` using the supplied local image `$DOCKYARD_IMAGE-preview`.
-Run two ready API replicas serving release `dispatch-preview-b`.
-Configure a rolling update with zero unavailable replicas and one surge replica, preserving the stable Deployment separately.
-Both replicas must run the supplied API and become dependency-ready.
+Deployment `worker` must run two available replicas of the existing worker, each with:
 
-## 6. Recover the report listener (10%)
+- a CPU request greater than zero, a CPU limit of at most `500m`, and the request no larger than the limit;
+- a memory request of at least `32Mi`, a memory limit of at most `256Mi`, and the request no larger than the limit.
 
-Diagnose the `report-listener` process from its logs and environment.
-Configure its PORT as 8090 and retain its supplied Python HTTP server.
-Keep Service `reports` on port 8080, routing to the actual 8090 listener.
-An ordinary HTTP request through the Service must succeed.
+## 4. Finish a Kustomize overlay (10%)
 
-## 7. Restore the accepted report into its existing claim (10%)
+Complete `release/overlays/production` in the workspace.
 
-Restore the exact bytes of `report-backup.json` as `/archive/report.json` in Deployment `report-cache`.
-Preserve and use its original `report-cache` claim at `/archive`.
-Keep the backup unchanged, and preserve the original Dispatch namespace, database claim, and seeded application row.
-The recovered report is separate from the application's database recovery contract.
+- Use a `configMapGenerator` in the overlay that merges into the base's generated ConfigMap, setting `environment` to `production` and `release` to `dispatch-approved-b`.
+- Leave `release/base` unchanged so other overlays can reuse it.
+- Apply the overlay with `kubectl apply -k`.
+
+Deployment `metadata-reader` must use the generated ConfigMap and serve both values.
+
+## 5. Fix the preview Deployment (15%)
+
+Deployment `preview-api` must run the local image `$DOCKYARD_IMAGE-preview`.
+
+- Run two ready replicas serving release `dispatch-preview-b`.
+- Use a rolling update with `maxUnavailable: 0` and `maxSurge: 1`.
+- Do not change Deployment `dispatch`.
+
+## 6. Fix the report listener (10%)
+
+Deployment `report-listener` runs a Python web server that reads its port from the `PORT` environment variable.
+
+- Set `PORT` to `8090`, keeping the same server.
+- Keep Service `reports` on port 8080, sending traffic to port 8090.
+
+An HTTP request to `http://reports:8080/` from inside the cluster must succeed.
+
+## 7. Restore a report into its volume (10%)
+
+Deployment `report-cache` mounts PersistentVolumeClaim `report-cache` at `/archive`.
+
+- Copy the workspace file `report-backup.json`, byte for byte, to `/archive/report.json` in that volume.
+- Keep the same claim, and leave `report-backup.json` unchanged.
+
+Also keep the namespace, the database's claim, and the job stored in it.
 
 ## 8. Separate stable and preview traffic (15%)
 
-Repair Service `preview` to select exactly the ready preview API replicas.
-Keep Service `dispatch` selecting exactly the ready stable API replicas.
-Actual requests through the two Services must return their respective stable and preview release identities.
-Retain both Services on port 8080.
+Both Services keep port 8080.
+
+- Service `preview` must send traffic to exactly the ready `preview-api` Pods.
+- Service `dispatch` must send traffic to exactly the ready stable API Pods.
+
+Requests through each Service must return its own release.

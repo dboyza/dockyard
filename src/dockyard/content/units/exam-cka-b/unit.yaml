@@ -3,21 +3,21 @@ revision: 1
 module: 24
 order: 101
 title: Native cluster maintenance assessment
-summary: Eight original tasks combine real adjacent-version maintenance, static-component recovery, certificate
-  renewal, and application continuity.
+summary: 'A timed CKA-style practice exam: eight maintenance tasks, including an upgrade, on a real kubeadm
+  cluster.'
 kind: exam
 runtime: linux
 nodes: 2
 minutes: 120
 outcomes:
-- Upgrade the existing cluster in place
-- Renew the served API certificate
-- Recover the missing static scheduler
-- Grant release automation a narrow scale capability
-- Repair the stable release selector
-- Repair dependency egress without widening trust
-- Protect one available API during voluntary disruption
-- Prove operational continuity after maintenance
+- Upgrade the cluster to 1.35.8
+- Renew the API server certificate
+- Bring back the scheduler
+- Allow an automation account to scale Deployments
+- Fix the Service selector
+- Fix a NetworkPolicy without opening it up
+- Protect the API during maintenance
+- Keep the application working
 prerequisites:
 - m24-mission
 objectives:
@@ -31,20 +31,19 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: What makes a completed practice score useful for review?
+  question: What does a practice exam score tell you?
   options:
-  - Recorded runtime outcomes tied to task requirements.
-  - The number of commands typed.
-  - A claim that the score guarantees certification.
+  - How many of these tasks worked when time was up.
+  - Whether you will pass the real exam.
+  - How many commands you typed.
   correct: 0
-  explanation: The score reports observed outcomes and directs review; it is not an official certification
-    result.
+  explanation: The score comes from checking the final state of each task. It shows where to practise
+    next; it cannot predict a real exam result.
 hints:
-- Separate a healthy API from the failing node agent or missing API objects.
-- Read the worker service journal and its configuration, or inspect the supplied snapshot and original
-  recovery contract.
-- Repair the invalid kubelet duration without resetting the node; for state loss, restore the verified
-  snapshot with revision bump and compaction, then verify original identities and fresh work.
+- Hints are not available during the exam. Afterwards, open each task's results to see what was checked.
+- For each task you missed, compare the live objects with the task text using kubectl get -o yaml and
+  kubectl describe.
+- Work through the lessons linked from each missed task, then try a fresh attempt without help.
 sources:
 - https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/
 - https://v1-35.docs.kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-certs/
@@ -66,8 +65,9 @@ prepare:
   timeout: 180
 checks:
 - id: exam-upgrade
-  title: Upgrade the existing cluster in place
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: The cluster runs 1.35.8 everywhere
+  explanation: The API server, control-plane images, and both kubelets must report v1.35.8, with both
+    original nodes Ready and schedulable.
   command:
     args:
     - python
@@ -78,10 +78,12 @@ checks:
   json_path:
   - upgrade
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: 'Review the kubeadm upgrade order: control plane first with kubeadm upgrade apply, then
+    each node’s kubelet, draining and uncordoning each. Lesson: m21-upgrade.'
 - id: exam-renewed
-  title: Renew the served API certificate
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: The API server serves a renewed certificate
+  explanation: The certificate the API server presents must have a new serial number and the original
+    CA.
   command:
     args:
     - python
@@ -92,10 +94,11 @@ checks:
   json_path:
   - renewed
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: 'Review kubeadm certs renew apiserver and restarting the API server container with crictl
+    stop. Lesson: m21-certificates.'
 - id: exam-scheduler
-  title: Recover the missing static scheduler
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: The scheduler is back and places new Pods
+  explanation: All control-plane components must be running and a new Pod must be scheduled.
   command:
     args:
     - python
@@ -106,10 +109,11 @@ checks:
   json_path:
   - scheduler
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: 'Review static Pod manifests in /etc/kubernetes/manifests. Lesson: m23-static-pods.'
 - id: exam-rbac
-  title: Grant release automation a narrow scale capability
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: release-operator can scale Deployments and nothing more
+  explanation: It must get and list Deployments and get, patch, and update deployments/scale, and must
+    not read Secrets, create Pods, or delete, patch, or update Deployments.
   command:
     args:
     - python
@@ -120,10 +124,12 @@ checks:
   json_path:
   - rbac
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: 'Review Role rules for a subresource such as deployments/scale, and kubectl auth can-i --subresource.
+    Lesson: m17-rbac.'
 - id: exam-service
-  title: Repair the stable release selector
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: Service dispatch reaches the two ready API Pods
+  explanation: The Service’s endpoints must be exactly the two ready API Pods, and /healthz through it
+    must answer from Dispatch.
   command:
     args:
     - python
@@ -134,10 +140,11 @@ checks:
   json_path:
   - service
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: 'Review Service selectors against Pod labels. Lesson: m10-services.'
 - id: exam-network
-  title: Repair dependency egress without widening trust
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: The API reaches Redis and the other rules still hold
+  explanation: The API must connect to queue on 6379 while the existing allow and deny rules, including
+    DNS over TCP and UDP, still behave as before.
   command:
     args:
     - python
@@ -148,10 +155,11 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: 'Review the port in the egress rule for the queue. Lesson: m17-network.'
 - id: exam-budget
-  title: Protect one available API during voluntary disruption
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: The disruption budget allows exactly one eviction
+  explanation: PDB dispatch-maintenance must select both API Pods and, with two healthy replicas, allow
+    exactly one disruption.
   command:
     args:
     - python
@@ -162,10 +170,12 @@ checks:
   json_path:
   - budget
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: 'Review PodDisruptionBudget minAvailable and maxUnavailable, and ALLOWED DISRUPTIONS in
+    kubectl get pdb. Lesson: m21-drain.'
 - id: exam-preserved
-  title: Prove operational continuity after maintenance
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: The original cluster and data are still there
+  explanation: The namespace, both Node objects, the maintenance-sentinel ConfigMap, and the stored job
+    must be the originals.
   command:
     args:
     - python
@@ -176,10 +186,11 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: Something from before the exam was deleted or recreated. Upgrade and repair in place instead
+    of rebuilding.
 - id: exam-workflow
-  title: Prove operational continuity after maintenance
-  explanation: Observe actual maintenance outcomes and preserved identities.
+  title: A new job completes and is saved
+  explanation: A job sent from the frontend must be processed by a worker and saved in PostgreSQL.
   command:
     args:
     - python
@@ -190,7 +201,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Use the host, API, and application evidence to identify the unresolved maintenance boundary.
+  diagnostic: 'Review the Service, NetworkPolicy, and node readiness tasks; the job needs all of them.
+    Lesson: m24-triage.'
 capabilities:
 - docker
 - limactl
@@ -205,12 +217,11 @@ images:
 - redis
 - busybox
 alternatives:
-- Equivalent editors, diagnostic order, and correctly scoped restoration paths are accepted.
-- Runtime outcomes and original identities are assessed, not shell history.
+- Any method that produces the requested final state is accepted.
+- Only the final state of the cluster is checked, not your commands.
 failure_modes:
-- A replacement object with matching contents has a different identity.
-- Existing running containers do not prove reconciliation or new scheduling.
-- An etcd backup does not contain application persistent-volume contents.
+- A healthy process alone does not show a working request path or a finished job.
+- Recreating an object gives it a new identity, which does not count as keeping the original.
 starter_failure_checks:
 - exam-upgrade
 - exam-renewed
