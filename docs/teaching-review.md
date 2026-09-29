@@ -78,24 +78,40 @@ The control retained its preparation error after the lab became ready.
 Terminal discovery now waits through preparation and refreshes when the lab identity or state changes.
 A focused regression check covers that transition in addition to the real browser journey.
 
+## Course-wide review (2026-09-28)
+
+After the first seven activities, every remaining course unit, incident, and practice exam was reviewed the same way.
+Each was attempted from its concept page, brief, and workspace files without hints or reference solutions, in a disposable profile.
+Per-activity results are in [the coverage ledger](teaching-review-coverage.md).
+
+The review aimed at one outcome: a beginner-to-intermediate software engineer can learn containers, Docker, and Kubernetes from scratch and reach CKA and CKAD exam readiness.
+Main changes:
+
+- Every concept, brief, and debrief now uses a patient teacher's voice: purpose first, terms introduced before use, an action, then what to observe.
+- Generic module-wide hints, copied predictions, and templated check messages were replaced with activity-specific ones that name the command to run next.
+- Missing prerequisites were added where walkthroughs exposed them, for example cron syntax, dnsPolicy, chmod, loading a local image into kind, and submitting a job in native labs.
+- Exam technique and exam-standard commands were added, including a primer covering contexts, imperative commands, `kubectl explain`, vim, and time management, and the etcd backup and restore forms.
+- The four practice exams now read like real exam tasks, and their task text has a single source in each exam's `brief.md`.
+- Walkthroughs exposed runtime problems, which were reproduced and fixed: resumed clusters reporting ready too early, Docker address pool exhaustion, a Pod subnet overlapping Docker networks, metrics breaking after resume, deadlocked failed labs, and timed exams invalidated when submitted during a rollout.
+
+Valid alternatives were tried deliberately, such as different replica counts, imperative instead of declarative changes, and a different recovery order.
+Negative cases were also checked, to confirm that failing messages point at the real cause.
+
 ## What remains to establish
 
-The other 105 activities still need comparable learner walkthroughs before claiming a course-wide teaching review.
-Priority areas are the Compose transition, storage recovery, GitOps, and native cluster administration, where supplied helpers and infrastructure prerequisites can conceal missing instruction.
-The independent missions also need broader transfer testing: vary the failure or requested behavior, then see whether a learner can reason through it without repeating a memorized recipe.
-A beginner usability session should check whether the rewritten introduction and terminal guidance are sufficient without an expert filling in gaps.
-Automated tests verify navigation, persistence, grading contracts, and regressions; they cannot answer those teaching questions.
+These were expert walkthroughs, not sessions with beginner participants.
+A beginner usability session should still check whether the explanations are enough without someone filling in gaps.
+The independent missions also need broader transfer testing: vary the failure, then see whether a learner can reason through it rather than repeat a recipe.
+A score on these practice exams is not evidence of a real exam result.
 
 ## Verification
 
-The installed candidate passed six browser journeys covering real Docker lab work, saved-project continuation, portable progress, recovery, terminal layouts, and accessibility.
-Dark and light themes were checked, including widths down to 320 pixels.
-The backend suite passed 122 non-integration checks, and five frontend unit checks passed.
-Ruff, mypy, frontend lint, formatting, TypeScript, package builds, and the structural curriculum audit passed.
-The manual results above are recorded separately from those automated checks.
-No grading predicates, reference solutions, runtime lifecycle behavior, or learner progress schema were changed in this review.
-Editorial changes preserve existing activity revisions and historical evidence.
-Disposable lab resources are cleaned after verification; personal progress and unrelated Docker resources are preserved.
+On 2026-09-28, after the course-wide review:
 
-The installer also reported two existing moderate npm dependency advisories in `vitest` and `@vitest/mocker`.
-Dependency upgrades were outside this teaching and navigation change.
+- Ruff, ruff format, mypy, 136 backend tests, frontend lint, formatting, TypeScript, and 5 frontend unit tests passed.
+- The structural curriculum audit passed: 96 course units, 12 incidents, and 4 exams.
+- The installed browser suites for the learner journey, portability, recovery, saved projects, accessibility, and terminal layout passed.
+- A real timed CKAD attempt, submitted while Pods were still rolling, was scored after the fix instead of being invalidated.
+
+The full runtime curriculum audit, which starts every fixture, and the exam browser suite, which needs a separately prepared exam profile, were not rerun.
+No reference solution scripts or grading predicates changed in this review, apart from the exam grading retry.
