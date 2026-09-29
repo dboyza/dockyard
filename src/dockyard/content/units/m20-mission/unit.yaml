@@ -10,7 +10,7 @@ nodes: 2
 minutes: 60
 outcomes:
 - Initialize and join real Linux guests using authenticated kubeadm configuration.
-- Establish CNI, DNS, and a working hardened Dispatch checkpoint.
+- Set up the Pod network, cluster DNS, and a working, locked-down Dispatch.
 - Explain bootstrap evidence and remaining availability limits.
 prerequisites:
 - m20-ha
@@ -32,8 +32,8 @@ prediction:
 hints:
 - Separate cluster initialization, private client setup, node registration, network readiness, and application
   deployment.
-- The supplied helpers render real kubeadm and CNI configuration; they do not replace the guest commands
-  that apply it.
+- The helpers only print kubeadm and network configuration; you still run kubeadm and kubectl yourself
+  to apply it.
 - Build the control plane first, refresh the host client, join the worker with CA-pinned discovery, install
   networking, then deploy and verify Dispatch.
 sources:

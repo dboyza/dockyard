@@ -297,7 +297,7 @@ checks:
   diagnostic: The original job is missing. Request /jobs. If the volume was replaced or the database deleted,
     reset the lab and repair the existing data instead.
 - id: incident-nonroot
-  title: The application and database retain UID 10001 without broad write access
+  title: The application and database still run as user 10001 without opening up write access
   explanation: The fix should keep the API as user 10001 and avoid giving every user write access.
   command:
     args:

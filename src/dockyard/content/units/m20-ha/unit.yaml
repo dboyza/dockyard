@@ -32,8 +32,8 @@ prediction:
 hints:
 - Inspect primary CRI containers and the worker load balancer before assuming the surviving datastore
   is unavailable.
-- The primary is deliberately down, but the other two control planes retain quorum; the endpoint must
-  route to at least one of them.
+- The first control plane is down on purpose, but the other two still have quorum; the load balancer must
+  send traffic to at least one of them.
 - Render lb-config, install it as the worker guest HAProxy configuration, validate syntax, and reload
   HAProxy while leaving the primary outage in place.
 sources:

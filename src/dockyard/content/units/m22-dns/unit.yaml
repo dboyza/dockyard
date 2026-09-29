@@ -31,7 +31,8 @@ prediction:
     working.
 hints:
 - Inspect the CoreDNS zone and the desired/running kube-proxy images separately.
-- The fixture retained the original CoreDNS text, and kube-proxy v1.35.8 is already cached.
+- Compare the Corefile's domain with cluster.local, and note that the kube-proxy v1.35.8 image is already
+  on the nodes.
 - Restore the cluster.local zone, restart CoreDNS, restore the kube-proxy image, and wait for both rollouts
   before testing a new Service.
 sources:

@@ -31,7 +31,7 @@ prediction:
   explanation: Cordoning blocks new scheduling but does not evict existing Pods.
 hints:
 - Inspect the target worker, workload owners, placement, and the disruption budget.
-- The initial budget protects both replicas; retain one while allowing a voluntary eviction.
+- The budget currently protects both replicas; change it to keep one available so one eviction is allowed.
 - Set minAvailable to one, drain only worker2 with the documented flags, and wait for two API replicas
   elsewhere.
 sources:

@@ -11,7 +11,7 @@ nodes: 2
 minutes: 40
 outcomes:
 - Tell a DNS failure apart from a blocked dependency port.
-- Restore egress with narrow rules that keep the network boundary.
+- Restore outgoing traffic with narrow rules that keep everything else blocked.
 - Prove the fix with a real job and the blocked paths.
 prerequisites:
 - m17-mission
@@ -35,8 +35,8 @@ prediction:
 hints:
 - Separate numeric-address connections from DNS queries and trace API and worker egress independently.
 - Check both DNS transports, then compare each allowed dependency port with its Service and actual listener.
-- Allow UDP and TCP 53 to CoreDNS and worker TCP 6379 to the queue while preserving the existing default-deny
-  and peer boundaries.
+- Allow DNS (UDP and TCP 53) to CoreDNS and TCP 6379 from the workers to the queue, keeping the default-deny
+  policy and the other rules as they are.
 sources:
 - https://kubernetes.io/docs/reference/access-authn-authz/rbac/
 - https://kubernetes.io/docs/concepts/services-networking/network-policies/

@@ -143,7 +143,7 @@ checks:
   diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
     if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
 - id: compose-owned
-  title: Every observed service belongs to this lab
+  title: Every running service belongs to this lab
   explanation: Every Dispatch container must carry this lab's label so Dockyard can recognize and clean
     them up.
   command:

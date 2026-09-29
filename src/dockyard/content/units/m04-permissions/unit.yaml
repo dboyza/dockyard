@@ -215,7 +215,7 @@ checks:
     cannot write to /data; compare docker exec "$DOCKYARD_CONTAINER" id with docker exec "$DOCKYARD_CONTAINER"
     ls -ldn /data.
 - id: storage-durable
-  title: A separate read-only container observes the committed job
+  title: A separate read-only container can read the saved job
   explanation: A separate read-only container opens the same storage and finds the new job, which shows
     the data lives outside the API container.
   command:

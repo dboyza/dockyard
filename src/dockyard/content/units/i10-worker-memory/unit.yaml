@@ -31,10 +31,10 @@ prediction:
     failures and image problems show different reasons.
 hints:
 - Inspect the previous termination reason and the worker memory limit before changing restart policy.
-- The supplied workload retains an 80 MiB working set in addition to its Python runtime and dependencies.
-  A request does not raise the hard limit.
-- Keep the supplied processing workload and two workers. Choose a bounded 128-256 MiB memory limit, wait
-  for a stable rollout, and verify a fresh completed job.
+- The worker keeps an 80 MiB working set in memory on top of what Python itself needs. Raising the request
+  does not raise the limit.
+- Keep the worker code and two workers. Set a memory limit between 128 and 256 MiB, wait for the rollout,
+  and check a new job completes.
 sources:
 - https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/
 starter: {}
@@ -128,7 +128,7 @@ checks:
   diagnostic: 'A new job was not completed. Run kubectl get pods -l app=worker: if RESTARTS keeps rising,
     kubectl describe pod on one and read its Last State and Reason.'
 - id: incident-contract
-  title: The workers have a bounded memory limit and stay up
+  title: The workers have a sensible memory limit and stay up
   explanation: Two workers must keep their 80 MiB working set, with a memory limit of 128-256 MiB, a request
     no larger than the limit, and no further restarts.
   command:

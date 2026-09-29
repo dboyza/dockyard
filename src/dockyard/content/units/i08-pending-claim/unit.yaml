@@ -35,8 +35,8 @@ hints:
 - Read the claim events, StorageClass binding mode, and consumer scheduling events together.
 - WaitForFirstConsumer needs an eligible consumer node. Compare the archiver node selector with actual
   node labels.
-- Place the archiver on the existing warm storage tier or make an equivalent legitimate placement repair,
-  then verify the original claim binds and retains a fresh file.
+- Schedule the archiver onto the node with the warm storage tier (or another valid placement fix), then
+  check the original claim binds and keeps a new file.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
 - https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/

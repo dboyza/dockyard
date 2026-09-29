@@ -30,8 +30,8 @@ prediction:
   explanation: A fresh job from the frontend, through Service DNS, completed on the other node.
 hints:
 - Compare the API node list with the two recorded guests; inspect CoreDNS and CNI state separately.
-- The worker needs a bootstrap token plus a CA hash, and both nodes need the supplied VXLAN network before
-  application traffic works.
+- The worker needs a bootstrap token and the CA certificate hash to join, and both nodes need the Calico
+  network before Pods can talk to each other.
 - Generate join-config for the worker, run kubeadm join there, apply network-manifest, wait for CNI and
   DNS, then run bootstrap.sh.
 sources:
