@@ -1,4 +1,5 @@
 import { createRoot } from "react-dom/client";
+import { useEffect, useRef } from "react";
 import { useWorkbench } from "./useWorkbench";
 import {
   Moon,
@@ -55,6 +56,22 @@ function App() {
     navigate,
   } = model;
   const section = navigationSection(page, lesson?.kind === "incident");
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const focusSearch = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const typing = !!target?.closest(
+        "input, textarea, select, [contenteditable]",
+      );
+      if (event.key === "Escape") setRailOpen(false);
+      if (event.key === "/" && !typing && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", focusSearch);
+    return () => window.removeEventListener("keydown", focusSearch);
+  }, [setRailOpen]);
   if (!connected)
     return (
       <main className="connection">
@@ -82,12 +99,18 @@ function App() {
         Skip to content
       </a>
       <aside id="sidebar" className={`sidebar ${railOpen ? "open" : ""}`}>
-        <button className="brand" onClick={() => navigate("home")}>
-          <Container size={24} />
-          <span>DOCKYARD</span>
-        </button>
-        <div className="localtag">
-          <span /> LOCAL WORKBENCH
+        <div className="sidebar-header">
+          <button className="brand" onClick={() => navigate("home")}>
+            <Container size={24} />
+            <span>DOCKYARD</span>
+          </button>
+          <button
+            className="icon drawer-close"
+            aria-label="Close navigation"
+            onClick={() => setRailOpen(false)}
+          >
+            <X size={20} />
+          </button>
         </div>
         <nav aria-label="Main navigation">
           {(
@@ -132,6 +155,13 @@ function App() {
           <span className="small muted">Your work stays on this computer.</span>
         </div>
       </aside>
+      {railOpen && (
+        <div
+          className="scrim"
+          aria-hidden="true"
+          onClick={() => setRailOpen(false)}
+        />
+      )}
       <div className="main-shell">
         <header className="topbar">
           <div className="breadcrumb">
@@ -155,23 +185,36 @@ function App() {
           <label className="searchbox">
             <Search size={16} />
             <input
+              ref={searchRef}
               aria-label="Search lessons"
-              placeholder="Find a lesson…"
+              aria-keyshortcuts="/"
+              placeholder="Search lessons"
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
                 setPage("course");
                 setRailOpen(false);
               }}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setSearch("");
+                  event.currentTarget.blur();
+                }
+              }}
             />
+            {!search && (
+              <kbd className="search-shortcut" aria-hidden="true">
+                /
+              </kbd>
+            )}
           </label>
           <div className="topbar-actions">
-            <span
-              className={`connection-indicator ${offline ? "offline" : ""}`}
-            >
-              <span />
-              {offline ? "Reconnecting" : "Local connection"}
-            </span>
+            {offline && (
+              <span className="connection-indicator offline" role="status">
+                <span />
+                Reconnecting…
+              </span>
+            )}
             <button
               className="icon"
               aria-label={
@@ -248,10 +291,6 @@ function App() {
           {page === "checkpoints" && <CheckpointsPage model={model} />}
           {page === "reference" && <ReferencePage model={model} />}
         </main>
-        <footer className="app-footer">
-          <span>Local by design. Real by practice.</span>
-          <span>Dockyard · Personal workbench</span>
-        </footer>
       </div>
       <dialog
         ref={dialogRef}

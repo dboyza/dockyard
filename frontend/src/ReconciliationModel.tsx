@@ -28,7 +28,7 @@ export function ReconciliationModel() {
     >
       <div className="section-heading">
         <div>
-          <div className="eyebrow">INTERACTIVE CONCEPT MODEL</div>
+          <div className="eyebrow">Try it here</div>
           <h3>Intent survives a missing Pod</h3>
         </div>
         <button

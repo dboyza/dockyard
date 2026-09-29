@@ -19,7 +19,7 @@ export function IncidentsPage({ model }: { model: Workbench }) {
   return (
     <>
       <div className="page-heading">
-        <div className="eyebrow">INDEPENDENT DIAGNOSIS</div>
+        <div className="eyebrow">Troubleshooting practice</div>
         <h1>Follow the evidence.</h1>
         <p className="intro">
           A reported symptom, a real broken environment, and room to

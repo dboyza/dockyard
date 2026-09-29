@@ -41,7 +41,7 @@ export function ReferencePage({ model }: { model: Workbench }) {
             <ArrowLeft size={15} /> Return to your lesson
           </button>
         )}
-        <div className="eyebrow">BACKGROUND KNOWLEDGE, WITHIN REACH</div>
+        <div className="eyebrow">Reference</div>
         <h1>A reference you can work with.</h1>
         <p className="intro">
           Look up an unfamiliar word or work through a short guide. You can

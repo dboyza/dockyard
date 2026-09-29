@@ -72,7 +72,7 @@ export function LiveLabMap({
     <section className="live-lab-map" aria-label="Observed lab resources">
       <div className="live-map-heading">
         <div>
-          <span className="eyebrow">YOUR ACTUAL LAB</span>
+          <span className="eyebrow">Live view of your lab</span>
           <h2>
             {snapshot?.runtime === "linux"
               ? "Inspect your Linux guests."

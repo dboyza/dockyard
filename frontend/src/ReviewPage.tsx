@@ -22,29 +22,13 @@ export function ReviewPage({ model }: { model: Workbench }) {
   return (
     <>
       <div className="page-heading">
-        <div className="eyebrow">RETURN WITH FRESH EVIDENCE</div>
+        <div className="eyebrow">Spaced review</div>
         <h1>Come back and try it again.</h1>
         <p className="intro">
           Before reopening a lesson, see what you remember. Explain why your
           last solution worked, then try the task again in a fresh lab.
         </p>
       </div>
-      <section className="panel review-policy">
-        <h2>A schedule you can inspect</h2>
-        <p className="muted">
-          Practice with help comes back after one day. A mission passed without
-          help comes back after seven days. A failed behavior check or a changed
-          lesson revision brings the activity back now. Blocked environments and
-          checks invalidated by changing work do not count as mistakes.
-        </p>
-        <p className="muted">
-          Opening a review does not earn new evidence. Use Check work to record
-          current behavior, or Independent retake on a mission or incident to
-          start without earlier hints. Repeated checks before a scheduled review
-          do not keep moving it further away. These intervals organize practice;
-          they do not certify retention or predict an exam result.
-        </p>
-      </section>
       <section
         className="panel review-list"
         aria-label="Activities due for review"
@@ -83,6 +67,22 @@ export function ReviewPage({ model }: { model: Workbench }) {
           </div>
         )}
       </section>
+      <details className="explainer">
+        <summary>How reviews are scheduled</summary>
+        <p>
+          Practice with help comes back after one day, and a mission passed
+          without help comes back after seven days. A failed check, or a lesson
+          that has been updated, comes back straight away. A check that could
+          not run, or that ran while the lab was still changing, does not count
+          as a mistake.
+        </p>
+        <p>
+          Opening a review does not change your record: use Check work, or
+          Independent retake on a mission or incident for a fresh attempt
+          without earlier hints. The schedule helps you practise; it cannot
+          prove you will remember something.
+        </p>
+      </details>
       {!!upcoming.length && (
         <section className="panel review-list" aria-label="Upcoming reviews">
           <h2>Coming back later</h2>

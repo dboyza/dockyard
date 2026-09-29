@@ -29,7 +29,7 @@ export function PlacementPage({ model }: { model: Workbench }) {
   return (
     <>
       <div className="page-heading">
-        <div className="eyebrow">OPTIONAL PRACTICAL PLACEMENT</div>
+        <div className="eyebrow">Placement</div>
         <h1>Find a good place to start.</h1>
         <p className="intro">
           Already know some Docker or Kubernetes? Try a mission from a familiar
@@ -70,22 +70,6 @@ export function PlacementPage({ model }: { model: Workbench }) {
         </div>
         <Compass className="placement-compass" size={90} strokeWidth={1} />
       </section>
-      <section className="panel">
-        <h2>How to use the result</h2>
-        <p className="muted">
-          Pick a mission from a part of the course you already know, prepare its
-          lab, and try it. Hints and the reference solution are there if you
-          need them, but a pass with help does not count as placing out of that
-          part.
-        </p>
-        <p className="muted">
-          A part counts as placed only when you pass its mission on your own and
-          it is not due for review. If you later fail a check, or the lesson is
-          updated, that part comes back into view. If you opened help earlier,
-          use Independent retake for a fresh try. This is a suggestion, not a
-          guarantee that you know every topic in that part.
-        </p>
-      </section>
       <section aria-label="Placement benchmarks" className="placement-grid">
         {benchmarks.map((item, index) => (
           <article className="panel" key={item.id}>
@@ -122,6 +106,22 @@ export function PlacementPage({ model }: { model: Workbench }) {
           </article>
         ))}
       </section>
+      <details className="explainer">
+        <summary>How placement works</summary>
+        <p>
+          Pick a mission from a part of the course you already know, prepare its
+          lab, and try it. Hints and the reference solution are there if you
+          need them, but a pass with help does not count as placing out of that
+          part.
+        </p>
+        <p>
+          A part counts as placed only when you pass its mission on your own and
+          it is not due for review. If you later fail a check, or the lesson is
+          updated, that part comes back into view. If you opened help earlier,
+          use Independent retake for a fresh try. This is a suggestion, not a
+          guarantee that you know every topic in that part.
+        </p>
+      </details>
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { currentPractice } from "./learning";
 import { UnitRow } from "./UnitRow";
 import type { Workbench } from "./useWorkbench";
 import { ChevronDown } from "lucide-react";
@@ -49,41 +50,63 @@ export function CoursePage({ model }: { model: Workbench }) {
             </div>
             {catalog?.modules
               .filter((module) => module.phase === phase)
-              .map((module) => (
-                <details
-                  className="module"
-                  key={module.id}
-                  open={module.id === (lesson?.module ?? 1)}
-                >
-                  <summary>
-                    <span className="module-id">
-                      {String(module.id).padStart(2, "0")}
-                    </span>
-                    <span>
-                      <strong>{module.title}</strong>
-                      <span className="muted small">
-                        {module.topics.join(" · ")}
+              .map((module) => {
+                const moduleUnits = units.filter(
+                  (unit) =>
+                    unit.module === module.id &&
+                    (unit.kind === "lesson" || unit.kind === "mission"),
+                );
+                const done = moduleUnits.filter((unit) =>
+                  currentPractice(unit.revision, state.progress[unit.id]),
+                ).length;
+                return (
+                  <details
+                    className="module"
+                    key={module.id}
+                    open={module.id === (lesson?.module ?? 1)}
+                  >
+                    <summary>
+                      <span className="module-id">
+                        {String(module.id).padStart(2, "0")}
                       </span>
-                    </span>
-                    <ChevronDown size={17} />
-                  </summary>
-                  <div className="module-lessons">
-                    {units
-                      .filter(
-                        (unit) =>
-                          unit.module === module.id &&
-                          (unit.kind === "lesson" || unit.kind === "mission"),
-                      )
-                      .map(unitRow)}
-                    {!units.some((unit) => unit.module === module.id) && (
-                      <p className="development-note">
-                        This module is being authored in the current development
-                        build.
-                      </p>
-                    )}
-                  </div>
-                </details>
-              ))}
+                      <span>
+                        <strong>{module.title}</strong>
+                        <span className="muted small">
+                          {module.topics.join(" · ")}
+                        </span>
+                      </span>
+                      {moduleUnits.length > 0 && (
+                        <span
+                          className="module-progress"
+                          aria-label={`${done} of ${moduleUnits.length} activities practised`}
+                        >
+                          <span
+                            className="module-progress-bar"
+                            aria-hidden="true"
+                          >
+                            <span
+                              style={{
+                                width: `${(done / moduleUnits.length) * 100}%`,
+                              }}
+                            />
+                          </span>
+                          {done}/{moduleUnits.length}
+                        </span>
+                      )}
+                      <ChevronDown size={17} />
+                    </summary>
+                    <div className="module-lessons">
+                      {moduleUnits.map(unitRow)}
+                      {!units.some((unit) => unit.module === module.id) && (
+                        <p className="development-note">
+                          This module is being authored in the current
+                          development build.
+                        </p>
+                      )}
+                    </div>
+                  </details>
+                );
+              })}
           </section>
         ))
       )}

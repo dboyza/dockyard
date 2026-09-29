@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { TerminalLauncher } from "./TerminalLauncher";
 import { LiveLabMap } from "./LiveLabMap";
 import type { Workbench } from "./useWorkbench";
 import { api } from "./api";
-import { Markdown, referenceTitle } from "./teaching";
+import { CodeBlock, Markdown, referenceTitle } from "./teaching";
 import { ReconciliationModel } from "./ReconciliationModel";
 import { QuorumModel } from "./QuorumModel";
 import { StorageModel } from "./StorageModel";
@@ -49,7 +50,21 @@ export function LessonPage({ model }: { model: Workbench }) {
     revealHint,
     revealReference,
   } = model;
+  const [saved, setSaved] = useState({
+    id: lesson?.id,
+    text: note,
+    status: "",
+  });
+  if (lesson && saved.id !== lesson.id)
+    setSaved({ id: lesson.id, text: note, status: "" });
   if (!lesson) return null;
+  const saveNote = (announce: boolean) =>
+    api(`/units/${lesson.id}/note`, { body: note })
+      .then(() => {
+        setSaved({ id: lesson.id, text: note, status: "Saved" });
+        if (announce) setNotice("Your observations were saved locally.");
+      })
+      .catch((e) => setError(e.message));
   const prerequisites = model.units.filter((unit) =>
     lesson.prerequisites.includes(unit.id),
   );
@@ -346,9 +361,9 @@ export function LessonPage({ model }: { model: Workbench }) {
                             <FileText size={15} />
                             {name}
                           </h4>
-                          <pre>
+                          <CodeBlock>
                             <code>{content}</code>
-                          </pre>
+                          </CodeBlock>
                         </section>
                       ))}
                     </div>
@@ -504,11 +519,10 @@ export function LessonPage({ model }: { model: Workbench }) {
                   ? "Native Linux lab"
                   : "Kubernetes lab"}
             </h3>
-            <div className="lab-state">
-              <span className={`dot ${lab?.state === "ready" ? "pass" : ""}`} />
-              {lab?.state || "Not prepared"}
+            <div className={`lab-state ${labTone(lab?.state)}`}>
+              <span className="dot" />
+              {labStateLabel(lab?.state)}
             </div>
-            {lab && <p className="mono small muted">{lab.id.slice(0, 12)}</p>}
             {lab?.state === "preparing" && lab.resources?.stage && (
               <p className="small" role="status">
                 {lab.resources?.stage}
@@ -565,7 +579,7 @@ export function LessonPage({ model }: { model: Workbench }) {
             {busy && (
               <div className="operation" role="status">
                 <LoaderCircle size={14} className="spin" />
-                {busy}…
+                {operationLabel(busy)}
                 {activeOperation && (
                   <button
                     className="text-button"
@@ -578,7 +592,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                 )}
               </div>
             )}
-            {lab && (
+            {lab && lab.state !== "absent" && (
               <>
                 <div className="lab-tools">
                   <button
@@ -612,6 +626,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                 <details className="workspace-location">
                   <summary>Workspace location</summary>
                   <p className="mono">{lab.workspace}</p>
+                  <p className="small muted">Lab ID {lab.id.slice(0, 12)}</p>
                   <button
                     className="small-button"
                     onClick={() =>
@@ -643,21 +658,27 @@ export function LessonPage({ model }: { model: Workbench }) {
             <textarea
               id="notes"
               value={note}
-              onChange={(event) => setNote(event.target.value)}
+              onChange={(event) => {
+                setNote(event.target.value);
+              }}
+              onBlur={() => {
+                if (note !== saved.text) void saveNote(false);
+              }}
               placeholder="What did you notice? What would you investigate next?"
             />
-            <button
-              className="text-button"
-              onClick={() =>
-                api(`/units/${lesson.id}/note`, { body: note })
-                  .then(() =>
-                    setNotice("Your observations were saved locally."),
-                  )
-                  .catch((e) => setError(e.message))
-              }
-            >
-              Save observations
-            </button>
+            <div className="notes-actions">
+              <button
+                className="text-button"
+                onClick={() => void saveNote(true)}
+              >
+                Save observations
+              </button>
+              <span className="small muted" role="status">
+                {note !== saved.text
+                  ? "Saves when you click away"
+                  : saved.status}
+              </span>
+            </div>
           </section>
           <section className="source-card">
             <h3>Go deeper</h3>
@@ -672,4 +693,40 @@ export function LessonPage({ model }: { model: Workbench }) {
       </div>
     </>
   );
+}
+
+const LAB_STATES: Record<string, string> = {
+  absent: "Not prepared",
+  preparing: "Preparing…",
+  ready: "Ready",
+  stopped: "Stopped",
+  stopping: "Stopping…",
+  checking: "Checking…",
+  cleaning: "Cleaning up…",
+  failed: "Needs attention",
+};
+
+function labStateLabel(state?: string) {
+  return LAB_STATES[state || "absent"] || state || "Not prepared";
+}
+
+function labTone(state?: string) {
+  if (state === "ready") return "pass";
+  if (state === "failed") return "fail";
+  if (state && state !== "absent" && state !== "stopped") return "busy";
+  return "";
+}
+
+const OPERATIONS: Record<string, string> = {
+  prepare: "Preparing your lab…",
+  check: "Checking your work…",
+  stop: "Stopping the lab…",
+  resume: "Resuming the lab…",
+  reset: "Resetting the lab…",
+  retake: "Setting up a fresh attempt…",
+  clean: "Cleaning up…",
+};
+
+function operationLabel(action: string) {
+  return OPERATIONS[action] || `${action}…`;
 }

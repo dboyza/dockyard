@@ -16,7 +16,7 @@ export function QuorumModel() {
     >
       <div className="section-heading">
         <div>
-          <div className="eyebrow">INTERACTIVE CONCEPT MODEL</div>
+          <div className="eyebrow">Try it here</div>
           <h3>A majority and a route are separate requirements</h3>
         </div>
         <button

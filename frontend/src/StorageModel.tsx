@@ -17,7 +17,7 @@ export function StorageModel() {
     >
       <div className="section-heading">
         <div>
-          <div className="eyebrow">INTERACTIVE CONCEPT MODEL</div>
+          <div className="eyebrow">Try it here</div>
           <h3>The Pod and its data have different lifetimes</h3>
         </div>
         <button

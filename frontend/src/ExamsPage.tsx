@@ -111,26 +111,33 @@ export function ExamsPage({ model }: { model: Workbench }) {
     return (
       <>
         <div className="page-heading">
-          <div className="eyebrow">ORIGINAL PERFORMANCE PRACTICE</div>
+          <div className="eyebrow">Timed practice exams</div>
           <h1>Work against a clear deadline.</h1>
           <p className="intro">
-            Two CKAD-oriented and two CKA-oriented task sets. Real environments,
-            explicit weights, and evidence you can use to choose your next
-            practice.
+            Two CKAD-style and two CKA-style exams, each with eight hands-on
+            tasks on a real cluster. Your results show which lessons to revisit.
           </p>
         </div>
-        <section className="panel">
-          <h2>A practice contract you can inspect</h2>
-          <p className="muted">
-            Preparation happens before the 120-minute timer starts. The deadline
-            survives browser reloads, and the launcher assesses the final state
-            when time expires. Keep Dockyard running through that deadline.
-          </p>
-          <p className="muted">
-            If the launcher is unavailable at the deadline, the environment is
-            unavailable, or work changes during grading, the attempt is retained
-            without a score. These original exercises do not reproduce
-            proctoring or predict an official exam result.
+        <section className="panel exam-rules">
+          <h2>How a practice exam works</h2>
+          <ol>
+            <li>
+              <strong>Prepare the environment.</strong> This can take a few
+              minutes, and the timer has not started yet.
+            </li>
+            <li>
+              <strong>Start the 120-minute timer</strong> and work in your lab
+              terminal. Reloading the browser does not pause it.
+            </li>
+            <li>
+              <strong>Submit, or let time run out.</strong> Dockyard checks the
+              final state of each task and scores it. Keep Dockyard running
+              until then.
+            </li>
+          </ol>
+          <p className="small muted">
+            These are original practice tasks without proctoring. A score here
+            is not an official result or a prediction of one.
           </p>
         </section>
         <div className="placement-grid">
@@ -231,14 +238,15 @@ export function ExamsPage({ model }: { model: Workbench }) {
             <div>
               <strong>
                 {lab?.state === "ready"
-                  ? "Environment prepared"
+                  ? "Environment ready"
                   : "Prepare before starting the clock"}
               </strong>
               <p className="muted small">
                 {operation
-                  ? lab?.resources.stage || operation.action
-                  : lab?.workspace ||
-                    "Provisioning time does not count toward your attempt."}
+                  ? lab?.resources.stage || "Preparing the environment…"
+                  : lab?.state === "ready"
+                    ? "Start the timer when you are ready to begin."
+                    : "Preparing does not count toward your 120 minutes."}
               </p>
             </div>
             <div className="button-row">

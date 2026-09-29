@@ -90,7 +90,7 @@ export function SettingsPage({ model }: { model: Workbench }) {
   return (
     <>
       <div className="page-heading">
-        <div className="eyebrow">PERSONAL, LOCAL, PORTABLE</div>
+        <div className="eyebrow">Settings</div>
         <h1>Keep your work yours.</h1>
         <p className="intro">
           Choose your reading theme and keep a portable copy of your learning

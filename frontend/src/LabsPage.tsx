@@ -20,16 +20,96 @@ export function LabsPage({ model }: { model: Workbench }) {
     perform,
     units,
   } = model;
+  const activeLabs = state.labs.filter((item) => item.state !== "absent");
   return (
     <>
       <div className="page-heading">
-        <div className="eyebrow">REAL RESOURCES, CLEAR OWNERSHIP</div>
+        <div className="eyebrow">Labs and tools</div>
         <h1>Lab manager</h1>
         <p className="intro">
           See what is prepared, inspect tool readiness, and stop resources you
           are not using.
         </p>
       </div>
+      <section className="lab-list" aria-labelledby="active-labs">
+        <header>
+          <h2 id="active-labs">Your labs</h2>
+          <span className="small muted">
+            {activeLabs.length === 1
+              ? "1 lab on this computer"
+              : `${activeLabs.length} labs on this computer`}
+          </span>
+        </header>
+        {activeLabs.length ? (
+          activeLabs.map((item) => (
+            <article className="resource-card" key={item.id}>
+              <div>
+                <h3>
+                  {units.find((unit) => unit.id === item.unit_id)?.title ||
+                    item.unit_id}
+                </h3>
+                <div className="resource-meta">
+                  <span
+                    className={`status-label ${
+                      item.state === "ready"
+                        ? "pass"
+                        : item.state === "failed"
+                          ? "fail"
+                          : ""
+                    }`}
+                  >
+                    {LAB_STATE_LABELS[item.state] || item.state}
+                  </span>
+                  <span className="mono muted small">{item.workspace}</span>
+                </div>
+                {item.state === "preparing" && item.resources?.stage && (
+                  <p className="small" role="status">
+                    {item.resources?.stage}
+                  </p>
+                )}
+                {item.error && <p className="diagnostic">{item.error}</p>}
+              </div>
+              <div className="button-row">
+                <button onClick={() => void openLesson(item.unit_id)}>
+                  Open lesson
+                  <ArrowRight size={15} />
+                </button>
+                <button
+                  disabled={!!busy}
+                  onClick={() =>
+                    void perform(
+                      item.state === "stopped" ? "resume" : "stop",
+                      false,
+                      item.unit_id,
+                    )
+                  }
+                >
+                  {item.state === "stopped" ? "Resume" : "Stop"}
+                </button>
+                <button
+                  disabled={!!busy}
+                  onClick={() => void perform("clean", false, item.unit_id)}
+                >
+                  Clean up
+                </button>
+              </div>
+            </article>
+          ))
+        ) : (
+          <div className="empty-state">
+            <FlaskConical size={32} />
+            <h3>No labs on this computer right now.</h3>
+            <p>
+              Open a lesson and choose Prepare lab to create one. Your own
+              Docker containers and clusters are never shown or changed here.
+            </p>
+            <button className="primary" onClick={() => navigate("course")}>
+              Browse the course
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        )}
+      </section>
       <section className="panel doctor">
         <div className="section-heading">
           <h2>Environment readiness</h2>
@@ -100,73 +180,16 @@ export function LabsPage({ model }: { model: Workbench }) {
         )}
       </section>
       <CachePanel model={model} />
-      {state.labs.length ? (
-        state.labs.map((item) => (
-          <section className="panel resource-card" key={item.id}>
-            <div>
-              <span
-                className={`status-label ${item.state === "ready" ? "pass" : ""}`}
-              >
-                {item.state}
-              </span>
-              <h2>
-                {units.find((unit) => unit.id === item.unit_id)?.title ||
-                  item.unit_id}
-              </h2>
-              <p className="mono muted small">{item.workspace}</p>
-              {item.state === "preparing" && item.resources?.stage && (
-                <p role="status">{item.resources?.stage}</p>
-              )}
-              {item.error && <p className="diagnostic">{item.error}</p>}
-            </div>
-            <div className="button-row">
-              <button onClick={() => void openLesson(item.unit_id)}>
-                Open lesson
-                <ArrowRight size={15} />
-              </button>
-              <button
-                disabled={!!busy}
-                onClick={() =>
-                  void perform(
-                    item.state === "absent"
-                      ? "prepare"
-                      : item.state === "stopped"
-                        ? "resume"
-                        : "stop",
-                    false,
-                    item.unit_id,
-                  )
-                }
-              >
-                {item.state === "absent"
-                  ? "Prepare"
-                  : item.state === "stopped"
-                    ? "Resume"
-                    : "Stop"}
-              </button>
-              <button
-                disabled={!!busy}
-                onClick={() => void perform("clean", false, item.unit_id)}
-              >
-                Clean up
-              </button>
-            </div>
-          </section>
-        ))
-      ) : (
-        <div className="empty-state">
-          <FlaskConical size={38} />
-          <h2>No labs prepared yet.</h2>
-          <p>
-            Start a lesson to create a dedicated workspace. Your existing Docker
-            resources are outside this view.
-          </p>
-          <button className="primary" onClick={() => navigate("course")}>
-            Browse the course
-            <ArrowRight size={16} />
-          </button>
-        </div>
-      )}
     </>
   );
 }
+
+const LAB_STATE_LABELS: Record<string, string> = {
+  preparing: "Preparing",
+  ready: "Ready",
+  stopped: "Stopped",
+  stopping: "Stopping",
+  checking: "Checking",
+  cleaning: "Cleaning up",
+  failed: "Needs attention",
+};
