@@ -637,9 +637,12 @@ pre {
   margin-bottom: 8px;
 }
 .stat strong {
+  display: block;
   font-size: 29px;
   font-weight: 600;
-  letter-spacing: -0.03em;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
 }
 .stat small {
   font-size: 13px;
@@ -919,7 +922,16 @@ pre {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  overflow: hidden;
+  overflow: clip;
+}
+.lesson-content > .tabs {
+  position: sticky;
+  top: 56px;
+  z-index: 5;
+  background: var(--surface);
+}
+.status-done {
+  color: var(--green);
 }
 .tabs {
   display: flex;
@@ -1596,8 +1608,20 @@ pre {
   padding: 25px;
 }
 .connection .brand {
-  margin-bottom: 35px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
   padding: 0;
+}
+.connection-command {
+  display: inline-block;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--code);
+  font-size: 14px;
+  margin: 0 0 16px;
 }
 .connection p {
   color: var(--muted);
@@ -2532,17 +2556,21 @@ pre {
 }
 .exam-tasks button {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   width: 100%;
-  padding: 14px 10px;
+  padding: 10px;
   background: none;
   border: 0;
   text-align: left;
+  font-weight: 400;
+}
+.exam-tasks button:hover {
+  background: var(--surface-hover);
 }
 .exam-tasks button.selected {
   background: var(--surface-alt);
-  color: var(--blue);
+  box-shadow: inset 3px 0 var(--blue);
 }
 .exam-tasks button > span:nth-child(2) {
   min-width: 0;
@@ -2550,8 +2578,9 @@ pre {
 }
 .exam-tasks strong {
   display: block;
-  font-weight: 500;
-  font-size: 13px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
 }
 .exam-tasks small {
   display: block;
@@ -2560,8 +2589,30 @@ pre {
   margin-top: 5px;
 }
 .exam-task-number {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
   color: var(--muted);
   font-size: 12px;
+  font-weight: 600;
+}
+.exam-task-number.pass {
+  border-color: var(--green);
+  color: var(--green);
+  background: var(--green-soft);
+}
+.exam-task-number.partial {
+  border-color: var(--amber);
+  color: var(--amber);
+  background: var(--amber-soft);
+}
+.exam-task-number.fail {
+  border-color: var(--red);
+  color: var(--red);
+  background: var(--red-soft);
 }
 .exam-task {
   min-width: 0;
@@ -2581,15 +2632,7 @@ pre {
   margin-top: 26px;
 }
 .exam-evidence {
-  padding: 15px 0;
-  border-bottom: 1px solid var(--line);
-}
-.exam-evidence summary {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  cursor: pointer;
-  font-size: 13px;
+  margin-top: 8px;
 }
 .exam-evidence pre {
   overflow: auto;
@@ -3013,4 +3056,125 @@ button.danger:not(.text-button):hover:not(:disabled) {
 }
 .text-button.danger {
   color: var(--red);
+}
+.lesson-pager {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 16px 28px;
+  border-top: 1px solid var(--line);
+}
+.lesson-pager > button {
+  justify-content: flex-start;
+  text-align: left;
+  min-width: 0;
+  padding: 10px 14px;
+  background: transparent;
+}
+.lesson-pager > button:hover {
+  background: var(--surface-alt);
+}
+.lesson-pager > .pager-next {
+  justify-content: flex-end;
+  text-align: right;
+  justify-self: end;
+}
+.lesson-pager > button > span {
+  display: grid;
+  min-width: 0;
+}
+.pager-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.pager-title {
+  color: var(--blue);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pager-position {
+  text-align: center;
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .lesson-pager {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    padding: 12px 16px;
+  }
+  .pager-position {
+    display: none;
+  }
+}
+.nav-count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 2em;
+  background: var(--surface-hover);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+button.stat {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-weight: 400;
+  color: var(--ink);
+}
+button.stat:disabled {
+  opacity: 1;
+  cursor: default;
+}
+button.stat:hover:not(:disabled) {
+  background: var(--surface-alt);
+  border-color: var(--blue);
+}
+.stat strong small {
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.stat .stat-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 6px 0 0;
+  color: var(--blue);
+  font-size: 13px;
+}
+.progress-groups > h2 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+.hero-actions {
+  margin-top: 20px;
+}
+.exam-remediation .evidence-title h4 {
+  margin: 0;
+  font-size: 14px;
+}
+.exam-remediation dl {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 6px 12px;
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+.exam-remediation dt {
+  color: var(--muted);
+}
+.exam-remediation dd {
+  margin: 0;
+}
+@media (max-width: 760px) {
+  .lesson-content > .tabs {
+    position: static;
+  }
 }

@@ -31,7 +31,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
           disabled={!!busy || !continueUnit}
           onClick={() => continueUnit && void openLesson(continueUnit.id)}
         >
-          {state.last_unit ? "Continue lesson" : "Start learning"}
+          {state.last_unit ? "Continue lesson" : "Open the first lesson"}
           <ArrowRight size={17} />
         </button>
       </div>
@@ -116,6 +116,21 @@ export function OverviewPage({ model }: { model: Workbench }) {
           recovering a Kubernetes cluster. You’ll read a short lesson here and
           try it in your own terminal.
         </p>
+        {!returning && (
+          <div className="button-row hero-actions">
+            <button
+              className="primary"
+              disabled={!!busy || !continueUnit}
+              onClick={() => continueUnit && void openLesson(continueUnit.id)}
+            >
+              Start learning
+              <ArrowRight size={17} />
+            </button>
+            <button onClick={() => navigate("placement")}>
+              I already know some Docker
+            </button>
+          </div>
+        )}
       </div>
       {returning && continueCard}
       {introduction}

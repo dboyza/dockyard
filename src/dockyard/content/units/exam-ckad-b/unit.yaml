@@ -87,8 +87,8 @@ checks:
   json_path:
   - digest
   expected: 'true'
-  diagnostic: 'Review how to look up a digest in a registry and deploy by digest, and how pull Secrets
-    work. Lessons: m06-registry and i07-registry-identity.'
+  diagnostic: Review how to look up a digest in a registry and deploy by digest, and how pull Secrets
+    work.
 - id: exam-credential
   title: The API reads its password and has no ServiceAccount token
   explanation: Both API Pods must report ready, set automountServiceAccountToken to false, and have no
@@ -103,8 +103,8 @@ checks:
   json_path:
   - credential
   expected: 'true'
-  diagnostic: 'Review DB_PASSWORD_FILE against the mounted Secret’s path and key, and automountServiceAccountToken
-    in the Pod spec. Lesson: m09-secrets and m09-identities.'
+  diagnostic: Review DB_PASSWORD_FILE against the mounted Secret’s path and key, and automountServiceAccountToken
+    in the Pod spec.
 - id: exam-workflow
   title: A new job completes and is saved
   explanation: A job sent through Service dispatch must be processed by a worker and saved in PostgreSQL.
@@ -118,8 +118,7 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: 'Review the API’s readiness first; it cannot save jobs without its database password. Lesson:
-    m09-secrets.'
+  diagnostic: Review the API’s readiness first; it cannot save jobs without its database password.
 - id: exam-resources
   title: Two workers run within the resource limits
   explanation: Two available workers, each with a CPU request above zero and a limit of at most 500m,
@@ -135,7 +134,7 @@ checks:
   json_path:
   - resources
   expected: 'true'
-  diagnostic: 'Review requests and limits and how they appear in the container’s cgroup. Lesson: m13-resources.'
+  diagnostic: Review requests and limits and how they appear in the container’s cgroup.
 - id: exam-overlay
   title: The production overlay configures metadata-reader
   explanation: kubectl kustomize release/overlays/production must generate the ConfigMap with environment
@@ -151,8 +150,7 @@ checks:
   json_path:
   - overlay
   expected: 'true'
-  diagnostic: 'Review configMapGenerator with behavior: merge in an overlay, and kubectl apply -k. Lesson:
-    m14-kustomize.'
+  diagnostic: 'Review configMapGenerator with behavior: merge in an overlay, and kubectl apply -k.'
 - id: exam-preview
   title: The preview Deployment runs two ready replicas with a safe rollout
   explanation: preview-api must have two available Pods serving dispatch-preview-b, with maxUnavailable
@@ -167,7 +165,7 @@ checks:
   json_path:
   - preview
   expected: 'true'
-  diagnostic: 'Review kubectl set image and the rollingUpdate settings. Lessons: m12-rollouts and m12-strategies.'
+  diagnostic: Review kubectl set image and the rollingUpdate settings.
 - id: exam-listener
   title: The report listener answers through its Service
   explanation: report-listener must set PORT to 8090, Service reports must map port 8080 to 8090, and
@@ -182,7 +180,7 @@ checks:
   json_path:
   - listener
   expected: 'true'
-  diagnostic: 'Review environment variables in a Deployment and Service targetPort. Lesson: m10-services.'
+  diagnostic: Review environment variables in a Deployment and Service targetPort.
 - id: exam-archive
   title: The report is restored into the original claim
   explanation: report-cache must mount the original report-cache claim at /archive, and /archive/report.json
@@ -197,8 +195,7 @@ checks:
   json_path:
   - archive
   expected: 'true'
-  diagnostic: 'Review copying a file into a Pod’s volume, for example with kubectl cp or kubectl exec
-    -i. Lesson: m11-backup.'
+  diagnostic: Review copying a file into a Pod’s volume, for example with kubectl cp or kubectl exec -i.
 - id: exam-preserved
   title: The original namespace, database claim, and stored job are still there
   explanation: The dispatch namespace, the database’s claim, and the job stored before the exam must be
@@ -213,8 +210,8 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: 'Something from before the exam is missing, or the database is not running, so the stored
-    job could not be read. Change existing objects in place. Lesson: m11-backup.'
+  diagnostic: Something from before the exam is missing, or the database is not running, so the stored
+    job could not be read. Change existing objects in place.
 - id: exam-routing
   title: Each Service reaches only its own release
   explanation: Service preview must select exactly the ready preview-api Pods and Service dispatch exactly
@@ -229,7 +226,7 @@ checks:
   json_path:
   - routing
   expected: 'true'
-  diagnostic: 'Review Service selectors and labels, and check both EndpointSlices. Lesson: m12-strategies.'
+  diagnostic: Review Service selectors and labels, and check both EndpointSlices.
 capabilities:
 - docker
 - kind

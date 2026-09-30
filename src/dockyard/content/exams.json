@@ -14,7 +14,7 @@
         ],
         "remediation": [
           "m02-multistage",
-          "m16-pipeline"
+          "m12-rollouts"
         ]
       },
       {
@@ -106,7 +106,8 @@
           "exam-digest"
         ],
         "remediation": [
-          "m16-pipeline"
+          "m06-registry",
+          "i07-registry-identity"
         ]
       },
       {
@@ -118,7 +119,7 @@
         ],
         "remediation": [
           "m09-secrets",
-          "m17-rbac"
+          "m09-identities"
         ]
       },
       {
@@ -148,7 +149,8 @@
           "exam-preview"
         ],
         "remediation": [
-          "m12-rollouts"
+          "m12-rollouts",
+          "m12-strategies"
         ]
       },
       {
@@ -158,7 +160,7 @@
           "exam-listener"
         ],
         "remediation": [
-          "m15-observation"
+          "m10-services"
         ]
       },
       {
@@ -169,7 +171,7 @@
           "exam-preserved"
         ],
         "remediation": [
-          "m11-statefulsets"
+          "m11-backup"
         ]
       },
       {
@@ -230,6 +232,7 @@
           "exam-preserved"
         ],
         "remediation": [
+          "m13-placement",
           "m22-storage"
         ]
       },
@@ -240,7 +243,8 @@
           "exam-agents"
         ],
         "remediation": [
-          "m08-patterns"
+          "m08-workloads",
+          "m13-placement"
         ]
       },
       {
@@ -271,7 +275,8 @@
           "exam-workflow"
         ],
         "remediation": [
-          "m22-packets"
+          "m22-packets",
+          "m22-mission"
         ]
       }
     ],
@@ -362,7 +367,7 @@
           "exam-workflow"
         ],
         "remediation": [
-          "m24-handoff"
+          "m24-triage"
         ]
       }
     ],

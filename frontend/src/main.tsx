@@ -58,6 +58,18 @@ function App() {
   const section = navigationSection(page, lesson?.kind === "incident");
   const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    const where =
+      page === "lesson" && lesson
+        ? lesson.title
+        : page === "exams" && model.examId
+          ? model.catalog?.exams.find((exam) => exam.id === model.examId)?.title
+          : pageLabels[page];
+    document.title = where ? `${where} · Dockyard` : "Dockyard";
+  }, [page, lesson, model.examId, model.catalog]);
+  const liveLabs = model.state.labs.filter(
+    (item) => item.state !== "absent",
+  ).length;
+  useEffect(() => {
     const focusSearch = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       const typing = !!target?.closest(
@@ -80,14 +92,22 @@ function App() {
           DOCKYARD
         </div>
         <h1>
-          {error ? "Connect your workbench." : "Preparing your workbench."}
+          {error ? "This browser is not connected." : "Opening your workbench…"}
         </h1>
-        <p>{error || "Loading your local course and progress."}</p>
-        {error && (
-          <p className="muted">
-            Launch Dockyard from your terminal to open a fresh one-time browser
-            connection. Your files and progress are stored locally.
-          </p>
+        {error ? (
+          <>
+            <p>
+              For your security, each browser link works once. To open Dockyard
+              again, run this in your Dockyard folder:
+            </p>
+            <pre className="connection-command">./dockyard</pre>
+            <p className="muted small">
+              It opens a fresh link in your browser. Your files and progress
+              stay on this computer. ({error})
+            </p>
+          </>
+        ) : (
+          <p>Loading your course and progress.</p>
         )}
         {!error && <LoaderCircle className="spin" />}
       </main>
@@ -126,13 +146,28 @@ function App() {
               key={item.id}
               className={section === item.id ? "selected" : ""}
               aria-current={section === item.id ? "page" : undefined}
+              aria-describedby={
+                item.id === "labs" && liveLabs > 0
+                  ? "live-lab-count"
+                  : undefined
+              }
               onClick={() => navigate(item.id)}
             >
               <item.icon size={18} />
               {item.label}
+              {item.id === "labs" && liveLabs > 0 && (
+                <span className="nav-count" aria-hidden="true">
+                  {liveLabs}
+                </span>
+              )}
             </button>
           ))}
         </nav>
+        {liveLabs > 0 && (
+          <span id="live-lab-count" className="sr-only">
+            {liveLabs} {liveLabs === 1 ? "lab" : "labs"} on this computer
+          </span>
+        )}
         <div className="sidebar-footer">
           <nav aria-label="Workspace tools">
             {(

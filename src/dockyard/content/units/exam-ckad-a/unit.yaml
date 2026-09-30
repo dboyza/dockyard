@@ -87,9 +87,8 @@ checks:
   json_path:
   - image
   expected: 'true'
-  diagnostic: 'Review Dockerfile CMD and USER, the build and kind load steps, and the image in Deployment
-    dispatch. Lessons: m02-multistage (images and users) and m12-rollouts (getting a new image into the
-    cluster).'
+  diagnostic: Review Dockerfile CMD and USER, the build and kind load steps, and the image in Deployment
+    dispatch.
 - id: exam-configuration
   title: The API reports the configured environment and banner
   explanation: Each API Pod’s /config must return environment assessment and banner Dispatch release accepted.
@@ -104,8 +103,8 @@ checks:
   json_path:
   - configuration
   expected: 'true'
-  diagnostic: 'Review how ConfigMap dispatch-settings reaches the Pod as an environment variable and a
-    mounted file, and that environment variables only change when Pods restart. Lesson: m09-configmaps.'
+  diagnostic: Review how ConfigMap dispatch-settings reaches the Pod as an environment variable and a
+    mounted file, and that environment variables only change when Pods restart.
 - id: exam-probes
   title: The startup, liveness, and readiness probes are correct
   explanation: The api container needs a startup probe on /startupz allowing at least 30 seconds, liveness
@@ -121,8 +120,8 @@ checks:
   json_path:
   - probes
   expected: 'true'
-  diagnostic: 'Review which endpoint each probe type should use and how failureThreshold times periodSeconds
-    sets the startup allowance. Lesson: m12-probes.'
+  diagnostic: Review which endpoint each probe type should use and how failureThreshold times periodSeconds
+    sets the startup allowance.
 - id: exam-schedule
   title: The CronJob is scheduled correctly and its test Job succeeded
   explanation: release-audit must use schedule 17 2 * * *, timeZone UTC, concurrencyPolicy Forbid, and
@@ -138,8 +137,7 @@ checks:
   json_path:
   - schedule
   expected: 'true'
-  diagnostic: 'Review cron syntax, timeZone, concurrencyPolicy, and kubectl create job --from=cronjob/NAME.
-    Lesson: m08-jobs.'
+  diagnostic: Review cron syntax, timeZone, concurrencyPolicy, and kubectl create job --from=cronjob/NAME.
 - id: exam-route
   title: Service dispatch reaches exactly the two ready API Pods
   explanation: The Service must keep port 8080 and its endpoints must be exactly the two ready API Pods.
@@ -154,8 +152,7 @@ checks:
   json_path:
   - route
   expected: 'true'
-  diagnostic: 'Review how a Service’s port and targetPort map to the container port, and check the EndpointSlice.
-    Lesson: m10-services.'
+  diagnostic: Review how a Service’s port and targetPort map to the container port, and check the EndpointSlice.
 - id: exam-workflow
   title: A new job completes and is saved
   explanation: A job sent through the Service must be processed by a worker and have the same result stored
@@ -171,8 +168,8 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: 'Review the request path from Service to API to worker to database; fix the route first,
-    then check the workers’ logs. Lesson: m10-services.'
+  diagnostic: Review the request path from Service to API to worker to database; fix the route first,
+    then check the workers’ logs.
 - id: exam-storage
   title: The reporter uses the original reports claim
   explanation: Deployment reporter must mount the original reports claim at /archive, and a file written
@@ -188,8 +185,7 @@ checks:
   json_path:
   - storage
   expected: 'true'
-  diagnostic: 'Review replacing an emptyDir volume with a persistentVolumeClaim volume in a Deployment.
-    Lesson: m11-claims.'
+  diagnostic: Review replacing an emptyDir volume with a persistentVolumeClaim volume in a Deployment.
 - id: exam-preserved
   title: The original namespace, database claim, and stored job are still there
   explanation: The dispatch namespace, the database’s claim, and the job stored before the exam must be
@@ -205,8 +201,8 @@ checks:
   json_path:
   - preserved
   expected: 'true'
-  diagnostic: 'Something from before the exam is missing, or the database is not running, so the stored
-    job could not be read. Change existing objects in place instead of recreating them. Lesson: m11-claims.'
+  diagnostic: Something from before the exam is missing, or the database is not running, so the stored
+    job could not be read. Change existing objects in place instead of recreating them.
 - id: exam-sidecar
   title: The init container and log sidecar work together
   explanation: Pod audit-tail needs init container seed and containers producer and tailer sharing an
@@ -222,8 +218,7 @@ checks:
   json_path:
   - sidecar
   expected: 'true'
-  diagnostic: 'Review initContainers, shared emptyDir volumes, and a sidecar that follows a file. Lesson:
-    m08-patterns.'
+  diagnostic: Review initContainers, shared emptyDir volumes, and a sidecar that follows a file.
 - id: exam-network
   title: Only the audit reader can reach the audit target
   explanation: From audit-reader a connection to an audit-target Pod on TCP 8080 must succeed, and from
@@ -239,7 +234,7 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: 'Review NetworkPolicy ingress rules with a podSelector for role: audit-reader. Lesson: m17-network.'
+  diagnostic: 'Review NetworkPolicy ingress rules with a podSelector for role: audit-reader.'
 capabilities:
 - docker
 - kind

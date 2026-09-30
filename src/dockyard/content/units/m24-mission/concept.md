@@ -15,7 +15,7 @@ Since the outage, several other things have gone wrong:
 
 ## The design to restore
 
-- The cluster's API address is the load balancer on the worker, which should send traffic to the control-plane nodes that are actually running. The m20 HA lesson showed how to check and regenerate its configuration.
+- The cluster's API address is the load balancer on the worker, which should send traffic to the control-plane nodes that are actually running. The high availability lesson in module 20 showed how to check and regenerate its configuration.
 - The two surviving etcd members keep quorum, and all three memberships stay registered.
 - The Dispatch Service sends requests to the stable API Pods, and at least one worker processes jobs.
 - The API meets the budget from the decisions lesson: 2 to 4 copies, total requests of at most 1 CPU and 512 MiB, total memory limits of at most 1 GiB, and a PDB named `dispatch-operations` for `app: dispatch, track: stable` that keeps at least one available.

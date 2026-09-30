@@ -163,6 +163,7 @@ export function useWorkbench() {
       setPredictionSubmitted(false);
       setAssessment(next.attempts[0] || null);
       setNote(next.note);
+      setSearch("");
       navigate("lesson");
     } catch (reason) {
       setError((reason as Error).message);

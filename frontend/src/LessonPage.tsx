@@ -7,12 +7,18 @@ import { CodeBlock, Markdown, referenceTitle } from "./teaching";
 import { ReconciliationModel } from "./ReconciliationModel";
 import { QuorumModel } from "./QuorumModel";
 import { StorageModel } from "./StorageModel";
-import { learningStatus, reviewNeeded } from "./learning";
+import {
+  currentPractice,
+  learningStatus,
+  reviewDue,
+  reviewNeeded,
+} from "./learning";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   Circle,
+  RotateCcw,
   Clock3,
   Container,
   Copy,
@@ -68,12 +74,20 @@ export function LessonPage({ model }: { model: Workbench }) {
   const prerequisites = model.units.filter((unit) =>
     lesson.prerequisites.includes(unit.id),
   );
-  const nextLesson = model.units.find(
-    (unit) =>
-      (unit.kind === "lesson" || unit.kind === "mission") &&
-      (unit.module > lesson.module ||
-        (unit.module === lesson.module && unit.order > lesson.order)),
-  );
+  const sequence = model.units
+    .filter((unit) =>
+      lesson.kind === "incident"
+        ? unit.kind === "incident"
+        : unit.kind === "lesson" || unit.kind === "mission",
+    )
+    .sort((a, b) => a.module - b.module || a.order - b.order);
+  const position = sequence.findIndex((unit) => unit.id === lesson.id);
+  const previousUnit = position > 0 ? sequence[position - 1] : undefined;
+  const nextUnit =
+    position >= 0 && position < sequence.length - 1
+      ? sequence[position + 1]
+      : undefined;
+  const nextLesson = lesson.kind === "incident" ? undefined : nextUnit;
   return (
     <>
       <div className="lesson-heading">
@@ -110,7 +124,13 @@ export function LessonPage({ model }: { model: Workbench }) {
                 : "Kubernetes"}
           </span>
           <span>
-            <Circle size={12} />
+            {reviewDue(lesson.revision, state.progress[lesson.id]) ? (
+              <RotateCcw size={13} />
+            ) : currentPractice(lesson.revision, state.progress[lesson.id]) ? (
+              <Check size={13} className="status-done" />
+            ) : (
+              <Circle size={12} />
+            )}
             {learningStatus(lesson.revision, state.progress[lesson.id])}
           </span>
         </div>
@@ -506,14 +526,55 @@ export function LessonPage({ model }: { model: Workbench }) {
                     </button>
                   </div>
                 )}
-                <LiveLabMap
-                  key={lesson.id}
-                  unitId={lesson.id}
-                  labState={lab?.state}
-                />
+                {lab && lab.state !== "absent" && (
+                  <LiveLabMap
+                    key={lesson.id}
+                    unitId={lesson.id}
+                    labState={lab.state}
+                  />
+                )}
               </>
             )}
           </div>
+          {position >= 0 && (
+            <nav
+              className="lesson-pager"
+              aria-label={
+                lesson.kind === "incident"
+                  ? "Incident navigation"
+                  : "Lesson navigation"
+              }
+            >
+              {previousUnit ? (
+                <button onClick={() => void model.openLesson(previousUnit.id)}>
+                  <ArrowLeft size={16} />
+                  <span>
+                    <span className="pager-label">Previous</span>
+                    <span className="pager-title">{previousUnit.title}</span>
+                  </span>
+                </button>
+              ) : (
+                <span />
+              )}
+              <span className="pager-position small muted">
+                {position + 1} of {sequence.length}
+              </span>
+              {nextUnit ? (
+                <button
+                  className="pager-next"
+                  onClick={() => void model.openLesson(nextUnit.id)}
+                >
+                  <span>
+                    <span className="pager-label">Next</span>
+                    <span className="pager-title">{nextUnit.title}</span>
+                  </span>
+                  <ArrowRight size={16} />
+                </button>
+              ) : (
+                <span />
+              )}
+            </nav>
+          )}
         </section>
         <aside className="context-panel">
           <section className="lab-card" id="lab-controls">

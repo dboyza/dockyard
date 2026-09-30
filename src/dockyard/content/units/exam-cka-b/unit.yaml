@@ -79,7 +79,7 @@ checks:
   - upgrade
   expected: 'true'
   diagnostic: 'Review the kubeadm upgrade order: control plane first with kubeadm upgrade apply, then
-    each node’s kubelet, draining and uncordoning each. Lesson: m21-upgrade.'
+    each node’s kubelet, draining and uncordoning each.'
 - id: exam-renewed
   title: The API server serves a renewed certificate
   explanation: The certificate the API server presents must have a new serial number and the original
@@ -94,8 +94,8 @@ checks:
   json_path:
   - renewed
   expected: 'true'
-  diagnostic: 'Review kubeadm certs renew apiserver and restarting the API server container with crictl
-    stop. Lesson: m21-certificates.'
+  diagnostic: Review kubeadm certs renew apiserver and restarting the API server container with crictl
+    stop.
 - id: exam-scheduler
   title: The scheduler is back and places new Pods
   explanation: All control-plane components must be running and a new Pod must be scheduled.
@@ -109,7 +109,7 @@ checks:
   json_path:
   - scheduler
   expected: 'true'
-  diagnostic: 'Review static Pod manifests in /etc/kubernetes/manifests. Lesson: m23-static-pods.'
+  diagnostic: Review static Pod manifests in /etc/kubernetes/manifests.
 - id: exam-rbac
   title: release-operator can scale Deployments and nothing more
   explanation: It must get and list Deployments and get, patch, and update deployments/scale, and must
@@ -124,8 +124,7 @@ checks:
   json_path:
   - rbac
   expected: 'true'
-  diagnostic: 'Review Role rules for a subresource such as deployments/scale, and kubectl auth can-i --subresource.
-    Lesson: m17-rbac.'
+  diagnostic: Review Role rules for a subresource such as deployments/scale, and kubectl auth can-i --subresource.
 - id: exam-service
   title: Service dispatch reaches the two ready API Pods
   explanation: The Service’s endpoints must be exactly the two ready API Pods, and /healthz through it
@@ -140,7 +139,7 @@ checks:
   json_path:
   - service
   expected: 'true'
-  diagnostic: 'Review Service selectors against Pod labels. Lesson: m10-services.'
+  diagnostic: Review Service selectors against Pod labels.
 - id: exam-network
   title: The API reaches Redis and the other rules still hold
   explanation: The API must connect to queue on 6379 while the existing allow and deny rules, including
@@ -155,7 +154,7 @@ checks:
   json_path:
   - network
   expected: 'true'
-  diagnostic: 'Review the port in the egress rule for the queue. Lesson: m17-network.'
+  diagnostic: Review the port in the egress rule for the queue.
 - id: exam-budget
   title: The disruption budget allows exactly one eviction
   explanation: PDB dispatch-maintenance must select both API Pods and, with two healthy replicas, allow
@@ -170,8 +169,8 @@ checks:
   json_path:
   - budget
   expected: 'true'
-  diagnostic: 'Review PodDisruptionBudget minAvailable and maxUnavailable, and ALLOWED DISRUPTIONS in
-    kubectl get pdb. Lesson: m21-drain.'
+  diagnostic: Review PodDisruptionBudget minAvailable and maxUnavailable, and ALLOWED DISRUPTIONS in kubectl
+    get pdb.
 - id: exam-preserved
   title: The original cluster and data are still there
   explanation: The namespace, both Node objects, the maintenance-sentinel ConfigMap, and the stored job
@@ -201,8 +200,7 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: 'Review the Service, NetworkPolicy, and node readiness tasks; the job needs all of them.
-    Lesson: m24-triage.'
+  diagnostic: Review the Service, NetworkPolicy, and node readiness tasks; the job needs all of them.
 capabilities:
 - docker
 - limactl

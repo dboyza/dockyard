@@ -1,6 +1,6 @@
 import { TerminalLauncher } from "./TerminalLauncher";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Flag, Play, Timer } from "lucide-react";
+import { ArrowLeft, ArrowRight, Flag, Play, Timer } from "lucide-react";
 import { api } from "./api";
 import type { Assessment, ExamAttempt } from "./contracts.gen";
 import type { Workbench } from "./useWorkbench";
@@ -239,14 +239,18 @@ export function ExamsPage({ model }: { model: Workbench }) {
               <strong>
                 {lab?.state === "ready"
                   ? "Environment ready"
-                  : "Prepare before starting the clock"}
+                  : attempt
+                    ? "Try this exam again"
+                    : "Prepare before starting the clock"}
               </strong>
               <p className="muted small">
                 {operation
                   ? lab?.resources.stage || "Preparing the environment…"
                   : lab?.state === "ready"
                     ? "Start the timer when you are ready to begin."
-                    : "Preparing does not count toward your 120 minutes."}
+                    : attempt
+                      ? "Independent retake resets the environment for a fresh timed attempt."
+                      : "Preparing does not count toward your 120 minutes."}
               </p>
             </div>
             <div className="button-row">
@@ -278,7 +282,7 @@ export function ExamsPage({ model }: { model: Workbench }) {
           </>
         )}
       </section>
-      {!active && state.exam_readiness[exam.id] && (
+      {!active && state.exam_readiness[exam.id] && lab?.state === "ready" && (
         <p className="muted small">{state.exam_readiness[exam.id]}</p>
       )}
       {!active && attempts.length > 1 && (
@@ -302,8 +306,8 @@ export function ExamsPage({ model }: { model: Workbench }) {
         <section className="panel exam-result" aria-label="Exam report">
           <div className="eyebrow">
             {attempt.state === "finished"
-              ? "FINAL PRACTICE OBSERVATION"
-              : "ATTEMPT RETAINED WITHOUT A SCORE"}
+              ? "Your score"
+              : "Attempt saved without a score"}
           </div>
           <h2>
             {attempt.score !== null
@@ -344,7 +348,8 @@ export function ExamsPage({ model }: { model: Workbench }) {
             Review reference solution
           </button>
           <p className="muted">
-            Select a task below to review its evidence and focused remediation.
+            Choose a task below to see what was checked and which lessons to
+            revisit.
           </p>
         </section>
       )}
@@ -393,14 +398,20 @@ export function ExamsPage({ model }: { model: Workbench }) {
               }
               onClick={() => choose(task.id)}
             >
-              <span className="exam-task-number">{index + 1}</span>
+              <span
+                className={`exam-task-number ${taskTone(
+                  attempt?.task_scores[task.id],
+                  task.weight,
+                )}`}
+              >
+                {index + 1}
+              </span>
               <span>
                 <strong>{task.title}</strong>
                 <small>
-                  {task.weight}%
                   {attempt?.task_scores[task.id] !== undefined
-                    ? ` · ${attempt.task_scores[task.id]} earned`
-                    : ""}
+                    ? `${attempt.task_scores[task.id]} of ${task.weight} points`
+                    : `${task.weight} points`}
                 </small>
               </span>
               {attempt?.flagged.includes(task.id) && <Flag size={15} />}
@@ -445,18 +456,38 @@ export function ExamsPage({ model }: { model: Workbench }) {
                       selected.criteria.includes(item.criterion),
                     )
                     .map((item) => (
-                      <details key={item.criterion} className="exam-evidence">
-                        <summary>
-                          <span>
-                            {item.status === "pass" && <Check size={15} />}{" "}
-                            {item.title}
+                      <article
+                        key={item.criterion}
+                        className={`evidence-card ${item.status}`}
+                      >
+                        <div className="evidence-title">
+                          <span className={`status-label ${item.status}`}>
+                            {item.status === "pass"
+                              ? "Passed"
+                              : item.status === "fail"
+                                ? "Needs attention"
+                                : "Could not check"}
                           </span>
-                          <strong>{item.status}</strong>
-                        </summary>
-                        <p className="muted">{item.diagnostic}</p>
-                        <pre>{item.observed}</pre>
-                        {item.details && <pre>{item.details}</pre>}
-                      </details>
+                          <h4>{item.title}</h4>
+                        </div>
+                        {item.status !== "pass" && (
+                          <p className="diagnostic">{item.diagnostic}</p>
+                        )}
+                        <details className="exam-evidence">
+                          <summary>Check details</summary>
+                          <dl>
+                            <dt>Expected</dt>
+                            <dd>{item.expected}</dd>
+                            <dt>Observed</dt>
+                            <dd>
+                              <pre>
+                                {item.observed || "No output was returned."}
+                              </pre>
+                            </dd>
+                          </dl>
+                          {item.details && <pre>{item.details}</pre>}
+                        </details>
+                      </article>
                     ))
                 ) : (
                   <p className="muted">Loading the saved assessment.</p>
@@ -478,4 +509,11 @@ export function ExamsPage({ model }: { model: Workbench }) {
       </div>
     </>
   );
+}
+
+function taskTone(score: number | undefined, weight: number) {
+  if (score === undefined) return "";
+  if (score >= weight) return "pass";
+  if (score > 0) return "partial";
+  return "fail";
 }
