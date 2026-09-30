@@ -3263,3 +3263,50 @@ button.stat:hover:not(:disabled) {
   border-color: var(--red);
   border-left-width: 3px;
 }
+.phase-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 8px;
+}
+.phase-jump a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 2em;
+  color: var(--ink);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--surface);
+}
+.phase-jump a:hover {
+  border-color: var(--blue);
+  background: var(--surface-alt);
+}
+.phase-jump a span {
+  color: var(--blue);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.course-phase {
+  scroll-margin-top: 72px;
+}
+.module-progress-bar.wide {
+  display: block;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  margin: 4px 0 16px;
+}
+.overview-progress-count strong {
+  font-size: 22px;
+  color: var(--ink);
+}
+.overview-links {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}

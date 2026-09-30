@@ -4,7 +4,21 @@ import type { Workbench } from "./useWorkbench";
 import { ChevronDown } from "lucide-react";
 import type { UnitSummary } from "./api";
 export function CoursePage({ model }: { model: Workbench }) {
-  const { catalog, lesson, search, units, filtered, state, openLesson } = model;
+  const {
+    catalog,
+    lesson,
+    search,
+    units,
+    filtered,
+    state,
+    openLesson,
+    continueUnit,
+  } = model;
+  const openModule = lesson?.module ?? continueUnit?.module ?? 1;
+  const phases = [1, 2, 3, 4].map((phase) => ({
+    phase,
+    title: catalog?.modules.find((item) => item.phase === phase)?.phase_title,
+  }));
   const unitRow = (unit: UnitSummary) => (
     <UnitRow
       key={unit.id}
@@ -24,6 +38,16 @@ export function CoursePage({ model }: { model: Workbench }) {
           step-by-step instructions.
         </p>
       </div>
+      {!search && (
+        <nav className="phase-jump" aria-label="Course phases">
+          {phases.map((item) => (
+            <a key={item.phase} href={`#phase-${item.phase}`}>
+              <span>0{item.phase}</span>
+              {item.title}
+            </a>
+          ))}
+        </nav>
+      )}
       {search ? (
         <section className="panel">
           <div className="section-heading">
@@ -77,7 +101,7 @@ export function CoursePage({ model }: { model: Workbench }) {
                   <details
                     className="module"
                     key={module.id}
-                    open={module.id === (lesson?.module ?? 1)}
+                    open={module.id === openModule}
                   >
                     <summary>
                       <span className="module-id">

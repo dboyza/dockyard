@@ -48,14 +48,14 @@ test('installed CLI and browser exchange portable history through a reviewed mer
   page.on('pageerror', error => failures.push(error.message));
   await page.goto(url);
   await navigateTo(page, 'Settings and data');
-  await expect(page.getByRole('heading', { name: 'Keep your work yours.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Settings and data', level: 1 })).toBeVisible();
   await page.getByLabel('Choose a Dockyard progress archive').setInputFiles(archive);
   const preview = page.getByRole('region', { name: 'Progress import preview' });
   await expect(preview).toContainText('source.zip');
   const noteURL = new URL('/api/units/m01-processes', page.url()).toString();
   const before = await page.request.get(noteURL).then(r => r.json());
   expect(before.note).not.toBe('My portable process observation.');
-  await page.getByRole('button', { name: 'Light workbench', exact: true }).click();
+  await page.getByRole('button', { name: 'Light', exact: true }).click();
   for (const width of [1440, 480]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -91,42 +91,39 @@ export function SettingsPage({ model }: { model: Workbench }) {
     <>
       <div className="page-heading">
         <div className="eyebrow">Settings</div>
-        <h1>Keep your work yours.</h1>
+        <h1>Settings and data</h1>
         <p className="intro">
-          Choose your reading theme and keep a portable copy of your learning
-          history, observations, and infrastructure source.
+          Choose a theme, and back up or move your progress to another computer.
         </p>
       </div>
       <section className="panel" aria-label="Appearance settings">
-        <h2>Reading theme</h2>
+        <h2>Theme</h2>
         <div className="button-row">
           <button
             aria-pressed={theme === "dark"}
             onClick={() => setTheme("dark")}
           >
-            <Moon size={16} /> Dark workbench
+            <Moon size={16} /> Dark
           </button>
           <button
             aria-pressed={theme === "light"}
             onClick={() => setTheme("light")}
           >
-            <Sun size={16} /> Light workbench
+            <Sun size={16} /> Light
           </button>
         </div>
       </section>
       <div className="placement-grid">
         <section className="panel" aria-label="Export progress">
           <FileArchive className="settings-icon" size={24} />
-          <h2>A portable learning archive</h2>
+          <h2>Back up your progress</h2>
           <p className="muted">
-            Includes progress, assessment evidence, exam history, notes, mission
-            checkpoints, and portable source drafts. Each archive records its
-            file hashes and source exclusions.
+            Download one file with your progress, check results, exam history,
+            notes, and saved mission files.
           </p>
           <p className="muted">
-            Live containers, VM disks, image caches, kubeconfigs, private keys,
-            and known lab credentials are excluded. Database recovery remains a
-            separate lab skill.
+            It never includes running labs, VM disks, cached images, cluster
+            credentials, or private keys.
           </p>
           <a
             className="button-link"
@@ -138,11 +135,11 @@ export function SettingsPage({ model }: { model: Workbench }) {
         </section>
         <section className="panel" aria-label="Import progress">
           <Upload className="settings-icon" size={24} />
-          <h2>Bring your history forward</h2>
+          <h2>Restore from a backup</h2>
           <p className="muted">
-            Inspect an archive before merging it. Existing notes and active
-            workspace files stay in place. Imported drafts and conflicting notes
-            go into a separate folder.
+            You’ll see what a backup contains before anything is merged. Your
+            current notes and workspace files are kept; anything that conflicts
+            is saved in a separate folder.
           </p>
           <label className="archive-picker">
             <span>Choose a Dockyard progress archive</span>
@@ -157,8 +154,8 @@ export function SettingsPage({ model }: { model: Workbench }) {
             />
           </label>
           <p className="small muted">
-            Up to 64 MiB compressed. Importing historical evidence does not
-            recreate a running lab or restart an exam timer.
+            Up to 64 MiB. Restoring history does not recreate running labs or
+            restart an exam timer.
           </p>
         </section>
       </div>

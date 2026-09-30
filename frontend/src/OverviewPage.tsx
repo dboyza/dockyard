@@ -1,9 +1,19 @@
 import type { Workbench } from "./useWorkbench";
+import { currentPractice, reviewDue } from "./learning";
 import { ArrowRight, Clock3, Terminal } from "lucide-react";
 
 export function OverviewPage({ model }: { model: Workbench }) {
   const { state, busy, navigate, openLesson, continueUnit } = model;
   const returning = !!state.last_unit;
+  const courseUnits = model.units.filter(
+    (unit) => unit.kind === "lesson" || unit.kind === "mission",
+  );
+  const practised = courseUnits.filter((unit) =>
+    currentPractice(unit.revision, state.progress[unit.id]),
+  ).length;
+  const due = model.units.filter((unit) =>
+    reviewDue(unit.revision, state.progress[unit.id]),
+  ).length;
   const continueCard = (
     <section className="continue-card">
       <div>
@@ -35,20 +45,50 @@ export function OverviewPage({ model }: { model: Workbench }) {
           <ArrowRight size={17} />
         </button>
       </div>
-      <div className="lesson-rhythm">
-        <h3>One lesson at a time</h3>
-        <p>
-          <strong>Understand.</strong> Learn the idea and predict what will
-          happen.
-        </p>
-        <p>
-          <strong>Try it.</strong> Prepare a lab and work in your terminal.
-        </p>
-        <p>
-          <strong>Check and explain.</strong> Check the result, then explain why
-          it worked.
-        </p>
-      </div>
+      {returning ? (
+        <div className="lesson-rhythm overview-progress">
+          <h3>Your progress</h3>
+          <p className="overview-progress-count">
+            <strong>{practised}</strong> of {courseUnits.length} lessons and
+            missions practised
+          </p>
+          <span className="module-progress-bar wide" aria-hidden="true">
+            <span
+              style={{
+                width: `${(practised / Math.max(courseUnits.length, 1)) * 100}%`,
+              }}
+            />
+          </span>
+          <div className="overview-links">
+            {due > 0 && (
+              <button
+                className="text-button"
+                onClick={() => navigate("review")}
+              >
+                {due} due for review <ArrowRight size={14} />
+              </button>
+            )}
+            <button className="text-button" onClick={() => navigate("course")}>
+              See the full course <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="lesson-rhythm">
+          <h3>One lesson at a time</h3>
+          <p>
+            <strong>Understand.</strong> Learn the idea and predict what will
+            happen.
+          </p>
+          <p>
+            <strong>Try it.</strong> Prepare a lab and work in your terminal.
+          </p>
+          <p>
+            <strong>Check and explain.</strong> Check the result, then explain
+            why it worked.
+          </p>
+        </div>
+      )}
     </section>
   );
   const introduction = (
@@ -109,12 +149,16 @@ export function OverviewPage({ model }: { model: Workbench }) {
   return (
     <>
       <div className="page-heading welcome-heading">
-        <div className="eyebrow">WELCOME TO DOCKYARD</div>
-        <h1>Learn to run a real application.</h1>
+        <div className="eyebrow">
+          {returning ? "Overview" : "WELCOME TO DOCKYARD"}
+        </div>
+        <h1>
+          {returning ? "Welcome back." : "Learn to run a real application."}
+        </h1>
         <p className="intro">
-          We’ll start with one Docker container, then build up to running and
-          recovering a Kubernetes cluster. You’ll read a short lesson here and
-          try it in your own terminal.
+          {returning
+            ? "Pick up your last lesson, or review something you practised earlier."
+            : "We’ll start with one Docker container, then build up to running and recovering a Kubernetes cluster. You’ll read a short lesson here and try it in your own terminal."}
         </p>
         {!returning && (
           <div className="button-row hero-actions">
