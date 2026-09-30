@@ -6,10 +6,12 @@ export function UnitRow({
   unit,
   progress,
   onOpen,
+  showModule = false,
 }: {
   unit: UnitSummary;
   progress?: Progress;
   onOpen: (id: string) => Promise<void>;
+  showModule?: boolean;
 }) {
   const current = currentPractice(unit.revision, progress);
   const review = reviewDue(unit.revision, progress);
@@ -25,6 +27,18 @@ export function UnitRow({
         )}
       </span>
       <span>
+        {showModule && (
+          <span className="unit-context">
+            Module {String(unit.module).padStart(2, "0")} ·{" "}
+            {unit.kind === "mission"
+              ? "Mission"
+              : unit.kind === "incident"
+                ? "Incident"
+                : unit.kind === "exam"
+                  ? "Practice exam"
+                  : "Lesson"}
+          </span>
+        )}
         <strong>{unit.title}</strong>
         <span className="muted small">{unit.summary}</span>
       </span>

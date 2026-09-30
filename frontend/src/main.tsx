@@ -58,6 +58,11 @@ function App() {
   const section = navigationSection(page, lesson?.kind === "incident");
   const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 6000);
+    return () => window.clearTimeout(timer);
+  }, [notice, setNotice]);
+  useEffect(() => {
     const where =
       page === "lesson" && lesson
         ? lesson.title
@@ -237,7 +242,19 @@ function App() {
                 }
               }}
             />
-            {!search && (
+            {search ? (
+              <button
+                type="button"
+                className="icon search-clear"
+                aria-label="Clear search"
+                onClick={() => {
+                  setSearch("");
+                  searchRef.current?.focus();
+                }}
+              >
+                <X size={15} />
+              </button>
+            ) : (
               <kbd className="search-shortcut" aria-hidden="true">
                 /
               </kbd>
@@ -260,6 +277,7 @@ function App() {
               {theme === "dark" ? <Sun size={19} /> : <Moon size={19} />}
             </button>
           </div>
+          {model.busy && <div className="busy-bar" aria-hidden="true" />}
         </header>
         <main
           id="main"
@@ -269,30 +287,6 @@ function App() {
             <div className="banner warning" role="status">
               The local connection is interrupted. Displayed evidence may be
               stale. Changes will resume when the service reconnects.
-            </div>
-          )}
-          {error && (
-            <div className="banner error" role="alert">
-              <span>{error}</span>
-              <button
-                className="icon"
-                aria-label="Dismiss error"
-                onClick={() => setError("")}
-              >
-                <X size={17} />
-              </button>
-            </div>
-          )}
-          {notice && (
-            <div className="banner success" role="status">
-              <span>{notice}</span>
-              <button
-                className="icon"
-                aria-label="Dismiss message"
-                onClick={() => setNotice("")}
-              >
-                <X size={17} />
-              </button>
             </div>
           )}
           {page !== "lesson" && sectionPages[section] && (
@@ -326,6 +320,32 @@ function App() {
           {page === "checkpoints" && <CheckpointsPage model={model} />}
           {page === "reference" && <ReferencePage model={model} />}
         </main>
+      </div>
+      <div className="toasts">
+        {error && (
+          <div className="banner error" role="alert">
+            <span>{error}</span>
+            <button
+              className="icon"
+              aria-label="Dismiss error"
+              onClick={() => setError("")}
+            >
+              <X size={17} />
+            </button>
+          </div>
+        )}
+        {notice && (
+          <div className="banner success" role="status">
+            <span>{notice}</span>
+            <button
+              className="icon"
+              aria-label="Dismiss message"
+              onClick={() => setNotice("")}
+            >
+              <X size={17} />
+            </button>
+          </div>
+        )}
       </div>
       <dialog
         ref={dialogRef}

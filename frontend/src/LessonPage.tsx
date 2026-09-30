@@ -292,7 +292,18 @@ export function LessonPage({ model }: { model: Workbench }) {
                   <fieldset disabled={predictionSubmitted}>
                     <legend className="sr-only">Choose an answer</legend>
                     {lesson.prediction.options.map((option, index) => (
-                      <label key={option}>
+                      <label
+                        key={option}
+                        className={
+                          !predictionSubmitted
+                            ? ""
+                            : index === lesson.prediction.correct
+                              ? "correct"
+                              : index === prediction
+                                ? "incorrect"
+                                : ""
+                        }
+                      >
                         <input
                           type="radio"
                           name="prediction"
@@ -304,7 +315,14 @@ export function LessonPage({ model }: { model: Workbench }) {
                     ))}
                   </fieldset>
                   {predictionSubmitted ? (
-                    <div className="prediction-feedback">
+                    <div
+                      className={`prediction-feedback ${
+                        prediction === lesson.prediction.correct
+                          ? "correct"
+                          : "incorrect"
+                      }`}
+                      role="status"
+                    >
                       <strong>
                         {prediction === lesson.prediction.correct
                           ? "Exactly."

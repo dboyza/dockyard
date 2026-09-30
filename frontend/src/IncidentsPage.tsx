@@ -71,6 +71,7 @@ export function IncidentsPage({ model }: { model: Workbench }) {
             unit={unit}
             progress={model.state.progress[unit.id]}
             onOpen={model.openLesson}
+            showModule
           />
         ))}
         {!visible.length && (

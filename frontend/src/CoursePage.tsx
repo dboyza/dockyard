@@ -26,9 +26,23 @@ export function CoursePage({ model }: { model: Workbench }) {
       </div>
       {search ? (
         <section className="panel">
-          <h2>Search results</h2>
+          <div className="section-heading">
+            <h2>Search results</h2>
+            <span className="muted small" role="status">
+              {filtered.length === 1 ? "1 match" : `${filtered.length} matches`}{" "}
+              for “{search}”
+            </span>
+          </div>
           {filtered.length ? (
-            filtered.map(unitRow)
+            filtered.map((unit) => (
+              <UnitRow
+                key={unit.id}
+                unit={unit}
+                progress={state.progress[unit.id]}
+                onOpen={openLesson}
+                showModule
+              />
+            ))
           ) : (
             <p className="muted">
               No lessons match “{search}”. Try a concept such as container,

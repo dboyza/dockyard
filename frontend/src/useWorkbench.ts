@@ -122,7 +122,7 @@ export function useWorkbench() {
       opened.current++;
       setBusy("");
     }
-    if (destination === "course") setSearch("");
+    setSearch("");
     setPage(destination);
     setRailOpen(false);
     setError("");
@@ -232,7 +232,13 @@ export function useWorkbench() {
             ? `Opening a lab session in ${result.terminal || "your terminal"}.`
             : action === "prepare"
               ? "Your workspace is ready. Open the terminal to begin."
-              : `${action.charAt(0).toUpperCase() + action.slice(1)} completed.`,
+              : action === "stop"
+                ? "Lab stopped. Resume it when you come back."
+                : action === "resume"
+                  ? "Lab resumed."
+                  : action === "clean"
+                    ? "Lab cleaned up."
+                    : `${action.charAt(0).toUpperCase() + action.slice(1)} completed.`,
         );
       }
       await refresh();

@@ -21,6 +21,7 @@ export function LabsPage({ model }: { model: Workbench }) {
     units,
   } = model;
   const activeLabs = state.labs.filter((item) => item.state !== "absent");
+  const runningLabs = activeLabs.filter((item) => item.state === "ready");
   return (
     <>
       <div className="page-heading">
@@ -34,10 +35,23 @@ export function LabsPage({ model }: { model: Workbench }) {
       <section className="lab-list" aria-labelledby="active-labs">
         <header>
           <h2 id="active-labs">Your labs</h2>
-          <span className="small muted">
-            {activeLabs.length === 1
-              ? "1 lab on this computer"
-              : `${activeLabs.length} labs on this computer`}
+          <span className="lab-list-actions">
+            <span className="small muted">
+              {activeLabs.length === 1
+                ? "1 lab on this computer"
+                : `${activeLabs.length} labs on this computer`}
+            </span>
+            {runningLabs.length > 1 && (
+              <button
+                disabled={!!busy}
+                onClick={async () => {
+                  for (const item of runningLabs)
+                    await perform("stop", false, item.unit_id);
+                }}
+              >
+                Stop all
+              </button>
+            )}
           </span>
         </header>
         {activeLabs.length ? (

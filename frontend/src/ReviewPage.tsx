@@ -50,6 +50,7 @@ export function ReviewPage({ model }: { model: Workbench }) {
                 unit={unit}
                 progress={state.progress[unit.id]}
                 onOpen={openLesson}
+                showModule
               />
             </div>
           ))
@@ -101,6 +102,7 @@ export function ReviewPage({ model }: { model: Workbench }) {
                 unit={unit}
                 progress={state.progress[unit.id]}
                 onOpen={openLesson}
+                showModule
               />
             </div>
           ))}

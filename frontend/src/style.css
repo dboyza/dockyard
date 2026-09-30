@@ -1305,7 +1305,29 @@ pre {
   font-size: 13px;
 }
 .prediction-feedback strong {
-  color: var(--blue);
+  color: var(--ink);
+}
+.prediction-feedback.correct strong {
+  color: var(--green);
+}
+.prediction-feedback.incorrect strong {
+  color: var(--amber);
+}
+.prediction label.correct,
+.prediction label.correct:has(input:checked) {
+  border-color: var(--green);
+  background: var(--green-soft);
+  color: var(--ink);
+}
+.prediction label.incorrect,
+.prediction label.incorrect:has(input:checked) {
+  border-color: var(--red);
+  background: var(--red-soft);
+  color: var(--ink);
+}
+.search-clear {
+  min-height: 24px;
+  padding: 2px;
 }
 .prediction-feedback p {
   color: var(--muted);
@@ -3114,7 +3136,7 @@ button.danger:not(.text-button):hover:not(:disabled) {
   min-width: 20px;
   padding: 0 6px;
   border-radius: 2em;
-  background: var(--surface-hover);
+  background: var(--line);
   color: var(--ink);
   font-size: 12px;
   font-weight: 600;
@@ -3177,4 +3199,67 @@ button.stat:hover:not(:disabled) {
   .lesson-content > .tabs {
     position: static;
   }
+}
+.unit-context {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+.lab-list-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.topbar {
+  position: sticky;
+}
+.busy-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  overflow: hidden;
+  background: var(--accent-soft);
+}
+.busy-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  background: var(--blue);
+  animation: busy-slide 1.1s ease-in-out infinite;
+}
+@keyframes busy-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .busy-bar::after {
+    animation: none;
+    width: 100%;
+  }
+}
+.toasts {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+  display: grid;
+  gap: 10px;
+  width: min(420px, calc(100vw - 40px));
+}
+.toasts .banner {
+  margin: 0;
+  box-shadow: var(--shadow);
+  font-size: 14px;
+}
+.toasts .banner.error {
+  border-color: var(--red);
+  border-left-width: 3px;
 }
