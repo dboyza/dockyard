@@ -63,8 +63,8 @@ The PowerShell and Python bridge contracts do not prove Windows GUI launch behav
 Those remain explicit release smoke-test targets.
 
 The x86-64 execution checks used emulation on ARM hardware.
-A physical x86-64 host, x86-64 QEMU/KVM native lesson, and the new GitHub Actions jobs were not executed here.
-The CI workflow is committed for subsequent runs and must not be reported as green until GitHub actually executes it.
+A physical x86-64 host and an x86-64 QEMU/KVM native lesson were not executed here.
+The project has no hosted CI; the checks in the [maintenance guide](maintenance.md) run locally on each platform.
 
 This is a portability validation, not a repeat of all 112 original activity audits on every platform.
 The original complete curriculum runtime evidence remains in [runtime-evidence.md](runtime-evidence.md).

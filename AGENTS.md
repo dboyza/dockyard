@@ -48,4 +48,5 @@
 - Keep AGENTS.md concise and durable; implementation details belong in docs.
 - Use one complete sentence per physical line in long Markdown.
 - Never use em dashes, add agent co-authors, or manually modify generated files or changelogs.
+- Do not add hosted CI such as GitHub Actions; keep verification local.
 - Create local commits after changes; only push when the user explicitly asks.
