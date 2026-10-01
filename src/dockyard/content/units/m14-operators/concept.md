@@ -53,5 +53,9 @@ If you scale `dispatch-workers` by hand, the controller notices on its next pass
 The WorkerPool is the **source of truth**; to make a lasting change, edit the WorkerPool.
 The supplied `operator-proof.py` does exactly this experiment: it scales the generated Deployment to zero, waits for the controller to restore two workers, and records what happened.
 
+```figure
+operator-loop
+```
+
 This small controller simply polls and retries.
 Real operators also handle upgrades, deletion clean-up, running several copies safely, and reporting failures.

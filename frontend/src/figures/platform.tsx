@@ -3,9 +3,11 @@ import {
   Box,
   Code,
   Diagram,
+  File,
   Label,
   Line,
   Region,
+  Reveal,
   Tag,
   type Tone,
 } from "./kit";
@@ -495,4 +497,291 @@ export const platform = {
       ))}
     </Diagram>
   ),
+  "kustomize-overlays": () => (
+    <Diagram height={268}>
+      <Region x={10} y={20} w={190} h={226} label="base" />
+      {[
+        "deployment.yaml",
+        "service.yaml",
+        "configmap.yaml",
+        "kustomization.yaml",
+      ].map((name, index) => (
+        <Tag key={name} x={105} y={66 + index * 40} text={name} />
+      ))}
+      <Region
+        x={250}
+        y={20}
+        w={200}
+        h={104}
+        label="overlays/development"
+        tone="focus"
+      />
+      {["namespace: dispatch", "replicas: 2", "environment: development"].map(
+        (line, index) => (
+          <Label key={line} x={266} y={58 + index * 22} size="small" mono>
+            {line}
+          </Label>
+        ),
+      )}
+      <Region x={250} y={142} w={200} h={104} label="overlays/staging" />
+      {["namespace: staging", "environment: staging"].map((line, index) => (
+        <Label key={line} x={266} y={180 + index * 22} size="small" mono>
+          {line}
+        </Label>
+      ))}
+      <Arrow
+        points={[
+          [200, 110],
+          [246, 72],
+        ]}
+      />
+      <Arrow
+        points={[
+          [200, 160],
+          [246, 194],
+        ]}
+      />
+      <Arrow
+        points={[
+          [450, 72],
+          [486, 72],
+        ]}
+        tone="good"
+      />
+      <Box
+        x={490}
+        y={42}
+        w={140}
+        h={60}
+        title="development"
+        sub="deployed here"
+        tone="good"
+      />
+      <Arrow
+        points={[
+          [450, 194],
+          [486, 194],
+        ]}
+        tone="muted"
+      />
+      <Box x={490} y={164} w={140} h={60} title="staging" sub="rendered only" />
+    </Diagram>
+  ),
+
+  "helm-render": () => (
+    <Diagram height={214}>
+      <Label x={10} y={20} size="small" tone="muted">
+        Values, from lowest to highest priority
+      </Label>
+      <Tag x={110} y={46} text="chart’s values.yaml" />
+      <Tag x={110} y={86} text="-f values-practice.yaml" tone="focus" />
+      <Tag x={110} y={126} text="--set api.replicas=2" tone="good" />
+      <Label x={110} y={160} anchor="middle" size="small" tone="muted">
+        later values win
+      </Label>
+      <Arrow
+        points={[
+          [200, 46],
+          [236, 76],
+        ]}
+        tone="muted"
+      />
+      <Arrow
+        points={[
+          [210, 86],
+          [236, 86],
+        ]}
+        tone="muted"
+      />
+      <Arrow
+        points={[
+          [200, 126],
+          [236, 96],
+        ]}
+        tone="muted"
+      />
+      <Box
+        x={240}
+        y={50}
+        w={160}
+        h={72}
+        title="templates"
+        sub="filled in with values"
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [400, 86],
+          [456, 86],
+        ]}
+        tone="good"
+        label="install"
+        labelAt={[428, 78]}
+      />
+      <Box
+        x={460}
+        y={50}
+        w={170}
+        h={72}
+        title="release dispatch"
+        sub="revision 1, 2, 3…"
+        tone="good"
+      />
+      <Label x={320} y={200} anchor="middle" size="small" tone="muted">
+        helm template shows the filled-in manifests without installing anything.
+      </Label>
+    </Diagram>
+  ),
+
+  "helm-revisions": ({ step = 0 }) => (
+    <Diagram height={262} step={step}>
+      <Box
+        x={10}
+        y={50}
+        w={180}
+        h={66}
+        title="revision 1"
+        sub="2 replicas: serving"
+        tone="good"
+      />
+      <Reveal from={1}>
+        <Arrow
+          points={[
+            [190, 83],
+            [226, 83],
+          ]}
+        />
+        <Box
+          x={230}
+          y={50}
+          w={180}
+          h={66}
+          title="revision 2"
+          sub="0 replicas"
+          tone="bad"
+        />
+        <Tag x={320} y={140} text="helm: deployed" tone="warn" />
+        <Tag x={320} y={172} text="0 Pods serving" tone="bad" />
+      </Reveal>
+      <Reveal from={2}>
+        <Arrow
+          points={[
+            [410, 83],
+            [446, 83],
+          ]}
+        />
+        <Box
+          x={450}
+          y={50}
+          w={180}
+          h={66}
+          title="revision 3"
+          sub="rollback to 1: serving"
+          tone="good"
+        />
+        <Arrow
+          points={[
+            [540, 50],
+            [540, 24],
+            [100, 24],
+            [100, 46],
+          ]}
+          dashed
+          tone="good"
+          label="reuses revision 1’s manifests and values"
+          labelAt={[320, 18]}
+        />
+        <File x={450} y={140} name="values-practice.yaml" tone="warn" />
+        <Label x={463} y={212} anchor="middle" size="small" tone="warn">
+          still says replicas: 0
+        </Label>
+      </Reveal>
+    </Diagram>
+  ),
+
+  "operator-loop": ({ step = 0 }) => {
+    const replicas = step === 1 ? 0 : 2;
+    return (
+      <Diagram height={262} step={step}>
+        <Box
+          x={10}
+          y={20}
+          w={180}
+          h={60}
+          title="WorkerPool dispatch"
+          sub="spec.replicas: 2"
+          tone="focus"
+        />
+        <Tag
+          x={100}
+          y={110}
+          text={step === 1 ? "Ready: False" : "Ready: True"}
+          tone={step === 1 ? "warn" : "good"}
+        />
+        <Label x={100} y={140} anchor="middle" size="small" tone="muted">
+          status, written by the controller
+        </Label>
+        <Box
+          x={230}
+          y={20}
+          w={190}
+          h={60}
+          title="workerpool-controller"
+          sub="watches and corrects"
+        />
+        <Box
+          x={460}
+          y={20}
+          w={170}
+          h={60}
+          title="dispatch-workers"
+          sub={`Deployment: replicas ${replicas}`}
+          tone={step === 1 ? "warn" : "good"}
+        />
+        <Arrow
+          points={[
+            [190, 50],
+            [226, 50],
+          ]}
+        />
+        <Arrow
+          points={[
+            [420, 50],
+            [456, 50],
+          ]}
+          tone={step === 2 ? "good" : "default"}
+        />
+        <Region x={330} y={120} w={300} h={120} label="Worker Pods" />
+        {[0, 1].map((index) => (
+          <Box
+            key={index}
+            x={355 + index * 140}
+            y={160}
+            w={120}
+            h={50}
+            title="worker"
+            sub={step === 1 ? "terminating" : step === 2 ? "starting" : "ready"}
+            tone={step === 1 ? "muted" : step === 2 ? "warn" : "good"}
+            dashed={step === 1}
+          />
+        ))}
+        <Reveal from={1} until={1}>
+          <Label x={10} y={200} size="small" tone="warn">
+            Someone ran kubectl scale on the
+          </Label>
+          <Label x={10} y={218} size="small" tone="warn">
+            Deployment, not the WorkerPool.
+          </Label>
+        </Reveal>
+        <Reveal from={2}>
+          <Label x={10} y={200} size="small" tone="good">
+            The controller puts the Deployment
+          </Label>
+          <Label x={10} y={218} size="small" tone="good">
+            back to what the WorkerPool says.
+          </Label>
+        </Reveal>
+      </Diagram>
+    );
+  },
 } satisfies Drawings;

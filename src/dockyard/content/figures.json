@@ -1025,5 +1025,57 @@
     "title": "Why a short preStop helps",
     "caption": "The pause lets the Service stop sending traffic before the process begins to exit.",
     "description": "A timeline from the moment a Pod is deleted. On the Service lane, the endpoint is being removed for the first moments, and after that no new traffic arrives. On the container lane, the preStop hook sleeps for 5 seconds while still serving, then SIGTERM arrives and the process exits. The grace period ends at 20 seconds."
+  },
+  {
+    "id": "kustomize-overlays",
+    "title": "One base, one overlay per environment",
+    "caption": "Each overlay starts from the shared base and records only what differs.",
+    "description": "The base folder holds deployment.yaml, service.yaml, configmap.yaml, and kustomization.yaml. The development overlay uses the base and sets namespace dispatch, replicas 2, and environment development, producing the development manifests that are deployed in this lab. The staging overlay uses the same base and sets namespace staging and environment staging, producing manifests that are only rendered here."
+  },
+  {
+    "id": "helm-render",
+    "title": "From values to a release",
+    "caption": "Helm fills the chart’s templates with the combined values, then records the result as a revision.",
+    "description": "Values come from three places, from lowest to highest priority: the chart's values.yaml defaults, a file passed with -f such as values-practice.yaml, and --set api.replicas=2; later values win. Helm fills the chart's templates with the combined values and installs the result as the release dispatch, recording revisions 1, 2, 3 and so on. A note says helm template shows the filled-in manifests without installing anything."
+  },
+  {
+    "id": "helm-revisions",
+    "title": "Revisions, a bad upgrade, and a rollback",
+    "caption": "A rollback makes a new revision from an old one, but leaves your values file unchanged.",
+    "description": "A sequence in three steps. Revision 1 runs 2 replicas and serves. Revision 2 sets 0 replicas; Helm reports it as deployed, but 0 Pods are serving. Rolling back to revision 1 creates revision 3, which reuses revision 1's manifests and values and serves again. The file values-practice.yaml still says replicas: 0.",
+    "steps": [
+      {
+        "label": "A healthy release",
+        "text": "Revision 1 runs two replicas and serves requests."
+      },
+      {
+        "label": "A bad upgrade",
+        "text": "Revision 2 asks for zero replicas. Helm reports deployed, because nothing it waited for failed, yet no Pod is serving."
+      },
+      {
+        "label": "Roll back",
+        "text": "helm rollback creates revision 3 from revision 1. The release serves again, but values-practice.yaml still says zero, so fix it too."
+      }
+    ]
+  },
+  {
+    "id": "operator-loop",
+    "title": "An operator restoring drift",
+    "caption": "The custom resource is the source of truth; the controller keeps the Deployment matching it.",
+    "description": "A sequence in three steps. The WorkerPool dispatch asks for 2 replicas, the workerpool-controller watches it and manages the Deployment dispatch-workers at 2 replicas, and two worker Pods are ready, so the WorkerPool status shows Ready True. Someone scales the Deployment to 0 by hand, the worker Pods terminate, and status shows Ready False. The controller notices the drift and sets the Deployment back to 2, starting new workers and returning to Ready True.",
+    "steps": [
+      {
+        "label": "Matching the WorkerPool",
+        "text": "The controller keeps dispatch-workers at the two replicas the WorkerPool asks for, and reports Ready."
+      },
+      {
+        "label": "Changed by hand",
+        "text": "Scaling the Deployment directly to zero stops the workers, and the status reports the mismatch."
+      },
+      {
+        "label": "Put back",
+        "text": "On its next pass the controller sets the Deployment back to two, because the WorkerPool still says two."
+      }
+    ]
   }
 ]

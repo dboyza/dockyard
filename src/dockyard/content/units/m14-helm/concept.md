@@ -36,6 +36,10 @@ helm template NAME CHART -f my-values.yaml
 - `template` renders the manifests locally without installing anything.
 - `--wait` makes install and upgrade wait until the new objects are ready.
 
+```figure
+helm-render
+```
+
 ## This lab
 
 The chart deploys Dispatch into the `staging` namespace as a release called `dispatch`.
@@ -56,6 +60,10 @@ In real deployments, this is one reason teams keep passwords out of Helm values 
 Revision 1 was healthy.
 Revision 2 set `api.replicas` to 0, and Helm still reported it as deployed, because zero ready copies out of zero requested satisfies Helm’s wait.
 A successful Helm command is not proof the application is serving.
+
+```figure
+helm-revisions
+```
 
 ## Rolling back
 

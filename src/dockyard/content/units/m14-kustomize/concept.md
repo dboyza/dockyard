@@ -14,6 +14,10 @@ kustomize/
       kustomization.yaml
 ```
 
+```figure
+kustomize-overlays
+```
+
 ## A kustomization file
 
 ```yaml
