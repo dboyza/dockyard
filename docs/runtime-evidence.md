@@ -640,3 +640,12 @@ These automated checks do not establish teaching effectiveness.
 All seven manual-review lab environments were cleaned through their recorded ownership.
 Twelve dependency and application images used by the walkthrough and browser checks were removed after identity verification.
 The original five unrelated image objects and four containers were preserved.
+
+## 2026-09-30: dependency refresh
+
+Pinned lab components were compared with their latest upstream releases.
+Kind 0.33.0, Helm 4.3.0, Flux 2.9.5, Trivy 0.74.0, Calico 3.32.2, Lima 2.2.0, MetalLB 0.16.1, and Traefik 3.7.13 were already current.
+Kubernetes stays on 1.35.8 to match the exam environment.
+Metrics Server moved from 0.8.1 to 0.9.0, including its multi-architecture image digest, and the Gateway API CRDs moved from 1.6.1 to 1.6.2.
+The only manifest difference in Metrics Server was its image tag, so the existing TLS and local-image patching still applies.
+The real-runtime curriculum audit passed for m13-autoscaling and m10-gateway, the activities that install those components, in 196 seconds.
