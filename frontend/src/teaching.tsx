@@ -7,7 +7,7 @@ export function CodeBlock({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLPreElement>(null);
   const [copied, setCopied] = useState(false);
   const copy = () => {
-    const text = ref.current?.innerText.replace(/\n$/, "") ?? "";
+    const text = (ref.current?.textContent ?? "").replace(/\n$/, "");
     navigator.clipboard
       .writeText(text)
       .then(() => {
