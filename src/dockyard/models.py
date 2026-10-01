@@ -47,6 +47,30 @@ class Prediction(Contract):
         return self
 
 
+class FigureStep(Contract):
+    label: str
+    text: str
+
+
+class Figure(Contract):
+    """Teaching text for a lesson visual; the drawing itself lives in the browser registry."""
+
+    id: Identifier
+    title: str
+    caption: str
+    description: str = Field(min_length=40)
+    steps: list[FigureStep] = Field(default_factory=list)
+    interactive: bool = False
+
+    @model_validator(mode="after")
+    def meaningful_steps(self) -> Figure:
+        if len(self.steps) == 1:
+            raise ValueError("A stepped figure needs at least two steps.")
+        if self.interactive and self.steps:
+            raise ValueError("Interactive figures manage their own state rather than steps.")
+        return self
+
+
 class Command(Contract):
     """Packaged operations only; never accepted as a browser request body."""
 
@@ -72,7 +96,7 @@ class Criterion(Contract):
 class Unit(Contract):
     id: Identifier
     revision: int = Field(default=1, ge=1)
-    module: int = Field(ge=1, le=24)
+    module: int = Field(ge=0, le=24)
     order: int = Field(ge=1)
     title: str
     summary: str

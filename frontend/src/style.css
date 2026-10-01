@@ -393,7 +393,7 @@ pre {
 .welcome-heading {
   max-width: 760px;
 }
-.dispatch-introduction {
+.course-introduction {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 20px 48px;
@@ -402,24 +402,24 @@ pre {
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
-.dispatch-introduction h2 {
+.course-introduction h2 {
   font-size: 30px;
 }
-.dispatch-introduction p {
+.course-introduction p {
   font-size: 14px;
 }
-.dispatch-story {
+.course-steps {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   gap: 18px;
 }
-.dispatch-story li {
+.course-steps li {
   display: flex;
   gap: 14px;
 }
-.dispatch-story li > span {
+.course-steps li > span {
   display: grid;
   place-items: center;
   flex: 0 0 28px;
@@ -429,17 +429,9 @@ pre {
   color: var(--blue);
   font-size: 13px;
 }
-.dispatch-story p {
+.course-steps p {
   margin: 4px 0 0;
   color: var(--muted);
-}
-.dispatch-start {
-  grid-column: 1 / -1;
-  margin: 0;
-  color: var(--muted);
-}
-.dispatch-start strong {
-  color: var(--ink);
 }
 .lesson-rhythm {
   max-width: 310px;
@@ -668,37 +660,6 @@ pre {
 }
 .project-panel h2 {
   font-size: 23px;
-}
-.topology {
-  width: 100%;
-  height: auto;
-}
-.topology text {
-  fill: var(--ink);
-  font-size: 14px;
-  font-weight: 500;
-  font-family: inherit;
-}
-.topology .subtext {
-  fill: var(--muted);
-  font-size: 10px;
-  font-weight: 400;
-}
-.node {
-  fill: var(--surface);
-  stroke: var(--line);
-  stroke-width: 1.5;
-}
-.focusnode {
-  stroke: var(--blue);
-}
-.future {
-  stroke-dasharray: 5 4;
-}
-.wire {
-  fill: none;
-  stroke: var(--line);
-  stroke-width: 2;
 }
 .section-heading {
   display: flex;
@@ -1039,6 +1000,360 @@ pre {
 .code-block {
   position: relative;
   margin: 16px 0;
+}
+.lesson-figure {
+  margin: 26px 0 30px;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+}
+.lesson-figure.interactive {
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.lesson-figure.interactive > section {
+  margin: 0;
+}
+.lesson-figure header {
+  margin-bottom: 10px;
+}
+.prose .lesson-figure h4 {
+  margin: 2px 0 0;
+  color: var(--ink);
+  font-size: 15px;
+}
+.figure-canvas {
+  overflow-x: auto;
+  margin: 0 -4px;
+  padding: 4px;
+}
+.figure-drawing {
+  display: block;
+  width: 100%;
+  min-width: 500px;
+  height: auto;
+  font-family: var(--font);
+  font-size: 13px;
+}
+.figure-drawing text {
+  fill: var(--ink-soft);
+}
+.figure-drawing .mono {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+.figure-drawing .fig-title {
+  fill: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.figure-drawing .fig-title.mono {
+  font-size: 13px;
+}
+.figure-drawing .fig-sub {
+  fill: var(--muted);
+  font-size: 12px;
+}
+.fig-box rect,
+.fig-box path,
+.fig-box ellipse,
+.fig-image rect,
+.fig-tag rect,
+.fig-file path {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.fig-box.dashed rect,
+.fig-box.dashed path,
+.fig-box.dashed ellipse {
+  stroke-dasharray: 5 4;
+}
+.fig-region rect {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+.figure-drawing .fig-region text {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.fig-arrow path {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.75;
+}
+.fig-arrow.dashed path {
+  stroke-dasharray: 5 4;
+}
+.figure-drawing .fig-arrow text {
+  fill: var(--muted);
+  font-size: 12px;
+  paint-order: stroke;
+  stroke: var(--surface-alt);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+.fig-marker path {
+  fill: var(--muted);
+}
+.fig-terminal rect {
+  fill: var(--code);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.fig-terminal path {
+  stroke: var(--line);
+}
+.fig-terminal circle {
+  fill: var(--line);
+}
+.figure-drawing .fig-terminal-title {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.figure-drawing .fig-command,
+.figure-drawing .fig-output {
+  font-family: var(--mono);
+  font-size: 12px;
+  white-space: pre;
+}
+.figure-drawing .fig-command {
+  fill: var(--ink);
+}
+.figure-drawing .fig-output {
+  fill: var(--muted);
+}
+.figure-drawing .fig-label.size-small {
+  font-size: 12px;
+}
+.figure-drawing .fig-label.size-large {
+  font-size: 16px;
+  font-weight: 600;
+}
+.figure-drawing .tone-muted text,
+.figure-drawing .fig-label.tone-muted {
+  fill: var(--muted);
+}
+.tone-focus rect,
+.tone-focus > path,
+.tone-focus ellipse {
+  stroke: var(--blue);
+}
+.fig-box.tone-focus rect,
+.fig-box.tone-focus path,
+.fig-box.tone-focus ellipse,
+.fig-image.tone-focus rect,
+.fig-tag.tone-focus rect {
+  fill: color-mix(in srgb, var(--blue) 12%, var(--surface));
+}
+.tone-good rect,
+.tone-good > path,
+.tone-good ellipse {
+  stroke: var(--green);
+}
+.fig-box.tone-good rect,
+.fig-box.tone-good path,
+.fig-box.tone-good ellipse,
+.fig-tag.tone-good rect {
+  fill: color-mix(in srgb, var(--green) 12%, var(--surface));
+}
+.tone-bad rect,
+.tone-bad > path,
+.tone-bad ellipse {
+  stroke: var(--red);
+}
+.fig-box.tone-bad rect,
+.fig-box.tone-bad path,
+.fig-box.tone-bad ellipse,
+.fig-tag.tone-bad rect {
+  fill: color-mix(in srgb, var(--red) 10%, var(--surface));
+}
+.tone-warn rect,
+.tone-warn > path,
+.tone-warn ellipse {
+  stroke: var(--amber);
+}
+.fig-box.tone-warn rect,
+.fig-box.tone-warn path,
+.fig-tag.tone-warn rect {
+  fill: color-mix(in srgb, var(--amber) 12%, var(--surface));
+}
+.fig-region.tone-focus rect {
+  stroke: var(--blue);
+}
+.fig-region.tone-good rect {
+  stroke: var(--green);
+}
+.fig-arrow.tone-focus path,
+.fig-marker.tone-focus path {
+  stroke: var(--blue);
+}
+.fig-marker.tone-focus path {
+  fill: var(--blue);
+}
+.fig-arrow.tone-good path {
+  stroke: var(--green);
+}
+.fig-marker.tone-good path {
+  stroke: none;
+  fill: var(--green);
+}
+.fig-arrow.tone-bad path {
+  stroke: var(--red);
+}
+.fig-marker.tone-bad path {
+  fill: var(--red);
+}
+.fig-arrow.tone-warn path {
+  stroke: var(--amber);
+}
+.fig-marker.tone-warn path {
+  fill: var(--amber);
+}
+.fig-marker path {
+  stroke: none;
+}
+.fig-arrow.tone-muted path {
+  stroke: var(--line);
+}
+.fig-marker.tone-muted path {
+  fill: var(--line);
+}
+.figure-drawing .fig-label.tone-focus,
+.figure-drawing .fig-arrow.tone-focus text,
+.figure-drawing .fig-region.tone-focus text,
+.figure-drawing .fig-tag.tone-focus text {
+  fill: var(--blue);
+}
+.figure-drawing .fig-label.tone-good,
+.figure-drawing .fig-arrow.tone-good text,
+.figure-drawing .fig-region.tone-good text,
+.figure-drawing .fig-tag.tone-good text {
+  fill: var(--green);
+}
+.figure-drawing .fig-label.tone-bad,
+.figure-drawing .fig-arrow.tone-bad text,
+.figure-drawing .fig-tag.tone-bad text {
+  fill: var(--red-text);
+}
+.figure-drawing .fig-label.tone-warn,
+.figure-drawing .fig-arrow.tone-warn text,
+.figure-drawing .fig-tag.tone-warn text {
+  fill: var(--amber);
+}
+.fig-code rect {
+  fill: var(--code);
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+.figure-drawing .fig-code text {
+  fill: var(--ink-soft);
+  white-space: pre;
+}
+.figure-drawing .fig-code text.tone-focus {
+  fill: var(--blue);
+}
+.figure-drawing .fig-code text.tone-good {
+  fill: var(--green);
+}
+.figure-drawing .fig-code text.tone-muted {
+  fill: var(--muted);
+}
+.fig-reveal {
+  transition: opacity 0.25s ease;
+}
+.fig-reveal.fig-hidden {
+  opacity: 0;
+}
+.figure-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 20px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.figure-step-text {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+.figure-step-count {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+.figure-step-text strong {
+  display: block;
+  font-size: 14px;
+}
+.prose .figure-step-text p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.figure-step-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.figure-step-controls > button {
+  min-height: 32px;
+  padding: 6px;
+}
+.figure-step-controls ol {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.prose .figure-step-controls li {
+  margin: 0;
+}
+.figure-step-controls ol button {
+  min-height: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.figure-step-controls ol button::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.figure-step-controls ol button.current::after {
+  background: var(--blue);
+}
+.lesson-figure figcaption {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.figure-missing {
+  padding: 12px 14px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 13px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fig-reveal {
+    transition: none;
+  }
 }
 .prose pre,
 .references pre {
@@ -1747,10 +2062,6 @@ pre {
   .project-panel {
     grid-template-columns: 1fr;
   }
-  .project-panel .topology {
-    max-width: 650px;
-    margin: auto;
-  }
   .lesson-layout {
     grid-template-columns: minmax(0, 1fr) 230px;
     gap: 18px;
@@ -1885,7 +2196,7 @@ pre {
     order: 3;
     width: 100%;
   }
-  .dispatch-introduction {
+  .course-introduction {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;
   }

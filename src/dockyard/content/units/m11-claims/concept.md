@@ -28,6 +28,12 @@ PostgreSQL writes /var/lib/postgresql/data
 
 A claim that exists but is not referenced by the Pod does nothing for your data.
 
+The model below lets you remove each link in that chain and see which lifetime ends with it.
+
+```figure
+storage-model
+```
+
 ## A claim in YAML
 
 ```yaml

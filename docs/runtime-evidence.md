@@ -672,3 +672,12 @@ All installed browser suites passed, including the exam suite with a prepared pr
 Testing artifacts were then removed: two stopped probe VMs, 154 orphaned lab image references, and 49 downloaded image references.
 The five unrelated images and four unrelated containers were preserved.
 Unattached anonymous volumes from earlier test runs and the unused `kind` network were left for the owner to remove.
+
+## 2026-10-01: foundations module and lesson figures
+
+Module 00 adds four Docker units that teach containers before Dispatch appears.
+The real-runtime curriculum audit passed for all four: each starter failed its declared checks, and each reference passed.
+A separate integration suite ran eleven alternative and failure-mode cases against real Docker, including `docker create` with `docker start`, `docker cp`, `--mount` with `readonly`, `--directory`, and a server on another container port.
+Removing a container with `--rm`, a Python error, a writable mount, and publishing on every network each failed exactly the intended checks.
+The installed accessibility, journey, portability, recovery, and reset browser suites passed with the foundations-first overview.
+No lab containers remained afterwards.

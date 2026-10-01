@@ -1,3 +1,4 @@
+import { coursePhases } from "./learning";
 import { useState } from "react";
 import { Download, RefreshCw, HardDrive } from "lucide-react";
 import { api } from "./api";
@@ -81,12 +82,9 @@ export function CachePanel({ model }: { model: Workbench }) {
           >
             <option value="all">Complete course, incidents, and exams</option>
             <optgroup label="Learning tracks">
-              {[1, 2, 3, 4].map((phase) => (
+              {coursePhases(catalog?.modules ?? []).map(({ phase, title }) => (
                 <option key={phase} value={`track:${phase}`}>
-                  {
-                    catalog?.modules.find((module) => module.phase === phase)
-                      ?.phase_title
-                  }
+                  {title}
                 </option>
               ))}
             </optgroup>

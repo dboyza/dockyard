@@ -31,6 +31,13 @@ HAProxy checks each API server and only forwards connections to healthy ones.
 A healthy etcd majority does not help if the load balancer only knows about the failed server.
 That is exactly this lab’s problem.
 
+The model below separates those two requirements.
+Stop etcd members, change which API servers the load balancer can reach, and attempt a write after each change.
+
+```figure
+quorum-model
+```
+
 ## What is broken
 
 On the primary control-plane VM, the API server and etcd manifests have been moved out of `/etc/kubernetes/manifests`, so the kubelet stopped them.

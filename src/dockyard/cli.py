@@ -110,7 +110,7 @@ def parser() -> argparse.ArgumentParser:
             "scope",
             nargs="?",
             default="all",
-            help="all (default), unit:ID, module:1-24, or track:1-4",
+            help="all (default), unit:ID, module:0-24, or track:0-4",
         )
         command.add_argument("--json", action="store_true", help="print machine-readable JSON")
     removal = caches.add_parser(

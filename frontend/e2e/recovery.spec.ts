@@ -9,6 +9,9 @@ const root = path.resolve(import.meta.dirname, '../..');
 const cli = path.join(root, '.runtime/installed/bin/dockyard');
 const python = path.join(root, '.runtime/installed/bin/python');
 test.skip(process.env.DOCKYARD_INTEGRATION !== '1', 'Requires the installed app and local Docker.');
+// Start learning opens the course's first lesson.
+const firstLesson = 'm00-first-container';
+
 test('port collision, unavailable Docker, cancellation, and concurrent clients recover', async ({ page, context }) => {
   test.setTimeout(90000);
   const profile = mkdtempSync('/private/tmp/dy-recovery-');
@@ -52,7 +55,7 @@ test('port collision, unavailable Docker, cancellation, and concurrent clients r
     const peer = await context.newPage();
     await peer.goto(new URL('/', url).toString());
     const headers = { 'X-Dockyard': '1', Origin: new URL(url).origin };
-    const response = await peer.request.post(new URL('/api/units/m01-processes/lab', url).toString(), { headers, data: { action: 'prepare' } });
+    const response = await peer.request.post(new URL(`/api/units/${firstLesson}/lab`, url).toString(), { headers, data: { action: 'prepare' } });
     expect(response.status()).toBe(409);
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Prepare lab', exact: true })).toBeEnabled();
@@ -63,7 +66,7 @@ test('port collision, unavailable Docker, cancellation, and concurrent clients r
     await restoreDocker();
     await page.getByRole('button', { name: 'Prepare lab', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Open terminal' })).toBeEnabled();
-    execFileSync(python, [path.join(root, 'frontend/e2e/repair_lab.py'), profile, 'm01-processes'], { env: environment });
+    execFileSync(python, [path.join(root, 'frontend/e2e/repair_lab.py'), profile, firstLesson], { env: environment });
     await page.getByRole('button', { name: 'Check work', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
     unlinkSync(socketPath);
@@ -75,7 +78,7 @@ test('port collision, unavailable Docker, cancellation, and concurrent clients r
     await peer.close();
   } finally {
     if (!restored) await restoreDocker();
-    execFileSync(cli, ['--data-dir', profile, 'lab', 'clean', 'm01-processes', '--yes'], { env: environment });
+    execFileSync(cli, ['--data-dir', profile, 'lab', 'clean', firstLesson, '--yes'], { env: environment });
     if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
     occupied.close();
     rmSync(profile, { recursive: true, force: true });

@@ -4,9 +4,6 @@ import { LiveLabMap } from "./LiveLabMap";
 import type { Workbench } from "./useWorkbench";
 import { api } from "./api";
 import { CodeBlock, Markdown, referenceTitle } from "./teaching";
-import { ReconciliationModel } from "./ReconciliationModel";
-import { QuorumModel } from "./QuorumModel";
-import { StorageModel } from "./StorageModel";
 import {
   currentPractice,
   learningStatus,
@@ -256,7 +253,7 @@ export function LessonPage({ model }: { model: Workbench }) {
                     ))}
                   </ul>
                 </div>
-                <Markdown>{lesson.concept}</Markdown>
+                <Markdown key={lesson.id}>{lesson.concept}</Markdown>
                 <aside className="reference-links" aria-label="Background help">
                   <strong>Need a term explained?</strong>
                   <p className="muted small">
@@ -283,9 +280,6 @@ export function LessonPage({ model }: { model: Workbench }) {
                     </button>
                   </div>
                 </aside>
-                {lesson.module === 7 && <ReconciliationModel key={lesson.id} />}
-                {lesson.module === 11 && <StorageModel key={lesson.id} />}
-                {lesson.id === "m20-ha" && <QuorumModel key={lesson.id} />}
                 <section className="prediction">
                   <div className="eyebrow">PAUSE AND PREDICT</div>
                   <h3>{lesson.prediction.question}</h3>

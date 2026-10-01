@@ -16,7 +16,7 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
     units = catalog.units
     course = [unit for unit in units.values() if unit.kind in {UnitKind.LESSON, UnitKind.MISSION}]
     incidents = [unit for unit in units.values() if unit.kind == UnitKind.INCIDENT]
-    for module in range(1, 25):
+    for module in range(0, 25):
         members = [unit for unit in course if unit.module == module]
         kinds = Counter(unit.kind for unit in members)
         if kinds != {UnitKind.LESSON: 3, UnitKind.MISSION: 1}:

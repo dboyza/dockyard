@@ -1,4 +1,4 @@
-import { currentPractice } from "./learning";
+import { coursePhases, currentPractice } from "./learning";
 import { UnitRow } from "./UnitRow";
 import type { Workbench } from "./useWorkbench";
 import { ChevronDown } from "lucide-react";
@@ -14,11 +14,8 @@ export function CoursePage({ model }: { model: Workbench }) {
     openLesson,
     continueUnit,
   } = model;
-  const openModule = lesson?.module ?? continueUnit?.module ?? 1;
-  const phases = [1, 2, 3, 4].map((phase) => ({
-    phase,
-    title: catalog?.modules.find((item) => item.phase === phase)?.phase_title,
-  }));
+  const openModule = lesson?.module ?? continueUnit?.module ?? 0;
+  const phases = coursePhases(catalog?.modules ?? []);
   const unitRow = (unit: UnitSummary) => (
     <UnitRow
       key={unit.id}
@@ -75,15 +72,12 @@ export function CoursePage({ model }: { model: Workbench }) {
           )}
         </section>
       ) : (
-        [1, 2, 3, 4].map((phase) => (
+        phases.map(({ phase, title }) => (
           <section className="course-phase" id={`phase-${phase}`} key={phase}>
             <div className="section-heading">
               <h2>
                 <span className="phase-number">0{phase}</span>
-                {
-                  catalog?.modules.find((item) => item.phase === phase)
-                    ?.phase_title
-                }
+                {title}
               </h2>
             </div>
             {catalog?.modules

@@ -91,6 +91,15 @@ Use an independent mission to assess prior teaching and a distinct incident faul
 Keep explanations ahead of the prerequisites used by a task.
 An exam's task titles and text come from its unit's `brief.md`, one `## N. Title (W%)` section per task in `exams.json` order; `exams.json` holds only weights, criteria, and remediation.
 
+### Lesson figures
+
+Lesson Markdown embeds a figure with a fenced block whose language is `figure` and whose only line is the figure ID.
+`src/dockyard/content/figures.json` holds each figure's title, caption, screen-reader description, and optional steps; the catalog rejects unknown or malformed references.
+The drawings live in `frontend/src/figures`, built from the shared SVG kit so they follow both themes.
+After changing `figures.json`, regenerate the contracts; TypeScript then requires a drawing for every figure.
+Review drawings with `npm --prefix frontend run dev` and `/gallery.html`, which shows every step; add `?theme=light` or `?figure=ID` as needed.
+Draw on a 640-unit-wide canvas, keep text at its rendered size, and check both themes before relying on a figure.
+
 Change an activity revision when its learning contract or grading behavior changes after release.
 Preserve older attempts as historical evidence and require reassessment for the new revision.
 Update objective mappings when published objectives change, recording the source, checked date, and supported runtime versions.

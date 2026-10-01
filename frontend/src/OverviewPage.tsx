@@ -21,11 +21,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
           {state.last_unit ? "PICK UP WHERE YOU LEFT OFF" : "YOUR FIRST STEP"}
         </div>
         <h2>{continueUnit?.title}</h2>
-        <p>
-          {state.last_unit
-            ? continueUnit?.summary
-            : "Start Dispatch, send it a request, and see what happens when you stop its container."}
-        </p>
+        <p>{continueUnit?.summary}</p>
         <div className="metadata">
           <span>
             <Clock3 size={14} />
@@ -91,59 +87,38 @@ export function OverviewPage({ model }: { model: Workbench }) {
       )}
     </section>
   );
+  const foundations = courseUnits.filter((unit) => unit.module === 0);
   const introduction = (
-    <section className="dispatch-introduction" aria-labelledby="dispatch-title">
+    <section
+      className="course-introduction"
+      aria-labelledby="foundations-title"
+    >
       <div>
-        <div className="eyebrow">THE APPLICATION YOU’LL WORK ON</div>
-        <h2 id="dispatch-title">Meet Dispatch.</h2>
+        <div className="eyebrow">START WITH THE FOUNDATIONS</div>
+        <h2 id="foundations-title">What a container really is.</h2>
         <p>
-          Dispatch is a small app that accepts jobs and processes them in the
-          background. Think of sending a task to a service, then coming back to
-          see whether it has finished.
+          No Docker experience needed. Each foundations lab explains one idea
+          with pictures you can step through, then you try it in your own
+          terminal.
         </p>
         <p className="muted">
-          We supply the Python code. Your job is to package it, connect its
-          parts, keep it running, and learn how to fix it when something breaks.
-          You don’t need to write Python.
+          You’ll run small, throwaway programs so you can focus on how
+          containers work. After that, you’ll put the same skills to work on a
+          real application and grow it, module by module, until it runs on a
+          Kubernetes cluster you build yourself.
         </p>
       </div>
-      <ol className="dispatch-story" aria-label="How Dispatch will work">
-        <li>
-          <span>1</span>
-          <div>
-            <strong>Send a job</strong>
-            <p>
-              The API, the part that receives requests, accepts a short piece of
-              text.
-            </p>
-          </div>
-        </li>
-        <li>
-          <span>2</span>
-          <div>
-            <strong>Do the work</strong>
-            <p>
-              A worker picks up the job, changes the text to uppercase, and
-              records a result.
-            </p>
-          </div>
-        </li>
-        <li>
-          <span>3</span>
-          <div>
-            <strong>Check the result</strong>
-            <p>
-              The app saves the job and its status in a database so you can ask
-              for them later.
-            </p>
-          </div>
-        </li>
+      <ol className="course-steps" aria-label="Foundations labs">
+        {foundations.map((unit, index) => (
+          <li key={unit.id}>
+            <span>{index + 1}</span>
+            <div>
+              <strong>{unit.title}</strong>
+              <p>{unit.summary}</p>
+            </div>
+          </li>
+        ))}
       </ol>
-      <p className="dispatch-start">
-        <strong>We’ll build toward this gradually.</strong> In your first
-        lesson, Dispatch only answers a health request. The database and worker
-        come later.
-      </p>
     </section>
   );
   return (
@@ -158,7 +133,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
         <p className="intro">
           {returning
             ? "Pick up your last lesson, or review something you practised earlier."
-            : "We’ll start with one Docker container, then build up to running and recovering a Kubernetes cluster. You’ll read a short lesson here and try it in your own terminal."}
+            : "Start with what a container is and how to reach one, then build up to running and recovering a Kubernetes cluster. You’ll read a short, illustrated lesson here and try it in your own terminal."}
         </p>
         {!returning && (
           <div className="button-row hero-actions">
@@ -176,8 +151,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
           </div>
         )}
       </div>
-      {returning && continueCard}
-      {introduction}
+      {returning ? continueCard : introduction}
       {!returning && continueCard}
       <p className="placement-invitation">
         Already know the basics?{" "}
@@ -188,8 +162,8 @@ export function OverviewPage({ model }: { model: Workbench }) {
       <section className="course-preview">
         <h2>Where the course takes you</h2>
         <p className="muted">
-          Run containers → connect services → deploy to Kubernetes → secure and
-          recover a cluster.
+          Learn the foundations → run a real application in containers → deploy
+          it to Kubernetes → secure it and recover a cluster.
         </p>
         <button className="text-button" onClick={() => navigate("course")}>
           Explore your course <ArrowRight size={16} />

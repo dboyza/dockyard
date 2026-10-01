@@ -1,0 +1,112 @@
+id: m00-layers
+revision: 1
+module: 0
+order: 2
+title: One image, many containers
+summary: Keep a container running, change a file inside it, and find where Docker stored that change.
+kind: lesson
+runtime: docker
+minutes: 25
+outcomes:
+- Explain that an image is a stack of read-only layers shared by every container made from it.
+- Make a change inside a running container and find it with docker diff.
+- Show that a second container made from the same image does not see that change.
+prerequisites:
+- m00-first-container
+objectives:
+- docker.lifecycle
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You create /tmp/note.txt inside your running container. Then you start a brand-new container from the same image and look for /tmp/note.txt. What do you find?
+  options:
+  - Nothing. The new container starts from the unchanged image, so the file is not there.
+  - The note, because both containers were made from the same image.
+  - An error saying the image was modified by the first container.
+  correct: 0
+  explanation: The note was written to the first container’s own writable layer. The image underneath never changes, so every new container starts from the same clean files.
+hints:
+- Start with docker ps. Is your lab's container running? If it shows only in docker ps -a, its main process has finished.
+- The main process must keep running, so the command after the image name should be sleep infinity, and the container needs -d to run in the background.
+- docker diff "$DOCKYARD_CONTAINER" lists changes in the writable layer. If /tmp/note.txt is missing, run the docker exec command from Understand again.
+sources:
+- https://docs.docker.com/get-started/docker-concepts/building-images/understanding-image-layers/
+- https://docs.docker.com/engine/storage/drivers/
+- https://docs.docker.com/reference/cli/docker/container/exec/
+- https://docs.docker.com/reference/cli/docker/container/diff/
+starter: {}
+reference: {}
+prepare: []
+capabilities:
+- docker
+- python-image
+checks:
+- id: lab-identity
+  title: A container with this lab's name and label exists
+  explanation: The name and the io.dockyard.lab label tell Dockyard which container is yours.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.lab
+  expected: '{{lab_id}}'
+  diagnostic: Docker has no container with this lab's name and label. Run docker ps -a to see what exists, then create the container with the docker run command from Understand.
+- id: python-image
+  title: The container was created from the prepared Python image
+  explanation: Every container in this lesson starts from the same image, which is what makes the comparison meaningful.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Image
+  expected: '{{python_image}}'
+  diagnostic: The container was created from a different image. Remove it with docker rm -f "$DOCKYARD_CONTAINER" and run it again with "$DOCKYARD_PYTHON_IMAGE" as the image.
+- id: still-running
+  title: The container's main process is still running
+  explanation: docker exec can only start a process in a container that is running, so the main process must not finish.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: The container is not running. Run docker ps -a to see its status. If its main process finished, remove it with docker rm "$DOCKYARD_CONTAINER" and run it again with -d and sleep infinity as the command.
+- id: note-in-writable-layer
+  title: The note was added to this container's writable layer
+  explanation: Files a container creates are stored in its own writable layer, which docker diff lists.
+  command:
+    args:
+    - docker
+    - diff
+    - '{{container}}'
+  expected: A /tmp/note.txt
+  diagnostic: docker diff does not list /tmp/note.txt as added. Run docker diff "$DOCKYARD_CONTAINER" yourself, then create the note with the docker exec command from Understand. If you recreated the container, the earlier note was removed with the old one.
+alternatives:
+- Any long-running main process from the prepared image is accepted, as long as the container keeps running.
+- The note may be created with docker exec, an interactive shell, or docker cp, and may contain any text.
+failure_modes:
+- Leaving out sleep infinity makes the container's default command finish straight away, so the container stops.
+- Leaving out -d keeps the terminal attached to the container's main process until you press Control-C.
+- Recreating the container discards the writable layer that held the note.
+starter_failure_checks:
+- lab-identity
+- python-image
+- still-running
+- note-in-writable-layer

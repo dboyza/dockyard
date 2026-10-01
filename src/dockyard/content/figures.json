@@ -1,0 +1,189 @@
+[
+  {
+    "id": "why-containers",
+    "title": "The same program, two ways of running it",
+    "caption": "A container carries the software its program needs, so the computer underneath only needs Docker.",
+    "description": "Two panels. On the left, a Python program written for Python 3.13 runs directly on a computer that has Python 3.9 installed, and it fails or behaves differently. On the right, the same program runs inside a container that also holds Python 3.13, and it runs the same wherever Docker runs."
+  },
+  {
+    "id": "image-to-container",
+    "title": "From image to finished program",
+    "caption": "A container runs only as long as its main process. When that process finishes, the container stops but is not deleted.",
+    "description": "A sequence in four steps. An image made of Python and Alpine Linux layers sits on disk. docker run creates a container holding the image's files plus an empty writable layer, in the Created state. Docker starts python as the main process and the container is Running. Python prints Hello from inside a container and exits with code 0, so the container shows Exited (0) and docker logs still shows the message.",
+    "steps": [
+      {
+        "label": "Start with an image",
+        "text": "The image holds a set of files: Alpine Linux and Python. On its own it does nothing; it is a template."
+      },
+      {
+        "label": "docker run creates a container",
+        "text": "Docker makes a container from the image: the image’s files, shared and read-only, plus a thin, empty writable layer of its own."
+      },
+      {
+        "label": "The main process starts",
+        "text": "Docker starts the command you gave, python, inside the container. While it runs, the container is running."
+      },
+      {
+        "label": "The program finishes",
+        "text": "Python prints its message and exits with code 0. With its main process gone, the container stops. Docker keeps the container, and its logs, until you remove it."
+      }
+    ]
+  },
+  {
+    "id": "docker-client-engine",
+    "title": "The docker command and the Docker Engine",
+    "caption": "You type docker commands; the Docker Engine does the work of storing images and running containers.",
+    "description": "A terminal on the left sends docker run and docker ps requests to the Docker Engine on the right. Inside the engine are stored images, such as python, postgres, and redis, which it uses to create containers, some running and one exited."
+  },
+  {
+    "id": "image-layers",
+    "title": "An image is a stack of layers",
+    "caption": "docker history lists the newest layer first, which is the same order as the top of the stack.",
+    "description": "On the left, simplified docker history output lists four rows from newest to oldest: a settings-only row of 0 bytes, a 44.1 MB layer that installs Python, a 2.94 MB layer that adds system packages, and a 9.31 MB layer that adds the Alpine Linux files. On the right, the same three file layers are drawn as a stack, with Python on top and Alpine Linux at the bottom, all read-only and shared by every container."
+  },
+  {
+    "id": "writable-layers",
+    "title": "Where a container’s changes go",
+    "caption": "Each container has its own writable layer. The image underneath never changes.",
+    "description": "A sequence in five steps. One read-only image sits at the bottom. Containers A and B are created from it, each with its own empty writable layer. A process in container A writes /tmp/note.txt, which appears only in A's writable layer. A process in container B runs cat /tmp/note.txt and gets No such file or directory. Finally container A is removed along with its writable layer and the note, while the image and container B are unchanged.",
+    "steps": [
+      {
+        "label": "One image",
+        "text": "The image’s layers are read-only and stored once, however many containers use them."
+      },
+      {
+        "label": "Two containers",
+        "text": "Each container made from the image gets its own empty writable layer on top."
+      },
+      {
+        "label": "Container A writes a file",
+        "text": "A process in container A creates /tmp/note.txt. The new file goes into A’s writable layer; the image is unchanged."
+      },
+      {
+        "label": "Container B looks for it",
+        "text": "Container B sees the image plus its own writable layer, which is still empty, so it has no note."
+      },
+      {
+        "label": "Remove container A",
+        "text": "Removing container A deletes its writable layer and the note with it. The image and container B are untouched."
+      }
+    ]
+  },
+  {
+    "id": "exec-process",
+    "title": "One main process, and extra ones from docker exec",
+    "caption": "docker exec adds a process to a running container. The container’s life still depends only on process 1.",
+    "description": "A terminal runs docker run with sleep infinity, which starts process 1, the main process, inside a container. A second command, docker exec with ps, adds an extra process to the same container. Both processes see the same files. Notes explain that the extra process can finish without stopping the container, but the container stops when process 1 finishes."
+  },
+  {
+    "id": "port-publishing",
+    "title": "How a request reaches a server in a container",
+    "caption": "Publishing connects a port on your computer to a port inside the container. Using 127.0.0.1 keeps it private to your computer.",
+    "description": "A sequence in four steps. A web server inside a container listens on port 8000. A curl request from the terminal on your computer cannot reach it, because the container has its own network. After publishing with -p, the request goes to 127.0.0.1 on an assigned port such as 54321 and Docker forwards it to port 8000 in the container. Another device on your network is refused, because 127.0.0.1 means this computer only.",
+    "steps": [
+      {
+        "label": "A server inside the container",
+        "text": "The web server listens on port 8000 on the container’s own private network."
+      },
+      {
+        "label": "No way in yet",
+        "text": "A request from your computer cannot reach port 8000. The container’s network is separate, and nothing connects the two."
+      },
+      {
+        "label": "Publish the port",
+        "text": "-p connects your assigned port on 127.0.0.1 to port 8000 inside the container. Docker forwards each request across."
+      },
+      {
+        "label": "Only this computer",
+        "text": "Because the port is published on 127.0.0.1, other devices on your network cannot connect. Without that address, they could."
+      }
+    ]
+  },
+  {
+    "id": "bind-mount",
+    "title": "A bind mount shares one folder with a container",
+    "caption": "The container sees your folder directly. The ro option lets it read the files but not change them.",
+    "description": "On the left, your computer has the folder DOCKYARD_WORKSPACE/site containing index.html. On the right, the container sees the same folder at /site containing the same index.html. A two-way arrow says they are the same files, not a copy. Editing the file on your computer is seen by the server at once, and a tag says ro: cannot write."
+  },
+  {
+    "id": "web-server-command",
+    "title": "Every part of the web server command",
+    "caption": "Everything before the image configures the container. Everything after it is the main process.",
+    "description": "The docker run command for the web server, one option per line, with a note beside each: -d runs in the background; --name gives the name used in later commands; --label marks it as this lab's container; -p connects your port on this computer to port 8000; -v makes your folder appear at /site read-only; -w starts the process in /site; the image variable is the image to start from; and python -m http.server 8000 is the main process."
+  },
+  {
+    "id": "reconciliation-model",
+    "title": "Intent survives a missing Pod",
+    "caption": "A simplified model of a Deployment controller, separate from your real lab.",
+    "description": "An interactive model with a desired replica count, a list of observed Pods that can be deleted, and a button that advances the controller one step toward the desired count.",
+    "interactive": true
+  },
+  {
+    "id": "storage-model",
+    "title": "The Pod and its data have different lifetimes",
+    "caption": "A simplified model of Pods, claims, and volumes, separate from your real lab.",
+    "description": "An interactive model in which you remove a Pod, its PersistentVolumeClaim, and its PersistentVolume, and change the reclaim policy to see which deletions destroy the stored records.",
+    "interactive": true
+  },
+  {
+    "id": "quorum-model",
+    "title": "A majority and a route are separate requirements",
+    "caption": "A simplified model of etcd quorum and a load-balanced API endpoint, separate from your real lab.",
+    "description": "An interactive model with three control-plane nodes, each running an etcd member, and a load balancer that can route to any of them; you stop members, choose routes, and try a write to see whether it succeeds.",
+    "interactive": true
+  },
+  {
+    "id": "dispatch-system",
+    "title": "How one job travels through Dispatch",
+    "caption": "The finished Dispatch: the API accepts work, the worker does it, PostgreSQL remembers it, and Redis passes the news between them.",
+    "description": "A sequence in four steps showing you, the API, Redis, PostgreSQL, and the worker. You send a job titled hello to the API. The API saves it in PostgreSQL with the status queued, notifies Redis, and replies that it was accepted. The worker hears about the new job, takes it, converts hello to HELLO, and saves the result in PostgreSQL with the status done. Finally you ask the API, which reads PostgreSQL and replies with status done.",
+    "steps": [
+      {
+        "label": "Send a job",
+        "text": "You send a job to the API: a short piece of text, such as hello."
+      },
+      {
+        "label": "The API records and announces it",
+        "text": "The API saves the job in PostgreSQL with the status queued, pushes a short notification onto the Redis queue, and replies to you straight away."
+      },
+      {
+        "label": "The worker does the work",
+        "text": "The worker hears about the new job, takes it from the database, converts its text to uppercase, and saves the result with the status done."
+      },
+      {
+        "label": "Ask for the result",
+        "text": "Later you ask the API about your jobs. It reads them from PostgreSQL and replies with each job’s status and result."
+      }
+    ]
+  },
+  {
+    "id": "dispatch-journey",
+    "title": "How Dispatch grows through the course",
+    "caption": "Each stage adds the parts, and the skills, the next one depends on.",
+    "description": "A timeline in four stages. In module 1, Dispatch is only its API, running in one container. In modules 2 to 6, all four parts, the API, Redis, the worker, and PostgreSQL, run together with Docker Compose. In modules 7 to 12, Kubernetes runs two copies each of the API and worker alongside Redis and PostgreSQL. In modules 13 to 24, three copies run on a cluster you build yourself, with monitoring and security added.",
+    "steps": [
+      {
+        "label": "Module 1: the API alone",
+        "text": "Dispatch starts as one web service in one container. It answers a health request so you can tell it is working."
+      },
+      {
+        "label": "Modules 2–6: all four parts",
+        "text": "You build Dispatch’s own image, then run the API, Redis, the worker, and PostgreSQL together with Docker Compose, keeping the data safe."
+      },
+      {
+        "label": "Modules 7–12: on Kubernetes",
+        "text": "Kubernetes keeps several copies of the API and worker running, routes requests to them, stores data on persistent volumes, and rolls out new versions safely."
+      },
+      {
+        "label": "Modules 13–24: run like a real service",
+        "text": "You add capacity limits, monitoring, automated delivery, and security, then build and repair the Kubernetes cluster underneath it yourself."
+      }
+    ]
+  },
+  {
+    "id": "dispatch-first-run",
+    "title": "Dispatch’s first version in this lab",
+    "caption": "The same pattern as the foundations web server: a published port in, and a read-only folder of code mounted.",
+    "description": "On your computer, a curl request to /healthz goes to 127.0.0.1 on an assigned port such as 54321, which is published with -p to port 8080 in the container. Inside the container, python app.py runs the Dispatch API on port 8080 and replies with status ok. The workspace folder containing app.py is bind mounted read-only at /app inside the container."
+  }
+]

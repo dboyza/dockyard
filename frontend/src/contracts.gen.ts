@@ -86,6 +86,20 @@ export type ExamTask = {
   "remediation": Array<string>;
 };
 
+export type Figure = {
+  "id": string;
+  "title": string;
+  "caption": string;
+  "description": string;
+  "steps": Array<FigureStep>;
+  "interactive": boolean;
+};
+
+export type FigureStep = {
+  "label": string;
+  "text": string;
+};
+
 export type Lab = {
   "id": string;
   "unit_id": string;
@@ -167,3 +181,21 @@ export type Unit = {
 };
 
 export type UnitKind = "lesson" | "mission" | "incident" | "exam";
+
+// Every figure a lesson can embed; the browser registry must draw each one.
+export type FigureId =
+  | "bind-mount"
+  | "dispatch-first-run"
+  | "dispatch-journey"
+  | "dispatch-system"
+  | "docker-client-engine"
+  | "exec-process"
+  | "image-layers"
+  | "image-to-container"
+  | "port-publishing"
+  | "quorum-model"
+  | "reconciliation-model"
+  | "storage-model"
+  | "web-server-command"
+  | "why-containers"
+  | "writable-layers";

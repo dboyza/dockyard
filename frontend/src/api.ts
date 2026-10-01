@@ -1,4 +1,11 @@
-import type { Assessment, Exam, ExamAttempt, Lab, Unit } from "./contracts.gen";
+import type {
+  Assessment,
+  Exam,
+  ExamAttempt,
+  Figure,
+  Lab,
+  Unit,
+} from "./contracts.gen";
 
 export type Primer = {
   id: string;
@@ -91,6 +98,7 @@ export type PlacementBenchmark = {
 };
 export type Catalog = {
   modules: Module[];
+  figures: Figure[];
   units: UnitSummary[];
   placement: PlacementBenchmark[];
   exams: Exam[];

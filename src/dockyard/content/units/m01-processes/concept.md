@@ -1,60 +1,69 @@
-## Start with something you can see
+## Meet Dispatch
 
-In this lesson, you’ll start Dispatch and ask whether it is healthy.
-You don’t need to understand its Python code.
-We’ll focus on how the program runs and how a request reaches it.
+From here to the end of the course, you’ll work on one application called **Dispatch**.
+Working on one application, rather than a new example in every lesson, means each skill builds on the last.
+It also means problems behave the way they do in real systems: a change you make in one module can matter several modules later.
 
-A **process** is a running program.
-A **container** gives a process its own view of files, networking, and other operating-system resources.
-An **image** is the reusable package Docker uses to create that container.
-Think of the image as the starting material and the container as one instance made from it.
-You can create several containers from the same image.
+Dispatch is a small **background job** service.
+You send it a job, a short piece of text, and it accepts the job straight away.
+A separate program then does the work in the background: it converts the text to uppercase and records a fingerprint of it.
+Later, you ask Dispatch for the job and see whether it has finished, and with what result.
 
-The important part is that a container needs a main process.
-When that process finishes, the container stops.
-A container is not a small computer that stays on after its programs have finished.
+Real applications use this pattern for work that takes too long to make someone wait for, such as sending emails, resizing photos, or generating reports.
+Step through the figure to follow one job through the finished system.
 
-## What Dispatch does here
+```figure
+dispatch-system
+```
 
-Dispatch will eventually accept jobs, process them in the background, and save their results.
-For now, we’re using its simplest version: a small web service that answers requests.
-An **API** is the part of an application that another program can send requests to.
-Dispatch’s `/healthz` address answers with a short message saying the service is working.
+When it is complete, Dispatch has four parts:
 
-To reach it, we need to connect two **ports**, which are numbered destinations for network traffic:
+- The **API**, short for application programming interface, is the part other programs send requests to. It accepts jobs and answers questions about them.
+- The **database**, PostgreSQL, stores every job, its status, and its result, so nothing is lost if a program restarts.
+- The **queue**, Redis, passes short notifications from the API to the worker, so the worker knows new work has arrived.
+- The **worker** takes queued jobs, does the work, and records the result.
 
-- Dispatch listens on port **8080 inside the container**.
-- Your terminal connects to an **assigned port on your computer**.
+We supply all of Dispatch’s code, which is written in Python.
+You won’t need to write or change any Python.
+Your job is the one platform and operations engineers do: run the application, connect its parts, keep it healthy, and fix it when something breaks.
 
-Docker’s port mapping connects those two destinations.
-The numbers do not need to be the same.
-The address `127.0.0.1`, also called localhost or loopback, refers to the computer making the request.
-We’ll publish the service there so it is available locally.
+## How Dispatch grows through the course
+
+You won’t meet all four parts at once.
+Dispatch starts small and grows as you learn the skills each part needs.
+
+```figure
+dispatch-journey
+```
+
+## Today: Dispatch’s first version
+
+In this lesson, Dispatch is only its API, and the API can’t take jobs yet.
+It answers two addresses:
+
+- `/` replies that Dispatch is ready to accept jobs.
+- `/healthz` replies that the service is healthy.
+
+An address like `/healthz` is called a **health endpoint**.
+It exists so that people and tools can quickly ask a service whether it is working.
+You’ll check it constantly, and in later modules other programs will check it for you.
+
+The API is a web server, just like the one you ran in the foundations.
+It listens on port 8080 inside its container, and its code is the file `app.py` in your lab workspace.
+
+```figure
+dispatch-first-run
+```
 
 ## Prepare your terminal
 
-Choose **Prepare lab**, then open its terminal or copy the displayed lab command into a terminal you already use.
-On Windows, run the lab command in WSL.
-Keep that terminal beside this lesson.
-It opens in a folder containing `app.py`, the supplied application.
+Choose **Prepare lab** and open the lab terminal, as before.
+This time the workspace contains `app.py`, Dispatch’s code.
+You can read it with `cat app.py` if you’re curious, but you don’t need to understand it.
 
-Dockyard sets named values called **environment variables** for this lesson.
-The shell replaces a name such as `$DOCKYARD_PORT` with its value when you run a command.
-Keep the dollar signs and quotes in the examples; you don’t need to replace them by hand.
-
-- `DOCKYARD_CONTAINER`: the name reserved for this container.
-- `DOCKYARD_LAB`: the label value identifying this lab’s resources.
-- `DOCKYARD_WORKSPACE`: the folder containing your application files.
-- `DOCKYARD_PORT`: the port assigned on your computer.
-- `DOCKYARD_PYTHON_IMAGE`: the prepared image containing Python.
-
-Try `pwd` to see the folder and `ls` to list its files.
-You can read the supplied application with `cat app.py`, but you don’t need to edit it.
+The lab sets the same variables you used in the foundations, including `$DOCKYARD_CONTAINER`, `$DOCKYARD_LAB`, `$DOCKYARD_PORT`, `$DOCKYARD_WORKSPACE`, and `$DOCKYARD_PYTHON_IMAGE`.
 
 ## Start Dispatch
-
-Run this command in the lab terminal.
-Each backslash continues the command onto the next line, so you can paste the whole block at once.
 
 ```sh
 docker run -d \
@@ -66,17 +75,15 @@ docker run -d \
   "$DOCKYARD_PYTHON_IMAGE" python app.py
 ```
 
-That is a lot of options for one command, so let’s unpack them:
+You know every option here from the web server lesson.
+Only three things are different:
 
-- `-d` starts the container in the background and returns you to the terminal prompt.
-- `--name` gives it this lab’s name, and `--label` marks it as belonging to this lab.
-- `-p` connects the assigned local port to port 8080 inside the container.
-- `-v` makes your application folder available at `/app` inside the container; `ro` means read-only.
-- `-w /app` makes `/app` the working directory inside the container.
-- `python app.py` starts the web service and becomes the container’s main process.
+- `-p` connects your assigned port to **8080**, the port Dispatch listens on.
+- `-v` mounts the **whole workspace** at `/app`, read-only, so the container can see `app.py`.
+- The main process is **`python app.py`**, which starts Dispatch.
 
 Docker prints a long container ID after a successful start.
-That tells you Docker started the container, but we still need to find out whether the application works.
+That tells you Docker started the container, but not yet whether Dispatch works.
 
 ## Send a request
 
@@ -86,34 +93,50 @@ docker logs "$DOCKYARD_CONTAINER"
 curl "http://127.0.0.1:$DOCKYARD_PORT/healthz"
 ```
 
-`docker ps` lists running containers.
-Look for your assigned name and the port mapping.
-`docker logs` shows messages written by the application.
-`curl` sends the HTTP request, the same kind of request a browser sends.
-You should see `{"service": "dispatch", "status": "ok"}`.
-If you ask immediately after starting the container, the application may still be starting; wait a moment and try the request again.
+`docker ps` should list your container as `Up`, with your port mapping.
+`docker logs` should show `Dispatch listening on 0.0.0.0:8080`, a message Dispatch prints when it starts.
+`0.0.0.0` means it accepts connections on every network inside its container, which is what lets Docker forward your requests to it.
+
+The health request should return:
+
+```text
+{"service": "dispatch", "status": "ok"}
+```
+
+This is **JSON**, a common text format for data: each name in quotes is paired with a value.
+Here it says the service is `dispatch` and its status is `ok`.
+If you ask immediately after starting the container, Dispatch may still be starting; wait a moment and try again.
+
+Try the main address too:
+
+```sh
+curl "http://127.0.0.1:$DOCKYARD_PORT/"
+```
+
+## Running is not the same as working
 
 A running container and a successful response tell you different things.
-The first means its main process is still running.
-The second means a request reached a working service.
+`Up` in `docker ps` means the main process is still running.
+A successful health response means a request actually reached a working service.
+You’ll meet plenty of situations later in the course where the first is true and the second is not, so always check both.
 
 ## Predict, stop, and try again
 
-Before running the next command, predict what will happen to the health request.
+Before running the next commands, predict what will happen to the health request.
 
 ```sh
 docker stop "$DOCKYARD_CONTAINER"
 curl "http://127.0.0.1:$DOCKYARD_PORT/healthz"
 ```
 
-The request should now fail because the service is stopped.
-Try `docker ps -a` to see stopped containers as well as running ones.
-The container still exists, and its image is still available.
+The request should now fail, because nothing is listening behind the published port.
+Run `docker ps -a`: the container still exists, in the `Exited` state, and the image is still on your computer.
 
 Start the same container again, then repeat the health request:
 
 ```sh
 docker start "$DOCKYARD_CONTAINER"
+curl "http://127.0.0.1:$DOCKYARD_PORT/healthz"
 ```
 
 Leave it running and choose **Check work**.
@@ -124,5 +147,4 @@ The next lesson looks more closely at what stays the same when you stop and star
 If Docker reports a name conflict, this lab’s container already exists.
 Inspect it with `docker ps -a` before deciding what to do; you may only need `docker start`.
 If it exits straight away, check its logs and the command it was given.
-If it runs but the request fails, compare the published ports with the example and look for application errors in the logs.
-You can use the first hint if you’re unsure what to inspect next.
+If it runs but the request fails, compare `docker port "$DOCKYARD_CONTAINER"` with the `-p` option above, and look for errors in the logs.

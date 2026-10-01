@@ -1,17 +1,18 @@
 id: m01-processes
-revision: 2
+revision: 3
 module: 1
 order: 1
-title: A container is a running process
-summary: Start Dispatch in a container, send it a request, and see what changes when you stop it.
+title: 'Meet Dispatch: run its first version'
+summary: Meet the application you’ll work on for the rest of the course, then start its first version and send it a request.
 kind: lesson
 runtime: docker
-minutes: 25
+minutes: 30
 outcomes:
-- Explain why stopping a container does not remove its image.
-- Run Dispatch in a container while keeping your terminal free for other commands.
-- Connect a local port to Dispatch and check its HTTP response.
-prerequisites: []
+- Describe what Dispatch does and name the parts it will grow into.
+- Run Dispatch’s API in a container with its port published on 127.0.0.1, and check its health response.
+- Explain why a stopped container cannot answer requests even though its image is still available.
+prerequisites:
+- m00-mission
 objectives:
 - docker.lifecycle
 - docker.ports
@@ -19,14 +20,13 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: You stop the container running Dispatch. What happens to the image used to start it?
+  question: Dispatch is answering requests. You stop its container and request /healthz again. What happens?
   options:
-  - The image remains available for a new container.
-  - Docker deletes the image along with the process.
-  - The image becomes the stopped container's filesystem.
+  - The request fails, because no process is listening any more.
+  - The request still succeeds, because the image is still on your computer.
+  - Dispatch answers with a status saying it has stopped.
   correct: 0
-  explanation: An image is a reusable template. Stopping a container stops its processes; it does not
-    remove the image. A container also has its own writable layer, which is distinct from the image.
+  explanation: Only a running process can answer a request. Stopping the container ended Dispatch’s main process, so nothing is listening behind the published port. The image is still there, ready to start a container again, but an image cannot answer anything by itself.
 hints:
 - 'Start with docker ps -a: is there a container with this lab’s name, and is it running?'
 - The command in Understand needs every line, including the label, port mapping, and folder mount.

@@ -1,6 +1,11 @@
 import { expect, test } from "vitest";
 import type { Progress } from "./api";
-import { currentPractice, learningStatus, reviewDue } from "./learning";
+import {
+  coursePhases,
+  currentPractice,
+  learningStatus,
+  reviewDue,
+} from "./learning";
 
 const base: Progress = {
   viewed: 1,
@@ -29,4 +34,26 @@ test("status follows viewing, practice, independent passes, and review dates", (
   expect(reviewDue(1, { ...due, review_at: "2026-10-01T00:00:00Z" }, now)).toBe(
     false,
   );
+});
+
+test("course phases follow their numbers, not module order", () => {
+  const module = (id: number, phase: number, phase_title: string) => ({
+    id,
+    phase,
+    phase_title,
+    title: "",
+    topics: [],
+    mission: "",
+  });
+  expect(
+    coursePhases([
+      module(1, 1, "Containers"),
+      module(0, 0, "Foundations"),
+      module(7, 2, "Kubernetes"),
+    ]),
+  ).toEqual([
+    { phase: 0, title: "Foundations" },
+    { phase: 1, title: "Containers" },
+    { phase: 2, title: "Kubernetes" },
+  ]);
 });

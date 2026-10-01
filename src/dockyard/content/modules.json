@@ -1,5 +1,17 @@
 [
   {
+    "id": 0,
+    "title": "Container foundations",
+    "phase": 0,
+    "phase_title": "Foundations",
+    "topics": [
+      "Images, containers, and processes",
+      "layers and isolation",
+      "ports and shared folders"
+    ],
+    "mission": "Repair a web server container that never serves its page"
+  },
+  {
     "id": 1,
     "title": "Processes to containers",
     "phase": 1,

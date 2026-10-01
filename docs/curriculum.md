@@ -2,9 +2,19 @@
 
 Status: approved for autonomous implementation through the planning review, 2026-09-26.
 The module outcomes below are a scope contract, not claims of completed content.
-Each row specifies three teaching labs and an independent mission, giving 96 course units across 24 modules.
-The sixth module's mission in each phase is the cumulative capstone.
-The phases form one evolving Dispatch project, with self-contained checkpoints for later entry.
+Each row specifies three teaching labs and an independent mission, giving 100 course units across 25 modules.
+Module 00 teaches container foundations with small throwaway programs before Dispatch is introduced.
+The sixth module's mission in each of the four main phases is the cumulative capstone.
+Those phases form one evolving Dispatch project, with self-contained checkpoints for later entry.
+Module 01 introduces Dispatch, its purpose, and how it grows before the learner operates it.
+
+## Foundations
+
+Added on 2026-10-01 after learner feedback that the first lesson introduced too many ideas at once and named Dispatch before explaining the fundamentals.
+
+| ID | Module | Three teaching labs | Independent mission |
+| --- | --- | --- | --- |
+| 00 | Container foundations | Images, containers, and processes; layers and writable storage; ports and bind mounts | Repair a web server container that never serves its page |
 
 ## Phase 1: Container engineering
 
@@ -83,6 +93,7 @@ Sources: [CKA domains](https://github.com/cncf/curriculum/blob/master/cka/README
 
 ## Required curriculum evidence
 
+Every lesson should explain its central ideas with embedded figures as well as prose; step-through figures suit sequences and changing state.
 Every unit must declare measurable outcomes, prerequisites, runtime profile, resource needs, versions, starter state, worked example, instructions, hints, references, checks, expected failure modes, and source attribution.
 Every independent mission must define acceptable alternatives and what evidence earns completion.
 Every capstone must connect to earlier Dispatch checkpoints and produce a useful export.

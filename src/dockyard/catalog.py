@@ -9,13 +9,23 @@ from typing import Any
 
 import yaml
 
-from dockyard.models import Exam, Unit
+from dockyard.models import Exam, Figure, Unit
 from dockyard.workspace import safe_relative
 
 CONTENT = Path(__file__).parent / "content"
 # libyaml's loader is about ten times faster and parses the same data.
 YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 TASK_HEADING = re.compile(r"^## (\d+)\. (.+) \((\d+)%\)$", re.MULTILINE)
+FIGURE_FENCE = re.compile(r"^```figure\b.*$", re.MULTILINE)
+FIGURE_BLOCK = re.compile(r"^```figure\n([a-z][a-z0-9-]{1,79})\n```$", re.MULTILINE)
+
+
+def figure_references(markdown: str) -> list[str]:
+    """Return the figures a Markdown text embeds, rejecting any malformed figure block."""
+    references = FIGURE_BLOCK.findall(markdown)
+    if len(FIGURE_FENCE.findall(markdown)) != len(references):
+        raise ValueError("A figure block must contain exactly one figure identifier.")
+    return references
 
 
 def attach_task_briefs(exam: dict[str, Any], brief: str) -> None:
@@ -36,6 +46,12 @@ class Catalog:
     def __init__(self, root: Path = CONTENT):
         self.root = root
         self.modules: list[dict[str, Any]] = json.loads((root / "modules.json").read_text())
+        figures = [
+            Figure.model_validate(item) for item in json.loads((root / "figures.json").read_text())
+        ]
+        self.figures: dict[str, Figure] = {figure.id: figure for figure in figures}
+        if len(self.figures) != len(figures):
+            raise ValueError("Figure identifiers must be unique.")
         self.units: dict[str, Unit] = {}
         for path in sorted((root / "units").glob("*/unit.yaml")):
             raw = yaml.load(path.read_text(), Loader=YAML_LOADER)  # noqa: S506
@@ -63,6 +79,10 @@ class Catalog:
                     },
                 }
             unit = Unit.model_validate(raw)
+            for text in (unit.concept, unit.brief, unit.debrief, *unit.hints):
+                for figure in figure_references(text):
+                    if figure not in self.figures:
+                        raise ValueError(f"{unit.id} embeds an unknown figure: {figure}")
             if unit.id in self.units:
                 raise ValueError(f"Duplicate unit: {unit.id}")
             for file_name in [*unit.starter, *unit.reference]:
@@ -101,6 +121,7 @@ class Catalog:
     def index(self) -> dict[str, Any]:
         return {
             "modules": self.modules,
+            "figures": [figure.model_dump(mode="json") for figure in self.figures.values()],
             "placement": self.placement,
             "exams": [exam.model_dump(mode="json") for exam in self.exams.values()],
             "units": [

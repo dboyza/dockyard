@@ -35,8 +35,8 @@ Read a short explanation, make a prediction, operate the real environment, and i
 Checks examine files, resource identity, and running behavior rather than command history.
 Hints and reference solutions stay separate from independent demonstrations.
 
-The course contains 96 teaching labs and missions across 24 modules, 12 incident scenarios, and four original timed CKA/CKAD-oriented practice exams.
-Dispatch grows from one process into a distributed application, with Compose, Kubernetes, delivery automation, security, and native kubeadm administration.
+The course contains 100 teaching labs and missions across 25 modules, 12 incident scenarios, and four original timed CKA/CKAD-oriented practice exams.
+It begins with illustrated container foundations, then introduces Dispatch, which grows from one process into a distributed application, with Compose, Kubernetes, delivery automation, security, and native kubeadm administration.
 The [objective map](docs/sources/objective-map.md) connects the published objectives to explanations, practice, and assessment.
 
 Successful missions create immutable source checkpoints.

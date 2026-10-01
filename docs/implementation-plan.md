@@ -99,7 +99,8 @@ It excludes lab credentials, private keys, transient kubeconfigs, and cached ima
 ## 6. Curriculum and assessments
 
 The baseline is 24 modules, each with three teaching labs and one independent project mission: 96 course units.
-Add 12 distinct incident scenarios and four original timed practice exams, two CKAD-oriented and two CKA-oriented, for 112 substantial activities.
+A foundations module 00, added on 2026-10-01, precedes them with four more units, bringing the course to 100.
+Add 12 distinct incident scenarios and four original timed practice exams, two CKAD-oriented and two CKA-oriented, for 116 substantial activities.
 The final mission in each six-module phase is a cumulative capstone, giving four capstones within the 24 missions.
 Placement diagnostics, primers, glossary entries, and spaced reviews are additional supporting material, not counted as course units.
 Each teaching lab includes at least one deliberate troubleshooting or prediction exercise where it supports the objective; do not force identical stage counts when they harm teaching.

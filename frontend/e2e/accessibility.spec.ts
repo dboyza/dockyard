@@ -50,7 +50,7 @@ test('all workbench destinations and lesson interactions meet automated accessib
     }
     await navigateTo(page, 'Your course');
     await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-processes');
-    await page.getByRole('button', { name: /A container is a running process/ }).click();
+    await page.getByRole('button', { name: /Meet Dispatch: run its first version/ }).click();
     await scan(`${theme}/lesson`);
     if (theme === 'dark') {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));

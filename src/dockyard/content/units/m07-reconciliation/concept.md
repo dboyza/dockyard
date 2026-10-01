@@ -60,6 +60,13 @@ An `apply` success means the API accepted your request, not that the containers 
 The final command lists Pods with the label `app=dispatch`; `-o wide` includes their IP addresses and node names.
 Look for two Pods with `1/1` in the READY column.
 
+Before deleting a real Pod, rehearse the idea in this simplified model.
+Delete a Pod, then advance the controller one step at a time and watch the observed count return to the desired count.
+
+```figure
+reconciliation-model
+```
+
 ## Predict what happens when a Pod disappears
 
 Choose one Pod name from that table.
