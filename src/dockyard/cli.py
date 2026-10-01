@@ -12,7 +12,7 @@ import threading
 import webbrowser
 from pathlib import Path
 from types import FrameType
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from dockyard.runtimes.docker import RuntimeErrorBase
 
@@ -32,59 +32,191 @@ def default_directory() -> Path:
     return directory()
 
 
+EXAMPLES = """\
+examples:
+  dockyard                              open the workbench in your browser
+  dockyard doctor                       check Docker, disk, memory, and terminals
+  dockyard lab prepare m01-processes    create a lesson's lab
+  dockyard lab shell m01-processes      open a shell inside that lab
+  dockyard lab check m01-processes      check your work
+  dockyard cache prepare module:7       download what module 7 needs ahead of time
+  dockyard progress export backup.zip   back up your progress
+"""
+
+LAB_ACTIONS = {
+    "prepare": "Create the lab and its workspace",
+    "shell": "Open a shell inside the lab, with its settings loaded",
+    "check": "Check your work and print the results",
+    "status": "Show whether the lab exists and where its files are",
+    "reset": "Back up your files and restore the starting state",
+    "retake": "Start a fresh attempt without earlier hints",
+    "stop": "Stop the lab's containers, cluster, or VMs, keeping everything",
+    "resume": "Start a stopped lab again",
+    "clean": "Remove the lab's resources; your files and progress stay",
+}
+
+
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(prog="dockyard", description="Learn containers in a real lab.")
-    result.add_argument("--data-dir", type=Path, default=default_directory())
-    commands = result.add_subparsers(dest="command")
-    launch = commands.add_parser("launch", help="Open the local learning workbench")
-    launch.add_argument("--port", type=int, default=8768)
-    launch.add_argument("--no-open", action="store_true")
-    commands.add_parser("doctor", help="Inspect local tool and runtime readiness")
-    commands.add_parser("catalog", help="List the authored curriculum")
-    audit = commands.add_parser("audit", help="Check curriculum structure and release coverage")
-    audit.add_argument("--json", action="store_true")
-    progress = commands.add_parser(
-        "progress", help="Export or safely merge personal learning history"
+    from dockyard import __version__
+
+    result = argparse.ArgumentParser(
+        prog="dockyard",
+        description="Learn containers, Docker, and Kubernetes in real labs on this computer.",
+        epilog=EXAMPLES,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    transfers = progress.add_subparsers(dest="transfer", required=True)
+    result.add_argument("--version", action="version", version=f"dockyard {__version__}")
+    result.add_argument(
+        "--data-dir",
+        type=Path,
+        default=default_directory(),
+        metavar="PATH",
+        help="where progress and labs are stored (default: %(default)s)",
+    )
+    commands = result.add_subparsers(dest="command", metavar="COMMAND")
+    launch = commands.add_parser("launch", help="open the workbench in your browser (the default)")
+    launch.add_argument(
+        "--port", type=int, default=8768, help="local port to listen on (default: %(default)s)"
+    )
+    launch.add_argument(
+        "--no-open", action="store_true", help="print the sign-in link instead of opening it"
+    )
+    doctor = commands.add_parser("doctor", help="check Docker, disk, memory, terminals, and tools")
+    doctor.add_argument("--json", action="store_true", help="print machine-readable JSON")
+    commands.add_parser("catalog", help="list every lesson, mission, incident, and exam")
+    audit = commands.add_parser("audit", help="check the curriculum's structure")
+    audit.add_argument("--json", action="store_true", help="print machine-readable JSON")
+    progress = commands.add_parser("progress", help="back up or restore your progress")
+    transfers = progress.add_subparsers(dest="transfer", required=True, metavar="ACTION")
     exported = transfers.add_parser(
-        "export", help="Save progress, evidence, checkpoints, and portable drafts"
+        "export", help="save progress, results, notes, and saved mission files to a .zip"
     )
-    exported.add_argument("destination", type=Path)
-    imported = transfers.add_parser(
-        "import", help="Preview a portable progress bundle before merging"
-    )
-    imported.add_argument("source", type=Path)
-    imported.add_argument("--yes", action="store_true", help="Merge after validating the preview")
-    cache = commands.add_parser("cache", help="Inspect and prefetch pinned lesson dependencies")
-    caches = cache.add_subparsers(dest="cache_action", required=True)
-    for name in ("status", "prepare"):
-        command = caches.add_parser(name)
-        command.add_argument(
-            "scope", nargs="?", default="all", help="all, unit:ID, module:1..24, or track:1..4"
-        )
-    portfolio = commands.add_parser("portfolio", help="Export a readable mission source portfolio")
-    portfolio.add_argument("destination", type=Path)
-    lab = commands.add_parser("lab", help="Manage and check a dedicated practice lab")
-    operations = lab.add_subparsers(dest="action", required=True)
-    for action in (
-        "prepare",
-        "shell",
-        "check",
-        "status",
-        "reset",
-        "retake",
-        "stop",
-        "resume",
-        "clean",
+    exported.add_argument("destination", type=Path, help="the .zip file to write")
+    imported = transfers.add_parser("import", help="preview a backup, then merge it with --yes")
+    imported.add_argument("source", type=Path, help="the backup .zip to read")
+    imported.add_argument("--yes", action="store_true", help="merge after showing the preview")
+    cache = commands.add_parser("cache", help="check or download what lessons need ahead of time")
+    caches = cache.add_subparsers(dest="cache_action", required=True, metavar="ACTION")
+    for name, text in (
+        ("status", "show what is already downloaded"),
+        ("prepare", "download what is missing"),
     ):
-        operation = operations.add_parser(action)
-        operation.add_argument("unit", nargs="?", default=os.environ.get("DOCKYARD_UNIT"))
+        command = caches.add_parser(name, help=text)
+        command.add_argument(
+            "scope",
+            nargs="?",
+            default="all",
+            help="all (default), unit:ID, module:1-24, or track:1-4",
+        )
+        command.add_argument("--json", action="store_true", help="print machine-readable JSON")
+    portfolio = commands.add_parser(
+        "portfolio", help="export your passed missions' files as a readable portfolio"
+    )
+    portfolio.add_argument("destination", type=Path, help="the .zip file to write")
+    lab = commands.add_parser("lab", help="prepare, check, and manage a lesson's lab")
+    operations = lab.add_subparsers(dest="action", required=True, metavar="ACTION")
+    for action, text in LAB_ACTIONS.items():
+        operation = operations.add_parser(
+            action, help=text[0].lower() + text[1:], description=text + "."
+        )
+        operation.add_argument(
+            "unit",
+            nargs="?",
+            default=os.environ.get("DOCKYARD_UNIT"),
+            help="activity ID, such as m01-processes (default: the current lab shell's)",
+        )
         if action != "shell":
-            operation.add_argument("--json", action="store_true", help="Emit machine-readable JSON")
+            operation.add_argument(
+                "--json", action="store_true", help="print machine-readable JSON"
+            )
         if action in {"reset", "retake", "clean"}:
-            operation.add_argument("--yes", action="store_true")
+            operation.add_argument("--yes", action="store_true", help="confirm the change")
     return result
+
+
+LAB_STATE_NAMES = {
+    "absent": "not prepared",
+    "preparing": "preparing",
+    "ready": "ready",
+    "checking": "checking",
+    "stopping": "stopping",
+    "stopped": "stopped",
+    "failed": "needs attention",
+    "cleaning": "cleaning up",
+}
+
+
+def print_doctor(report: dict[str, Any]) -> None:
+    from dockyard import __version__
+
+    def line(label: str, value: str) -> None:
+        print(f"  {label:<14}{value}")
+
+    print(f"Dockyard {__version__}")
+    line("System", f"{'WSL 2' if report['wsl'] else report['system']} {report['architecture']}")
+    memory = report["host_memory_gib"]
+    free = report["memory_free_percent"]
+    line(
+        "Memory",
+        (f"{memory:g} GiB" if memory is not None else "not reported")
+        + (f", {free}% available" if free is not None else ""),
+    )
+    line("Free disk", f"{report['free_disk_gib']:g} GiB")
+    line(
+        "Docker",
+        f"ready ({report['docker_version']})"
+        if report["docker_ready"]
+        else f"not available: {report['docker_error'] or 'no response'}",
+    )
+    if report["docker_tools_error"]:
+        line("Docker tools", report["docker_tools_error"])
+    line("Terminal", report["terminal"] or "none found; copy lab commands into your own terminal")
+    line(
+        "VM labs",
+        f"blocked: {report['native_vm_blocker']}"
+        if report["native_vm_blocker"]
+        else f"available (up to {report['vm_budget_gib']} GiB)",
+    )
+    for name, location in sorted(report["tools"].items()):
+        line(name, location or "not installed yet")
+
+
+def print_cache(report: dict[str, Any]) -> None:
+    units = report["units"]
+    ready = sum(1 for unit in units if unit["status"] == "cached")
+    print(f"Scope {report['scope']}: {ready} of {len(units)} activities have everything cached")
+    for unit in units:
+        if unit["status"] != "cached":
+            print(f"  {unit['unit_id']:<24} {unit['status']}")
+            for item in unit["missing"]:
+                print(f"    missing: {item}")
+            for item in unit["limitations"]:
+                print(f"    needs network: {item}")
+    print(
+        f"Private cache {report['private_cache_gib']:g} GiB of {report['soft_budget_gib']} GiB"
+        f" suggested; {report['free_disk_gib']:g} GiB free on disk."
+    )
+
+
+def print_lab(unit_id: str, lab: dict[str, Any] | None) -> None:
+    if not lab:
+        print(f"{unit_id}: not prepared. Run: dockyard lab prepare {unit_id}")
+        return
+    print(f"{unit_id}: {LAB_STATE_NAMES.get(lab['state'], lab['state'])}")
+    print(f"  Workspace  {lab['workspace']}")
+    if lab.get("error"):
+        print(
+            textwrap.fill(
+                lab["error"],
+                width=88,
+                initial_indent="  Problem    ",
+                subsequent_indent="             ",
+            )
+        )
+    if lab["state"] == "ready":
+        print(f"  Next       dockyard lab shell {unit_id}")
+    elif lab["state"] == "stopped":
+        print(f"  Next       dockyard lab resume {unit_id}")
 
 
 def open_local_browser(url: str) -> None:
@@ -158,7 +290,11 @@ def main() -> None:
                 service, getattr(arguments, "port", 8768), not getattr(arguments, "no_open", False)
             )
         elif arguments.command == "doctor":
-            print(json.dumps(service.doctor(), indent=2))
+            report = service.doctor()
+            if arguments.json:
+                print(json.dumps(report, indent=2))
+            else:
+                print_doctor(report)
         elif arguments.command == "audit":
             from dockyard.audit import curriculum
 
@@ -188,7 +324,10 @@ def main() -> None:
                 if arguments.cache_action == "prepare"
                 else inventory(service, arguments.scope)
             )
-            print(json.dumps(report, indent=2))
+            if arguments.json:
+                print(json.dumps(report, indent=2))
+            else:
+                print_cache(report)
         elif arguments.command == "portfolio":
             from dockyard.progress_bundle import save_export
             from dockyard.projects import export_portfolio
@@ -218,8 +357,15 @@ def main() -> None:
                     print(json.dumps(preview, indent=2))
                     print("Review this merge, then repeat with --yes to import.")
         elif arguments.command == "catalog":
-            for unit in service.catalog.units.values():
-                print(f"{unit.id:28} {unit.title}")
+            kinds = {"lesson": "", "mission": "mission", "incident": "incident", "exam": "exam"}
+            for module in service.catalog.modules:
+                print(f"\nModule {module['id']:02d} · {module['title']}")
+                members = sorted(
+                    (u for u in service.catalog.units.values() if u.module == module["id"]),
+                    key=lambda unit: unit.order,
+                )
+                for unit in members:
+                    print(f"  {unit.id:24} {kinds[unit.kind]:9} {unit.title}")
         elif arguments.command == "lab":
             if not arguments.unit:
                 raise LabError("Name a unit, or run this command inside its Dockyard lab shell.")
@@ -246,11 +392,11 @@ def main() -> None:
                 os.execvpe(executable, args, env)
             elif arguments.action == "status":
                 lab = service.store.lab(arguments.unit)
-                print(
-                    json.dumps(service.public_lab(lab), indent=2)
-                    if lab
-                    else "This lab is not prepared."
-                )
+                public = service.public_lab(lab) if lab else None
+                if arguments.json:
+                    print(json.dumps(public, indent=2))
+                else:
+                    print_lab(arguments.unit, public)
             else:
                 result = service.perform(arguments.unit, arguments.action)
                 if arguments.action == "check" and not arguments.json:
@@ -270,8 +416,11 @@ def main() -> None:
                     if result["status"] == "stale":
                         print(STALE_NOTE)
                     print("\nEvidence is saved in the workbench. Use --json for full observations.")
-                else:
+                elif arguments.json:
                     print(json.dumps(result, indent=2))
+                else:
+                    lab = service.store.lab(arguments.unit)
+                    print_lab(arguments.unit, service.public_lab(lab) if lab else None)
                 if arguments.action == "check" and result.get("status") != "pass":
                     raise SystemExit(1)
     except KeyboardInterrupt:

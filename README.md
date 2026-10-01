@@ -79,5 +79,5 @@ The [platform validation](docs/platform-validation.md) records cross-platform ch
 The [original release validation](docs/release-validation.md) preserves the macOS baseline.
 The [runtime evidence log](docs/runtime-evidence.md) records the underlying staged observations.
 
-For help, include the activity ID, action, relevant diagnostic, app version, and `./dockyard doctor` output.
+For help, include the activity ID, the action you took, the diagnostic shown, and the output of `./dockyard doctor`, which includes the app version.
 Exclude kubeconfigs, credentials, private keys, and raw lab databases.

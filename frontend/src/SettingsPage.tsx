@@ -159,6 +159,10 @@ export function SettingsPage({ model }: { model: Workbench }) {
           </p>
         </section>
       </div>
+      <p className="small muted settings-version">
+        Dockyard {model.catalog?.version}. Include this version and the output
+        of <code>./dockyard doctor</code> when you report a problem.
+      </p>
       {preview && (
         <section
           className="panel import-preview"

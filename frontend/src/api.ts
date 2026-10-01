@@ -94,6 +94,7 @@ export type Catalog = {
   units: UnitSummary[];
   placement: PlacementBenchmark[];
   exams: Exam[];
+  version: string;
 };
 export type Doctor = {
   tools: Record<string, string | null>;

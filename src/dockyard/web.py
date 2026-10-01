@@ -158,7 +158,9 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
 
     @app.get("/api/catalog")
     def catalog() -> dict[str, Any]:
-        return service.catalog.index()
+        from dockyard import __version__
+
+        return {**service.catalog.index(), "version": __version__}
 
     @app.get("/api/reference")
     def reference_library() -> dict[str, Any]:

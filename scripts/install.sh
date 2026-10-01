@@ -26,6 +26,6 @@ if [ ! -x .runtime/installed/bin/python ]; then
   uv venv --python 3.14 --cache-dir .tools/uv-cache .runtime/installed
 fi
 uv pip install --cache-dir .tools/uv-cache --python .runtime/installed/bin/python \
-  --reinstall "dist/dockyard_learn-$(.venv/bin/python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')-py3-none-any.whl"
+  --reinstall "dist/dockyard_learn-$(.venv/bin/python -c 'import dockyard; print(dockyard.__version__)')-py3-none-any.whl"
 ./dockyard --data-dir .runtime/install-check audit
 printf '\nInstalled. Run ./dockyard to open the learning workbench.\n'
