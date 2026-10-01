@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
-import { mkdtempSync, symlinkSync, unlinkSync } from 'node:fs';
+import { mkdtempSync, rmSync, symlinkSync, unlinkSync } from 'node:fs';
 import { createServer, type Socket } from 'node:net';
 import { once } from 'node:events';
 import path from 'node:path';
@@ -78,5 +78,6 @@ test('port collision, unavailable Docker, cancellation, and concurrent clients r
     execFileSync(cli, ['--data-dir', profile, 'lab', 'clean', 'm01-processes', '--yes'], { env: environment });
     if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
     occupied.close();
+    rmSync(profile, { recursive: true, force: true });
   }
 });
