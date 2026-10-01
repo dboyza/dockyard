@@ -45,7 +45,10 @@ def command(
     output_limit: int = 1_000_000,
 ) -> ProcessResult:
     if not expected or identity(Path(env["KUBECONFIG"])) != expected:
-        raise RuntimeErrorBase("The kubeconfig no longer matches this recorded lab cluster.")
+        raise RuntimeErrorBase(
+            "This lab's cluster was removed or replaced outside Dockyard. "
+            "Reset the lab to create a fresh one."
+        )
     return run(
         [
             str(tools / "bin/kubectl"),

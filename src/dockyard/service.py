@@ -196,7 +196,10 @@ class Service:
                 )
             endpoint = result.stdout.strip()
         if not endpoint.startswith("unix://"):
-            raise LabError("Dockyard requires a local Unix-socket Docker endpoint.")
+            raise LabError(
+                "Dockyard needs Docker running on this computer. "
+                "If DOCKER_HOST points somewhere else, unset it, then try again."
+            )
         return endpoint
 
     def _allocate_lab(self, unit_id: str) -> Lab:

@@ -100,7 +100,11 @@ class DockerRuntime:
             or self.created(resource) != item["created"]
             or self.labels(item["kind"], resource).get(LABEL) != self.lab.id
         ):
-            raise RuntimeErrorBase("A recorded resource changed identity; it was preserved.")
+            raise RuntimeErrorBase(
+                "Something with this lab's name was changed outside Dockyard, "
+                "so Dockyard left it untouched. "
+                "Reset the lab to start again."
+            )
         return resource
 
     def change(self, action: str, cancel: threading.Event) -> None:

@@ -44,7 +44,10 @@ def observe(runtime: DockerRuntime | KubernetesRuntime | LinuxRuntime) -> LabObs
             for entry in json.loads(runtime.lab.resources.get("kind_inventory", "[]"))
         ]
         if not nodes or not all(node and node["State"]["Running"] for node in nodes):
-            raise RuntimeErrorBase("The owned cluster is stopped or a recorded node is missing.")
+            raise RuntimeErrorBase(
+                "This lab's cluster is stopped or one of its nodes is missing. "
+                "Resume the lab, or reset it if that does not help."
+            )
         response = runtime.kubectl(
             ["get", "deploy,rs,sts,ds,pod,svc,endpointslice,pvc,pv", "-A", "-o", "json"],
             output_limit=4_000_000,

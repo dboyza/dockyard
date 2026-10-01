@@ -54,7 +54,7 @@ def test_vm_identity_preserves_replaced_disk_and_changed_mounts(tmp_path, monkey
     replacement = directory / "replacement"
     replacement.write_bytes(b"different VM")
     replacement.replace(directory / "disk")
-    with pytest.raises(RuntimeErrorBase, match="identity changed"):
+    with pytest.raises(RuntimeErrorBase, match="changed outside Dockyard"):
         runtime.verify(entry)
     assert (directory / "disk").read_bytes() == b"different VM"
     (directory / "lima.yaml").write_text(

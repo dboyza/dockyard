@@ -25,7 +25,9 @@ def current() -> LinuxRuntime:
         or lab.id != os.environ["DOCKYARD_LAB"]
         or Path(lab.workspace).resolve() != Path(os.environ["DOCKYARD_WORKSPACE"]).resolve()
     ):
-        raise RuntimeErrorBase("This terminal no longer identifies the current native lab.")
+        raise RuntimeErrorBase(
+            "This terminal belongs to an older lab. Open a new terminal from the lesson."
+        )
     return LinuxRuntime(lab, service.environment(lab), service.store.save_lab, service.tools)
 
 

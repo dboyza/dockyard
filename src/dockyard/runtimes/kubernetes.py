@@ -59,7 +59,10 @@ class KubernetesRuntime:
     def verify_kubeconfig(self) -> None:
         expected = self.lab.resources.get("kubeconfig_identity")
         if not expected or self.config_identity() != expected:
-            raise RuntimeErrorBase("The kubeconfig no longer matches this recorded lab cluster.")
+            raise RuntimeErrorBase(
+                "This lab's cluster was removed or replaced outside Dockyard. "
+                "Reset the lab to create a fresh one."
+            )
 
     def discover(self) -> list[dict[str, str]]:
         inventory: list[dict[str, str]] = json.loads(self.lab.resources.get("kind_inventory", "[]"))
@@ -88,7 +91,11 @@ class KubernetesRuntime:
                 or datetime.fromisoformat(created.replace("Z", "+00:00"))
                 < datetime.fromisoformat(self.lab.created_at)
             ):
-                raise RuntimeErrorBase("An unrecognized cluster node was preserved.")
+                raise RuntimeErrorBase(
+                    "This lab's cluster has a node Dockyard did not create, "
+                    "so Dockyard left it untouched. "
+                    "Reset the lab to start again."
+                )
             entry = {"id": str(resource["Id"]), "created": created, "name": name}
             if entry not in inventory:
                 inventory.append(entry)
@@ -106,7 +113,11 @@ class KubernetesRuntime:
             or str(resource["Name"]).lstrip("/") != entry["name"]
             or self.docker.labels("container", resource).get(CLUSTER_LABEL) != self.name
         ):
-            raise RuntimeErrorBase("A cluster node changed identity; it was preserved.")
+            raise RuntimeErrorBase(
+                "A node in this lab's cluster was changed outside Dockyard, "
+                "so Dockyard left it untouched. "
+                "Reset the lab to start again."
+            )
         return resource
 
     def load_image(self, name: str, cancel: threading.Event) -> str:

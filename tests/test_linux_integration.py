@@ -169,7 +169,7 @@ while True:
             original = configuration.read_bytes()
             try:
                 configuration.write_bytes(original + b"\n# changed outside Dockyard\n")
-                with pytest.raises(RuntimeErrorBase, match="identity changed"):
+                with pytest.raises(RuntimeErrorBase, match="changed outside Dockyard"):
                     runtime.change("stop", cancel)
             finally:
                 configuration.write_bytes(original)

@@ -164,7 +164,11 @@ class LinuxRuntime:
         if existing is None:
             return None
         if self.identity(entry["name"]) != entry:
-            raise RuntimeErrorBase("The recorded VM identity changed; preserved.")
+            raise RuntimeErrorBase(
+                "One of this lab's VMs was changed outside Dockyard, "
+                "so Dockyard left it untouched. "
+                "Reset the lab to start again."
+            )
         return existing
 
     def guest(
@@ -219,7 +223,11 @@ class LinuxRuntime:
             (name in existing or (self.home / name).exists()) and name not in inventory
             for name in names
         ):
-            raise RuntimeErrorBase("An unrecorded VM occupies a requested name; preserved.")
+            raise RuntimeErrorBase(
+                "A VM that Dockyard did not create already uses this lab's name, "
+                "so Dockyard left it untouched. "
+                "Remove that VM or choose Clean up, then prepare again."
+            )
         if not json.loads(self.lab.resources.get("vm_intent", "[]")):
             atomic_write(
                 self.root / "vm-intent.json",
