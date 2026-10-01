@@ -49,7 +49,7 @@ test('installed CLI and browser exchange portable history through a reviewed mer
   await page.goto(url);
   await navigateTo(page, 'Settings and data');
   await expect(page.getByRole('heading', { name: 'Settings and data', level: 1 })).toBeVisible();
-  await page.getByLabel('Choose a Dockyard progress archive').setInputFiles(archive);
+  await page.getByLabel('Choose a backup file').setInputFiles(archive);
   const preview = page.getByRole('region', { name: 'Progress import preview' });
   await expect(preview).toContainText('source.zip');
   const noteURL = new URL('/api/units/m01-processes', page.url()).toString();
@@ -68,7 +68,7 @@ test('installed CLI and browser exchange portable history through a reviewed mer
   const state = await page.request.get(new URL('/api/state', page.url()).toString()).then(r => r.json());
   expect(state.labs).toEqual([]);
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('link', { name: 'Export progress archive' }).click();
+  await page.getByRole('link', { name: 'Download a backup' }).click();
   const downloaded = await downloadPromise;
   const result = path.join(temporary, 'browser-export.zip');
   await downloaded.saveAs(result);

@@ -130,7 +130,7 @@ export function SettingsPage({ model }: { model: Workbench }) {
             href="/api/progress/export"
             download="dockyard-progress.zip"
           >
-            <Download size={16} /> Export progress archive
+            <Download size={16} /> Download a backup
           </a>
         </section>
         <section className="panel" aria-label="Import progress">
@@ -142,7 +142,7 @@ export function SettingsPage({ model }: { model: Workbench }) {
             is saved in a separate folder.
           </p>
           <label className="archive-picker">
-            <span>Choose a Dockyard progress archive</span>
+            <span>Choose a backup file</span>
             <input
               type="file"
               accept=".zip,application/zip"
