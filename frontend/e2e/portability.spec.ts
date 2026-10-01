@@ -75,7 +75,8 @@ test('installed CLI and browser exchange portable history through a reviewed mer
   expect((await readFile(result)).byteLength).toBeGreaterThan(100);
   const cliProfile = path.join(temporary, 'cli-restored');
   const review = execFileSync(cli, ['--data-dir', cliProfile, 'progress', 'import', result], { encoding: 'utf8' });
-  expect(review).toContain('"notes": 1');
+  expect(review).toMatch(/Notes +1 \(/);
+  expect(review).toContain('repeat this command with --yes');
   execFileSync(cli, ['--data-dir', cliProfile, 'progress', 'import', result, '--yes']);
   const note = execFileSync(python, ['-c', `from pathlib import Path
 import sys
