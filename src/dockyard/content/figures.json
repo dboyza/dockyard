@@ -681,5 +681,67 @@
     "title": "A schedule meeting a slow run",
     "caption": "concurrencyPolicy decides what happens when a run is still going at the next scheduled time.",
     "description": "A timeline for the schedule */5 * * * * with concurrencyPolicy Forbid. At 02:00 a Job runs and succeeds. At 02:05 a Job starts and is still running at 02:10, so the 02:10 run is skipped. At 02:15 a new Job runs and succeeds. A note says kubectl create job --from=cronjob starts a run immediately without waiting."
+  },
+  {
+    "id": "configmap-delivery",
+    "title": "Two ways a ConfigMap reaches a container",
+    "caption": "The same ConfigMap can feed an environment variable and a mounted file, and they behave differently.",
+    "description": "The ConfigMap dispatch-settings holds environment: learning and a banner.txt key. Inside the API container, the environment key becomes the environment variable DISPATCH_ENV, read once at start, and banner.txt becomes the mounted file /config/banner.txt, which is kept up to date. Dispatch's /config address shows both."
+  },
+  {
+    "id": "config-update-timing",
+    "title": "When a ConfigMap change arrives",
+    "caption": "Mounted files follow the ConfigMap; environment variables wait for a new container.",
+    "description": "A sequence in three steps. At first the ConfigMap has environment learning and banner v1, and the running Pod shows DISPATCH_ENV=learning and banner.txt v1. After the ConfigMap is edited to testing and v2, the mounted banner.txt updates to v2 within a minute or two, but DISPATCH_ENV still shows the old value learning because it is read only at start. After kubectl rollout restart, a new Pod shows DISPATCH_ENV=testing and banner v2.",
+    "steps": [
+      {
+        "label": "Pod and ConfigMap agree",
+        "text": "The running Pod read the environment name at start and sees the banner file v1."
+      },
+      {
+        "label": "Edit the ConfigMap",
+        "text": "The mounted file updates in place within a minute or two. The environment variable keeps its old value."
+      },
+      {
+        "label": "Restart the rollout",
+        "text": "New Pods read the environment variable again when they start, so both values now match the ConfigMap."
+      }
+    ]
+  },
+  {
+    "id": "secret-encoding",
+    "title": "Base64 is not encryption",
+    "caption": "A Secret is protected by who can read it, not by its encoding.",
+    "description": "You write password: example. The Secret stores it base64-encoded as ZXhhbXBsZQ==. Anyone who can read the Secret can decode it back to example. Real protection comes from controlling who may read Secrets, encryption at rest, and applications that never print them."
+  },
+  {
+    "id": "projected-volume",
+    "title": "A projected volume combines sources",
+    "caption": "Several Secrets and ConfigMaps can appear as files in one folder.",
+    "description": "The Secret dispatch-database with its password key and the ConfigMap dispatch-settings with two keys both feed one projected volume. Mounted at /etc/dispatch in the container, it contains the files password, environment, and banner.txt."
+  },
+  {
+    "id": "rbac-request",
+    "title": "How the API answers a Pod’s request",
+    "caption": "Authentication names the caller; authorization checks what its bound Roles allow, in that namespace.",
+    "description": "A sequence in four steps. The inventory Pod sends a request with the token for the ServiceAccount dispatch-reader. The API server's authentication step identifies it as system:serviceaccount:dispatch:dispatch-reader. Its authorization step follows the RoleBinding in dispatch to a Role that allows only listing Pods. Listing Pods in dispatch returns 200 OK. Listing Secrets in dispatch returns 403 Forbidden. Listing Pods in kube-system returns 403 Forbidden, because the binding applies only in dispatch.",
+    "steps": [
+      {
+        "label": "Who is asking?",
+        "text": "The token identifies the caller as the ServiceAccount dispatch-reader in the dispatch namespace."
+      },
+      {
+        "label": "List Pods in dispatch",
+        "text": "The RoleBinding in dispatch gives this ServiceAccount a Role that allows listing Pods, so the answer is 200."
+      },
+      {
+        "label": "List Secrets",
+        "text": "The Role says nothing about Secrets, so the API refuses with 403. The request arrived; RBAC said no."
+      },
+      {
+        "label": "List Pods in kube-system",
+        "text": "The RoleBinding only applies in dispatch, so the same request in another namespace is refused with 403."
+      }
+    ]
   }
 ]

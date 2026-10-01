@@ -6,6 +6,10 @@ It is a separate object type so that access to it can be controlled separately, 
 Be clear about what a Secret does *not* do.
 Its values are stored **base64 encoded**, which is a way of writing any bytes as plain text.
 That is not encryption: anyone who can read the Secret can decode it in one command.
+
+```figure
+secret-encoding
+```
 Real protection comes from who is allowed to read Secrets, encrypting the cluster’s storage, and the application not printing them.
 The security modules look at those controls.
 
@@ -68,6 +72,10 @@ volumes:
 ```
 
 Mounted at `/etc/dispatch`, this gives one folder containing `password` and every key from the ConfigMap.
+
+```figure
+projected-volume
+```
 
 ## This lab
 

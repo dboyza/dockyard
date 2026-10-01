@@ -1080,10 +1080,9 @@ pre {
 }
 .figure-drawing .fig-region text {
   fill: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 .fig-arrow path {
   fill: none;

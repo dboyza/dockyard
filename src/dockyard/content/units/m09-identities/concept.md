@@ -38,6 +38,10 @@ Both are needed.
 A perfect Role that is bound to the wrong subject grants nothing.
 (ClusterRoles and ClusterRoleBindings do the same across the whole cluster; the security module covers them.)
 
+```figure
+rbac-request
+```
+
 ## Creating them quickly
 
 These commands are worth knowing by heart for the exams:

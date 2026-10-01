@@ -1,6 +1,7 @@
 import {
   Arrow,
   Box,
+  Code,
   Cylinder,
   Diagram,
   Label,
@@ -821,4 +822,371 @@ export const kubernetes = {
       </Label>
     </Diagram>
   ),
+  "configmap-delivery": () => (
+    <Diagram height={258}>
+      <Label x={10} y={50} size="small" tone="muted">
+        ConfigMap dispatch-settings
+      </Label>
+      <Code
+        x={10}
+        y={60}
+        w={210}
+        lines={[
+          { text: "environment: learning", tone: "warn" },
+          { text: "banner.txt: |", tone: "good" },
+          { text: "  Configured through…", tone: "good" },
+        ]}
+      />
+      <Region
+        x={270}
+        y={14}
+        w={360}
+        h={228}
+        label="API container"
+        tone="focus"
+      />
+      <Box
+        x={290}
+        y={44}
+        w={170}
+        h={60}
+        title="DISPATCH_ENV"
+        sub="env var: read once at start"
+        tone="warn"
+        mono
+      />
+      <Box
+        x={290}
+        y={160}
+        w={170}
+        h={60}
+        title="/config/banner.txt"
+        sub="file: kept up to date"
+        tone="good"
+        mono
+      />
+      <Arrow
+        points={[
+          [220, 88],
+          [286, 74],
+        ]}
+        tone="warn"
+      />
+      <Arrow
+        points={[
+          [220, 132],
+          [286, 190],
+        ]}
+        tone="good"
+      />
+      <Box
+        x={490}
+        y={102}
+        w={124}
+        h={60}
+        title="Dispatch"
+        sub="/config shows both"
+      />
+      <Arrow
+        points={[
+          [460, 74],
+          [520, 98],
+        ]}
+        tone="muted"
+      />
+      <Arrow
+        points={[
+          [460, 190],
+          [520, 166],
+        ]}
+        tone="muted"
+      />
+    </Diagram>
+  ),
+
+  "config-update-timing": ({ step = 0 }) => {
+    const changed = step >= 1;
+    const restarted = step >= 2;
+    return (
+      <Diagram height={232} step={step}>
+        <Label x={10} y={50} size="small" tone="muted">
+          ConfigMap
+        </Label>
+        <Code
+          x={10}
+          y={60}
+          w={200}
+          lines={[
+            {
+              text: changed ? "environment: testing" : "environment: learning",
+              tone: changed ? "focus" : "default",
+            },
+            {
+              text: changed ? "banner: v2" : "banner: v1",
+              tone: changed ? "focus" : "default",
+            },
+          ]}
+        />
+        <Arrow
+          points={[
+            [210, 104],
+            [256, 104],
+          ]}
+        />
+        <Region
+          x={260}
+          y={20}
+          w={370}
+          h={196}
+          label={restarted ? "New Pod, after rollout restart" : "Running Pod"}
+          tone={restarted ? "good" : "focus"}
+        />
+        <Box
+          x={280}
+          y={56}
+          w={330}
+          h={56}
+          title={`DISPATCH_ENV=${restarted ? "testing" : "learning"}`}
+          sub={
+            changed && !restarted
+              ? "still the old value: read only at start"
+              : "read when the container starts"
+          }
+          tone={changed && !restarted ? "warn" : "good"}
+          mono
+        />
+        <Box
+          x={280}
+          y={132}
+          w={330}
+          h={56}
+          title={`banner.txt: ${changed ? "v2" : "v1"}`}
+          sub={
+            changed
+              ? "updated in place within a minute or two"
+              : "a mounted file"
+          }
+          tone="good"
+          mono
+        />
+      </Diagram>
+    );
+  },
+
+  "secret-encoding": () => (
+    <Diagram height={210}>
+      <Box
+        x={10}
+        y={30}
+        w={170}
+        h={60}
+        title="password: example"
+        sub="what you write"
+        mono
+      />
+      <Arrow
+        points={[
+          [180, 60],
+          [231, 60],
+        ]}
+        label="base64"
+        labelAt={[206, 50]}
+      />
+      <Box
+        x={235}
+        y={30}
+        w={170}
+        h={60}
+        title="ZXhhbXBsZQ=="
+        sub="what the Secret stores"
+        tone="warn"
+        mono
+      />
+      <Arrow
+        points={[
+          [405, 60],
+          [456, 60],
+        ]}
+        tone="bad"
+        label="decode"
+        labelAt={[431, 50]}
+      />
+      <Box
+        x={460}
+        y={30}
+        w={170}
+        h={60}
+        title="example"
+        sub="for anyone who can read it"
+        tone="bad"
+        mono
+      />
+      <Label x={10} y={140} size="small" tone="muted">
+        Encoding is not encryption. Real protection comes from:
+      </Label>
+      <Tag x={95} y={172} text="who may read Secrets" tone="good" />
+      <Tag x={312} y={172} text="encryption at rest" tone="good" />
+      <Tag x={528} y={172} text="apps that never log them" tone="good" />
+    </Diagram>
+  ),
+
+  "projected-volume": () => (
+    <Diagram height={232}>
+      <Box
+        x={10}
+        y={30}
+        w={190}
+        h={60}
+        title="Secret"
+        sub="dispatch-database: password"
+      />
+      <Box
+        x={10}
+        y={130}
+        w={190}
+        h={60}
+        title="ConfigMap"
+        sub="dispatch-settings: 2 keys"
+      />
+      <Arrow
+        points={[
+          [200, 60],
+          [246, 100],
+        ]}
+      />
+      <Arrow
+        points={[
+          [200, 160],
+          [246, 120],
+        ]}
+      />
+      <Box
+        x={250}
+        y={80}
+        w={150}
+        h={60}
+        title="projected"
+        sub="one volume"
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [400, 110],
+          [436, 110],
+        ]}
+        tone="focus"
+      />
+      <Region
+        x={440}
+        y={20}
+        w={190}
+        h={180}
+        label="/etc/dispatch"
+        tone="focus"
+      />
+      <Tag x={535} y={66} text="password" tone="warn" />
+      <Tag x={535} y={110} text="environment" />
+      <Tag x={535} y={154} text="banner.txt" />
+    </Diagram>
+  ),
+
+  "rbac-request": ({ step = 0 }) => {
+    const requests: [string, string, Tone][] = [
+      ["any request", "", "default"],
+      ["list pods in dispatch", "200 OK", "good"],
+      ["list secrets in dispatch", "403 Forbidden", "bad"],
+      ["list pods in kube-system", "403 Forbidden", "bad"],
+    ];
+    const [request, result, tone] = requests[step];
+    return (
+      <Diagram height={286} step={step}>
+        <Box
+          x={10}
+          y={30}
+          w={180}
+          h={56}
+          title="inventory Pod"
+          sub="token: dispatch-reader"
+        />
+        <Tag x={100} y={122} text={request} tone="focus" />
+        <Arrow
+          points={[
+            [190, 58],
+            [236, 72],
+          ]}
+          tone="focus"
+        />
+        <Region x={220} y={14} w={410} h={222} label="API server" />
+        <Box
+          x={240}
+          y={44}
+          w={170}
+          h={56}
+          title="Authentication"
+          sub="who is asking?"
+          tone={step === 0 ? "focus" : "good"}
+        />
+        <Arrow
+          points={[
+            [410, 72],
+            [436, 72],
+          ]}
+        />
+        <Box
+          x={440}
+          y={44}
+          w={170}
+          h={56}
+          title="Authorization"
+          sub="does RBAC allow it?"
+          tone={step === 0 ? "default" : tone}
+        />
+        <Box
+          x={236}
+          y={150}
+          w={124}
+          h={56}
+          title="ServiceAccount"
+          sub="dispatch-reader"
+        />
+        <Box
+          x={370}
+          y={150}
+          w={116}
+          h={56}
+          title="RoleBinding"
+          sub="in dispatch"
+        />
+        <Box x={496} y={150} w={120} h={56} title="Role" sub="list pods only" />
+        <Line
+          points={[
+            [370, 178],
+            [360, 178],
+          ]}
+        />
+        <Line
+          points={[
+            [486, 178],
+            [496, 178],
+          ]}
+        />
+        <Line
+          points={[
+            [525, 100],
+            [525, 146],
+          ]}
+          dashed
+        />
+        <Reveal from={1}>
+          <Tag x={100} y={184} text={result} tone={tone} />
+          <Label x={100} y={160} anchor="middle" size="small" tone="muted">
+            response
+          </Label>
+        </Reveal>
+        <Label x={10} y={264} size="small" tone="muted" mono>
+          identity: system:serviceaccount:dispatch:dispatch-reader
+        </Label>
+      </Diagram>
+    );
+  },
 } satisfies Drawings;

@@ -60,6 +60,10 @@ volumes:
 `items` is optional; it chooses which keys to include and what file name each gets.
 Mount the volume in the container with `volumeMounts` as usual, for example at `/config`.
 
+```figure
+configmap-delivery
+```
+
 ## When do changes reach the application?
 
 This is the part people get wrong.
@@ -68,6 +72,10 @@ This is the part people get wrong.
 - **Mounted files are updated** by Kubernetes, usually within a minute or two, but only if the application reads the file again. A mount that uses `subPath` never receives updates.
 
 Dispatch’s `/config` address shows both: the environment name it read at startup, and the banner file, which it reads fresh on every request.
+
+```figure
+config-update-timing
+```
 
 ## This lab
 
