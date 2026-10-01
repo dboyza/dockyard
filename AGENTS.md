@@ -34,7 +34,7 @@
 ## Engineering and verification
 
 - Prefer simple typed interfaces, one canonical curriculum source, reversible lab operations, and observed runtime evidence.
-- Follow [the maintenance guide](docs/maintenance.md) for installed verification and [platform validation](docs/platform-validation.md) for the current evidence boundaries.
+- Run `./scripts/check.sh` before committing; follow [the maintenance guide](docs/maintenance.md) for installed and runtime verification and [platform validation](docs/platform-validation.md) for the current evidence boundaries.
 - Start bug fixes by reproducing through the real learner workflow.
 - Check terminal behavior using real PTYs and terminal tools, never browser-rendered terminal previews.
 - Inspect screenshots with direct image-reading tools; browser automation is for the actual browser interface.

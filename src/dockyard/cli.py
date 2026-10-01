@@ -256,6 +256,11 @@ def launch(service: Service, port: int, open_browser: bool) -> None:
         timer.start()
     else:
         print(f"One-time browser sign-in (valid for five minutes): {url}", flush=True)
+    print(
+        "Keep this window open while you use Dockyard. Press Ctrl-C to stop; "
+        "your work and labs are kept.",
+        flush=True,
+    )
 
     class WorkbenchServer(uvicorn.Server):
         def handle_exit(self, sig: int, frame: FrameType | None) -> None:
@@ -274,6 +279,7 @@ def launch(service: Service, port: int, open_browser: bool) -> None:
         WorkbenchServer(config).run(sockets=[listener])
     finally:
         listener.close()
+    print("Dockyard stopped. Your work and labs are kept.", flush=True)
 
 
 def main() -> None:
@@ -424,7 +430,7 @@ def main() -> None:
                 if arguments.action == "check" and result.get("status") != "pass":
                     raise SystemExit(1)
     except KeyboardInterrupt:
-        print("Dockyard stopped. Your work and lab resources are preserved.")
+        print("Dockyard stopped. Your work and labs are kept.")
         if arguments.command not in {None, "launch"}:
             raise SystemExit(130) from None
     except (BusyError, RuntimeErrorBase, ValueError, FileNotFoundError) as error:
