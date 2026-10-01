@@ -1113,5 +1113,55 @@
     "title": "An error budget of ten reads",
     "caption": "The objective decides how many bad events you can afford before the SLO is missed.",
     "description": "A grid of 200 squares, one for each eligible GET /jobs read: 190 are good and the last 10 are marked as the error budget. With an objective of 95% good, at most 10 reads may be bad. A read is bad if it fails, or if it succeeds but takes over 250 milliseconds."
+  },
+  {
+    "id": "pipeline-gate",
+    "title": "A test gate in the pipeline",
+    "caption": "A gate only protects you if a failure really stops the steps after it.",
+    "description": "A sequence in three steps through four pipeline stages: build, test, push, and record. With tests switched off, the test is skipped and anything that builds is pushed and recorded. With a failing test, the test reports FAIL with exit 1, and push and record do not run. With passing tests, the test reports OK with exit 0, the image is pushed, and release.json records the exact digest that passed.",
+    "steps": [
+      {
+        "label": "Tests switched off",
+        "text": "The test stage is skipped, so any image that builds is pushed and recorded."
+      },
+      {
+        "label": "A failing test",
+        "text": "The test exits 1, so the pipeline stops: nothing is pushed or recorded."
+      },
+      {
+        "label": "Tests pass",
+        "text": "The image is pushed, and release.json records its digest and the source fingerprints."
+      }
+    ]
+  },
+  {
+    "id": "gitops-loop",
+    "title": "The GitOps loop",
+    "caption": "To change what runs, change Git; changes made only in the cluster do not last.",
+    "description": "You commit and push to the Git repository delivery, which holds the desired state. Flux fetches it, builds it, and applies it to the dispatch namespace as the ServiceAccount dispatch-deployer, so the Deployment dispatch matches what Git declares. A change made by hand with kubectl, which Git does not know about, is undone on Flux's next pass."
+  },
+  {
+    "id": "promotion-flow",
+    "title": "Promote by digest, roll back through Git",
+    "caption": "Staging receives the exact image development tested, and a bad change is undone by a new commit.",
+    "description": "A sequence in four steps with the Git history in delivery beside the development and staging environments. Commit a1 sets development to the image sha256:7c9…, which becomes ready. Commit b2 promotes the same digest to staging. Commit c3 sets staging to a missing image; the new staging Pod cannot pull it while the old Pod keeps serving. Commit d4 reverts c3, and staging is ready again on sha256:7c9….",
+    "steps": [
+      {
+        "label": "Release to development",
+        "text": "A commit sets development to the tested image digest, and Flux applies it."
+      },
+      {
+        "label": "Promote the same digest",
+        "text": "A separate commit gives staging the exact same digest, not a rebuild."
+      },
+      {
+        "label": "A bad commit",
+        "text": "Staging is pointed at an image that does not exist. The new Pod cannot pull it; the old Pod keeps serving because maxUnavailable is 0."
+      },
+      {
+        "label": "Revert in Git",
+        "text": "git revert adds a commit that undoes the mistake, and Flux returns staging to the good digest."
+      }
+    ]
   }
 ]

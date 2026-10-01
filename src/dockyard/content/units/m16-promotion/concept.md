@@ -19,6 +19,10 @@ Read it before running it. It:
 
 It puts Git back in order even if a step fails, and saves what happened in `delivery-evidence.json`.
 
+```figure
+promotion-flow
+```
+
 ## Rolling back the GitOps way
 
 ```sh

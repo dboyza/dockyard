@@ -2,6 +2,7 @@ import {
   Arrow,
   Box,
   Code,
+  Cylinder,
   Diagram,
   File,
   Label,
@@ -1156,4 +1157,199 @@ export const platform = {
       </Label>
     </Diagram>
   ),
+  "pipeline-gate": ({ step = 0 }) => {
+    const stages: [string, string, Tone, boolean][][] = [
+      [
+        ["build", "image built", "good", false],
+        ["test", "skipped", "muted", true],
+        ["push", "pushed anyway", "bad", false],
+        ["record", "digest recorded", "bad", false],
+      ],
+      [
+        ["build", "image built", "good", false],
+        ["test", "FAIL, exit 1", "bad", false],
+        ["push", "not run", "muted", true],
+        ["record", "not run", "muted", true],
+      ],
+      [
+        ["build", "image built", "good", false],
+        ["test", "OK, exit 0", "good", false],
+        ["push", "pushed", "good", false],
+        ["record", "release.json", "good", false],
+      ],
+    ];
+    const footer: [string, Tone][] = [
+      ["With tests switched off, anything that builds is published.", "bad"],
+      ["A failing test stops every step after it.", "good"],
+      ["release.json names the exact image digest that passed.", "good"],
+    ];
+    return (
+      <Diagram height={190} step={step}>
+        {stages[step].map(([title, sub, tone, dashed], index) => (
+          <g key={title}>
+            <Box
+              x={10 + index * 160}
+              y={50}
+              w={140}
+              h={60}
+              title={title}
+              sub={sub}
+              tone={tone}
+              dashed={dashed}
+            />
+            {index > 0 && (
+              <Arrow
+                points={[
+                  [index * 160 - 10, 80],
+                  [index * 160 + 6, 80],
+                ]}
+                tone={dashed ? "muted" : "default"}
+              />
+            )}
+          </g>
+        ))}
+        <Label x={170 + 70} y={36} anchor="middle" size="small" tone="focus">
+          the gate
+        </Label>
+        <Label
+          x={320}
+          y={160}
+          anchor="middle"
+          size="small"
+          tone={footer[step][1]}
+        >
+          {footer[step][0]}
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "gitops-loop": () => (
+    <Diagram height={272}>
+      <Box x={10} y={20} w={150} h={56} title="You" sub="commit and push" />
+      <Arrow
+        points={[
+          [160, 48],
+          [216, 48],
+        ]}
+        label="push"
+        labelAt={[188, 40]}
+      />
+      <Cylinder
+        x={220}
+        y={12}
+        w={180}
+        h={72}
+        title="Git: delivery"
+        sub="the desired state"
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [400, 48],
+          [446, 48],
+        ]}
+        label="fetch"
+        labelAt={[423, 40]}
+      />
+      <Box
+        x={450}
+        y={20}
+        w={180}
+        h={56}
+        title="Flux"
+        sub="builds and applies"
+      />
+      <Arrow
+        points={[
+          [540, 76],
+          [540, 126],
+        ]}
+        tone="good"
+        label="applies as dispatch-deployer"
+        labelAt={[540, 104]}
+      />
+      <Region x={300} y={130} w={330} h={120} label="Cluster: dispatch" />
+      <Box
+        x={330}
+        y={170}
+        w={270}
+        h={52}
+        title="Deployment dispatch"
+        sub="matches what Git declares"
+        tone="good"
+      />
+      <Box
+        x={10}
+        y={150}
+        w={210}
+        h={56}
+        title="kubectl, by hand"
+        sub="a change Git does not know"
+        tone="warn"
+      />
+      <Arrow
+        points={[
+          [220, 178],
+          [326, 196],
+        ]}
+        tone="warn"
+        dashed
+      />
+      <Label x={115} y={234} anchor="middle" size="small" tone="warn">
+        undone on Flux’s next pass
+      </Label>
+    </Diagram>
+  ),
+
+  "promotion-flow": ({ step = 0 }) => {
+    const commits: [string, Tone][] = [
+      ["a1  dev → sha256:7c9…", "default"],
+      ["b2  staging → sha256:7c9…", "default"],
+      ["c3  staging → missing:v9", "bad"],
+      ["d4  Revert c3", "good"],
+    ];
+    const staging: [string, Tone][] = [
+      ["the previous release: ready", "default"],
+      ["sha256:7c9…: the same image, ready", "good"],
+      ["new Pod cannot pull; old Pod still serving", "warn"],
+      ["sha256:7c9…: ready again", "good"],
+    ];
+    return (
+      <Diagram height={250} step={step}>
+        <Region x={10} y={14} w={240} h={220} label="Git history in delivery" />
+        {commits.slice(0, step + 1).map(([text, tone], index) => (
+          <Label key={text} x={26} y={60 + index * 34} tone={tone} mono>
+            {text}
+          </Label>
+        ))}
+        <Arrow
+          points={[
+            [250, 124],
+            [276, 124],
+          ]}
+          label="Flux"
+          labelAt={[263, 112]}
+        />
+        <Box
+          x={280}
+          y={40}
+          w={350}
+          h={70}
+          title="development"
+          sub="sha256:7c9…: ready"
+          tone="good"
+        />
+        <Box
+          x={280}
+          y={140}
+          w={350}
+          h={70}
+          title="staging"
+          sub={staging[step][0]}
+          tone={staging[step][1]}
+        />
+      </Diagram>
+    );
+  },
 } satisfies Drawings;

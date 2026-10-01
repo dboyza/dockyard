@@ -4,6 +4,10 @@
 To change what runs, you commit to Git; the controller notices and applies it.
 Manual changes to the cluster are undone on the controller’s next pass, the same reconciliation idea you have seen throughout Kubernetes.
 
+```figure
+gitops-loop
+```
+
 This lab runs a real local Git server and **Flux**, a popular GitOps controller.
 Nothing is sent to an external Git host.
 The practice repository is the `delivery` folder in your workspace, with its own local author settings; your own Git configuration is untouched.

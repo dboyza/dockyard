@@ -16,6 +16,10 @@ A build that succeeds proves only that the image was assembled, not that the app
 Each step checks the previous one’s exit status and stops on failure.
 But `pipeline.json` has a switch, `run_tests`, and it is currently `false`: the tests are skipped and anything that builds gets published.
 
+```figure
+pipeline-gate
+```
+
 ```sh
 cat pipeline.json
 python pipeline.py
