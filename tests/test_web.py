@@ -165,3 +165,24 @@ def test_terminal_choices_cannot_execute_arbitrary_programs(connected, monkeypat
     monkeypatch.setattr(terminals, "available", lambda: [])
     info = client.get("/api/units/m01-processes/terminal").json()
     assert info["options"] == [] and info["command"] and info["selected"] == "auto"
+
+
+def test_state_operations_keep_active_and_recent_finished_only():
+    from dockyard.web import recent_operations
+
+    operations = [{"id": str(i), "state": "succeeded"} for i in range(8)]
+    operations.insert(3, {"id": "live", "state": "running"})
+    kept = recent_operations(operations)
+    assert [item["id"] for item in kept] == ["live", "0", "1", "2", "3", "4"]
+
+
+def test_no_telemetry_sdk_or_exporter_is_installed():
+    # FastAPI depends on the no-op OpenTelemetry API; nothing may be able to export data.
+    import importlib.util
+
+    for module in ("opentelemetry.sdk", "opentelemetry.exporter"):
+        try:
+            found = importlib.util.find_spec(module)
+        except ModuleNotFoundError:
+            found = None
+        assert found is None, f"{module} must not be installed"

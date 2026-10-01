@@ -66,6 +66,15 @@ class ExamEdit(Body):
     flagged: list[str]
 
 
+ACTIVE_OPERATIONS = {"running", "queued", "canceling"}
+
+
+def recent_operations(operations: list[dict[str, Any]], finished: int = 5) -> list[dict[str, Any]]:
+    """Keep every unfinished operation and only the latest few finished ones."""
+    done = [item for item in operations if item["state"] not in ACTIVE_OPERATIONS]
+    return [item for item in operations if item["state"] in ACTIVE_OPERATIONS] + done[:finished]
+
+
 def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -161,8 +170,12 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
     def state() -> dict[str, Any]:
         return {
             "progress": service.store.progress(),
-            "labs": [service.public_lab(lab) for lab in service.store.labs()],
-            "operations": service.store.operations(),
+            # Cleaned-up lab records and finished operations stay in the store for history,
+            # but the browser only needs what exists or is still running.
+            "labs": [
+                service.public_lab(lab) for lab in service.store.labs() if lab.state != "absent"
+            ],
+            "operations": recent_operations(service.store.operations()),
             "theme": service.store.setting("theme", "dark"),
             "last_unit": service.store.setting("last_unit"),
             "checkpoints": service.store.checkpoints(),
