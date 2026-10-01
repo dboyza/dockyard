@@ -649,3 +649,26 @@ Kubernetes stays on 1.35.8 to match the exam environment.
 Metrics Server moved from 0.8.1 to 0.9.0, including its multi-architecture image digest, and the Gateway API CRDs moved from 1.6.1 to 1.6.2.
 The only manifest difference in Metrics Server was its image tag, so the existing TLS and local-image patching still applies.
 The real-runtime curriculum audit passed for m13-autoscaling and m10-gateway, the activities that install those components, in 196 seconds.
+
+## 2026-10-01: cleanup ownership and starter observations
+
+Lab clean removed recorded containers without their anonymous volumes, so each Redis or registry container left a volume behind.
+A real m05-services lab reproduced it: one anonymous volume remained after clean, and none remained after the fix.
+Clean also left every lab-named image and every image pushed to a lab registry, about 130 MB per activity.
+It now untags images named for that lab or held in its loopback registries, without forcing, and preserves unrelated names and registry ports.
+The real-Docker lifecycle suite verifies both rules against labeled, unlabeled, and unrelated resources.
+
+The real-runtime starter audit for every Docker activity found nine failures that predate this cycle.
+Docker observations reported a container, network, or volume that the learner had not created yet as an observation error instead of an unmet outcome.
+They now report each outcome as unmet with the reason in the details, while other Docker errors still fail the observation.
+The m05-readiness and m06-registry starter contracts now list only the checks their starters actually fail.
+All 28 Docker activities then passed their starter and reference audits, and m24-decisions, m16-pipeline, and i07-registry-identity passed with no lab images left behind.
+One Redis anonymous volume appeared during the earlier failing run and could not be reproduced afterwards.
+
+The new `dockyard cache clean` removes only `dockyard-cache` aliases and pinned digest pulls, including superseded pins.
+Dogfooding it found a digest pull that Docker lists only under its alias; selection now reads each alias's repository digests.
+All installed browser suites passed, including the exam suite with a prepared profile.
+
+Testing artifacts were then removed: two stopped probe VMs, 154 orphaned lab image references, and 49 downloaded image references.
+The five unrelated images and four unrelated containers were preserved.
+Unattached anonymous volumes from earlier test runs and the unused `kind` network were left for the owner to remove.
