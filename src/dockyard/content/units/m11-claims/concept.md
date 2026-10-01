@@ -123,6 +123,35 @@ A claim binds to it if it asks for `storageClassName: manual`, a compatible acce
 
 **Reclaim policy** decides what happens to a PV when its claim is deleted: `Delete` removes the storage, `Retain` keeps it for an administrator to deal with.
 
+## Writing a StorageClass
+
+A StorageClass names a provisioner and the settings it applies to every PV it creates:
+
+```yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-local
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: rancher.io/local-path
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+```
+
+- `provisioner` is the plugin that creates the storage; `kubectl get storageclass` shows which ones the cluster has.
+- `volumeBindingMode: WaitForFirstConsumer` waits until a Pod uses the claim, so the volume is created on the node where that Pod runs.
+- `allowVolumeExpansion: true` lets you grow a claim later by raising its `resources.requests.storage`; claims can grow but never shrink.
+- The annotation `storageclass.kubernetes.io/is-default-class: "true"` makes a class the **default**, used by claims that do not name one. `kubectl get storageclass` marks it `(default)`. Only one class should be the default.
+
+To change the default, remove the annotation from the old class and add it to the new one:
+
+```sh
+kubectl patch storageclass standard -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"false"}}}'
+kubectl patch storageclass fast-local -p '{"metadata":{"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+```
+
 ## What this does not protect against
 
 This lab’s storage lives inside the kind node.

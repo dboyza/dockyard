@@ -51,6 +51,15 @@ kubectl create rolebinding demo-pod-reader --role=demo-pod-reader --serviceaccou
 Note the `NAMESPACE:NAME` format in `--serviceaccount`.
 As always, add `--dry-run=client -o yaml` to see the YAML instead.
 
+For a quick manual test, you can ask for a short-lived token for any ServiceAccount:
+
+```sh
+kubectl create token demo-reader --duration=10m
+```
+
+It prints a token that expires after ten minutes.
+Kubernetes does not store it, so you cannot list or delete it; it simply stops working when it expires.
+
 ## Ask Kubernetes directly
 
 `kubectl auth can-i` asks whether an identity may do something, pretending to be it with `--as`:

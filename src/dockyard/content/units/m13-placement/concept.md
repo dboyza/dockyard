@@ -80,6 +80,26 @@ topologySpreadConstraints:
 
 Spread rules only act when a Pod is placed; Kubernetes does not move running Pods later to rebalance them.
 
+## Priority: which Pods win when a cluster is full
+
+A **PriorityClass** gives Pods a number: the higher it is, the more important they are.
+When there is no room, the scheduler places higher-priority Pods first and may **preempt**, that is evict, lower-priority Pods to make space.
+
+```sh
+kubectl create priorityclass dispatch-critical --value=100000 --description="Core Dispatch services"
+kubectl get priorityclass
+```
+
+A Pod opts in with `priorityClassName: dispatch-critical` in its spec; for a Deployment, that goes in the Pod template:
+
+```sh
+kubectl patch deployment dispatch -p '{"spec":{"template":{"spec":{"priorityClassName":"dispatch-critical"}}}}'
+```
+
+PriorityClasses belong to the whole cluster, not a namespace.
+Kubernetes ships two for its own components, `system-cluster-critical` and `system-node-critical`; leave those to the system.
+Use priority sparingly: if everything is high priority, nothing is.
+
 ## This lab
 
 The cluster has a control-plane node and two worker nodes.

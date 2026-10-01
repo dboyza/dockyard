@@ -87,3 +87,16 @@ Remove `--dry-run=client -o yaml` to create it for real.
 A Service with `clusterIP: None` is called **headless**.
 Its DNS name returns the Pods’ own addresses instead of one virtual address.
 The StatefulSet lesson uses one so each database Pod can be reached by name.
+
+## ExternalName Services
+
+An **ExternalName** Service has no Pods behind it at all.
+Its DNS name simply answers with another DNS name, so applications in the cluster can use a stable internal name for something outside it:
+
+```sh
+kubectl create service externalname billing --external-name billing.example.com
+kubectl get service billing
+```
+
+Inside the cluster, `billing` now resolves to `billing.example.com`.
+There is no ClusterIP, no port mapping, and no EndpointSlice, so nothing checks that the outside address works.

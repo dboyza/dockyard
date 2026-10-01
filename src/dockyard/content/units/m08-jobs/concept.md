@@ -12,6 +12,33 @@ Kubernetes has two controllers for finite work:
 - `backoffLimit` is how many times a failed attempt is retried before the Job gives up. Keep it small, so a broken task fails visibly instead of retrying forever.
 - `restartPolicy` must be `Never` or `OnFailure` in a Job. `Never` starts a fresh Pod for each attempt, which keeps the failed Pods around for you to read their logs.
 - A Job’s Pod template cannot be changed after the Job is created. To run a corrected task, delete the old Job and create a new one.
+- `completions` is how many Pods must succeed for the Job to be complete (default 1), and `parallelism` is how many may run at once.
+- `activeDeadlineSeconds` stops the whole Job, and marks it failed, if it runs longer than that many seconds.
+- `ttlSecondsAfterFinished` deletes a finished Job, and its Pods, that many seconds after it ends.
+
+For example, this Job runs five copies of a task, two at a time, gives up after two minutes, and cleans itself up an hour after finishing:
+
+```yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: batch-import
+spec:
+  completions: 5
+  parallelism: 2
+  backoffLimit: 2
+  activeDeadlineSeconds: 120
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: import
+          image: busybox
+          command: ["sh", "-c", "echo importing; sleep 5"]
+```
+
+`kubectl get job batch-import` shows progress in the `COMPLETIONS` column, such as `2/5`.
 
 ## Reading a cron schedule
 

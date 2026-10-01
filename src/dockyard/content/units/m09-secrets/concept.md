@@ -50,6 +50,25 @@ When Kubernetes prints the YAML back, it shows the same value in decimal, `292`,
 
 Files are usually the safer choice: environment variables are easy to leak through logs and error reports, and, as with ConfigMaps, they never update while the container runs.
 
+To put several sources in one folder, use a **projected** volume.
+It combines Secrets, ConfigMaps, and a few other sources into a single mount:
+
+```yaml
+volumes:
+- name: app-config
+  projected:
+    sources:
+    - secret:
+        name: dispatch-database
+        items:
+        - key: password
+          path: password
+    - configMap:
+        name: dispatch-settings
+```
+
+Mounted at `/etc/dispatch`, this gives one folder containing `password` and every key from the ConfigMap.
+
 ## This lab
 
 Dispatch reads its database password from the file named in `DB_PASSWORD_FILE`, `/var/run/dispatch/password`.

@@ -51,6 +51,30 @@ kubectl get nodes
 The node will show **NotReady**, and CoreDNS will be Pending.
 That is expected: there is no Pod network yet.
 
+## Preparing a node yourself
+
+In this lab the machines arrive ready, but an exam task may ask you to prepare one.
+Kubernetes needs two things from the operating system before `kubeadm init` will pass its checks:
+
+- **IPv4 forwarding** turned on, so the node can pass Pod traffic along. Make it permanent with a file in `/etc/sysctl.d`, then reload the settings:
+
+  ```sh
+  echo 'net.ipv4.ip_forward = 1' | sudo tee /etc/sysctl.d/k8s.conf
+  sudo sysctl --system
+  sysctl net.ipv4.ip_forward
+  ```
+
+  The last command should print `net.ipv4.ip_forward = 1`.
+- A **container runtime** installed and running, such as containerd, or Docker Engine together with **cri-dockerd**, the adapter that lets the kubelet talk to Docker. A runtime supplied as a package file installs with `dpkg` and starts with `systemctl`:
+
+  ```sh
+  sudo dpkg -i cri-dockerd_VERSION_amd64.deb
+  sudo systemctl enable --now cri-docker.service
+  systemctl status cri-docker.service
+  ```
+
+If a node has more than one runtime, tell kubeadm which one to use with `--cri-socket`, for example `--cri-socket=unix:///var/run/cri-dockerd.sock`.
+
 ## In the exam
 
 You will usually run kubeadm directly on the node with flags instead of a file:
