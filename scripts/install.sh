@@ -21,11 +21,19 @@ fi
 uv sync --locked --cache-dir .tools/uv-cache
 npm --prefix frontend ci
 npm --prefix frontend run build
-uv build --cache-dir .tools/uv-cache
+rm -rf dist
+# The cache lives in .tools, which the explicit sdist include list already leaves out.
+uv build --quiet --cache-dir .tools/uv-cache
 if [ ! -x .runtime/installed/bin/python ]; then
   uv venv --python 3.14 --cache-dir .tools/uv-cache .runtime/installed
 fi
-uv pip install --cache-dir .tools/uv-cache --python .runtime/installed/bin/python \
-  --reinstall "dist/dockyard_learn-$(.venv/bin/python -c 'import dockyard; print(dockyard.__version__)')-py3-none-any.whl"
+# Install exactly the locked, hash-verified runtime dependencies, then the freshly built app.
+locked="$(mktemp)"
+trap 'rm -f "$locked"' EXIT
+uv export --frozen --no-dev --no-emit-project --quiet --cache-dir .tools/uv-cache -o "$locked"
+uv pip sync --quiet --cache-dir .tools/uv-cache --python .runtime/installed/bin/python \
+  --require-hashes "$locked"
+uv pip install --quiet --cache-dir .tools/uv-cache --python .runtime/installed/bin/python \
+  --no-deps "dist/dockyard_learn-$(.venv/bin/python -c 'import dockyard; print(dockyard.__version__)')-py3-none-any.whl"
 ./dockyard --data-dir .runtime/install-check audit
 printf '\nInstalled. Run ./dockyard to open the learning workbench.\n'

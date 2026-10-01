@@ -66,3 +66,11 @@ def test_lab_and_cache_summaries(capsys):
     assert "not prepared. Run: dockyard lab prepare m01-processes" in out
     assert "dockyard lab shell m01-processes" in out
     assert "1 of 2 activities" in out and "missing: kind" in out
+
+
+def test_frontend_and_python_versions_match():
+    import json
+    from pathlib import Path
+
+    package = json.loads((Path(__file__).parents[1] / "frontend/package.json").read_text())
+    assert package["version"] == __version__
