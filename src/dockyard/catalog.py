@@ -13,6 +13,8 @@ from dockyard.models import Exam, Unit
 from dockyard.workspace import safe_relative
 
 CONTENT = Path(__file__).parent / "content"
+# libyaml's loader is about ten times faster and parses the same data.
+YAML_LOADER = getattr(yaml, "CSafeLoader", yaml.SafeLoader)
 TASK_HEADING = re.compile(r"^## (\d+)\. (.+) \((\d+)%\)$", re.MULTILINE)
 
 
@@ -36,7 +38,7 @@ class Catalog:
         self.modules: list[dict[str, Any]] = json.loads((root / "modules.json").read_text())
         self.units: dict[str, Unit] = {}
         for path in sorted((root / "units").glob("*/unit.yaml")):
-            raw = yaml.safe_load(path.read_text())
+            raw = yaml.load(path.read_text(), Loader=YAML_LOADER)  # noqa: S506
             for field in ("concept", "brief", "debrief"):
                 relative = safe_relative(raw[field])
                 raw[field] = path.parent.joinpath(*relative.parts).read_text()
