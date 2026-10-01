@@ -15,6 +15,10 @@ Every SLI needs three decisions written down:
 
 With a 95% objective, 200 eligible reads may include at most ten bad ones.
 
+```figure
+error-budget
+```
+
 ## Honest measurement
 
 It is easy to make an SLI look better than reality:

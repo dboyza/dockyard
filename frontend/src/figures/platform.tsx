@@ -784,4 +784,376 @@ export const platform = {
       </Diagram>
     );
   },
+  "evidence-types": () => (
+    <Diagram height={250}>
+      {(
+        [
+          [10, "Events", "what Kubernetes noticed"],
+          [220, "Logs", "what the application said"],
+          [430, "Metrics", "how it behaves over time"],
+        ] as [number, string, string][]
+      ).map(([x, title, sub]) => (
+        <g key={title}>
+          <Label x={x + 100} y={22} anchor="middle" size="large">
+            {title}
+          </Label>
+          <Label x={x + 100} y={42} anchor="middle" size="small" tone="muted">
+            {sub}
+          </Label>
+        </g>
+      ))}
+      <Code
+        x={10}
+        y={56}
+        w={200}
+        spacing={30}
+        lines={[
+          { text: "Scheduled  Pod placed" },
+          { text: "Pulled     image ready" },
+          { text: "Unhealthy  probe failed", tone: "warn" },
+        ]}
+      />
+      <Code
+        x={220}
+        y={56}
+        w={200}
+        spacing={30}
+        lines={[
+          { text: "GET /jobs 200  12ms" },
+          { text: "GET /jobs 200  15ms" },
+          { text: "GET /jobs 200 640ms", tone: "warn" },
+        ]}
+      />
+      <Box x={430} y={56} w={200} h={106} />
+      <Line
+        points={[
+          [445, 140],
+          [490, 136],
+          [530, 138],
+          [560, 110],
+          [590, 78],
+          [615, 72],
+        ]}
+        tone="warn"
+      />
+      <Label x={445} y={78} size="small" tone="muted">
+        response time
+      </Label>
+      <Label x={320} y={208} anchor="middle" size="small" tone="muted">
+        A Pod can be Running, with clean-looking logs, and still serve every
+      </Label>
+      <Label x={320} y={226} anchor="middle" size="small" tone="muted">
+        request slowly. Use all three.
+      </Label>
+    </Diagram>
+  ),
+
+  "prometheus-scrape": () => (
+    <Diagram height={262}>
+      <Box
+        x={10}
+        y={14}
+        w={170}
+        h={50}
+        title="Kubernetes API"
+        sub="lists the Pods"
+      />
+      <Arrow
+        points={[
+          [95, 64],
+          [95, 96],
+        ]}
+        dashed
+        tone="muted"
+        label="which Pods?"
+        labelAt={[140, 86]}
+      />
+      <Box
+        x={10}
+        y={100}
+        w={170}
+        h={60}
+        title="Prometheus"
+        sub="scrapes every 5 s"
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [180, 130],
+          [216, 130],
+        ]}
+      />
+      <Box
+        x={220}
+        y={100}
+        w={190}
+        h={60}
+        title="relabel rules"
+        sub="keep app=dispatch, port http"
+      />
+      <Box
+        x={460}
+        y={20}
+        w={170}
+        h={54}
+        title="dispatch Pod A"
+        sub="kept: pod=A"
+        tone="good"
+      />
+      <Box
+        x={460}
+        y={103}
+        w={170}
+        h={54}
+        title="dispatch Pod B"
+        sub="kept: pod=B"
+        tone="good"
+      />
+      <Box
+        x={460}
+        y={186}
+        w={170}
+        h={54}
+        title="db Pod"
+        sub="dropped"
+        tone="muted"
+        dashed
+      />
+      <Arrow
+        points={[
+          [410, 120],
+          [456, 52],
+        ]}
+        tone="good"
+      />
+      <Arrow
+        points={[
+          [410, 130],
+          [456, 130],
+        ]}
+        tone="good"
+      />
+      <Arrow
+        points={[
+          [410, 140],
+          [456, 206],
+        ]}
+        tone="muted"
+        dashed
+      />
+      <Label x={10} y={210} size="small" tone="muted">
+        Each Pod’s /metrics is scraped
+      </Label>
+      <Label x={10} y={228} size="small" tone="muted">
+        directly and keeps its own pod label.
+      </Label>
+    </Diagram>
+  ),
+
+  "counter-rate": () => (
+    <Diagram height={236}>
+      <Label x={60} y={16} size="small" tone="muted">
+        dispatch_http_requests_total, a counter
+      </Label>
+      <Line
+        points={[
+          [60, 100],
+          [620, 100],
+        ]}
+      />
+      <Line
+        points={[
+          [60, 96],
+          [330, 30],
+          [330, 96],
+          [620, 40],
+        ]}
+        tone="focus"
+      />
+      <Label x={60} y={128} size="small" tone="muted">
+        rate(…[2m]): requests per second
+      </Label>
+      <Line
+        points={[
+          [60, 204],
+          [620, 204],
+        ]}
+      />
+      <Line
+        points={[
+          [60, 168],
+          [620, 168],
+        ]}
+        tone="good"
+      />
+      <Line
+        points={[
+          [330, 22],
+          [330, 208],
+        ]}
+        dashed
+      />
+      <Label x={620} y={226} anchor="end" size="small" tone="muted">
+        the Pod restarted: its counter reset to 0, but the rate holds steady
+      </Label>
+    </Diagram>
+  ),
+
+  "histogram-buckets": () => {
+    const buckets: [string, number][] = [
+      ["≤ 0.1 s", 120],
+      ["≤ 0.25 s", 170],
+      ["≤ 0.5 s", 190],
+      ["≤ 1 s", 198],
+      ["all", 200],
+    ];
+    return (
+      <Diagram height={260}>
+        {buckets.map(([name, count], index) => {
+          const height = count * 0.8;
+          const x = 30 + index * 78;
+          return (
+            <g key={name}>
+              <Box
+                x={x}
+                y={210 - height}
+                w={60}
+                h={height}
+                tone={index === 1 ? "focus" : index === 4 ? "default" : "muted"}
+              />
+              <Label
+                x={x + 30}
+                y={204 - height}
+                anchor="middle"
+                size="small"
+                mono
+              >
+                {String(count)}
+              </Label>
+              <Label
+                x={x + 30}
+                y={230}
+                anchor="middle"
+                size="small"
+                tone="muted"
+              >
+                {name}
+              </Label>
+            </g>
+          );
+        })}
+        <Label x={30} y={252} size="small" tone="muted">
+          Each bucket counts every request at or under its limit.
+        </Label>
+        <Label x={440} y={70}>
+          fast enough
+        </Label>
+        <Label x={440} y={90} size="small" tone="focus" mono>
+          170 ÷ 200 = 85%
+        </Label>
+        <Label x={440} y={124}>
+          too slow
+        </Label>
+        <Label x={440} y={144} size="small" tone="bad" mono>
+          1 − 0.85 = 15%
+        </Label>
+        <Tag x={520} y={180} text="15% > 10%: alert" tone="bad" />
+      </Diagram>
+    );
+  },
+
+  "alert-states": () => (
+    <Diagram height={226}>
+      <Label x={10} y={70} size="small" tone="muted">
+        condition
+      </Label>
+      <Label x={10} y={130} size="small" tone="muted">
+        alert
+      </Label>
+      <Box x={80} y={50} w={90} h={32} title="no" tone="muted" />
+      <Box
+        x={170}
+        y={50}
+        w={370}
+        h={32}
+        title="slow fraction above 10%"
+        tone="warn"
+      />
+      <Box x={540} y={50} w={80} h={32} title="no" tone="muted" />
+      <Box x={80} y={110} w={90} h={32} title="inactive" tone="muted" />
+      <Box
+        x={170}
+        y={110}
+        w={160}
+        h={32}
+        title="pending: for 15 s"
+        tone="warn"
+      />
+      <Box x={330} y={110} w={210} h={32} title="firing" tone="bad" />
+      <Box x={540} y={110} w={80} h={32} title="resolved" tone="good" />
+      <Arrow
+        points={[
+          [80, 172],
+          [624, 172],
+        ]}
+        tone="muted"
+      />
+      {(
+        [
+          [170, "slowdown starts"],
+          [330, "+15 s"],
+          [540, "speed restored"],
+        ] as [number, string][]
+      ).map(([x, text]) => (
+        <g key={text}>
+          <Line
+            points={[
+              [x, 164],
+              [x, 180],
+            ]}
+          />
+          <Label x={x} y={198} anchor="middle" size="small" tone="muted">
+            {text}
+          </Label>
+        </g>
+      ))}
+    </Diagram>
+  ),
+
+  "error-budget": () => (
+    <Diagram height={232}>
+      {Array.from({ length: 200 }, (_, index) => {
+        const column = index % 20;
+        const row = Math.floor(index / 20);
+        const bad = index >= 190;
+        return (
+          <g key={index} className={`fig-box tone-${bad ? "warn" : "good"}`}>
+            <rect
+              x={20 + column * 18}
+              y={30 + row * 18}
+              width={14}
+              height={14}
+              rx={3}
+            />
+          </g>
+        );
+      })}
+      <Label x={20} y={20} size="small" tone="muted">
+        200 eligible GET /jobs reads
+      </Label>
+      <Label x={410} y={60}>
+        objective: 95% good
+      </Label>
+      <Label x={410} y={84} size="small" tone="muted">
+        so at most 10 may be bad
+      </Label>
+      <Tag x={500} y={124} text="error budget: 10 reads" tone="warn" />
+      <Label x={410} y={168} size="small" tone="muted">
+        A read is bad if it fails, or if it
+      </Label>
+      <Label x={410} y={186} size="small" tone="muted">
+        succeeds but takes over 250 ms.
+      </Label>
+    </Diagram>
+  ),
 } satisfies Drawings;

@@ -1077,5 +1077,41 @@
         "text": "On its next pass the controller sets the Deployment back to two, because the WorkerPool still says two."
       }
     ]
+  },
+  {
+    "id": "evidence-types",
+    "title": "Three kinds of evidence",
+    "caption": "Each source answers a different question; one alone can mislead you.",
+    "description": "Three panels. Events show what Kubernetes noticed, such as Scheduled, Pulled, and Unhealthy when a probe failed. Logs show what the application said, such as GET /jobs 200 lines taking 12, 15, and 640 milliseconds. Metrics show how it behaves over time, as a response-time line rising sharply. A note says a Pod can be Running, with clean-looking logs, and still serve every request slowly, so use all three."
+  },
+  {
+    "id": "counter-rate",
+    "title": "Why you take the rate of a counter",
+    "caption": "A counter drops to zero when its process restarts; rate() measures growth and copes with the reset.",
+    "description": "Two charts over the same time. The counter dispatch_http_requests_total climbs steadily, drops to zero when the Pod restarts, then climbs again. Below it, rate over two minutes, the requests per second, stays level through the restart."
+  },
+  {
+    "id": "prometheus-scrape",
+    "title": "How Prometheus chooses what to scrape",
+    "caption": "Relabel rules decide which Pods are targets and how their series are labelled.",
+    "description": "Prometheus asks the Kubernetes API which Pods exist, then applies relabel rules that keep only Pods labelled app=dispatch with a container port named http. Dispatch Pods A and B are kept and scraped directly, each with its own pod label; the db Pod is dropped. Prometheus scrapes every five seconds."
+  },
+  {
+    "id": "histogram-buckets",
+    "title": "From histogram buckets to a slow fraction",
+    "caption": "Divide the bucket at your threshold by the total count, then subtract from one.",
+    "description": "A bar chart of 200 requests in cumulative buckets: 120 at or under 0.1 seconds, 170 at or under 0.25 seconds, 190 at or under 0.5 seconds, 198 at or under 1 second, and 200 in all. Each bucket counts every request at or under its limit. Fast enough is 170 divided by 200, which is 85%. Too slow is 1 minus 0.85, which is 15%. Since 15% is above the 10% threshold, the alert condition is true."
+  },
+  {
+    "id": "alert-states",
+    "title": "Pending, firing, resolved",
+    "caption": "for: 15s holds the alert in pending until the condition has lasted fifteen seconds.",
+    "description": "A timeline with two rows. The condition, slow fraction above 10%, is false at first, true from when the slowdown starts until speed is restored, then false again. The alert is inactive at first, pending for the first 15 seconds of the slowdown, firing from then until speed is restored, and then resolved."
+  },
+  {
+    "id": "error-budget",
+    "title": "An error budget of ten reads",
+    "caption": "The objective decides how many bad events you can afford before the SLO is missed.",
+    "description": "A grid of 200 squares, one for each eligible GET /jobs read: 190 are good and the last 10 are marked as the error budget. With an objective of 95% good, at most 10 reads may be bad. A read is bad if it fails, or if it succeeds but takes over 250 milliseconds."
   }
 ]

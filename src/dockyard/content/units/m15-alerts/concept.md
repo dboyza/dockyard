@@ -37,6 +37,10 @@ The fraction that were **too slow** is one minus that; PromQL lets you write `1 
 A **percentile** such as `histogram_quantile(0.95, ...)` estimates the time under which 95% of requests finished, but it is only as precise as the bucket boundaries.
 When your target is an exact boundary like 250 ms, the bucket fraction above is clearer.
 
+```figure
+histogram-buckets
+```
+
 ## Writing the alert
 
 ```yaml
@@ -53,6 +57,10 @@ When your target is an exact boundary like 250 ms, the bucket fraction above is 
 - `expr` is the condition; the alert is active while it returns a value.
 - `for: 15s` means the condition must hold for fifteen seconds before the alert **fires**. Until then it is **pending**. This avoids alerting on one brief spike, at the cost of noticing a little later.
 - `annotations` tell whoever receives the alert what it means and where to start.
+
+```figure
+alert-states
+```
 
 This lab does not send notifications anywhere; you watch the alert’s state instead.
 

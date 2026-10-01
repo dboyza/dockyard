@@ -9,6 +9,10 @@ When something goes wrong in a cluster, there are three main places to look, and
 None of them replaces the others.
 A Pod can be Running with healthy logs while serving every request slowly, and a broken metrics collector can make a healthy app look silent.
 
+```figure
+evidence-types
+```
+
 ## Kubernetes’ own tools
 
 These are what the CKA and CKAD exams expect you to use quickly:
@@ -56,6 +60,10 @@ Because counters reset, you look at how fast they grow rather than their raw val
 In Prometheus’s query language, `rate(dispatch_http_requests_total[2m])` is requests per second averaged over two minutes, and it copes with resets.
 Dispatch’s latency histogram only counts real `/jobs` reads, not health checks.
 
+```figure
+counter-rate
+```
+
 ## Finding every Pod to scrape
 
 Prometheus asks the Kubernetes API for Pods and decides which to scrape with **relabel rules**:
@@ -81,6 +89,10 @@ Prometheus runs with its own ServiceAccount, allowed only to read Pods in this n
 
 `up` is a special series Prometheus records for every target: 1 if the last scrape worked, 0 if it failed.
 It tells you the target could be scraped, not that users are happy.
+
+```figure
+prometheus-scrape
+```
 
 The supplied `monitoring.sh` loads your edited files into ConfigMaps and restarts Prometheus so it reads them.
 This lab scrapes every five seconds so you see results quickly; real systems choose these settings much more carefully.
