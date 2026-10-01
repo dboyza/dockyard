@@ -20,7 +20,7 @@ from dockyard.catalog import CONTENT
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes import kubeclient
-from dockyard.runtimes.docker import RuntimeErrorBase
+from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.toolchain import MANIFEST, Toolchain, digest
 from dockyard.workspace import atomic_write
 
@@ -416,6 +416,8 @@ class LinuxRuntime:
         if action == "resume":
             native_resume.wait(self, cancel)
         if action == "clean":
+            # VM labs build their practice image with the host's Docker before importing it.
+            DockerRuntime(self.lab, self.env, self.save).remove_images(set(), cancel)
             self.lab.resources.pop("resume_contract", None)
             self.lab.resources["vm_inventory"] = "[]"
             self.lab.resources["vm_intent"] = "[]"

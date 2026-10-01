@@ -110,6 +110,7 @@ class DockerRuntime:
     def change(self, action: str, cancel: threading.Event) -> None:
         inventory = self.discover()
         inventory.sort(key=lambda item: ("container", "network", "volume").index(item["kind"]))
+        ports: set[str] = set()
         for item in inventory:
             if cancel.is_set():
                 raise RuntimeErrorBase("Operation canceled. Remaining resources are preserved.")
@@ -127,6 +128,8 @@ class DockerRuntime:
                     self.command(["container", verb, item["id"]], timeout=45, cancel=cancel)
                 )
             elif action == "clean":
+                for bindings in (resource.get("NetworkSettings", {}).get("Ports") or {}).values():
+                    ports.update(binding["HostPort"] for binding in bindings or [])
                 args = [item["kind"], "rm"]
                 if item["kind"] == "container":
                     # Anonymous volumes belong to this exact recorded container; named ones
@@ -137,6 +140,45 @@ class DockerRuntime:
             self.lab.resources["docker_inventory"] = "[]"
             self.lab.resources.pop("container_id", None)
             self.save(self.lab)
+            self.remove_images(ports, cancel)
+
+    def remove_images(self, ports: set[str], cancel: threading.Event) -> None:
+        """Untag images named for this lab or held in its own loopback registries.
+
+        Images still used by a container are preserved, and nothing is forced.
+        """
+        listed = self.command(
+            ["image", "ls", "--digests", "--format", "{{json .}}"], timeout=60, cancel=cancel
+        )
+        if not listed.ok:
+            return  # Only VM labs reach this without Docker, and they may have built nothing.
+        recorded = (
+            self.lab.resources.get("registry_port", ""),
+            self.lab.resources.get("registry", "").rpartition(":")[2],
+        )
+        hosts = {
+            f"{address}:{port}"
+            for port in ports.union(recorded) - {""}
+            for address in ("127.0.0.1", "localhost")
+        }
+        for line in listed.stdout.splitlines():
+            image = json.loads(line)
+            repository, tag, digest = image["Repository"], image["Tag"], image["Digest"]
+            owned = repository.partition("/")[0] in hosts
+            if not owned and repository != f"dockyard-{self.lab.id[:12]}":
+                continue
+            if tag != "<none>":
+                reference = f"{repository}:{tag}"
+            elif digest != "<none>":
+                reference = f"{repository}@{digest}"
+            else:
+                continue
+            if cancel.is_set():
+                raise RuntimeErrorBase("Operation canceled. Remaining images are preserved.")
+            result = self.command(["image", "rm", reference], timeout=60, cancel=cancel)
+            message = result.stderr.lower()
+            if not result.ok and "conflict" not in message and "no such image" not in message:
+                self.require(result)
 
     def fingerprint(self) -> str:
         """Stable identity/running/restart observations, excluding constantly changing counters."""

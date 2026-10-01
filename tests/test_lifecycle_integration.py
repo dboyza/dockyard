@@ -69,6 +69,7 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
     outsider = name + "-unlabeled"
     label = f"io.dockyard.lab={lab.id}"
     outsider_id = None
+    unrelated_tags = [f"dockyard-{'0' * 12}:practice", "127.0.0.1:1/unrelated:kept"]
     try:
         for args in (
             ["network", "create", "--label", label, network],
@@ -82,6 +83,8 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
                 label,
                 "--network",
                 network,
+                "-p",
+                "127.0.0.1::8080",
                 "-v",
                 f"{volume}:/data",
                 env["DOCKYARD_PYTHON_IMAGE"],
@@ -127,6 +130,10 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
         assert not runtime.inspect("container", name + "-worker")["State"]["Running"]
         service.perform(unit, "resume")
         assert runtime.inspect("container", name + "-worker")["State"]["Running"]
+        ports = runtime.inspect("container", name)["NetworkSettings"]["Ports"]
+        owned_tags = [env["DOCKYARD_IMAGE"], f"127.0.0.1:{ports['8080/tcp'][0]['HostPort']}/d:1"]
+        for tag in [*owned_tags, *unrelated_tags]:
+            runtime.require(runtime.command(["tag", env["DOCKYARD_PYTHON_IMAGE"], tag]))
         service.perform(unit, "clean")
         assert runtime.inspect("container", name) is None
         assert runtime.inspect("network", network) is None
@@ -134,6 +141,9 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
         assert runtime.inspect("volume", anonymous) is None
         assert runtime.inspect("container", outsider_id)["Id"] == outsider_id
         assert runtime.inspect("volume", unrelated) is not None
+        assert all(runtime.inspect("image", tag) is None for tag in owned_tags)
+        assert all(runtime.inspect("image", tag) for tag in unrelated_tags)
+        assert runtime.inspect("image", env["DOCKYARD_PYTHON_IMAGE"])
     finally:
         service.perform(unit, "clean")
         if outsider_id:
@@ -141,6 +151,8 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
             runtime.require(
                 runtime.command(["container", "rm", "--force", "--volumes", outsider_id])
             )
+        for tag in unrelated_tags:
+            runtime.command(["image", "rm", tag])
 
 
 def test_interrupted_cli_reports_interruption_and_recovers_on_retry():

@@ -20,12 +20,50 @@ from urllib.request import Request, urlopen
 from dockyard import host
 from dockyard.process import run
 
+# Every boolean each observation reports. When the learner has not created a resource yet,
+# or the application is not answering, each one is reported as not satisfied.
+OUTCOMES: dict[str, tuple[str, ...]] = {
+    "network": ("owned", "shared_bridge", "dns", "dependency_private", "reached_peer"),
+    "compose": (
+        "owned",
+        "ready",
+        "private",
+        "healthy",
+        "persistent",
+        "guarded",
+        "scaled",
+        "processed",
+        "durable",
+    ),
+    "registry": ("pinned", "served", "private", "owned"),
+    "artifact": ("native", "excluded_secret"),
+    "hardening": ("nonroot", "readonly", "caps", "no_escalation", "memory", "cpu", "pids"),
+    "recovery": ("restored", "workers_hardened", "runbook_present"),
+    "storage-bind": ("mount", "roundtrip", "durable"),
+    "storage-volume": ("mount", "roundtrip", "durable"),
+    "storage-recovery": ("mount", "roundtrip", "durable", "restored", "backup"),
+}
+
+
+class Absent(ValueError):
+    """An observed container, network, or volume does not exist yet."""
+
 
 def inspect(kind: str, identity: str) -> dict[str, Any]:
     result = run(["docker", kind, "inspect", identity], timeout=10)
     if not result.ok:
-        raise ValueError(result.stderr.strip())
+        message = result.stderr.strip()
+        if "no such" in message.lower() or "not found" in message.lower():
+            raise Absent(message)
+        raise ValueError(message)
     return dict(json.loads(result.stdout)[0])
+
+
+def find(kind: str, identity: str) -> dict[str, Any] | None:
+    try:
+        return inspect(kind, identity)
+    except Absent:
+        return None
 
 
 def network() -> dict[str, Any]:
@@ -278,10 +316,10 @@ def compose() -> dict[str, Any]:
 
 
 def registry() -> dict[str, Any]:
-    api = inspect("container", os.environ["DOCKYARD_CONTAINER"])
-    registry_container = inspect("container", os.environ["DOCKYARD_CONTAINER"] + "-registry")
+    api = find("container", os.environ["DOCKYARD_CONTAINER"])
+    registry_container = find("container", os.environ["DOCKYARD_CONTAINER"] + "-registry") or {}
     address = "127.0.0.1:" + os.environ["DOCKYARD_REGISTRY_PORT"]
-    selected = api["Config"]["Image"]
+    selected = api["Config"]["Image"] if api else ""
     pinned = bool(re.fullmatch(re.escape(address) + r"/dispatch@sha256:[0-9a-f]{64}", selected))
     served = False
     if pinned:
@@ -295,15 +333,16 @@ def registry() -> dict[str, Any]:
         }
         with urlopen(Request(target, method="HEAD", headers=headers), timeout=4) as response:
             served = response.headers.get("Docker-Content-Digest") == digest
-    bindings = registry_container["HostConfig"]["PortBindings"].get("5000/tcp", [])
+    bindings = (
+        registry_container.get("HostConfig", {}).get("PortBindings", {}).get("5000/tcp") or []
+    )
     private = (
         len(bindings) == 1
         and bindings[0]["HostIp"] == "127.0.0.1"
         and bindings[0]["HostPort"] == os.environ["DOCKYARD_REGISTRY_PORT"]
     )
-    owned = (
-        registry_container["Config"]["Labels"].get("io.dockyard.lab") == os.environ["DOCKYARD_LAB"]
-    )
+    labels = registry_container.get("Config", {}).get("Labels") or {}
+    owned = labels.get("io.dockyard.lab") == os.environ["DOCKYARD_LAB"]
     return {
         "pinned": pinned,
         "served": served,
@@ -458,7 +497,17 @@ def main() -> None:
     try:
         if len(sys.argv) != 2 or sys.argv[1] not in probes:
             raise ValueError("Unknown packaged observation.")
-        print(json.dumps(probes[sys.argv[1]]()))
+        name = sys.argv[1]
+        try:
+            print(json.dumps(probes[name]()))
+        except (Absent, OSError) as error:
+            # urllib reports an application that is not answering as an OSError.
+            outcomes, reason = OUTCOMES[name], {"not_observed": str(error)}
+            print(
+                json.dumps(
+                    {**dict.fromkeys(outcomes, False), "_details": dict.fromkeys(outcomes, reason)}
+                )
+            )
     except (ValueError, KeyError, OSError, sqlite3.Error, tarfile.TarError) as error:
         print(json.dumps({"observation_error": str(error)}))
         raise SystemExit(1) from error

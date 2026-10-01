@@ -290,5 +290,3 @@ starter_failure_checks:
 - release
 - registry-pinned
 - registry-served
-- registry-private
-- registry-owned
