@@ -19,7 +19,7 @@ from dockyard.workspace import atomic_write
 def prepare() -> None:
     r = current()
     record()
-    worker = "d" + r.lab.id[:10] + "-worker"
+    worker = r.worker
     status = json.loads(
         etcd(
             r,

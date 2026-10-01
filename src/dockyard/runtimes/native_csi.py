@@ -82,7 +82,7 @@ def manifest(runtime: LinuxRuntime) -> str:
     plugin = next(item for item in source if item.get("kind") == "StatefulSet")
     plugin["metadata"]["namespace"] = NAMESPACE
     spec = plugin["spec"]["template"]["spec"]
-    spec["nodeSelector"] = {"kubernetes.io/hostname": "lima-d" + runtime.lab.id[:10] + "-worker"}
+    spec["nodeSelector"] = {"kubernetes.io/hostname": "lima-" + runtime.worker}
     spec["containers"] = [
         container for container in spec["containers"] if container["name"] in CONTAINERS
     ]

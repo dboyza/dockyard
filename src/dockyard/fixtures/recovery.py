@@ -13,7 +13,7 @@ from dockyard.workspace import atomic_write
 
 
 def etcd(runtime: LinuxRuntime, args: list[str]) -> str:
-    primary = "d" + runtime.lab.id[:10] + "-cp1"
+    primary = runtime.primary
     found = runtime.guest(primary, ["sudo", "crictl", "ps", "--name", "^etcd$", "-q"])
     runtime.require(found)
     containers = found.stdout.split()
@@ -56,7 +56,7 @@ def snapshot(runtime: LinuxRuntime) -> None:
 
 def prepare(mode: str) -> None:
     runtime = current()
-    primary = "d" + runtime.lab.id[:10] + "-cp1"
+    primary = runtime.primary
     if mode == "stage-loss":
         status = json.loads(
             etcd(

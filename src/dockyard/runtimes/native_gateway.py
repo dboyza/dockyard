@@ -9,7 +9,7 @@ from dockyard.runtimes.linux import LinuxRuntime
 
 
 def prepare(runtime: LinuxRuntime, cancel: threading.Event) -> None:
-    worker = "d" + runtime.lab.id[:10] + "-worker"
+    worker = runtime.worker
     if worker not in {entry["name"] for entry in runtime.discover()}:
         raise RuntimeErrorBase("The application gateway requires this lab's recorded worker.")
     target = f"TCP4:lima-{worker}.internal:30080"

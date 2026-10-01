@@ -92,3 +92,10 @@ def test_long_ssh_socket_path_is_rejected_before_guest_creation(tmp_path, monkey
     )
     with pytest.raises(RuntimeErrorBase, match="too long for Lima sockets"):
         runtime.prepare(2, threading.Event())
+
+
+def test_vm_names_follow_one_convention(tmp_path):
+    runtime = fixture(tmp_path)[0]
+    assert runtime.prefix == "daaaaaaaaaa"
+    assert runtime.primary == "daaaaaaaaaa-cp1"
+    assert runtime.worker == "daaaaaaaaaa-worker"

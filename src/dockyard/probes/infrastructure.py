@@ -39,8 +39,8 @@ def infrastructure() -> dict[str, Any]:
         )
         clients = observed(runtime, ["get", "pods", "-n", "frontend", "-l", "app=trusted"])["items"]
         client = next(item for item in clients if not item["metadata"].get("deletionTimestamp"))
-        source = "lima-d" + runtime.lab.id[:10] + "-cp1"
-        target = "lima-d" + runtime.lab.id[:10] + "-worker"
+        source = "lima-" + runtime.primary
+        target = "lima-" + runtime.worker
         result["packets"] = bool(
             client["spec"]["nodeName"] == source
             and pod["spec"]["nodeName"] == target
@@ -104,7 +104,7 @@ def infrastructure() -> dict[str, Any]:
         claim = observed(runtime, ["get", "pvc", "data-db-0"])
         volume = observed(runtime, ["get", "pv", claim["spec"]["volumeName"]])
         database = observed(runtime, ["get", "pod", "db-0"])
-        node = "lima-d" + runtime.lab.id[:10] + "-worker"
+        node = "lima-" + runtime.worker
         registration = observed(runtime, ["get", "csinode", node])
         attachments = observed(runtime, ["get", "volumeattachments"])["items"]
         mounted = runtime.kubectl(

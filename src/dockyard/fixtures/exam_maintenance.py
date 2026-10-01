@@ -14,7 +14,7 @@ from dockyard.probes.kubernetes import kubectl
 def prepare() -> None:
     r = current()
     record()
-    primary = "d" + r.lab.id[:10] + "-cp1"
+    primary = r.primary
     apply(
         {
             "apiVersion": "v1",

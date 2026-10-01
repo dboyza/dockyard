@@ -29,7 +29,7 @@ def recovery(mode: str) -> dict[str, Any]:
     result = maintenance("recovery")
     result.update(dict.fromkeys(("components", "scheduled", "restored"), False))
     runtime = current()
-    primary = "d" + runtime.lab.id[:10] + "-cp1"
+    primary = runtime.primary
     with measured(result, "components"):
         active = runtime.guest(primary, ["systemctl", "is-active", "kubelet"])
         ready = runtime.kubectl(["get", "--raw=/readyz"])

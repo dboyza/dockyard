@@ -17,8 +17,8 @@ from dockyard.workspace import atomic_write
 def prepare(mode: str) -> None:
     record()
     runtime = current()
-    primary = "d" + runtime.lab.id[:10] + "-cp1"
-    worker = "d" + runtime.lab.id[:10] + "-worker"
+    primary = runtime.primary
+    worker = runtime.worker
     if mode in {"storage", "mission"}:
         path = runtime.root / "data/maintenance-baseline.json"
         baseline = json.loads(path.read_text())

@@ -43,8 +43,8 @@ def operations() -> dict[str, Any]:
             ("backup", "rbac", "dns", "storage", "agents", "placement", "chart", "transport"), False
         )
     )
-    primary = "d" + r.lab.id[:10] + "-cp1"
-    worker = "d" + r.lab.id[:10] + "-worker"
+    primary = r.primary
+    worker = r.worker
     with suppress(*ERRORS):
         baseline = json.loads((r.root / "data/exam-backup.json").read_text())
         status = json.loads(

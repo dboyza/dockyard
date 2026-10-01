@@ -31,7 +31,7 @@ from dockyard.portfolio import checkpoint
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.runtimes.kubernetes import KubernetesRuntime
-from dockyard.runtimes.linux import LinuxRuntime
+from dockyard.runtimes.linux import LinuxRuntime, vm_prefix
 from dockyard.store import Store, timestamp
 from dockyard.workspace import atomic_write, reset, snapshot, write_files
 
@@ -149,9 +149,9 @@ class Service:
                 env.update(
                     LIMA_HOME=str(self.directory / "vms"),
                     SSH="/usr/bin/ssh",
-                    DOCKYARD_NODE_PREFIX="d" + lab.id[:10],
-                    DOCKYARD_CONTROL_PLANE="d" + lab.id[:10] + "-cp1",
-                    DOCKYARD_WORKER="d" + lab.id[:10] + "-worker",
+                    DOCKYARD_NODE_PREFIX=vm_prefix(lab.id),
+                    DOCKYARD_CONTROL_PLANE=vm_prefix(lab.id) + "-cp1",
+                    DOCKYARD_WORKER=vm_prefix(lab.id) + "-worker",
                     DOCKYARD_API_PORT=lab.resources.get("api_port", ""),
                 )
             for key in ("git_url", "git_cluster_url", "registry"):

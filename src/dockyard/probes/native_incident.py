@@ -26,7 +26,7 @@ def observe(mode: str) -> dict[str, Any]:
                 and actual.get("status", {}).get("availableReplicas", 0) >= 1
             )
         elif mode == "kubelet":
-            worker = "d" + r.lab.id[:10] + "-worker"
+            worker = r.worker
             active = r.guest(worker, ["systemctl", "is-active", "kubelet"])
             nodes = observed(r, ["get", "nodes"])["items"]
             result["incident"] = (

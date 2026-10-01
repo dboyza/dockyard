@@ -93,7 +93,7 @@ def main() -> None:
 
         print(stage_upgrade(runtime, cancel))
     elif args.action == "prepare-storage":
-        worker = "d" + runtime.lab.id[:10] + "-worker"
+        worker = runtime.worker
         runtime.require(
             runtime.guest(
                 worker,

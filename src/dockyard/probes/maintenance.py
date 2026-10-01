@@ -28,7 +28,7 @@ def observed(runtime: LinuxRuntime, args: list[str]) -> dict[str, Any]:
 
 
 def certificate(runtime: LinuxRuntime) -> tuple[int, str]:
-    primary = "d" + runtime.lab.id[:10] + "-cp1"
+    primary = runtime.primary
     result = runtime.guest(primary, ["sudo", "cat", "/etc/kubernetes/pki/apiserver.crt"])
     runtime.require(result)
     cert = x509.load_pem_x509_certificate(result.stdout.encode())
@@ -116,7 +116,7 @@ def maintenance(mode: str) -> dict[str, Any]:
             }
     if mode == "drain":
         with suppress(*ERRORS):
-            target = "lima-d" + runtime.lab.id[:10] + "-worker2"
+            target = "lima-" + runtime.prefix + "-worker2"
             node = observed(runtime, ["get", "node", target])
             pods = observed(
                 runtime, ["get", "pods", "-A", "--field-selector=spec.nodeName=" + target]

@@ -41,7 +41,26 @@ def birth_time(path: Path) -> float:
     )
 
 
+def vm_prefix(lab_id: str) -> str:
+    """Name prefix shared by every VM a native lab owns."""
+    return "d" + lab_id[:10]
+
+
 class LinuxRuntime:
+    @property
+    def prefix(self) -> str:
+        return vm_prefix(self.lab.id)
+
+    @property
+    def primary(self) -> str:
+        """The first control-plane VM."""
+        return self.prefix + "-cp1"
+
+    @property
+    def worker(self) -> str:
+        """The worker VM that hosts application workloads."""
+        return self.prefix + "-worker"
+
     def __init__(self, lab: Lab, env: dict[str, str], save: Callable[[Lab], None], tools: Path):
         self.lab, self.save, self.tools = lab, save, tools
         self.root = Path(lab.workspace).parent
@@ -172,10 +191,10 @@ class LinuxRuntime:
 
         if nodes not in (2, 3, 4):
             raise RuntimeErrorBase("Linux profiles require two or three guests, or four HA guests.")
-        names = [f"d{self.lab.id[:10]}-cp{n + 1}" for n in range(3 if nodes == 4 else 1)]
+        names = [f"{self.prefix}-cp{n + 1}" for n in range(3 if nodes == 4 else 1)]
         if nodes == 3:
-            names.append(f"d{self.lab.id[:10]}-worker2")
-        names.append(f"d{self.lab.id[:10]}-worker")
+            names.append(f"{self.prefix}-worker2")
+        names.append(self.worker)
         # Include the temporary SSH control socket, which is longer than the network socket.
         sockets = [self.home / "_networks/user-v2/usernet.user-v2.sock"] + [
             self.home / name / "ssh.sock.1234567890123456" for name in names
@@ -315,7 +334,7 @@ class LinuxRuntime:
         )
 
     def export_kubeconfig(self, cancel: threading.Event) -> None:
-        primary = "d" + self.lab.id[:10] + "-cp1"
+        primary = self.primary
         result = self.guest(primary, ["sudo", "cat", "/etc/kubernetes/admin.conf"], cancel=cancel)
         self.require(result)
         config = yaml.safe_load(result.stdout)

@@ -15,8 +15,8 @@ from dockyard.workspace import atomic_write
 
 def prepare(mode: str) -> None:
     r = current()
-    primary = "d" + r.lab.id[:10] + "-cp1"
-    worker = "d" + r.lab.id[:10] + "-worker"
+    primary = r.primary
+    worker = r.worker
     record()
     r.require(r.guest(primary, ["sudo", "mkdir", "-p", "/var/lib/dockyard"]))
     if mode == "deleted-state":
