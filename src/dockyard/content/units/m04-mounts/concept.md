@@ -17,6 +17,10 @@ There are two useful choices:
 Both can survive container replacement.
 Neither protects you from deleting or corrupting the data itself, so neither replaces a backup.
 
+```figure
+storage-choices
+```
+
 ## Build and start the storage version
 
 Prepare the lab and open its terminal.
@@ -57,6 +61,10 @@ The header tells the API that the body is JSON.
 Record the returned job’s identity.
 Stop and remove only the assigned container, then repeat the same `docker run` command, including its mount.
 Request `/jobs` again: the same job should still be present.
+
+```figure
+replace-with-mount
+```
 
 The checker also creates its own temporary job and reads the committed database through the mount independently.
 It removes that observation afterward and leaves your jobs intact.

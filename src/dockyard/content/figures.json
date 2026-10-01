@@ -383,5 +383,179 @@
         "text": "A replacement API container with the corrected setting reaches the dependency over the lab network."
       }
     ]
+  },
+  {
+    "id": "storage-choices",
+    "title": "Where /data can live",
+    "caption": "A mount moves the data out of the container’s writable layer, so replacing the container leaves it behind.",
+    "description": "Three columns, each with a container writing /data/jobs.db. With no mount, the data goes into the container's own writable layer and is lost with the container. With a bind mount, it goes into a folder you chose on your computer and survives replacement. With a named volume, it goes into a Docker-managed volume and survives replacement. A note says neither mount protects against deleting or corrupting the data itself."
+  },
+  {
+    "id": "replace-with-mount",
+    "title": "Replacing the container, keeping the data",
+    "caption": "The storage outlives the container because it was never inside it.",
+    "description": "A sequence in three steps. A container with /data mounted writes a job into separate storage holding jobs.db. The container is removed, and the storage remains. A replacement container with the same mount at /data reads the job back, so GET /jobs still returns keep this job.",
+    "steps": [
+      {
+        "label": "Write a job",
+        "text": "The container writes the job into jobs.db on the mounted storage, not into its own writable layer."
+      },
+      {
+        "label": "Remove the container",
+        "text": "Removing the container deletes the container, but the mounted storage is separate and remains."
+      },
+      {
+        "label": "Mount it again",
+        "text": "A replacement container with the same mount sees the same jobs.db, so the job is still there."
+      }
+    ]
+  },
+  {
+    "id": "ownership-mismatch",
+    "title": "A numeric owner mismatch",
+    "caption": "Linux compares numbers: the process’s UID must be allowed by the directory’s owner and mode.",
+    "description": "A sequence in three steps. The Dispatch API runs as UID 10001, but /data on the volume is owned by 0, root, with mode 0700, so writing fails with permission denied. A temporary container runs chown 10001:10001 /data, making UID 10001 the owner. The write then succeeds while the API still runs as an ordinary user. A note says chmod 777 or running as root would also work by giving far more access than the API needs.",
+    "steps": [
+      {
+        "label": "The write is denied",
+        "text": "The API runs as UID 10001, but the directory belongs to UID 0 with mode 0700, which admits only its owner."
+      },
+      {
+        "label": "Change only the owner",
+        "text": "A temporary maintenance container changes the directory’s owner to 10001, then removes itself."
+      },
+      {
+        "label": "The write succeeds",
+        "text": "The API, still running as UID 10001, now owns the directory and can save jobs."
+      }
+    ]
+  },
+  {
+    "id": "backup-restore",
+    "title": "Back up, restore, and prove it",
+    "caption": "The source stays untouched; the API is stopped only while its own database is replaced.",
+    "description": "A sequence in four steps. A temporary container reads the source volume's jobs.db read-only and writes backup.tar into your workspace with tar -c. The Dispatch API that uses the target volume is stopped. Another temporary container extracts the archive into the target volume and changes the owner. The API is started again and GET /jobs finds the recovered job.",
+    "steps": [
+      {
+        "label": "Archive the source",
+        "text": "A temporary container mounts the source read-only and writes backup.tar into your workspace."
+      },
+      {
+        "label": "Stop the target’s API",
+        "text": "Stopping the API makes sure nothing writes to the target database while it is replaced."
+      },
+      {
+        "label": "Restore into the target",
+        "text": "Another temporary container extracts jobs.db into the target volume and gives it to UID 10001."
+      },
+      {
+        "label": "Start and verify",
+        "text": "With the API running again, request /jobs and look for the recovered job, then write a new one."
+      }
+    ]
+  },
+  {
+    "id": "recovery-point-time",
+    "title": "Recovery point and recovery time",
+    "caption": "A recent backup shrinks the lost data; a practised restore shrinks the outage.",
+    "description": "A timeline. A backup is taken, which is the recovery point; later a failure happens; later still service is restored. Changes made between the backup and the failure are lost. The time between the failure and the restored service is the recovery time."
+  },
+  {
+    "id": "compose-project",
+    "title": "Dispatch as one Compose project",
+    "caption": "Compose starts all four roles on one network; only the API is published to your computer.",
+    "description": "compose.yaml is read by docker compose up, which starts four services on the network app. The api service has a published port reached from 127.0.0.1 on your computer. The worker, queue (Redis), and db (PostgreSQL, with the jobs volume) have no published ports. The api and worker each connect to the queue and the db by their service names."
+  },
+  {
+    "id": "compose-interpolation",
+    "title": "Interpolation versus a container’s environment",
+    "caption": "${…} is filled in from your terminal when Compose reads the file; only environment entries reach the container.",
+    "description": "Three stacked panels. Your lab terminal has variables such as DOCKYARD_DB_PASSWORD, DOCKYARD_PORT, and HOME. In compose.yaml, the environment section sets DB_HOST to db and DB_PASSWORD to ${DOCKYARD_DB_PASSWORD}, which Compose fills in while reading the file. Inside the api container, only DB_HOST and DB_PASSWORD exist; HOME and DOCKYARD_PORT are not passed in."
+  },
+  {
+    "id": "health-wait",
+    "title": "Running is not the same as ready",
+    "caption": "service_healthy makes the API wait for its dependencies’ health checks, not just for their containers to exist.",
+    "description": "A sequence in three steps with three services: db with the pg_isready check, queue with redis-cli ping, and api with GET /readyz, which depends on the other two. At first db and queue are running but still starting, and the api waits. Then db and queue become healthy, and the api starts. Finally the api's own check passes, all three are healthy, and docker compose up --wait finishes successfully.",
+    "steps": [
+      {
+        "label": "Containers start",
+        "text": "db and queue are running, but their health checks do not pass yet. The api waits, because it depends on them being healthy."
+      },
+      {
+        "label": "Dependencies become healthy",
+        "text": "pg_isready and redis-cli ping succeed, so Compose starts the api."
+      },
+      {
+        "label": "The API is ready too",
+        "text": "The api’s own check of /readyz succeeds, so every service is healthy and docker compose up --wait finishes."
+      }
+    ]
+  },
+  {
+    "id": "worker-replicas",
+    "title": "Two workers, one jobs table",
+    "caption": "Replicas share the queue and database; row locks decide which worker takes each job.",
+    "description": "Worker 1 and worker 2 both hear from the queue that work is available. In the jobs table in PostgreSQL, job 1 is locked by worker 1, job 2 is locked by worker 2, and job 3 is still queued. A note says each worker skips jobs another worker has locked, so a job is claimed once."
+  },
+  {
+    "id": "pg-dump-restore",
+    "title": "A logical backup restored beside the live database",
+    "caption": "The application keeps using dispatch; restored exists only to prove the backup works.",
+    "description": "One PostgreSQL server in the db container holds two databases. The api and workers use dispatch, the live database. pg_dump writes dispatch out to backup.sql in your workspace, and psql reads backup.sql into a separate database named restored, used only as a recovery test."
+  },
+  {
+    "id": "image-reference",
+    "title": "Reading an image reference",
+    "caption": "A reference ends with either a tag, which can move, or a digest, which identifies fixed content.",
+    "description": "Two image references with their parts labelled. In 127.0.0.1:49804/dispatch:release, 127.0.0.1:49804 is the registry, dispatch is the repository, and release is a tag that can move. In 127.0.0.1:49804/dispatch@sha256:3f1a…, the registry and repository are the same, and sha256:3f1a… is a digest identifying fixed content."
+  },
+  {
+    "id": "tags-vs-digests",
+    "title": "A tag moves; a digest stays",
+    "caption": "Deploy by digest when you need to know exactly which image will run.",
+    "description": "A sequence in two steps. In the registry, the tag dispatch:release and the digest reference dispatch@sha256:3f1a… both point at image A. Then someone pushes image B, sha256:9c2e…, under the same tag. The tag now points at image B, so a deploy by tag gets image B, while the digest reference still points at image A, so a deploy by digest still gets image A.",
+    "steps": [
+      {
+        "label": "After your push",
+        "text": "The tag release and the digest sha256:3f1a… both identify image A."
+      },
+      {
+        "label": "Someone pushes again",
+        "text": "A new image B is pushed under the same tag. The tag moves to B; the digest still identifies A."
+      }
+    ]
+  },
+  {
+    "id": "image-platforms",
+    "title": "One image name, several platforms",
+    "caption": "Docker picks the image that matches your processor from the name’s list.",
+    "description": "The image name python points to a list of platform images. One is linux/arm64, for ARM64 processors, which an Apple Silicon Mac pulls. The other is linux/amd64, for x86-64 processors, which an x86-64 PC pulls."
+  },
+  {
+    "id": "secret-in-layers",
+    "title": "Deleting a secret does not remove it",
+    "caption": "Keep secrets out of the build context; a later layer can only hide what an earlier one stored.",
+    "description": "A sequence in three steps showing image layers beside what the running container sees and what the image stores. COPY . . copies app.py and .env into a layer, so both the container and the image contain .env. Adding RUN rm .env hides .env from the running container, but the image still stores it in the COPY layer. With .env listed in .dockerignore, the COPY layer contains only app.py, and no layer stores .env.",
+    "steps": [
+      {
+        "label": "COPY . . copies the secret",
+        "text": "Everything in the folder, including .env, is stored in the COPY layer."
+      },
+      {
+        "label": "Deleting it later only hides it",
+        "text": "RUN rm .env adds a layer that hides the file from the running container, but the COPY layer below still stores it."
+      },
+      {
+        "label": ".dockerignore keeps it out",
+        "text": "With .env listed in .dockerignore, the build never receives it, so no layer can contain it."
+      }
+    ]
+  },
+  {
+    "id": "container-restrictions",
+    "title": "Independent layers of restriction",
+    "caption": "If one layer is bypassed, the others still apply.",
+    "description": "Nested layers around Dispatch, which runs as UID 10001. From the inside out: all capabilities dropped, no new privileges, a read-only filesystem, and cgroup limits of 128 MiB memory, half a CPU, and 64 processes. A note says each layer closes a different door and together they limit the damage."
   }
 ]

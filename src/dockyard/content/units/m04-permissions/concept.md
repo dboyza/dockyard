@@ -25,6 +25,10 @@ That mode allows only its owner to read, write, or enter it.
 Linux uses these numbers to decide access; matching friendly user names is not enough.
 Rebuilding the image does not change the owner already stored on a separate volume.
 
+```figure
+ownership-mismatch
+```
+
 ## Repair the identified directory
 
 Use a temporary maintenance container to change just this volume’s directory owner:

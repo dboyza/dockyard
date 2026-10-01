@@ -17,6 +17,10 @@ Let Compose choose their names and keep the lab label on both.
 
 The supplied worker claims a job in a database transaction and skips rows another worker has already locked.
 That prevents these workers from handling the same local job at the same time.
+
+```figure
+worker-replicas
+```
 It does not guarantee that arbitrary external actions, such as charging a payment, happen exactly once.
 Such applications need additional protection against repeated actions.
 
@@ -54,6 +58,10 @@ docker compose exec -T db psql -U dispatch -d restored -c 'SELECT id, title, sta
 `createdb` creates the separate restore target, and `psql` runs SQL against it.
 `ON_ERROR_STOP=1` makes restoration stop if an SQL command fails.
 The final query lists the restored jobs so you can find the one you submitted.
+
+```figure
+pg-dump-restore
+```
 
 Keep the application connected to `dispatch`; `restored` is only your recovery test.
 If you repeat the exercise and `restored` already exists, inspect it before deciding to remove and recreate that practice database.

@@ -445,3 +445,23 @@ export function Code({
     </g>
   );
 }
+
+/** A plain connecting line without an arrowhead. */
+export function Line({
+  points,
+  tone = "muted",
+  dashed = false,
+}: {
+  points: Point[];
+  tone?: Tone;
+  dashed?: boolean;
+}) {
+  const d = points
+    .map(([px, py], index) => `${index ? "L" : "M"}${px} ${py}`)
+    .join(" ");
+  return (
+    <g className={`fig-arrow tone-${tone} ${dashed ? "dashed" : ""}`}>
+      <path d={d} />
+    </g>
+  );
+}

@@ -7,6 +7,7 @@ import {
   File,
   ImageStack,
   Label,
+  Line,
   Region,
   Reveal,
   Tag,
@@ -910,6 +911,986 @@ export const docker = {
           replaced with the corrected setting
         </Label>
       </Reveal>
+    </Diagram>
+  ),
+  "storage-choices": () => (
+    <Diagram height={262}>
+      {[
+        {
+          x: 10,
+          heading: "No mount",
+          title: "its writable layer",
+          sub: "inside the container",
+          result: "lost with the container",
+          tone: "bad" as Tone,
+        },
+        {
+          x: 220,
+          heading: "Bind mount",
+          title: "a folder you chose",
+          sub: "on your computer",
+          result: "survives replacement",
+          tone: "good" as Tone,
+        },
+        {
+          x: 430,
+          heading: "Named volume",
+          title: "a Docker volume",
+          sub: "managed by Docker",
+          result: "survives replacement",
+          tone: "good" as Tone,
+        },
+      ].map((item) => (
+        <g key={item.heading}>
+          <Label x={item.x + 100} y={20} anchor="middle">
+            {item.heading}
+          </Label>
+          <Box
+            x={item.x + 20}
+            y={36}
+            w={160}
+            h={50}
+            title="container"
+            sub="writes /data/jobs.db"
+            tone="focus"
+          />
+          <Arrow
+            points={[
+              [item.x + 100, 86],
+              [item.x + 100, 116],
+            ]}
+          />
+          {item.x === 430 ? (
+            <Cylinder
+              x={item.x + 20}
+              y={120}
+              w={160}
+              h={64}
+              title={item.title}
+              sub={item.sub}
+            />
+          ) : (
+            <Box
+              x={item.x + 20}
+              y={120}
+              w={160}
+              h={56}
+              title={item.title}
+              sub={item.sub}
+              dashed={item.x === 10}
+            />
+          )}
+          <Tag x={item.x + 100} y={214} text={item.result} tone={item.tone} />
+        </g>
+      ))}
+      <Label x={320} y={252} anchor="middle" size="small" tone="muted">
+        Neither mount protects against deleting or corrupting the data itself.
+      </Label>
+    </Diagram>
+  ),
+
+  "replace-with-mount": ({ step = 0 }) => (
+    <Diagram height={244} step={step}>
+      <Cylinder
+        x={250}
+        y={150}
+        w={140}
+        h={74}
+        title="storage"
+        sub="jobs.db"
+        tone="focus"
+      />
+      <Reveal from={0} until={0}>
+        <Box
+          x={40}
+          y={40}
+          w={200}
+          h={56}
+          title="container"
+          sub="/data is mounted"
+          tone="good"
+        />
+        <Arrow
+          points={[
+            [140, 96],
+            [262, 156],
+          ]}
+          tone="focus"
+          label="writes a job"
+          labelAt={[170, 140]}
+        />
+      </Reveal>
+      <Reveal from={1}>
+        <Box
+          x={40}
+          y={40}
+          w={200}
+          h={56}
+          title="old container"
+          sub="removed"
+          tone="muted"
+          dashed
+        />
+        <Label x={320} y={136} anchor="middle" size="small" tone="good">
+          the storage remains
+        </Label>
+      </Reveal>
+      <Reveal from={2}>
+        <Box
+          x={400}
+          y={40}
+          w={200}
+          h={56}
+          title="replacement"
+          sub="same mount at /data"
+          tone="good"
+        />
+        <Arrow
+          points={[
+            [500, 96],
+            [378, 156],
+          ]}
+          tone="good"
+          label="reads it back"
+          labelAt={[478, 140]}
+        />
+        <Tag x={500} y={22} text="GET /jobs: keep this job" tone="good" />
+      </Reveal>
+    </Diagram>
+  ),
+
+  "ownership-mismatch": ({ step = 0 }) => (
+    <Diagram height={262} step={step}>
+      <Region
+        x={10}
+        y={14}
+        w={280}
+        h={120}
+        label="API container"
+        tone="focus"
+      />
+      <Box
+        x={30}
+        y={48}
+        w={240}
+        h={56}
+        title="Dispatch API"
+        sub="runs as UID 10001"
+      />
+      <Cylinder
+        x={370}
+        y={24}
+        w={250}
+        h={110}
+        title="/data on the volume"
+        sub={step >= 1 ? "owner 10001, mode 0700" : "owner 0 (root), mode 0700"}
+        tone={step >= 1 ? "good" : "warn"}
+      />
+      <Reveal from={0} until={0}>
+        <Arrow
+          points={[
+            [270, 76],
+            [366, 76],
+          ]}
+          tone="bad"
+          label="write"
+          labelAt={[318, 68]}
+        />
+        <Label x={320} y={170} anchor="middle" tone="bad">
+          Permission denied: UID 10001 is not the owner
+        </Label>
+      </Reveal>
+      <Reveal from={1} until={1}>
+        <Box
+          x={370}
+          y={180}
+          w={250}
+          h={52}
+          title="temporary container"
+          sub="chown 10001:10001 /data"
+          tone="focus"
+        />
+        <Arrow
+          points={[
+            [495, 180],
+            [495, 138],
+          ]}
+          tone="focus"
+        />
+      </Reveal>
+      <Reveal from={2}>
+        <Arrow
+          points={[
+            [270, 76],
+            [366, 76],
+          ]}
+          tone="good"
+          label="write"
+          labelAt={[318, 68]}
+        />
+        <Label x={320} y={170} anchor="middle" tone="good">
+          The job is saved, and the API still runs as an ordinary user.
+        </Label>
+        <Label x={320} y={200} anchor="middle" size="small" tone="muted">
+          chmod 777 or running as root would also work, by giving far more
+        </Label>
+        <Label x={320} y={218} anchor="middle" size="small" tone="muted">
+          access than the API needs.
+        </Label>
+      </Reveal>
+    </Diagram>
+  ),
+
+  "backup-restore": ({ step = 0 }) => (
+    <Diagram height={262} step={step}>
+      <Cylinder
+        x={10}
+        y={40}
+        w={150}
+        h={80}
+        title="source volume"
+        sub="jobs.db"
+      />
+      <Label x={85} y={142} anchor="middle" size="small" tone="muted">
+        read-only, kept intact
+      </Label>
+      <Reveal from={0}>
+        <Arrow
+          points={[
+            [160, 80],
+            [298, 80],
+          ]}
+          tone="focus"
+          label="tar -c"
+          labelAt={[229, 72]}
+        />
+        <Label x={229} y={124} anchor="middle" size="small" tone="muted">
+          temporary container
+        </Label>
+        <File x={307} y={56} name="backup.tar" tone="focus" />
+      </Reveal>
+      <Cylinder
+        x={480}
+        y={40}
+        w={150}
+        h={80}
+        title="target volume"
+        sub={step >= 2 ? "jobs.db restored" : "empty"}
+        tone={step >= 2 ? "good" : "default"}
+      />
+      <Box
+        x={480}
+        y={182}
+        w={150}
+        h={56}
+        title="Dispatch API"
+        sub={step === 1 || step === 2 ? "stopped" : "running"}
+        tone={
+          step === 1 || step === 2 ? "muted" : step === 3 ? "good" : "default"
+        }
+      />
+      <Line
+        points={[
+          [555, 120],
+          [555, 182],
+        ]}
+      />
+      <Reveal from={2}>
+        <Arrow
+          points={[
+            [340, 80],
+            [476, 80],
+          ]}
+          tone="focus"
+          label="tar -x, chown"
+          labelAt={[408, 72]}
+        />
+        <Label x={408} y={124} anchor="middle" size="small" tone="muted">
+          temporary container
+        </Label>
+      </Reveal>
+      <Reveal from={3}>
+        <Tag x={300} y={210} text="GET /jobs finds the job" tone="good" />
+      </Reveal>
+    </Diagram>
+  ),
+
+  "recovery-point-time": () => (
+    <Diagram height={186}>
+      <Arrow
+        points={[
+          [20, 96],
+          [624, 96],
+        ]}
+        tone="muted"
+      />
+      <Label x={620} y={118} anchor="end" size="small" tone="muted">
+        time
+      </Label>
+      {(
+        [
+          [120, "backup taken", "focus"],
+          [360, "failure", "bad"],
+          [520, "service restored", "good"],
+        ] as [number, string, Tone][]
+      ).map(([x, text, tone]) => (
+        <g key={text}>
+          <Line
+            points={[
+              [x, 72],
+              [x, 96],
+            ]}
+            tone={tone}
+          />
+          <Tag x={x} y={58} text={text} tone={tone} />
+        </g>
+      ))}
+      <Label x={120} y={118} anchor="middle" size="small" tone="focus">
+        recovery point
+      </Label>
+      <Arrow
+        points={[
+          [126, 146],
+          [354, 146],
+        ]}
+        both
+        tone="warn"
+        label="changes made here are lost"
+        labelAt={[240, 170]}
+      />
+      <Arrow
+        points={[
+          [366, 146],
+          [514, 146],
+        ]}
+        both
+        tone="focus"
+        label="recovery time"
+        labelAt={[440, 170]}
+      />
+    </Diagram>
+  ),
+  "compose-project": () => (
+    <Diagram height={262}>
+      <Tag x={76} y={75} text="127.0.0.1:PORT" tone="focus" />
+      <Arrow
+        points={[
+          [138, 75],
+          [176, 75],
+        ]}
+        tone="focus"
+      />
+      <File x={44} y={150} name="compose.yaml" tone="focus" />
+      <Arrow
+        points={[
+          [80, 166],
+          [146, 166],
+        ]}
+        label="up"
+        labelAt={[113, 158]}
+      />
+      <Region
+        x={150}
+        y={14}
+        w={480}
+        h={236}
+        label="Network: app"
+        tone="focus"
+      />
+      <Box
+        x={180}
+        y={50}
+        w={150}
+        h={50}
+        title="api"
+        sub="published port"
+        tone="focus"
+      />
+      <Box
+        x={180}
+        y={168}
+        w={150}
+        h={50}
+        title="worker"
+        sub="no published port"
+      />
+      <Box x={460} y={50} w={150} h={50} title="queue" sub="Redis" />
+      <Cylinder x={460} y={140} w={150} h={74} title="db" sub="PostgreSQL" />
+      <Tag x={535} y={232} text="volume: jobs" />
+      <Arrow
+        points={[
+          [330, 75],
+          [456, 75],
+        ]}
+        label="queue"
+        labelAt={[393, 67]}
+      />
+      <Arrow
+        points={[
+          [330, 193],
+          [456, 193],
+        ]}
+        label="db"
+        labelAt={[393, 185]}
+      />
+      <Arrow
+        points={[
+          [330, 95],
+          [456, 160],
+        ]}
+        tone="muted"
+      />
+      <Arrow
+        points={[
+          [330, 172],
+          [456, 96],
+        ]}
+        tone="muted"
+      />
+    </Diagram>
+  ),
+
+  "compose-interpolation": () => (
+    <Diagram height={362}>
+      <Code
+        x={10}
+        y={10}
+        w={300}
+        lines={[
+          { text: "DOCKYARD_DB_PASSWORD=s3cr…", tone: "focus" },
+          { text: "DOCKYARD_PORT=51234" },
+          { text: "HOME=/home/you", tone: "muted" },
+        ]}
+      />
+      <Label x={330} y={50}>
+        Variables in your lab terminal
+      </Label>
+      <Arrow
+        points={[
+          [160, 112],
+          [160, 140],
+        ]}
+        tone="focus"
+        label="Compose fills in ${…} while reading the file"
+        labelAt={[330, 130]}
+      />
+      <Code
+        x={10}
+        y={144}
+        w={300}
+        lines={[
+          { text: "environment:" },
+          { text: "  DB_HOST: db" },
+          { text: "  DB_PASSWORD: ${DOCKYARD_DB_PASSWORD}", tone: "focus" },
+        ]}
+      />
+      <Label x={330} y={184}>
+        compose.yaml
+      </Label>
+      <Arrow
+        points={[
+          [160, 246],
+          [160, 274],
+        ]}
+        tone="good"
+        label="only environment entries are passed in"
+        labelAt={[330, 264]}
+      />
+      <Code
+        x={10}
+        y={278}
+        w={300}
+        lines={[
+          { text: "DB_HOST=db" },
+          { text: "DB_PASSWORD=s3cr…", tone: "good" },
+        ]}
+      />
+      <Label x={330} y={308}>
+        Inside the api container
+      </Label>
+      <Label x={330} y={330} size="small" tone="muted">
+        HOME and DOCKYARD_PORT are not passed in.
+      </Label>
+    </Diagram>
+  ),
+
+  "health-wait": ({ step = 0 }) => {
+    const rows: { y: number; name: string; sub: string; check: string }[] = [
+      { y: 40, name: "db", sub: "PostgreSQL", check: "pg_isready" },
+      { y: 110, name: "queue", sub: "Redis", check: "redis-cli ping" },
+      { y: 180, name: "api", sub: "waits for both", check: "GET /readyz" },
+    ];
+    const states: [string, Tone][][] = [
+      [
+        ["running, starting", "warn"],
+        ["running, starting", "warn"],
+        ["waiting", "muted"],
+      ],
+      [
+        ["healthy", "good"],
+        ["healthy", "good"],
+        ["running, starting", "warn"],
+      ],
+      [
+        ["healthy", "good"],
+        ["healthy", "good"],
+        ["healthy", "good"],
+      ],
+    ];
+    return (
+      <Diagram height={254} step={step}>
+        <Label x={20} y={22} size="small" tone="muted">
+          Service
+        </Label>
+        <Label x={400} y={22} anchor="middle" size="small" tone="muted">
+          State
+        </Label>
+        <Label x={500} y={22} size="small" tone="muted">
+          Health check
+        </Label>
+        {rows.map((row, index) => {
+          const [text, tone] = states[step][index];
+          return (
+            <g key={row.name}>
+              <Box
+                x={20}
+                y={row.y}
+                w={200}
+                h={50}
+                title={row.name}
+                sub={row.sub}
+                tone={index === 2 ? "focus" : "default"}
+              />
+              <Tag x={400} y={row.y + 25} text={text} tone={tone} />
+              <Label x={500} y={row.y + 29} mono>
+                {row.check}
+              </Label>
+            </g>
+          );
+        })}
+        <Arrow
+          points={[
+            [220, 205],
+            [262, 205],
+            [262, 65],
+            [224, 65],
+          ]}
+          tone="muted"
+          dashed
+        />
+        <Line
+          points={[
+            [262, 135],
+            [224, 135],
+          ]}
+          tone="muted"
+          dashed
+        />
+        <Reveal from={2}>
+          <Label x={320} y={248} anchor="middle" size="small" tone="good">
+            docker compose up --wait finishes successfully.
+          </Label>
+        </Reveal>
+      </Diagram>
+    );
+  },
+
+  "worker-replicas": () => (
+    <Diagram height={258}>
+      <Box x={20} y={30} w={170} h={50} title="worker 1" tone="focus" />
+      <Box
+        x={235}
+        y={30}
+        w={170}
+        h={50}
+        title="queue"
+        sub="work is available"
+      />
+      <Box x={450} y={30} w={170} h={50} title="worker 2" tone="good" />
+      <Arrow
+        points={[
+          [235, 55],
+          [194, 55],
+        ]}
+        tone="muted"
+        dashed
+      />
+      <Arrow
+        points={[
+          [405, 55],
+          [446, 55],
+        ]}
+        tone="muted"
+        dashed
+      />
+      <Region
+        x={150}
+        y={106}
+        w={340}
+        h={124}
+        label="jobs table in PostgreSQL"
+      />
+      <Box
+        x={170}
+        y={134}
+        w={300}
+        h={26}
+        title="job 1: locked by worker 1"
+        tone="focus"
+      />
+      <Box
+        x={170}
+        y={166}
+        w={300}
+        h={26}
+        title="job 2: locked by worker 2"
+        tone="good"
+      />
+      <Box x={170} y={198} w={300} h={26} title="job 3: queued" tone="muted" />
+      <Arrow
+        points={[
+          [105, 80],
+          [105, 147],
+          [166, 147],
+        ]}
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [535, 80],
+          [535, 179],
+          [474, 179],
+        ]}
+        tone="good"
+      />
+      <Label x={320} y={252} anchor="middle" size="small" tone="muted">
+        Each worker skips jobs another worker has locked, so a job is claimed
+        once.
+      </Label>
+    </Diagram>
+  ),
+
+  "pg-dump-restore": () => (
+    <Diagram height={262}>
+      <Box
+        x={170}
+        y={10}
+        w={160}
+        h={44}
+        title="api and workers"
+        sub="use dispatch"
+      />
+      <Arrow
+        points={[
+          [250, 54],
+          [250, 96],
+        ]}
+      />
+      <Region x={10} y={72} w={620} h={112} label="db: one PostgreSQL server" />
+      <Cylinder
+        x={175}
+        y={100}
+        w={150}
+        h={70}
+        title="dispatch"
+        sub="live database"
+        tone="good"
+      />
+      <Cylinder
+        x={460}
+        y={100}
+        w={150}
+        h={70}
+        title="restored"
+        sub="your recovery test"
+        tone="focus"
+      />
+      <File x={378} y={200} name="backup.sql" tone="focus" />
+      <Arrow
+        points={[
+          [325, 150],
+          [372, 210],
+        ]}
+        tone="focus"
+        label="pg_dump >"
+        labelAt={[318, 206]}
+      />
+      <Arrow
+        points={[
+          [410, 212],
+          [470, 154],
+        ]}
+        tone="focus"
+        label="psql <"
+        labelAt={[476, 206]}
+      />
+    </Diagram>
+  ),
+  "image-reference": () => {
+    const rows: { y: number; parts: [string, Tone, string?][] }[] = [
+      {
+        y: 50,
+        parts: [
+          ["127.0.0.1:49804", "focus", "registry"],
+          ["/", "muted"],
+          ["dispatch", "good", "repository"],
+          [":", "muted"],
+          ["release", "warn", "tag: can move"],
+        ],
+      },
+      {
+        y: 140,
+        parts: [
+          ["127.0.0.1:49804", "focus", "registry"],
+          ["/", "muted"],
+          ["dispatch", "good", "repository"],
+          ["@", "muted"],
+          ["sha256:3f1a…", "default", "digest: fixed content"],
+        ],
+      },
+    ];
+    const charWidth = 9.6;
+    return (
+      <Diagram height={196}>
+        {rows.map((row) => {
+          let x = 40;
+          return row.parts.map(([text, tone, note]) => {
+            const left = x;
+            const width = text.length * charWidth;
+            x += width;
+            return (
+              <g key={`${row.y}-${left}`}>
+                <Label x={left} y={row.y} tone={tone} size="large" mono>
+                  {text}
+                </Label>
+                {note && (
+                  <>
+                    <Line
+                      points={[
+                        [left + 1, row.y + 8],
+                        [left + 1, row.y + 14],
+                        [left + width - 1, row.y + 14],
+                        [left + width - 1, row.y + 8],
+                      ]}
+                      tone={tone}
+                    />
+                    <Label
+                      x={left + width / 2}
+                      y={row.y + 32}
+                      anchor="middle"
+                      size="small"
+                      tone={tone}
+                    >
+                      {note}
+                    </Label>
+                  </>
+                )}
+              </g>
+            );
+          });
+        })}
+      </Diagram>
+    );
+  },
+
+  "tags-vs-digests": ({ step = 0 }) => (
+    <Diagram height={250} step={step}>
+      <Region x={200} y={14} w={240} h={196} label="Registry" />
+      <Box
+        x={220}
+        y={50}
+        w={200}
+        h={50}
+        title="image A"
+        sub="sha256:3f1a…"
+        tone="good"
+      />
+      <Tag x={100} y={75} text="dispatch:release" tone="warn" />
+      <Tag x={540} y={75} text="dispatch@sha256:3f1a…" tone="good" />
+      <Arrow
+        points={[
+          [456, 75],
+          [424, 75],
+        ]}
+        tone="good"
+      />
+      <Reveal from={0} until={0}>
+        <Arrow
+          points={[
+            [166, 75],
+            [216, 75],
+          ]}
+          tone="warn"
+        />
+      </Reveal>
+      <Reveal from={1}>
+        <Box
+          x={220}
+          y={140}
+          w={200}
+          h={50}
+          title="image B"
+          sub="sha256:9c2e…"
+          tone="warn"
+        />
+        <Arrow
+          points={[
+            [166, 75],
+            [188, 75],
+            [188, 165],
+            [216, 165],
+          ]}
+          tone="warn"
+        />
+        <Label x={100} y={236} anchor="middle" size="small" tone="warn">
+          deploy by tag: image B
+        </Label>
+        <Label x={540} y={236} anchor="middle" size="small" tone="good">
+          deploy by digest: image A
+        </Label>
+      </Reveal>
+    </Diagram>
+  ),
+
+  "image-platforms": () => (
+    <Diagram height={216}>
+      <Box
+        x={210}
+        y={14}
+        w={220}
+        h={54}
+        title="python"
+        sub="one name, a list of platforms"
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [280, 68],
+          [190, 120],
+        ]}
+      />
+      <Arrow
+        points={[
+          [360, 68],
+          [450, 120],
+        ]}
+      />
+      <Box
+        x={90}
+        y={124}
+        w={180}
+        h={50}
+        title="linux/arm64"
+        sub="image for ARM64"
+        mono
+      />
+      <Box
+        x={370}
+        y={124}
+        w={180}
+        h={50}
+        title="linux/amd64"
+        sub="image for x86-64"
+        mono
+      />
+      <Label x={180} y={200} anchor="middle" size="small" tone="muted">
+        an Apple Silicon Mac pulls this one
+      </Label>
+      <Label x={460} y={200} anchor="middle" size="small" tone="muted">
+        an x86-64 PC pulls this one
+      </Label>
+    </Diagram>
+  ),
+
+  "secret-in-layers": ({ step = 0 }) => (
+    <Diagram height={254} step={step}>
+      <Label x={180} y={24} anchor="middle" size="small" tone="muted">
+        Image layers, newest on top
+      </Label>
+      <Reveal from={1} until={1}>
+        <Box
+          x={40}
+          y={92}
+          w={280}
+          h={30}
+          title="RUN rm .env: hides it"
+          tone="warn"
+        />
+      </Reveal>
+      <Box
+        x={40}
+        y={130}
+        w={280}
+        h={30}
+        title={step === 2 ? "COPY . .  →  app.py" : "COPY . .  →  app.py, .env"}
+        tone={step === 2 ? "good" : "bad"}
+      />
+      <Box
+        x={40}
+        y={168}
+        w={280}
+        h={30}
+        title="Python base image"
+        tone="muted"
+      />
+      <Reveal from={2}>
+        <Label x={40} y={232} size="small" tone="good">
+          .dockerignore lists .env, so it never enters the build.
+        </Label>
+      </Reveal>
+      <Region
+        x={360}
+        y={20}
+        w={270}
+        h={90}
+        label="The running container sees"
+      />
+      <Label
+        x={495}
+        y={74}
+        anchor="middle"
+        tone={step === 0 ? "bad" : "good"}
+        mono
+      >
+        {step === 0 ? "app.py  .env" : "app.py"}
+      </Label>
+      <Region x={360} y={124} w={270} h={90} label="The image stores" />
+      <Label x={495} y={178} anchor="middle" tone={step === 2 ? "good" : "bad"}>
+        {step === 2 ? "no .env in any layer" : ".env in the COPY layer"}
+      </Label>
+    </Diagram>
+  ),
+
+  "container-restrictions": () => (
+    <Diagram height={300}>
+      <Region
+        x={10}
+        y={14}
+        w={620}
+        h={258}
+        label="cgroup limits: 128 MiB memory, half a CPU, 64 processes"
+      />
+      <Region x={40} y={46} w={560} h={196} label="read-only filesystem" />
+      <Region x={70} y={78} w={500} h={134} label="no new privileges" />
+      <Region
+        x={100}
+        y={110}
+        w={440}
+        h={72}
+        label="all capabilities dropped"
+        tone="focus"
+      />
+      <Box
+        x={130}
+        y={136}
+        w={380}
+        h={36}
+        title="Dispatch, running as UID 10001"
+        tone="good"
+      />
+      <Label x={320} y={292} anchor="middle" size="small" tone="muted">
+        Each layer closes a different door; together they limit the damage.
+      </Label>
     </Diagram>
   ),
 } satisfies Drawings;

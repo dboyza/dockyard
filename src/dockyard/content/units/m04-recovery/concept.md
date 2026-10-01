@@ -9,6 +9,12 @@ That matters: copying a database file while it changes can produce an inconsiste
 For this small SQLite database, stopping writes before copying is sufficient.
 Later, PostgreSQL uses its own backup tool instead of copying its live files.
 
+Step through the whole recovery before running it.
+
+```figure
+backup-restore
+```
+
 ## Create and inspect the archive
 
 ```sh
@@ -64,3 +70,7 @@ The **recovery point** is the time represented by the recovered data.
 Changes made after that point will be missing.
 The **recovery time** is how long it takes to make useful service available again.
 For this exercise, identify both from your actual steps rather than from the archive’s filename.
+
+```figure
+recovery-point-time
+```

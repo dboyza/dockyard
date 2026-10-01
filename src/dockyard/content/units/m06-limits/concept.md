@@ -4,6 +4,10 @@ If an attacker ever took control of Dispatch, what could they do with it?
 This lesson adds several independent restrictions, each closing a different door.
 None of them replaces fixing bugs in the application, but together they limit the damage.
 
+```figure
+container-restrictions
+```
+
 **Who the process runs as.**
 Dispatch already runs as user 10001, not root, so it cannot change most files.
 

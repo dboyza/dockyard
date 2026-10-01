@@ -44,6 +44,10 @@ depends_on:
 `service_healthy` waits for its health check to succeed.
 You need both the dependency’s health check and this condition.
 
+```figure
+health-wait
+```
+
 Give the API its own health check as well:
 
 ```yaml

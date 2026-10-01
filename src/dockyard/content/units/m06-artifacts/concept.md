@@ -23,6 +23,10 @@ docker image inspect --format '{{.Os}}/{{.Architecture}}' "$DOCKYARD_IMAGE"
 
 Many public images are published for several platforms under one name, and Docker automatically downloads the one that matches your computer.
 
+```figure
+image-platforms
+```
+
 ## Secrets in images
 
 This lab’s Dockerfile uses `COPY . .`, which copies everything in the build folder into the image.
@@ -32,6 +36,10 @@ Here it is a harmless fake, but in real projects this is a classic way to leak s
 Remember that an image is a stack of layers.
 If one step copies `.env` in and a later step deletes it, the file is hidden from the running container but still stored in the earlier layer.
 Anyone who has the image can extract it.
+
+```figure
+secret-in-layers
+```
 
 The fix is to stop the file entering the build at all.
 Either copy only the files the app needs, or list the file in a `.dockerignore` file next to the Dockerfile:

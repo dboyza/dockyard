@@ -13,12 +13,20 @@ It is reachable only from your computer and uses no password, which is fine for 
 An image name has three parts: where it lives, what it is called, and which version.
 In `127.0.0.1:49804/dispatch:release`, the registry is `127.0.0.1:49804`, the repository is `dispatch`, and the tag is `release`.
 
+```figure
+image-reference
+```
+
 A **tag** is a label someone can move to a different image at any time.
 If you deploy `dispatch:release` today and someone pushes a new build under the same tag tomorrow, the same name now means different content.
 
 A **digest** is a fingerprint calculated from the image’s content, written like `sha256:3f1a...`.
 If the content changes, the digest changes.
 Deploying `dispatch@sha256:3f1a...` always gets exactly the same image, which is why careful teams deploy by digest.
+
+```figure
+tags-vs-digests
+```
 
 ## Push an image
 

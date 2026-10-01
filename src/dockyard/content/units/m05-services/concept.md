@@ -15,6 +15,10 @@ PostgreSQL keeps the actual list of unfinished jobs.
 Workers also check that list periodically, so a lost Redis notification does not lose the job itself.
 The Python code is supplied; your job is to connect and run these roles.
 
+```figure
+compose-project
+```
+
 ## Begin with the API
 
 Create `compose.yaml` in the workspace.
@@ -89,6 +93,10 @@ Compose replaces `${VARIABLE}` with a value from your terminal while reading the
 This is called **interpolation**.
 Only values listed under a service’s `environment` are then passed into that container.
 A variable in your terminal is not automatically given to every service.
+
+```figure
+compose-interpolation
+```
 
 Dockyard also sets `COMPOSE_PROJECT_NAME` so commands in this lab address its own project.
 Keep all commands in the lab terminal and workspace.
