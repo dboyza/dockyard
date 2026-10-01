@@ -29,7 +29,9 @@ export function ExamsPage({ model }: { model: Workbench }) {
   );
   const [evidence, setEvidence] = useState<Assessment | null>(null);
   const exam = catalog?.exams.find((item) => item.id === examId);
-  const attempts = state.exams.filter((item) => item.exam_id === examId);
+  const attempts = state.exams
+    .filter((item) => item.exam_id === examId)
+    .sort((a, b) => Date.parse(b.started_at) - Date.parse(a.started_at));
   const running = attempts.find((item) =>
     ["active", "grading"].includes(item.state),
   );
@@ -142,9 +144,11 @@ export function ExamsPage({ model }: { model: Workbench }) {
         </section>
         <div className="placement-grid">
           {catalog?.exams.map((item) => {
-            const latest = state.exams.find(
-              (attempt) => attempt.exam_id === item.id,
-            );
+            const latest = state.exams
+              .filter((attempt) => attempt.exam_id === item.id)
+              .sort(
+                (a, b) => Date.parse(b.started_at) - Date.parse(a.started_at),
+              )[0];
             return (
               <article className="panel" key={item.id}>
                 <div className="eyebrow">
@@ -422,7 +426,8 @@ export function ExamsPage({ model }: { model: Workbench }) {
           <section className="panel exam-task">
             <div className="section-heading">
               <span className="eyebrow">
-                TASK {exam.tasks.indexOf(selected) + 1} · {selected.weight}%
+                Task {exam.tasks.indexOf(selected) + 1} · {selected.weight}{" "}
+                points
               </span>
               {attempt?.state === "active" && (
                 <button

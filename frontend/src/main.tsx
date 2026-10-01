@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useWorkbench } from "./useWorkbench";
 import {
   Moon,
@@ -17,6 +17,7 @@ import {
   Library,
   Activity,
   Settings,
+  Timer,
 } from "lucide-react";
 import { OverviewPage } from "./OverviewPage";
 import { CoursePage } from "./CoursePage";
@@ -261,6 +262,7 @@ function App() {
             )}
           </label>
           <div className="topbar-actions">
+            <ExamClock model={model} />
             {offline && (
               <span className="connection-indicator offline" role="status">
                 <span />
@@ -362,6 +364,36 @@ function App() {
         </div>
       </dialog>
     </div>
+  );
+}
+
+function ExamClock({ model }: { model: ReturnType<typeof useWorkbench> }) {
+  const active = model.state.exams.find((item) => item.state === "active");
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [active]);
+  if (!active || (model.page === "exams" && model.examId === active.exam_id))
+    return null;
+  const remaining = Math.max(
+    0,
+    Math.ceil((Date.parse(active.deadline) - now) / 1000),
+  );
+  const hours = Math.floor(remaining / 3600);
+  const minutes = Math.floor((remaining % 3600) / 60);
+  const seconds = remaining % 60;
+  const label = `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  return (
+    <button
+      className={`exam-clock ${remaining < 600 ? "low" : ""}`}
+      onClick={() => model.openExam(active.exam_id)}
+      aria-label={`Practice exam in progress, ${hours} hours ${minutes} minutes left. Open the exam.`}
+    >
+      <Timer size={15} />
+      {label}
+    </button>
   );
 }
 

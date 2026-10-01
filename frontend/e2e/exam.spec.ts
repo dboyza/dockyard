@@ -90,7 +90,7 @@ test('saved exam reports remain readable after environment cleanup', async ({ pa
   await history.selectOption({ index: 0 });
   await expect(report.getByRole('heading', { name: '100 / 100', exact: true })).toBeVisible();
   if (await page.getByRole('button', { name: 'Use light theme' }).isVisible()) await page.getByRole('button', { name: 'Use light theme' }).click();
-  await expect.poll(() => page.getByRole('button', { name: 'Review reference solution' }).evaluate(element => getComputedStyle(element).backgroundColor)).toBe('rgb(234, 240, 247)');
+  await expect.poll(() => page.getByRole('button', { name: 'Review reference solution' }).evaluate(element => getComputedStyle(element).backgroundColor)).toBe('rgb(239, 242, 245)');
   for (const width of [1440, 480]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

@@ -3310,3 +3310,17 @@ button.stat:hover:not(:disabled) {
   gap: 8px;
   justify-items: start;
 }
+.exam-clock {
+  min-height: 30px;
+  padding: 3px 10px;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  border-color: var(--blue);
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+.exam-clock.low {
+  border-color: var(--amber);
+  background: var(--amber-soft);
+}
