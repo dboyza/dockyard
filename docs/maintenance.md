@@ -29,15 +29,11 @@ Build browser assets with `npm --prefix frontend run build`.
 ## Fast verification
 
 ```sh
-.venv/bin/ruff check src/dockyard
-.venv/bin/mypy src/dockyard
-.venv/bin/pytest -q -m 'not integration'
-npm --prefix frontend run lint
-npm --prefix frontend run format:check
-npm --prefix frontend run check
-npm --prefix frontend run test
-.venv/bin/python -m dockyard --data-dir .runtime/audit audit
+./scripts/check.sh
 ```
+
+It runs, in order: Ruff lint and format checks and mypy, the non-integration Python tests, frontend lint, formatting, TypeScript, and unit tests, the structural curriculum audit in a temporary profile, and `pip-audit` plus `npm audit` dependency advisory scans.
+It stops at the first failure.
 
 Some backend checks bind local loopback sockets.
 A restricted execution sandbox may require explicit local-network permission even though those tests do not contact an external service.
