@@ -59,6 +59,10 @@ Here is the part people get wrong: a toleration only *allows* a Pod onto a taint
 It does not *send* it there.
 To dedicate nodes to an application you need both: a taint to keep others off, and affinity (or a nodeSelector) to bring the application on.
 
+```figure
+taints-affinity
+```
+
 ## Spreading copies across nodes
 
 A **topology spread constraint** keeps copies from bunching up:
@@ -79,6 +83,10 @@ topologySpreadConstraints:
 `matchLabelKeys: [pod-template-hash]` means each new rollout is spread on its own, ignoring old Pods on their way out.
 
 Spread rules only act when a Pod is placed; Kubernetes does not move running Pods later to rebalance them.
+
+```figure
+topology-spread
+```
 
 ## Priority: which Pods win when a cluster is full
 

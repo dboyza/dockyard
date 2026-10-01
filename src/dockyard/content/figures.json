@@ -947,5 +947,83 @@
         "text": "Changing the selector to version=green moves all traffic to release 2 at once. Blue stays ready in case you switch back."
       }
     ]
+  },
+  {
+    "id": "requests-limits",
+    "title": "Requests reserve; limits cap",
+    "caption": "Going over a CPU limit slows a container down; going over a memory limit kills it.",
+    "description": "Two bars. For CPU, a request of 50m is reserved and the limit is 300m; a busy container is held at the limit and slows down, which is called throttling. For memory, a request of 64Mi is reserved and the limit is 192Mi; a container that uses more than the limit is killed with OOMKilled."
+  },
+  {
+    "id": "qos-classes",
+    "title": "Quality of service classes",
+    "caption": "Requests and limits decide which Pods are evicted first when memory runs short.",
+    "description": "Three classes from left to right: BestEffort, with no requests or limits; Burstable, with some requests or limits, which includes Dispatch's API; and Guaranteed, with requests equal to limits. When a node runs short of memory, BestEffort Pods are evicted first and Guaranteed Pods last."
+  },
+  {
+    "id": "taints-affinity",
+    "title": "Taints repel, tolerations allow, affinity attracts",
+    "caption": "Dedicating nodes takes a taint on the nodes plus a toleration and affinity on the Pod.",
+    "description": "A sequence in three steps with three nodes: the control plane, tainted control-plane:NoSchedule, and two workers, each tainted pool=apps:NoSchedule and labelled pool=apps. A Dispatch Pod with no toleration is refused by every node because of untolerated taints and stays Pending. With a toleration for pool=apps, the workers allow it but nothing sends it there, and the control plane still refuses. With the toleration and affinity for pool=apps, the control plane is excluded because it is not pool=apps, and Pods are placed on the workers.",
+    "steps": [
+      {
+        "label": "Taints keep it out",
+        "text": "Every node has a taint the Pod does not tolerate, so it stays Pending."
+      },
+      {
+        "label": "A toleration only allows",
+        "text": "The workers now allow the Pod, but a toleration never sends a Pod anywhere."
+      },
+      {
+        "label": "Affinity sends it there",
+        "text": "Affinity requires pool=apps nodes, so the Pod is placed on the workers, while their taint keeps other Pods away."
+      }
+    ]
+  },
+  {
+    "id": "topology-spread",
+    "title": "Spreading copies across nodes",
+    "caption": "maxSkew limits how uneven the copies may be across the chosen topology.",
+    "description": "Two panels, each with two worker nodes. Without a spread rule, both Pods can land on one node, a skew of 2. With maxSkew 1 by hostname, the Pods are placed one on each node, a skew of 0."
+  },
+  {
+    "id": "hpa-math",
+    "title": "How the HPA chooses a replica count",
+    "caption": "Utilization is measured against the request, then the result is kept between min and max.",
+    "description": "The Metrics Server measures each Pod, the HPA compares the measurement with its target, and the Deployment is scaled from 2 to 4 replicas, repeating every few seconds. The calculation: the target is 50% of the 50m request, so aim for 25m per Pod; the measured average use is 100m per Pod, 200%; desired is 2 Pods times 200% divided by 50%, which is 8 Pods; capped at maxReplicas, that is 4 Pods, and the HPA reports ScalingLimited."
+  },
+  {
+    "id": "pdb-drain",
+    "title": "A drain that respects a PodDisruptionBudget",
+    "caption": "Evictions wait whenever one more would take the application below its minimum.",
+    "description": "A sequence in five steps with a PodDisruptionBudget of minAvailable 2. At first worker runs Pods A and B and worker2 runs Pod C, so 3 are ready. Draining cordons worker and evicts Pod A; its replacement A′ starts on worker2, leaving 2 ready. Pod B must wait, because evicting it would leave only 1 ready. Once A′ is ready, B is evicted and B′ starts, still 2 ready. Finally all three run on worker2 and 3 are ready.",
+    "steps": [
+      {
+        "label": "Before the drain",
+        "text": "Three Pods are ready, one more than the budget’s minimum of two."
+      },
+      {
+        "label": "Evict one Pod",
+        "text": "The drain cordons worker and evicts Pod A. Its replacement starts on worker2, and two Pods stay ready."
+      },
+      {
+        "label": "The next eviction waits",
+        "text": "Evicting Pod B now would leave one ready Pod, below the minimum, so the drain waits."
+      },
+      {
+        "label": "Continue",
+        "text": "With A′ ready, Pod B can be evicted, and its replacement starts on worker2."
+      },
+      {
+        "label": "The drain completes",
+        "text": "worker is empty and all three Pods run on worker2. The budget was never broken."
+      }
+    ]
+  },
+  {
+    "id": "prestop-timeline",
+    "title": "Why a short preStop helps",
+    "caption": "The pause lets the Service stop sending traffic before the process begins to exit.",
+    "description": "A timeline from the moment a Pod is deleted. On the Service lane, the endpoint is being removed for the first moments, and after that no new traffic arrives. On the container lane, the preStop hook sleeps for 5 seconds while still serving, then SIGTERM arrives and the process exits. The grace period ends at 20 seconds."
   }
 ]

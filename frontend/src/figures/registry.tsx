@@ -7,6 +7,7 @@ import { dispatch } from "./dispatch";
 import { docker } from "./docker";
 import { foundations } from "./foundations";
 import { kubernetes } from "./kubernetes";
+import { platform } from "./platform";
 
 export type Drawing = (props: { step?: number }) => ReactElement;
 export type Drawings = Partial<Record<FigureId, Drawing>>;
@@ -24,6 +25,7 @@ export const drawings: Record<FigureId, Drawing> = {
   ...dispatch,
   ...docker,
   ...kubernetes,
+  ...platform,
   ...models,
 };
 

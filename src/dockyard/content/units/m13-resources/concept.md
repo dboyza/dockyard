@@ -19,6 +19,10 @@ resources:
 Requests are about *reservation*, not actual use.
 A container that does nothing but requests 99 CPUs can never be scheduled on a smaller node.
 
+```figure
+requests-limits
+```
+
 ## Units
 
 | Written | Means |
@@ -40,6 +44,10 @@ From its requests and limits, Kubernetes puts each Pod in a **QoS class**:
 
 When a node runs short of memory, BestEffort Pods are evicted first and Guaranteed Pods last.
 Dispatch’s API is Burstable, because its requests are lower than its limits.
+
+```figure
+qos-classes
+```
 
 ## Seeing what a node has
 

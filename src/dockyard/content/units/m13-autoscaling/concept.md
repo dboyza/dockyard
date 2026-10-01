@@ -41,6 +41,10 @@ If average use rises to 100m, that is 200% of the request, so the HPA wants abou
 
 That is why an HPA cannot work without requests.
 
+```figure
+hpa-math
+```
+
 ## Where the measurements come from
 
 The HPA reads CPU and memory numbers from the **Metrics Server**, which this lab has installed for you.
@@ -96,9 +100,17 @@ A PDB applies to **voluntary** disruptions, such as `kubectl drain` evicting Pod
 It cannot stop a node crashing, and it cannot create spare capacity.
 A budget that allows no disruption at all will block every drain.
 
+```figure
+pdb-drain
+```
+
 ## Letting in-flight requests finish
 
 When a Pod is removed, two things happen at the same time: Services stop sending it new traffic, and the container receives SIGTERM.
 If the process exits instantly, requests still on their way can fail.
 Dispatch’s Deployment has a short `preStop` hook, `sleep 5`, which gives the Service change time to spread before SIGTERM arrives, within its twenty-second grace period.
 The [official termination flow](https://kubernetes.io/docs/tutorials/services/pods-and-endpoint-termination-flow/) explains this in detail.
+
+```figure
+prestop-timeline
+```
