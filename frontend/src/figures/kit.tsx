@@ -140,6 +140,7 @@ export function Region({
   h,
   label,
   tone = "default",
+  labelBelow = false,
 }: {
   x: number;
   y: number;
@@ -147,11 +148,13 @@ export function Region({
   h: number;
   label: string;
   tone?: Tone;
+  /** Put the label along the bottom edge, clear of arrows arriving from above. */
+  labelBelow?: boolean;
 }) {
   return (
     <g className={`fig-region tone-${tone}`}>
       <rect x={x} y={y} width={w} height={h} rx="10" />
-      <text x={x + 12} y={y + 19}>
+      <text x={x + 12} y={labelBelow ? y + h - 10 : y + 19}>
         {label}
       </text>
     </g>

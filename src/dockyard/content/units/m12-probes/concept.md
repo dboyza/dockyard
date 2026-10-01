@@ -20,6 +20,10 @@ The classic mistake is using a dependency check such as `/readyz` for liveness.
 If the database goes down, every API Pod fails liveness and restarts over and over, and none of that fixes the database.
 Readiness is the right place for dependency checks: the Pods stop receiving traffic, then come back by themselves when the database recovers.
 
+```figure
+probe-roles
+```
+
 ## Probe settings
 
 ```yaml

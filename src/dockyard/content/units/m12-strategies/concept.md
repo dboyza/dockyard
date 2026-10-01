@@ -22,12 +22,20 @@ For exact percentages you need a routing layer with traffic weights, such as Gat
 
 A second Service, `dispatch-preview`, selects `track=canary` only, so you can test the candidate directly before it gets any real traffic.
 
+```figure
+canary-split
+```
+
 ## Blue-green releases
 
 **Blue-green** keeps two complete copies, blue (current) and green (new).
 The Service points at one of them through its selector.
 After testing green, you switch the selector, and all traffic moves at once.
 Switching back is just as quick, but you need capacity for two full copies.
+
+```figure
+blue-green
+```
 
 ## Deciding whether to promote
 

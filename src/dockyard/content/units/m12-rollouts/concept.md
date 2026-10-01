@@ -18,6 +18,10 @@ strategy:
 
 With two replicas, `maxSurge: 1` and `maxUnavailable: 0` means: start one new Pod, wait until it is ready, remove one old Pod, and repeat.
 You never drop below two ready Pods, as long as there is room for the third, and as long as readiness really means ready.
+```figure
+rolling-update
+```
+
 The other strategy type, `Recreate`, stops all old Pods before starting new ones, which causes downtime but avoids two versions running at once.
 
 ## Changing the image
@@ -85,6 +89,10 @@ The new Pods cannot start: look for `ErrImageNeverPull` or `ImagePullBackOff` in
 Worse, this Deployment’s update settings are `maxUnavailable: 2` and `maxSurge: 0`, so Kubernetes was allowed to remove both working Pods before any new one was ready.
 Compare the READY column of the two ReplicaSets: the old one was scaled to zero, and the new one has no ready Pods, so Dispatch is completely down.
 With `maxUnavailable: 0` and `maxSurge: 1`, the same bad image would have left the old Pods serving while the new one failed.
+
+```figure
+bad-rollout
+```
 The failed attempt remains visible as its own ReplicaSet.
 
 `rollout undo` fixes the live Deployment, but not your file.

@@ -8,6 +8,10 @@ A **StatefulSet** provides exactly that.
 - Pods start in order, `db-0` first, and stop in reverse order.
 - `volumeClaimTemplates` create a separate claim for each Pod, named after it, such as `data-db-0`. A replacement `db-0` gets the same claim back.
 
+```figure
+statefulset-identity
+```
+
 What a StatefulSet does **not** do is copy data between Pods.
 Setting PostgreSQL’s replicas to 3 would give you three unrelated, empty databases, not one replicated database.
 Replication is the database software’s job.

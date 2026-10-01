@@ -811,5 +811,141 @@
         "text": "The route is attached, but backendRefs names a port the Service does not have, so ResolvedRefs is False."
       }
     ]
+  },
+  {
+    "id": "storage-chain",
+    "title": "From PostgreSQL’s folder to a disk",
+    "caption": "Every link must be present; a claim the Pod does not use protects nothing.",
+    "description": "A chain of six links. PostgreSQL writes its data folder. The container's volumeMounts mount the volume named data there. The Pod's volumes entry says data uses the claim, through claimName. The PersistentVolumeClaim is the request in the dispatch namespace. It is Bound to a PersistentVolume, the real storage, which is cluster-wide. That volume is a disk on the node where the bytes live. A StorageClass named standard provisions the PersistentVolume."
+  },
+  {
+    "id": "wait-first-consumer",
+    "title": "Why the claim waits",
+    "caption": "With WaitForFirstConsumer, storage is created only once Kubernetes knows which node needs it.",
+    "description": "A sequence in four steps. The claim dispatch-data uses a WaitForFirstConsumer class and is Pending while no Pod uses it. A db Pod that uses the claim is scheduled to a node. The provisioner creates a PersistentVolume on that node. The claim becomes Bound and the Pod runs.",
+    "steps": [
+      {
+        "label": "No Pod yet",
+        "text": "Nothing uses the claim, so it stays Pending. This is expected, not an error."
+      },
+      {
+        "label": "A Pod is scheduled",
+        "text": "A Pod that uses the claim is placed on a node, so Kubernetes now knows where the storage must be."
+      },
+      {
+        "label": "A volume is created there",
+        "text": "The provisioner creates a PersistentVolume on that node."
+      },
+      {
+        "label": "Bound",
+        "text": "The claim binds to the new volume, and the Pod starts with its storage mounted."
+      }
+    ]
+  },
+  {
+    "id": "statefulset-identity",
+    "title": "Same name, same claim, new Pod",
+    "caption": "A replacement db-0 is a new Pod that takes over the old one’s name and storage.",
+    "description": "A sequence in three steps. The StatefulSet db runs the Pod db-0, with UID 4c1e, attached to the claim data-db-0. The headless Service db-headless, with clusterIP None, gives it the DNS name db-0.db-headless.dispatch. When db-0 is deleted, its claim is kept. The replacement is again named db-0 and reattaches data-db-0, but it has a new UID, 9a7f, because it is a new Pod.",
+    "steps": [
+      {
+        "label": "db-0 and its claim",
+        "text": "The StatefulSet’s first Pod is always named db-0 and uses its own claim, data-db-0."
+      },
+      {
+        "label": "db-0 is deleted",
+        "text": "The Pod is gone, but its claim, and the data on it, remain."
+      },
+      {
+        "label": "A new db-0",
+        "text": "The replacement gets the same name and the same claim, with a new UID because it is a different Pod."
+      }
+    ]
+  },
+  {
+    "id": "independent-restore",
+    "title": "Restore into something separate",
+    "caption": "Prove a backup by restoring it next to the original, then comparing rows.",
+    "description": "pg_dump reads the source database in db-0, whose claim is data-db-0, and writes dispatch.sql on your computer. psql restores that file into db-restore-0, which has its own claim data-db-restore-0. Separate claims and volumes mean a bad restore cannot harm the source. A warning says --schema-only produces tables but no rows."
+  },
+  {
+    "id": "probe-roles",
+    "title": "What each probe does, and when",
+    "caption": "Readiness controls traffic; liveness controls restarts. Only liveness should ignore dependencies.",
+    "description": "A sequence in four steps showing the startup probe on /startupz, the liveness probe on /healthz, and the readiness probe on /readyz, beside the Pod's place in the Service endpoints and its restart count. While warming up, only the startup probe checks, and the Pod is not yet in the endpoints. Once started, liveness and readiness pass and the Pod is included. When the database is down, readiness fails and the Pod is removed from the endpoints, but liveness still passes, so nothing restarts. If liveness wrongly uses /readyz, the database outage makes liveness fail too, and restarts keep climbing.",
+    "steps": [
+      {
+        "label": "Warming up",
+        "text": "Only the startup probe runs. The Pod receives no traffic yet, and the other probes wait."
+      },
+      {
+        "label": "Started",
+        "text": "The startup probe has passed. Liveness and readiness both pass, so the Pod is added to the Service’s endpoints."
+      },
+      {
+        "label": "The database goes down",
+        "text": "Readiness fails, so the Pod stops receiving traffic. Liveness only checks the process, so nothing is restarted."
+      },
+      {
+        "label": "The classic mistake",
+        "text": "With liveness on /readyz, the same outage makes liveness fail too. Kubernetes restarts the container again and again, which cannot fix the database."
+      }
+    ]
+  },
+  {
+    "id": "rolling-update",
+    "title": "A rolling update, one Pod at a time",
+    "caption": "With maxSurge 1 and maxUnavailable 0, two Pods stay ready throughout.",
+    "description": "A sequence in five steps for two replicas with maxSurge 1 and maxUnavailable 0. The old ReplicaSet runs two ready v1 Pods. A new v2 Pod starts, making three Pods in total. When it is ready, one v1 Pod is removed. A second v2 Pod starts. When it is ready, the last v1 Pod is removed, leaving two ready v2 Pods. Throughout, two Pods are ready.",
+    "steps": [
+      {
+        "label": "Before the update",
+        "text": "The old ReplicaSet runs two ready Pods of v1."
+      },
+      {
+        "label": "Surge one new Pod",
+        "text": "maxSurge 1 allows a third Pod, so the first v2 Pod starts while both v1 Pods keep serving."
+      },
+      {
+        "label": "Replace one old Pod",
+        "text": "Once the new Pod is ready, one v1 Pod is removed. Two Pods are still ready."
+      },
+      {
+        "label": "Surge again",
+        "text": "The second v2 Pod starts beside the remaining v1 Pod."
+      },
+      {
+        "label": "Finished",
+        "text": "The last v1 Pod is removed. The new ReplicaSet runs two ready v2 Pods."
+      }
+    ]
+  },
+  {
+    "id": "bad-rollout",
+    "title": "How update settings limit the damage",
+    "caption": "A bad image stalls both rollouts, but only one of them takes the service down.",
+    "description": "Two panels showing the same missing image. With maxUnavailable 2 and maxSurge 0, both v1 Pods are removed and both v2 Pods cannot start, leaving 0 ready Pods: an outage. With maxUnavailable 0 and maxSurge 1, both v1 Pods stay ready while one v2 Pod cannot start, leaving 2 ready Pods still serving. A note says either way the rollout is stuck, but only one setting keeps Dispatch up."
+  },
+  {
+    "id": "canary-split",
+    "title": "A canary beside the stable release",
+    "caption": "The main Service selects both tracks; the preview Service selects only the canary.",
+    "description": "The Service dispatch selects app=dispatch and sends traffic to three Pods: two release 1 Pods from the Deployment dispatch with track=stable, and one release 2 Pod from dispatch-canary with track=canary. The Service dispatch-preview selects track=canary and reaches only the canary Pod. A note says about one in three connections to dispatch reaches the canary."
+  },
+  {
+    "id": "blue-green",
+    "title": "Blue-green: switch everything at once",
+    "caption": "Changing one selector moves all traffic; changing it back undoes the switch.",
+    "description": "A sequence in two steps. The Service dispatch has the selector version=blue, so all traffic goes to the two blue Pods running release 1, while the two green Pods running release 2 wait. After the selector changes to version=green, all traffic goes to the green Pods at once, and the blue Pods remain available for a quick switch back.",
+    "steps": [
+      {
+        "label": "Blue is live",
+        "text": "The Service selects version=blue, so every request reaches release 1. Green runs release 2 but receives no traffic."
+      },
+      {
+        "label": "Switch to green",
+        "text": "Changing the selector to version=green moves all traffic to release 2 at once. Blue stays ready in case you switch back."
+      }
+    ]
   }
 ]

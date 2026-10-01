@@ -24,6 +24,10 @@ A large file and a zero exit code do not prove the rows are in it.
 ## Restore somewhere separate
 
 Never test a backup by restoring over the original: if the backup is bad, you have just destroyed the only good copy.
+
+```figure
+independent-restore
+```
 This lab has a second database, the `db-restore` StatefulSet, with its own claim and volume.
 Restoring into it looks like this:
 

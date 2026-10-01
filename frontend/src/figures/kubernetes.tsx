@@ -4,6 +4,7 @@ import {
   Code,
   Cylinder,
   Diagram,
+  File,
   Label,
   Line,
   Region,
@@ -1590,6 +1591,681 @@ export const kubernetes = {
             </g>
           ))
         )}
+      </Diagram>
+    );
+  },
+  "storage-chain": () => {
+    const steps: [number, number, string, string, Tone][] = [
+      [10, 30, "PostgreSQL", "writes its data folder", "good"],
+      [230, 30, "volumeMounts", "container: mount data there", "default"],
+      [450, 30, "volumes", "Pod: data uses the claim", "default"],
+      [450, 150, "PersistentVolumeClaim", "the request, in dispatch", "focus"],
+      [230, 150, "PersistentVolume", "real storage, cluster-wide", "default"],
+      [10, 150, "Disk on the node", "where the bytes live", "default"],
+    ];
+    return (
+      <Diagram height={316}>
+        {steps.map(([x, y, title, sub, tone]) => (
+          <Box
+            key={title}
+            x={x}
+            y={y}
+            w={180}
+            h={64}
+            title={title}
+            sub={sub}
+            tone={tone}
+          />
+        ))}
+        <Arrow
+          points={[
+            [190, 62],
+            [226, 62],
+          ]}
+        />
+        <Arrow
+          points={[
+            [410, 62],
+            [446, 62],
+          ]}
+        />
+        <Arrow
+          points={[
+            [540, 94],
+            [540, 146],
+          ]}
+          label="claimName"
+          labelAt={[540, 124]}
+        />
+        <Arrow
+          points={[
+            [450, 182],
+            [414, 182],
+          ]}
+          tone="good"
+          label="Bound"
+          labelAt={[432, 174]}
+        />
+        <Arrow
+          points={[
+            [230, 182],
+            [194, 182],
+          ]}
+        />
+        <Box
+          x={230}
+          y={250}
+          w={180}
+          h={54}
+          title="StorageClass"
+          sub="standard: creates PVs"
+          dashed
+        />
+        <Arrow
+          points={[
+            [320, 250],
+            [320, 218],
+          ]}
+          dashed
+          label="provisions"
+          labelAt={[366, 238]}
+        />
+      </Diagram>
+    );
+  },
+
+  "wait-first-consumer": ({ step = 0 }) => (
+    <Diagram height={250} step={step}>
+      <Box
+        x={10}
+        y={40}
+        w={190}
+        h={60}
+        title="PVC dispatch-data"
+        sub={step === 3 ? "Bound" : "Pending"}
+        tone={step === 3 ? "good" : "warn"}
+      />
+      <Tag x={105} y={130} text="WaitForFirstConsumer" />
+      <Region x={260} y={14} w={370} h={222} label="Node" />
+      <Reveal from={1}>
+        <Box
+          x={290}
+          y={44}
+          w={170}
+          h={56}
+          title="db Pod"
+          sub={step === 3 ? "running" : "scheduled here"}
+          tone={step === 3 ? "good" : "focus"}
+        />
+        <Arrow
+          points={[
+            [290, 72],
+            [204, 72],
+          ]}
+          dashed
+          label="uses"
+          labelAt={[247, 64]}
+        />
+      </Reveal>
+      <Reveal from={2}>
+        <Cylinder
+          x={290}
+          y={140}
+          w={170}
+          h={74}
+          title="PersistentVolume"
+          sub="created on this node"
+          tone={step === 3 ? "good" : "focus"}
+        />
+      </Reveal>
+      <Reveal from={3}>
+        <Arrow
+          points={[
+            [200, 92],
+            [286, 170],
+          ]}
+          tone="good"
+          label="Bound"
+          labelAt={[230, 146]}
+        />
+      </Reveal>
+    </Diagram>
+  ),
+
+  "statefulset-identity": ({ step = 0 }) => (
+    <Diagram height={272} step={step}>
+      <Box
+        x={10}
+        y={20}
+        w={200}
+        h={56}
+        title="StatefulSet db"
+        sub="replicas: 1"
+        tone="focus"
+      />
+      <Box
+        x={430}
+        y={20}
+        w={200}
+        h={56}
+        title="Service db-headless"
+        sub="clusterIP: None"
+      />
+      <Label x={530} y={98} anchor="middle" size="small" tone="muted" mono>
+        db-0.db-headless.dispatch…
+      </Label>
+      <Arrow
+        points={[
+          [110, 76],
+          [230, 110],
+        ]}
+      />
+      <Box
+        x={220}
+        y={110}
+        w={200}
+        h={56}
+        title="db-0"
+        sub={
+          step === 0
+            ? "UID 4c1e…"
+            : step === 1
+              ? "deleted"
+              : "UID 9a7f…, a new Pod"
+        }
+        tone={step === 1 ? "muted" : step === 2 ? "good" : "default"}
+        dashed={step === 1}
+        mono
+      />
+      <Arrow
+        points={[
+          [530, 106],
+          [424, 132],
+        ]}
+        dashed
+        tone="muted"
+      />
+      <Line
+        points={[
+          [320, 166],
+          [320, 190],
+        ]}
+      />
+      <Cylinder
+        x={220}
+        y={190}
+        w={200}
+        h={70}
+        title="data-db-0"
+        sub={step === 1 ? "kept while db-0 is gone" : "claim for db-0"}
+        tone="focus"
+      />
+    </Diagram>
+  ),
+
+  "independent-restore": () => (
+    <Diagram height={262}>
+      <Box
+        x={10}
+        y={30}
+        w={170}
+        h={56}
+        title="db-0"
+        sub="the source"
+        tone="good"
+        mono
+      />
+      <Cylinder x={10} y={112} w={170} h={60} title="data-db-0" />
+      <Line
+        points={[
+          [95, 86],
+          [95, 112],
+        ]}
+      />
+      <Box
+        x={460}
+        y={30}
+        w={170}
+        h={56}
+        title="db-restore-0"
+        sub="the restore target"
+        tone="focus"
+        mono
+      />
+      <Cylinder x={460} y={112} w={170} h={60} title="data-db-restore-0" />
+      <Line
+        points={[
+          [545, 86],
+          [545, 112],
+        ]}
+      />
+      <File x={307} y={40} name="dispatch.sql" tone="focus" />
+      <Label x={320} y={110} anchor="middle" size="small" tone="muted">
+        on your computer
+      </Label>
+      <Arrow
+        points={[
+          [180, 58],
+          [298, 58],
+        ]}
+        tone="focus"
+        label="pg_dump"
+        labelAt={[239, 50]}
+      />
+      <Arrow
+        points={[
+          [342, 58],
+          [456, 58],
+        ]}
+        tone="focus"
+        label="psql"
+        labelAt={[399, 50]}
+      />
+      <Label x={320} y={206} anchor="middle" size="small" tone="muted">
+        Separate claims and volumes, so a bad restore cannot harm the source.
+      </Label>
+      <Tag
+        x={320}
+        y={238}
+        text="--schema-only: tables, but no rows"
+        tone="bad"
+      />
+    </Diagram>
+  ),
+  "probe-roles": ({ step = 0 }) => {
+    const probes: [string, string][] = [
+      ["startup probe", "/startupz"],
+      ["liveness probe", step === 3 ? "/readyz (wrong)" : "/healthz"],
+      ["readiness probe", "/readyz"],
+    ];
+    const states: [string, Tone][][] = [
+      [
+        ["checking: warming up", "warn"],
+        ["waits for startup", "muted"],
+        ["waits for startup", "muted"],
+      ],
+      [
+        ["passed", "good"],
+        ["passing", "good"],
+        ["passing", "good"],
+      ],
+      [
+        ["passed", "good"],
+        ["passing", "good"],
+        ["failing: no database", "warn"],
+      ],
+      [
+        ["passed", "good"],
+        ["failing: restarts", "bad"],
+        ["failing: no database", "warn"],
+      ],
+    ];
+    const endpoints: [string, Tone][] = [
+      ["not included yet", "muted"],
+      ["included", "good"],
+      ["removed until ready", "warn"],
+      ["removed", "warn"],
+    ];
+    const restarts: [string, Tone][] = [
+      ["0", "default"],
+      ["0", "default"],
+      ["0: nothing restarts", "good"],
+      ["climbing", "bad"],
+    ];
+    return (
+      <Diagram height={238} step={step}>
+        {probes.map(([name, path], index) => (
+          <g key={name}>
+            <Label x={20} y={50 + index * 64}>
+              {name}
+            </Label>
+            <Label x={20} y={70 + index * 64} size="small" tone="muted" mono>
+              {path}
+            </Label>
+            <Tag
+              x={320}
+              y={56 + index * 64}
+              text={states[step][index][0]}
+              tone={states[step][index][1]}
+            />
+          </g>
+        ))}
+        <Box
+          x={460}
+          y={34}
+          w={170}
+          h={60}
+          title="Service endpoints"
+          sub={endpoints[step][0]}
+          tone={endpoints[step][1]}
+        />
+        <Box
+          x={460}
+          y={142}
+          w={170}
+          h={60}
+          title="Restarts"
+          sub={restarts[step][0]}
+          tone={restarts[step][1]}
+        />
+      </Diagram>
+    );
+  },
+
+  "rolling-update": ({ step = 0 }) => {
+    const plan: { old: string[]; next: string[] }[] = [
+      { old: ["ready", "ready"], next: [] },
+      { old: ["ready", "ready"], next: ["starting"] },
+      { old: ["ready"], next: ["ready"] },
+      { old: ["ready"], next: ["ready", "starting"] },
+      { old: [], next: ["ready", "ready"] },
+    ];
+    const { old, next } = plan[step];
+    const total = old.length + next.length;
+    return (
+      <Diagram height={236} step={step}>
+        <Label x={10} y={18} size="small" tone="muted" mono>
+          replicas: 2 maxSurge: 1 maxUnavailable: 0
+        </Label>
+        <Region x={10} y={34} w={300} h={140} label="Old ReplicaSet: v1" />
+        <Region
+          x={330}
+          y={34}
+          w={300}
+          h={140}
+          label="New ReplicaSet: v2"
+          tone="focus"
+        />
+        {old.map((state, index) => (
+          <Box
+            key={`old-${index}`}
+            x={30 + index * 140}
+            y={84}
+            w={120}
+            h={50}
+            title="Pod v1"
+            sub={state}
+            tone="good"
+          />
+        ))}
+        {next.map((state, index) => (
+          <Box
+            key={`new-${index}`}
+            x={350 + index * 140}
+            y={84}
+            w={120}
+            h={50}
+            title="Pod v2"
+            sub={state}
+            tone={state === "ready" ? "good" : "warn"}
+          />
+        ))}
+        <Tag
+          x={320}
+          y={208}
+          text={`ready: 2 of 2   Pods in total: ${total}`}
+          tone="good"
+        />
+      </Diagram>
+    );
+  },
+
+  "bad-rollout": () => (
+    <Diagram height={268}>
+      <Label x={320} y={18} anchor="middle" size="small" tone="muted">
+        The same missing image, under two update settings
+      </Label>
+      <Region
+        x={10}
+        y={30}
+        w={300}
+        h={196}
+        label="maxUnavailable: 2, maxSurge: 0"
+        tone="bad"
+      />
+      <Box
+        x={30}
+        y={62}
+        w={120}
+        h={46}
+        title="Pod v1"
+        sub="removed"
+        tone="muted"
+        dashed
+      />
+      <Box
+        x={170}
+        y={62}
+        w={120}
+        h={46}
+        title="Pod v1"
+        sub="removed"
+        tone="muted"
+        dashed
+      />
+      <Box
+        x={30}
+        y={126}
+        w={120}
+        h={46}
+        title="Pod v2"
+        sub="cannot start"
+        tone="bad"
+      />
+      <Box
+        x={170}
+        y={126}
+        w={120}
+        h={46}
+        title="Pod v2"
+        sub="cannot start"
+        tone="bad"
+      />
+      <Tag x={160} y={200} text="0 ready: an outage" tone="bad" />
+
+      <Region
+        x={330}
+        y={30}
+        w={300}
+        h={196}
+        label="maxUnavailable: 0, maxSurge: 1"
+        tone="good"
+      />
+      <Box
+        x={350}
+        y={62}
+        w={120}
+        h={46}
+        title="Pod v1"
+        sub="ready"
+        tone="good"
+      />
+      <Box
+        x={490}
+        y={62}
+        w={120}
+        h={46}
+        title="Pod v1"
+        sub="ready"
+        tone="good"
+      />
+      <Box
+        x={350}
+        y={126}
+        w={120}
+        h={46}
+        title="Pod v2"
+        sub="cannot start"
+        tone="bad"
+      />
+      <Tag x={480} y={200} text="2 ready: still serving" tone="good" />
+      <Label x={320} y={256} anchor="middle" size="small" tone="muted">
+        Either way the rollout is stuck; only one setting keeps Dispatch up.
+      </Label>
+    </Diagram>
+  ),
+
+  "canary-split": () => (
+    <Diagram height={286}>
+      <Box
+        x={40}
+        y={14}
+        w={230}
+        h={56}
+        title="Service dispatch"
+        sub="selects app=dispatch"
+        tone="focus"
+      />
+      <Box
+        x={390}
+        y={14}
+        w={230}
+        h={56}
+        title="Service dispatch-preview"
+        sub="selects track=canary"
+        tone="warn"
+      />
+      <Region
+        x={10}
+        y={118}
+        w={380}
+        h={140}
+        label="Deployment dispatch, track=stable"
+        labelBelow
+      />
+      <Region
+        x={410}
+        y={118}
+        w={220}
+        h={140}
+        label="dispatch-canary, track=canary"
+        labelBelow
+        tone="warn"
+      />
+      <Box
+        x={30}
+        y={160}
+        w={160}
+        h={56}
+        title="Pod"
+        sub="release 1"
+        tone="good"
+      />
+      <Box
+        x={210}
+        y={160}
+        w={160}
+        h={56}
+        title="Pod"
+        sub="release 1"
+        tone="good"
+      />
+      <Box
+        x={440}
+        y={160}
+        w={160}
+        h={56}
+        title="Pod"
+        sub="release 2"
+        tone="warn"
+      />
+      <Arrow
+        points={[
+          [110, 70],
+          [110, 156],
+        ]}
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [155, 70],
+          [290, 156],
+        ]}
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [230, 70],
+          [500, 156],
+        ]}
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [540, 70],
+          [540, 156],
+        ]}
+        tone="warn"
+      />
+      <Label x={320} y={274} anchor="middle" size="small" tone="muted">
+        About one in three connections to dispatch reaches the canary.
+      </Label>
+    </Diagram>
+  ),
+
+  "blue-green": ({ step = 0 }) => {
+    const live = step === 0 ? "blue" : "green";
+    return (
+      <Diagram height={250} step={step}>
+        <Box
+          x={210}
+          y={14}
+          w={220}
+          h={60}
+          title="Service dispatch"
+          sub={`selector: version=${live}`}
+          tone="focus"
+        />
+        {(["blue", "green"] as const).map((name, index) => {
+          const x = index === 0 ? 10 : 330;
+          const selected = name === live;
+          return (
+            <g key={name}>
+              <Region
+                x={x}
+                y={120}
+                w={300}
+                h={124}
+                label={
+                  index === 0
+                    ? "blue: the current release"
+                    : "green: the new release"
+                }
+                tone={selected ? "good" : "default"}
+              />
+              {[0, 1].map((pod) => (
+                <Box
+                  key={pod}
+                  x={x + 20 + pod * 140}
+                  y={156}
+                  w={120}
+                  h={50}
+                  title="Pod"
+                  sub={index === 0 ? "release 1" : "release 2"}
+                  tone={selected ? "good" : "muted"}
+                />
+              ))}
+              {selected && (
+                <>
+                  <Arrow
+                    points={[
+                      [300, 74],
+                      [x + 80, 152],
+                    ]}
+                    tone="good"
+                  />
+                  <Arrow
+                    points={[
+                      [340, 74],
+                      [x + 220, 152],
+                    ]}
+                    tone="good"
+                  />
+                </>
+              )}
+            </g>
+          );
+        })}
       </Diagram>
     );
   },

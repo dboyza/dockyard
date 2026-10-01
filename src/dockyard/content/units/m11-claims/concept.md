@@ -17,13 +17,8 @@ The claim and PV are then **Bound** to each other.
 
 The chain from database to disk looks like this:
 
-```text
-PostgreSQL writes /var/lib/postgresql/data
-  -> volumeMounts entry in the container
-  -> volumes entry in the Pod, pointing at a claim
-  -> PersistentVolumeClaim dispatch-data
-  -> PersistentVolume (created for the claim)
-  -> real storage on the node
+```figure
+storage-chain
 ```
 
 A claim that exists but is not referenced by the Pod does nothing for your data.
@@ -78,6 +73,10 @@ This lab’s `standard` class uses `volumeBindingMode: WaitForFirstConsumer`.
 That means no PV is created until a Pod that uses the claim is scheduled, so the storage can be made on the node where the Pod will run.
 Until then, `describe pvc` shows an event such as “waiting for first consumer to be created before binding”.
 Pending is normal here; read the events before assuming something is broken.
+
+```figure
+wait-first-consumer
+```
 
 ## Changing the database’s storage safely
 
