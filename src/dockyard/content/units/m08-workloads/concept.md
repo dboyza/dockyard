@@ -15,6 +15,10 @@ Choosing the right one is a core exam skill, and it saves you from fighting the 
 A Pod created on its own, with no controller, is called a **bare Pod**.
 Nothing replaces it if it is deleted or its node fails, so avoid them for real work.
 
+```figure
+workload-controllers
+```
+
 Dispatch’s workers are a good fit for a Deployment: any worker can take any job, and they coordinate through the database, not through memory.
 
 ## This lab
@@ -36,6 +40,10 @@ kubectl get nodes --show-labels
 For a DaemonSet, `DESIRED` is the number of nodes it is allowed to run on.
 Here it is 0, because no node has the label `dockyard.invalid/node=missing`.
 A DaemonSet has no replicas setting to increase; you fix it by changing where it is allowed to run.
+
+```figure
+daemonset-selector
+```
 
 ## Two ways to change the worker count
 
@@ -73,6 +81,10 @@ Any free port on your computer will do; if 18080 is already in use, the command 
 The `&` runs the tunnel in the background so you can keep typing; `kill %1` closes it when you are done.
 The worker’s log should show your job being completed.
 Port-forwarding is for testing and debugging; real users reach applications through Services and Ingress, which later lessons cover.
+
+```figure
+port-forward
+```
 
 ## Generate these objects quickly
 

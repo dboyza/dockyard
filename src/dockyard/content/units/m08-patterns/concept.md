@@ -18,6 +18,10 @@ It survives a single container restarting, but is deleted when the Pod is delete
 Each container lists the volumes it uses under `volumeMounts`, by name.
 Two containers only share a folder if they mount the *same* volume name.
 
+```figure
+pod-patterns
+```
+
 ## This lab
 
 Each worker Pod has three containers:

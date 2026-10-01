@@ -21,6 +21,10 @@ A **Service** gives requests a stable destination even when the Pods change.
 Later lessons explain how it finds the right Pods.
 For now, keep the supplied Service settings unchanged.
 
+```figure
+k8s-object-chain
+```
+
 ## Read the starting state
 
 Prepare the lab, then open its lab terminal.
@@ -56,6 +60,10 @@ kubectl get pods -n dispatch -l app=dispatch -o wide
 `sh run.sh` runs the script in your workspace.
 It replaces the image placeholder with this lab’s image and sends your files to Kubernetes using `kubectl apply`.
 An `apply` success means the API accepted your request, not that the containers have finished starting.
+
+```figure
+apply-to-running
+```
 `rollout status` waits for the Deployment to become available.
 The final command lists Pods with the label `app=dispatch`; `-o wide` includes their IP addresses and node names.
 Look for two Pods with `1/1` in the READY column.

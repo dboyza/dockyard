@@ -22,6 +22,10 @@ You will see Kubernetes’ own components in `kube-system`.
 Leave that namespace alone; it is not a place for applications.
 `default` is simply the namespace used when none is chosen; it is not special.
 
+```figure
+namespaces
+```
+
 When something seems to be missing, try `-A` first: it may just be in a different namespace.
 
 ## Labels and selectors
@@ -32,6 +36,10 @@ Labels mean nothing to Kubernetes on their own; they are for finding and groupin
 A **selector** is a rule that picks objects by their labels.
 A Service’s selector decides which Pods receive its traffic.
 It looks only at labels, never at names: a Service called `dispatch` has no idea that a Deployment is also called `dispatch`.
+
+```figure
+labels-selectors
+```
 
 ```sh
 kubectl get pods --show-labels

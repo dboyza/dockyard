@@ -10,6 +10,10 @@ kubectl reads a **kubeconfig** file to know which clusters exist, how to log in 
 A **context** is a saved combination of a cluster, a login, and a default namespace.
 Whichever context is **current** receives every command you type.
 
+```figure
+kubeconfig-contexts
+```
+
 ```sh
 kubectl config current-context
 kubectl config get-contexts
@@ -44,6 +48,10 @@ python render.py deployment.yaml | kubectl apply --dry-run=server -f -
 `kubectl diff` shows what would change in the live object.
 It exits with status 1 when there are differences, which is normal.
 `--dry-run=server` sends the object to the cluster for full checking without saving it, so you find mistakes before anything changes.
+
+```figure
+change-workflow
+```
 
 After a real `apply`, remember that acceptance is not the same as success: `kubectl rollout status` tells you when the new Pods are actually running.
 

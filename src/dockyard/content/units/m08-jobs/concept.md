@@ -40,6 +40,10 @@ spec:
 
 `kubectl get job batch-import` shows progress in the `COMPLETIONS` column, such as `2/5`.
 
+```figure
+job-parallel
+```
+
 ## Reading a cron schedule
 
 A CronJob’s `schedule` uses the classic Linux **cron** format: five fields separated by spaces.
@@ -77,6 +81,10 @@ Always put quotes around the schedule in YAML, because `*` has a special meaning
 
 A schedule does not guarantee a task runs exactly once: a run can be retried, or missed if the cluster is down.
 Write maintenance tasks so running them twice does no harm.
+
+```figure
+cron-runs
+```
 
 ## This lab
 

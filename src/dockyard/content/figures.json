@@ -557,5 +557,129 @@
     "title": "Independent layers of restriction",
     "caption": "If one layer is bypassed, the others still apply.",
     "description": "Nested layers around Dispatch, which runs as UID 10001. From the inside out: all capabilities dropped, no new privileges, a read-only filesystem, and cgroup limits of 128 MiB memory, half a CPU, and 64 processes. A note says each layer closes a different door and together they limit the damage."
+  },
+  {
+    "id": "k8s-object-chain",
+    "title": "The objects behind one application",
+    "caption": "You describe the Deployment; Kubernetes creates the ReplicaSet and Pods, and the Service sends requests to them.",
+    "description": "A Deployment with replicas 2 manages a ReplicaSet that keeps 2 Pods running. The ReplicaSet creates two Pods, each holding a Dispatch container. A Service, which provides a stable address, sends requests to both Pods. A note says you change the Deployment and Kubernetes creates and replaces the rest."
+  },
+  {
+    "id": "apply-to-running",
+    "title": "From kubectl apply to running Pods",
+    "caption": "apply records what you want; controllers and the node do the work afterwards.",
+    "description": "A sequence in four steps. kubectl apply sends the manifest to the API server, which stores the desired state and replies that the deployment is configured, though nothing is running yet. The Deployment controller notices it wants 2 Pods but sees 0. It creates two Pods, which start on the node. Finally both Pods are 1/1 ready and kubectl rollout status reports a successful rollout.",
+    "steps": [
+      {
+        "label": "apply is accepted",
+        "text": "The API server stores your desired state and replies at once. No container has started yet."
+      },
+      {
+        "label": "A controller notices",
+        "text": "The Deployment controller compares what you asked for with what exists: it wants 2 Pods and sees 0."
+      },
+      {
+        "label": "Pods are created",
+        "text": "The controller creates Pods, and the node starts their containers. Until they pass their checks, they are only starting."
+      },
+      {
+        "label": "The rollout finishes",
+        "text": "Both Pods are ready, so kubectl rollout status reports success. This is the moment the change has really happened."
+      }
+    ]
+  },
+  {
+    "id": "labels-selectors",
+    "title": "How a Service chooses its Pods",
+    "caption": "A selector matches labels exactly; one wrong character leaves the Service with nowhere to send requests.",
+    "description": "A sequence in two steps. The Service dispatch has the selector app=dispatch. Two Pods labelled app=dispatch are selected and a Pod labelled app=worker is not, so the EndpointSlice lists 2 ready Pod addresses. When the selector is mistyped as app=dispach, no Pod matches, and the EndpointSlice is empty.",
+    "steps": [
+      {
+        "label": "The selector matches",
+        "text": "Both Pods labelled app=dispatch are selected, and their ready addresses appear in the EndpointSlice."
+      },
+      {
+        "label": "One wrong character",
+        "text": "With the selector app=dispach, no Pod matches. The Service still exists, but its EndpointSlice is empty."
+      }
+    ]
+  },
+  {
+    "id": "namespaces",
+    "title": "Namespaces inside one cluster",
+    "caption": "Names only need to be unique within a namespace; some objects belong to the whole cluster.",
+    "description": "A cluster containing three namespaces. The dispatch namespace holds the Service dispatch and your Pods. A staging namespace also holds a Service named dispatch, which is allowed because it is a different namespace. The kube-system namespace holds Kubernetes itself and should be left alone. Nodes and other cluster-wide objects belong to no namespace."
+  },
+  {
+    "id": "kubeconfig-contexts",
+    "title": "What a context combines",
+    "caption": "Switching context changes which cluster, login, and namespace your next command uses.",
+    "description": "Inside the kubeconfig file named by KUBECONFIG, a cluster entry says where the API is, a user entry says how to log in, and a namespace such as dispatch is the default. A context combines the cluster, the user, and the namespace. The current-context setting points at one context, and every kubectl command goes to it."
+  },
+  {
+    "id": "change-workflow",
+    "title": "A careful change, step by step",
+    "caption": "The first three steps cost nothing and catch most mistakes before they reach the cluster.",
+    "description": "Five steps in a row: render fills in the image, diff shows what would change, a server dry run checks the object, apply saves it in the cluster, and rollout status confirms the Pods are ready. The first three change nothing; the last two change the cluster. A note says to check which context you are using before any of these steps."
+  },
+  {
+    "id": "workload-controllers",
+    "title": "Five controllers, five shapes of work",
+    "caption": "Choose the controller by how the work should behave, not by habit.",
+    "description": "Five panels. A Deployment runs interchangeable copies, as many as you ask for. A DaemonSet runs one Pod on each matching node, shown with node 1 and node 2. A StatefulSet runs db-0 and db-1, each with its own stable name and data volume. A Job runs a Pod that does its task until it succeeds and is Completed. A CronJob uses a schedule such as 0 2 * * * to create a new Job, which creates a Pod."
+  },
+  {
+    "id": "daemonset-selector",
+    "title": "Why the DaemonSet wants zero Pods",
+    "caption": "A DaemonSet’s desired count comes from the nodes it may use.",
+    "description": "A sequence in two steps. The DaemonSet's node selector requires a label ending node=missing, which the lab's node does not have; its labels include kubernetes.io/os=linux. No label matches, so DESIRED is 0 and no Pod is placed. When the selector matches the node, DESIRED becomes 1 and a node-agent Pod runs on it.",
+    "steps": [
+      {
+        "label": "No node matches",
+        "text": "The node selector asks for a label no node has, so the DaemonSet wants zero Pods."
+      },
+      {
+        "label": "The selector matches",
+        "text": "Once the selector allows the lab’s node, the DaemonSet wants one Pod there, and runs it."
+      }
+    ]
+  },
+  {
+    "id": "port-forward",
+    "title": "What kubectl port-forward connects",
+    "caption": "The tunnel exists only while the command runs.",
+    "description": "On your computer, curl sends a request to 127.0.0.1 port 18080, where kubectl port-forward is listening. kubectl carries the request through a temporary tunnel into the cluster, to the Service dispatch on port 8080, which sends it to a Pod running the API on port 8080."
+  },
+  {
+    "id": "pod-patterns",
+    "title": "Init containers, sidecars, and a shared folder",
+    "caption": "Init containers finish first; main containers and sidecars share files only through the same volume.",
+    "description": "A sequence in three steps inside one worker Pod with the containers configure, worker, and observer and an emptyDir volume named shared. First the init container configure runs and writes worker.conf into shared while the others wait. Then configure has completed, and worker and the observer sidecar both read worker.conf from shared. In the broken version, the observer mounts a different emptyDir named scratch, which is empty, so it cannot see the file.",
+    "steps": [
+      {
+        "label": "The init container runs first",
+        "text": "configure writes worker.conf into the shared emptyDir. The main containers wait until it finishes."
+      },
+      {
+        "label": "Then the main containers",
+        "text": "worker and the observer sidecar start, and both read worker.conf from the same volume."
+      },
+      {
+        "label": "A different volume shares nothing",
+        "text": "If the observer mounts another emptyDir, it sees that volume’s empty folder instead of the file."
+      }
+    ]
+  },
+  {
+    "id": "job-parallel",
+    "title": "Completions, parallelism, and a retry",
+    "caption": "At most two Pods run at once, and the Job keeps going until five have succeeded.",
+    "description": "A timeline with two slots for completions 5, parallelism 2, and backoffLimit 2. Slot 1 runs Pod 1, Pod 3, and Pod 5, all successful. Slot 2 runs Pod 2, which succeeds, then Pod 4, which fails, then a retry, which succeeds. The Job reaches 5 of 5 completions and is Complete. A note says a failed Pod counts toward backoffLimit and the Job retries with a new Pod."
+  },
+  {
+    "id": "cron-runs",
+    "title": "A schedule meeting a slow run",
+    "caption": "concurrencyPolicy decides what happens when a run is still going at the next scheduled time.",
+    "description": "A timeline for the schedule */5 * * * * with concurrencyPolicy Forbid. At 02:00 a Job runs and succeeds. At 02:05 a Job starts and is still running at 02:10, so the 02:10 run is skipped. At 02:15 a new Job runs and succeeds. A note says kubectl create job --from=cronjob starts a run immediately without waiting."
   }
 ]
