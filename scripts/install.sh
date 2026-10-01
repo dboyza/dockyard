@@ -29,11 +29,12 @@ if [ ! -x .runtime/installed/bin/python ]; then
 fi
 # Install exactly the locked, hash-verified runtime dependencies, then the freshly built app.
 locked="$(mktemp)"
-trap 'rm -f "$locked"' EXIT
+check_profile="$(mktemp -d)"
+trap 'rm -rf "$locked" "$check_profile"' EXIT
 uv export --frozen --no-dev --no-emit-project --quiet --cache-dir .tools/uv-cache -o "$locked"
 uv pip sync --quiet --cache-dir .tools/uv-cache --python .runtime/installed/bin/python \
   --require-hashes "$locked"
 uv pip install --quiet --cache-dir .tools/uv-cache --python .runtime/installed/bin/python \
   --no-deps "dist/dockyard_learn-$(.venv/bin/python -c 'import dockyard; print(dockyard.__version__)')-py3-none-any.whl"
-./dockyard --data-dir .runtime/install-check audit
+./dockyard --data-dir "$check_profile" audit
 printf '\nInstalled. Run ./dockyard to open the learning workbench.\n'
