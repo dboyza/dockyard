@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import threading
@@ -282,3 +283,64 @@ def prepare(
         finally:
             with service._lock:
                 service._cancels.pop(identity, None)
+
+
+def pulled_references(service: Service) -> list[str]:
+    """Image references Dockyard itself created: cache aliases and pinned digest pulls.
+
+    Superseded pins are recognized through their alias, which records the digest prefix.
+    Tags that people add themselves are never included, even on the same image.
+    """
+    listed = run(
+        ["docker", "image", "ls", "--digests", "--format", "{{json .}}"],
+        env=docker_environment(service),
+        timeout=30,
+    )
+    service._require(listed)
+    rows = [json.loads(line) for line in listed.stdout.splitlines()]
+    aliases = [
+        f"{row['Repository']}:{row['Tag']}"
+        for row in rows
+        if row["Repository"].startswith("dockyard-cache/") and row["Tag"] != "<none>"
+    ]
+    prefixes = {alias.rpartition(":")[2] for alias in aliases}
+    pinned = set()
+    for reference in COMPATIBILITY["images"].values():
+        name, _, digest = reference.partition("@")
+        if ":" in name.rpartition("/")[2]:
+            name = name.rpartition(":")[0]
+        pinned.add(f"{name}@{digest}")
+    digests = [
+        f"{row['Repository']}@{row['Digest']}"
+        for row in rows
+        if row["Tag"] == "<none>"
+        and row["Digest"].startswith("sha256:")
+        and (
+            f"{row['Repository']}@{row['Digest']}" in pinned
+            or row["Digest"].removeprefix("sha256:")[:16] in prefixes
+        )
+    ]
+    return sorted(aliases) + sorted(set(digests))
+
+
+def docker_environment(service: Service) -> dict[str, str]:
+    env = service.environment()
+    env["DOCKER_HOST"] = service._docker_endpoint()
+    return env
+
+
+def clean(service: Service) -> dict[str, Any]:
+    """Remove Dockyard's downloaded images without forcing; images in use stay."""
+    with operation_lock(service.directory / "locks", "cache-prefetch"):
+        env = docker_environment(service)
+        removed, kept = [], []
+        for reference in pulled_references(service):
+            result = run(["docker", "image", "rm", reference], env=env, timeout=60)
+            message = result.stderr.lower()
+            if result.ok or "no such image" in message:
+                removed.append(reference)
+            elif "conflict" in message or "in use" in message or "being used" in message:
+                kept.append(reference)
+            else:
+                service._require(result)
+        return {"removed": removed, "kept_in_use": kept}

@@ -41,6 +41,7 @@ examples:
   dockyard lab shell m01-processes      open a shell inside that lab
   dockyard lab check m01-processes      check your work
   dockyard cache prepare module:7       download what module 7 needs ahead of time
+  dockyard cache clean                  list, then with --yes remove, downloaded images
   dockyard progress export backup.zip   back up your progress
 """
 
@@ -111,6 +112,15 @@ def parser() -> argparse.ArgumentParser:
             help="all (default), unit:ID, module:1-24, or track:1-4",
         )
         command.add_argument("--json", action="store_true", help="print machine-readable JSON")
+    removal = caches.add_parser(
+        "clean",
+        help="remove the container images Dockyard downloaded",
+        description="Remove the container images Dockyard downloaded. Images that a container "
+        "still uses, and tags you added yourself, are kept. Lessons download them again "
+        "when needed.",
+    )
+    removal.add_argument("--yes", action="store_true", help="remove after showing the list")
+    removal.add_argument("--json", action="store_true", help="print machine-readable JSON")
     portfolio = commands.add_parser(
         "portfolio", help="export your passed missions' files as a readable portfolio"
     )
@@ -365,6 +375,28 @@ def main() -> None:
                 print(report["evidence_boundary"])
             if report["issues"]:
                 raise SystemExit(1)
+        elif arguments.command == "cache" and arguments.cache_action == "clean":
+            from dockyard.cache import clean, pulled_references
+
+            if arguments.yes:
+                outcome = clean(service)
+                if arguments.json:
+                    print(json.dumps(outcome, indent=2))
+                else:
+                    print(f"Removed {len(outcome['removed'])} image references.")
+                    for reference in outcome["kept_in_use"]:
+                        print(f"  kept, still used by a container: {reference}")
+            else:
+                references = pulled_references(service)
+                if arguments.json:
+                    print(json.dumps(references, indent=2))
+                elif not references:
+                    print("Dockyard has no downloaded images to remove.")
+                else:
+                    for reference in references:
+                        print("  " + reference)
+                    print(f"These {len(references)} image references would be removed.")
+                    print("To remove them, repeat this command with --yes.")
         elif arguments.command == "cache":
             from dockyard.cache import inventory, prepare
 

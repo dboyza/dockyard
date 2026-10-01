@@ -115,7 +115,7 @@ Running and failed labs are never reclaimed.
 | Resume | Restarts the preserved environment and verifies its prior readiness contract. |
 | Reset | Backs up the complete workspace and restores the starter environment. |
 | Independent retake | Performs a reset and starts a fresh learning-support record. |
-| Clean up | Removes verified owned runtime resources while preserving source and history. |
+| Clean up | Removes verified owned runtime resources, their anonymous volumes, and images named for the lab or pushed to its registry, while preserving source and history. |
 
 Closing a browser does not stop lab resources.
 Stop the environment explicitly when you finish a session.
@@ -157,6 +157,7 @@ Older curriculum evidence stays historical and remains due for reassessment wher
 ./dockyard lab status
 ./dockyard cache status module:1
 ./dockyard cache prepare track:1
+./dockyard cache clean
 ./dockyard progress export ./my-learning.zip
 ./dockyard progress import ./my-learning.zip
 ./dockyard progress import ./my-learning.zip --yes
@@ -166,6 +167,7 @@ Older curriculum evidence stays historical and remains due for reassessment wher
 Export destinations must not already exist.
 The import command previews by default; `--yes` merges the validated archive.
 `lab status` without an activity lists every lab in the profile.
+`cache clean` lists the container images Dockyard downloaded; add `--yes` to remove them.
 Most commands print a readable summary; add `--json` for scripts.
 Use `--data-dir PATH` before the subcommand for a separate profile.
 Native VM profiles require short paths because Lima Unix socket paths have a fixed length limit.
@@ -187,11 +189,12 @@ Do not attach private runtime data or credentials to a report.
 ## Remove Dockyard
 
 1. Back up anything you want to keep with `./dockyard progress export dockyard-backup.zip`.
-2. Remove every lab's containers, clusters, networks, and VMs with `./dockyard lab clean --all --yes`.
+2. Remove every lab's containers, clusters, networks, volumes, images, and VMs with `./dockyard lab clean --all --yes`.
    It only touches resources Dockyard recorded as its own.
-3. Delete the data folder that `./dockyard doctor` lists as **Data**.
-   It holds your progress, notes, lab workspaces, and the tools and images Dockyard downloaded for that profile.
-4. Delete the Dockyard folder you installed from, which also removes its private `.runtime` and `.tools` folders.
+3. Remove the container images Dockyard downloaded, such as Python and PostgreSQL, with `./dockyard cache clean --yes`.
+   It keeps any image a container still uses and any tag you added yourself.
+4. Delete the data folder that `./dockyard doctor` lists as **Data**.
+   It holds your progress, notes, lab workspaces, and the tools and VM images Dockyard downloaded for that profile.
+5. Delete the Dockyard folder you installed from, which also removes its private `.runtime` and `.tools` folders.
 
 Dockyard never edits your shell configuration, Docker settings, or default kubeconfig, so there is nothing to undo there.
-Base images it pulled, such as Python and PostgreSQL, stay in Docker; remove them with `docker image ls` and `docker image rm` if you want the disk space back.

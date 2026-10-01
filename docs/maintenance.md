@@ -54,6 +54,8 @@ DOCKYARD_VM_INTEGRATION=1 .venv/bin/pytest -q tests/test_linux_integration.py
 The curriculum audit starts every activity's real fixture, verifies its declared failure criteria, applies the reference, and checks actual passing behavior.
 Additional suites test valid alternatives, ownership preservation, Stop/Resume, reset backups, and supported versus independent attempts.
 A file-only curriculum audit does not replace runtime evidence.
+Every suite cleans the labs it creates, including their images and anonymous volumes.
+Afterwards, `./dockyard cache clean --yes` removes the pinned images the suites downloaded.
 
 ## Installed browser checks
 
