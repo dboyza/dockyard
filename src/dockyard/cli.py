@@ -131,6 +131,10 @@ def parser() -> argparse.ArgumentParser:
             )
         if action in {"reset", "retake", "clean"}:
             operation.add_argument("--yes", action="store_true", help="confirm the change")
+        if action == "clean":
+            operation.add_argument(
+                "--all", action="store_true", help="clean every lab in this profile"
+            )
     return result
 
 
@@ -153,6 +157,8 @@ def print_doctor(report: dict[str, Any]) -> None:
         print(f"  {label:<14}{value}")
 
     print(f"Dockyard {__version__}")
+    if report.get("data_dir"):
+        line("Data", report["data_dir"])
     line("System", f"{'WSL 2' if report['wsl'] else report['system']} {report['architecture']}")
     memory = report["host_memory_gib"]
     free = report["memory_free_percent"]
@@ -217,6 +223,8 @@ def print_lab(unit_id: str, lab: dict[str, Any] | None) -> None:
         print(f"  Next       dockyard lab shell {unit_id}")
     elif lab["state"] == "stopped":
         print(f"  Next       dockyard lab resume {unit_id}")
+    elif lab["state"] == "absent":
+        print(f"  Next       dockyard lab prepare {unit_id}")
 
 
 def open_local_browser(url: str) -> None:
@@ -296,7 +304,7 @@ def main() -> None:
                 service, getattr(arguments, "port", 8768), not getattr(arguments, "no_open", False)
             )
         elif arguments.command == "doctor":
-            report = service.doctor()
+            report = {**service.doctor(), "data_dir": str(service.directory)}
             if arguments.json:
                 print(json.dumps(report, indent=2))
             else:
@@ -372,6 +380,23 @@ def main() -> None:
                 )
                 for unit in members:
                     print(f"  {unit.id:24} {kinds[unit.kind]:9} {unit.title}")
+        elif arguments.command == "lab" and getattr(arguments, "all", False):
+            if arguments.unit:
+                raise LabError("Use either a unit or --all, not both.")
+            owned = [item for item in service.store.labs() if item.state != "absent"]
+            plural = "lab" if len(owned) == 1 else "labs"
+            if not owned:
+                print("No labs to clean.")
+                return
+            if not arguments.yes:
+                raise LabError(
+                    f"This removes the resources of {len(owned)} {plural}. "
+                    "Your files and progress stay. Repeat with --yes to continue."
+                )
+            for item in owned:
+                print(f"Cleaning {item.unit_id}…", flush=True)
+                service.perform(item.unit_id, "clean")
+            print(f"Cleaned {len(owned)} {plural}.")
         elif arguments.command == "lab":
             if not arguments.unit:
                 raise LabError("Name a unit, or run this command inside its Dockyard lab shell.")

@@ -74,3 +74,15 @@ def test_frontend_and_python_versions_match():
 
     package = json.loads((Path(__file__).parents[1] / "frontend/package.json").read_text())
     assert package["version"] == __version__
+
+
+def test_clean_all_needs_confirmation_and_reports_nothing_to_clean(tmp_path, monkeypatch, capsys):
+    import sys
+
+    from dockyard import cli
+
+    monkeypatch.setattr(
+        sys, "argv", ["dockyard", "--data-dir", str(tmp_path), "lab", "clean", "--all"]
+    )
+    cli.main()
+    assert capsys.readouterr().out.strip() == "No labs to clean."

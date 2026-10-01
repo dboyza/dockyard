@@ -180,3 +180,15 @@ If a port is occupied, preserve the other process and prepare a fresh owned envi
 
 For a suspected defect, retain the activity ID, app version, operation, and visible diagnostic.
 Do not attach private runtime data or credentials to a report.
+
+## Remove Dockyard
+
+1. Back up anything you want to keep with `./dockyard progress export dockyard-backup.zip`.
+2. Remove every lab's containers, clusters, networks, and VMs with `./dockyard lab clean --all --yes`.
+   It only touches resources Dockyard recorded as its own.
+3. Delete the data folder that `./dockyard doctor` lists as **Data**.
+   It holds your progress, notes, lab workspaces, and the tools and images Dockyard downloaded for that profile.
+4. Delete the Dockyard folder you installed from, which also removes its private `.runtime` and `.tools` folders.
+
+Dockyard never edits your shell configuration, Docker settings, or default kubeconfig, so there is nothing to undo there.
+Base images it pulled, such as Python and PostgreSQL, stay in Docker; remove them with `docker image ls` and `docker image rm` if you want the disk space back.
