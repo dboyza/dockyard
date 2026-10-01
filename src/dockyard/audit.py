@@ -31,6 +31,9 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
     visited: set[str] = set()
 
     def visit(identity: str) -> None:
+        if identity not in units:
+            issues.append(f"A prerequisite names {identity}, which does not exist.")
+            return
         if identity in visiting:
             issues.append(f"Prerequisite cycle reaches {identity}.")
             return
