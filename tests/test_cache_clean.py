@@ -18,17 +18,26 @@ def test_only_dockyard_aliases_and_pinned_digests_are_selected(tmp_path, monkeyp
         {"Repository": "python", "Tag": "3.14", "Digest": python_digest},
         {"Repository": kind_name.rpartition(":")[0], "Tag": "<none>", "Digest": kind_digest},
         {"Repository": "dockyard-cache/metrics-server", "Tag": "ab" * 8, "Digest": "<none>"},
+        {"Repository": "dockyard-cache/git", "Tag": "ef" * 8, "Digest": "<none>"},
         {"Repository": "registry.k8s.io/metrics-server", "Tag": "<none>", "Digest": old},
         {"Repository": "ubuntu", "Tag": "<none>", "Digest": "sha256:" + "cd" * 32},
         {"Repository": "my-app", "Tag": "latest", "Digest": "<none>"},
     ]
     listed = ProcessResult((), 0, "\n".join(json.dumps(row) for row in rows), "", 0.0)
-    monkeypatch.setattr(cache, "run", lambda *args, **kwargs: listed)
+    # A digest pull Docker reports only through the alias's image, never as its own row.
+    hidden = "alpine/git@sha256:" + "ef" * 32
+    alias_digests = [json.dumps([f"python@{python_digest}"]), json.dumps([]), json.dumps([hidden])]
+    inspected = ProcessResult((), 0, "\n".join(alias_digests), "", 0.0)
+    monkeypatch.setattr(
+        cache, "run", lambda args, **kwargs: inspected if args[2] == "inspect" else listed
+    )
     monkeypatch.setenv("DOCKER_HOST", "unix:///nonexistent/docker.sock")
     selected = cache.pulled_references(Service(tmp_path))
     assert selected == [
+        "dockyard-cache/git:" + "ef" * 8,
         "dockyard-cache/metrics-server:" + "ab" * 8,
         "dockyard-cache/python:" + python_digest[7:23],
+        hidden,
         f"{kind_name.rpartition(':')[0]}@{kind_digest}",
         f"python@{python_digest}",
         f"registry.k8s.io/metrics-server@{old}",

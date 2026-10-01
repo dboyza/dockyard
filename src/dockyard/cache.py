@@ -291,18 +291,17 @@ def pulled_references(service: Service) -> list[str]:
     Superseded pins are recognized through their alias, which records the digest prefix.
     Tags that people add themselves are never included, even on the same image.
     """
+    env = docker_environment(service)
     listed = run(
-        ["docker", "image", "ls", "--digests", "--format", "{{json .}}"],
-        env=docker_environment(service),
-        timeout=30,
+        ["docker", "image", "ls", "--digests", "--format", "{{json .}}"], env=env, timeout=30
     )
     service._require(listed)
     rows = [json.loads(line) for line in listed.stdout.splitlines()]
-    aliases = [
+    aliases = sorted(
         f"{row['Repository']}:{row['Tag']}"
         for row in rows
         if row["Repository"].startswith("dockyard-cache/") and row["Tag"] != "<none>"
-    ]
+    )
     prefixes = {alias.rpartition(":")[2] for alias in aliases}
     pinned = set()
     for reference in COMPATIBILITY["images"].values():
@@ -310,17 +309,27 @@ def pulled_references(service: Service) -> list[str]:
         if ":" in name.rpartition("/")[2]:
             name = name.rpartition(":")[0]
         pinned.add(f"{name}@{digest}")
-    digests = [
+    candidates = {
         f"{row['Repository']}@{row['Digest']}"
         for row in rows
-        if row["Tag"] == "<none>"
-        and row["Digest"].startswith("sha256:")
-        and (
-            f"{row['Repository']}@{row['Digest']}" in pinned
-            or row["Digest"].removeprefix("sha256:")[:16] in prefixes
+        if row["Tag"] == "<none>" and row["Digest"].startswith("sha256:")
+    }
+    if aliases:
+        # Docker may list a digest pull only as part of the alias's image, not as its own row.
+        inspected = run(
+            ["docker", "image", "inspect", "--format", "{{json .RepoDigests}}", *aliases],
+            env=env,
+            timeout=30,
         )
-    ]
-    return sorted(aliases) + sorted(set(digests))
+        service._require(inspected)
+        for line in inspected.stdout.splitlines():
+            candidates.update(json.loads(line) or [])
+    digests = {
+        reference
+        for reference in candidates
+        if reference in pinned or reference.partition("@sha256:")[2][:16] in prefixes
+    }
+    return aliases + sorted(digests)
 
 
 def docker_environment(service: Service) -> dict[str, str]:
