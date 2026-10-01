@@ -743,5 +743,73 @@
         "text": "The RoleBinding only applies in dispatch, so the same request in another namespace is refused with 403."
       }
     ]
+  },
+  {
+    "id": "service-types",
+    "title": "Where each Service type lets clients in",
+    "caption": "ClusterIP serves the inside of the cluster; NodePort and LoadBalancer add doors from outside.",
+    "description": "A cluster containing the Service dispatch, which sends traffic to two Pods. Another Pod inside the cluster reaches the Service through its ClusterIP. Your computer reaches it through a node port such as node:30080, the NodePort path. An outside client reaches it through a load balancer address on port 8080, the LoadBalancer path. A note says each type builds on the one before it."
+  },
+  {
+    "id": "service-ports",
+    "title": "port versus targetPort",
+    "caption": "port is what clients use; targetPort must be where the application actually listens.",
+    "description": "A sequence in two steps. A client connects to the Service on port 8080. With targetPort 8080, the Service forwards to port 8080 in the Pod, where Dispatch listens, and the request succeeds. With targetPort 9090, the Service forwards to port 9090, where nothing listens: endpoints still exist, but every connection is refused.",
+    "steps": [
+      {
+        "label": "targetPort matches the listener",
+        "text": "The Service forwards from its port 8080 to the Pod’s port 8080, where Dispatch is listening."
+      },
+      {
+        "label": "targetPort is wrong",
+        "text": "The Service still selects the Pods, so its endpoints look healthy, but it forwards to 9090, where nothing listens."
+      }
+    ]
+  },
+  {
+    "id": "ingress-routing",
+    "title": "How an Ingress request is served",
+    "caption": "The Ingress is only rules; the controller reads them, terminates HTTPS, and forwards to the Service.",
+    "description": "Your client sends an HTTPS request for https://dispatch.test/ to Traefik, the ingress controller. Traefik reads the Ingress rules, which send dispatch.test/ to dispatch:8080, and takes its certificate from the Secret dispatch-tls holding tls.crt and tls.key. It forwards the request over HTTP to the Service dispatch on port 8080, and from there to the Pods."
+  },
+  {
+    "id": "tls-checks",
+    "title": "The two checks HTTPS makes",
+    "caption": "Trust and hostname are both checked before any data is exchanged.",
+    "description": "A sequence in three steps. Traefik presents a certificate for dispatch.test from the practice certificate authority to curl. With --cacert, curl trusts the issuer and confirms the hostname, so the request continues. Without --cacert, the issuer is unknown and curl refuses before checking the hostname. With --insecure, both checks are skipped: the connection is encrypted, but you no longer know who answered.",
+    "steps": [
+      {
+        "label": "Both checks pass",
+        "text": "--cacert makes curl trust the practice issuer, and the certificate is for dispatch.test, so the request continues."
+      },
+      {
+        "label": "An unknown issuer",
+        "text": "Without --cacert, curl does not trust who issued the certificate and stops immediately."
+      },
+      {
+        "label": "Skipping the checks",
+        "text": "--insecure skips both checks. The traffic is encrypted, but you cannot know who you are talking to."
+      }
+    ]
+  },
+  {
+    "id": "gateway-api",
+    "title": "Gateway API’s links and what breaks them",
+    "caption": "parentRefs attaches a route to a Gateway; backendRefs sends it to a Service. Status shows which link failed.",
+    "description": "A sequence in three steps. A GatewayClass named traefik is owned by admins, a Gateway with a listener on 8080 by the platform team, and an HTTPRoute by the app team. The HTTPRoute attaches to the Gateway through parentRefs and sends traffic to the Service dispatch on port 8080 through backendRefs. When everything links, the route's status shows Accepted, ResolvedRefs, and Programmed all True. When parentRefs names a Gateway that does not exist, there is no entry under Parents at all. When backendRefs uses a port the Service does not have, ResolvedRefs is False.",
+    "steps": [
+      {
+        "label": "Everything links",
+        "text": "The route is attached to the Gateway and its backend exists, so Accepted, ResolvedRefs, and Programmed are all True."
+      },
+      {
+        "label": "A missing parent",
+        "text": "parentRefs names a Gateway that does not exist, so no controller reports on the route: Parents is empty."
+      },
+      {
+        "label": "A wrong backend port",
+        "text": "The route is attached, but backendRefs names a port the Service does not have, so ResolvedRefs is False."
+      }
+    ]
   }
 ]

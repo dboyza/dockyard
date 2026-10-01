@@ -12,6 +12,10 @@ You met one in module 7; now you’ll look at the three common **types** of Serv
 
 Each type builds on the one before: a NodePort Service also has a ClusterIP, and a LoadBalancer Service also has a NodePort.
 
+```figure
+service-types
+```
+
 ## Ports: three numbers that are easy to mix up
 
 ```yaml
@@ -27,6 +31,10 @@ ports:
 
 A container’s `containerPort` in the Deployment is only a label; it does not make the application listen anywhere.
 If `targetPort` is wrong, the Service still has endpoints but every connection fails.
+
+```figure
+service-ports
+```
 
 ## Endpoints tell you what the Service really reaches
 

@@ -10,6 +10,10 @@ This lab runs the **Traefik** controller for you.
 An **IngressClass** names a controller, and `ingressClassName` in an Ingress says which controller should handle it.
 Without a controller, an Ingress is accepted and does nothing.
 
+```figure
+ingress-routing
+```
+
 ## An Ingress, piece by piece
 
 ```yaml
@@ -56,6 +60,10 @@ Your client checks two things:
 If either check fails, curl refuses to continue.
 `--insecure` skips both checks.
 That makes the connection encrypted, but you no longer know who you are talking to, so never use it to “fix” a certificate problem.
+
+```figure
+tls-checks
+```
 
 This lab made a practice certificate for `dispatch.test` and saved it at `$DOCKYARD_TLS_CERT`.
 Your computer does not know that hostname, so the test uses two curl options:

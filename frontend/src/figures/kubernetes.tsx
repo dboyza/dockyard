@@ -1189,4 +1189,408 @@ export const kubernetes = {
       </Diagram>
     );
   },
+  "service-types": () => (
+    <Diagram height={286}>
+      <Region x={190} y={14} w={440} h={256} label="Cluster" tone="focus" />
+      <Box
+        x={210}
+        y={40}
+        w={150}
+        h={44}
+        title="another Pod"
+        sub="inside the cluster"
+      />
+      <Box x={10} y={120} w={110} h={46} title="your computer" />
+      <Box x={10} y={200} w={110} h={46} title="outside client" />
+      <Tag x={190} y={143} text="node:30080" />
+      <Tag x={190} y={223} text="LB IP:8080" />
+      <Arrow
+        points={[
+          [120, 143],
+          [144, 143],
+        ]}
+      />
+      <Arrow
+        points={[
+          [120, 223],
+          [144, 223],
+        ]}
+      />
+      <Box
+        x={400}
+        y={110}
+        w={120}
+        h={60}
+        title="Service"
+        sub="dispatch"
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [360, 62],
+          [420, 106],
+        ]}
+        label="ClusterIP"
+        labelAt={[420, 70]}
+      />
+      <Arrow
+        points={[
+          [236, 143],
+          [396, 143],
+        ]}
+        label="NodePort"
+        labelAt={[316, 135]}
+      />
+      <Arrow
+        points={[
+          [236, 223],
+          [460, 223],
+          [460, 174],
+        ]}
+        label="LoadBalancer"
+        labelAt={[350, 215]}
+      />
+      <Box x={548} y={80} w={70} h={40} title="Pod" tone="good" />
+      <Box x={548} y={160} w={70} h={40} title="Pod" tone="good" />
+      <Arrow
+        points={[
+          [520, 130],
+          [544, 104],
+        ]}
+        tone="muted"
+      />
+      <Arrow
+        points={[
+          [520, 150],
+          [544, 176],
+        ]}
+        tone="muted"
+      />
+      <Label x={410} y={262} anchor="middle" size="small" tone="muted">
+        Each type builds on the one before it.
+      </Label>
+    </Diagram>
+  ),
+
+  "service-ports": ({ step = 0 }) => (
+    <Diagram height={236} step={step}>
+      <Box x={10} y={80} w={120} h={56} title="client" sub="connects to 8080" />
+      <Arrow
+        points={[
+          [130, 108],
+          [176, 108],
+        ]}
+        label="port"
+        labelAt={[153, 100]}
+      />
+      <Box
+        x={180}
+        y={70}
+        w={180}
+        h={76}
+        title="Service"
+        sub={
+          step === 0
+            ? "port 8080, targetPort 8080"
+            : "port 8080, targetPort 9090"
+        }
+        tone={step === 0 ? "focus" : "bad"}
+      />
+      <Arrow
+        points={[
+          [360, 108],
+          [376, 108],
+        ]}
+        tone={step === 0 ? "good" : "bad"}
+      />
+      <Region x={400} y={30} w={230} h={170} label="Pod" />
+      <Tag
+        x={400}
+        y={108}
+        text={step === 0 ? "8080" : "9090"}
+        tone={step === 0 ? "good" : "bad"}
+      />
+      <Box
+        x={440}
+        y={80}
+        w={170}
+        h={56}
+        title="Dispatch"
+        sub="listens on 8080"
+        tone="good"
+      />
+      <Reveal from={1}>
+        <Label x={320} y={226} anchor="middle" size="small" tone="bad">
+          Endpoints still exist, but every connection to 9090 is refused.
+        </Label>
+      </Reveal>
+    </Diagram>
+  ),
+
+  "ingress-routing": () => (
+    <Diagram height={262}>
+      <Box
+        x={10}
+        y={96}
+        w={170}
+        h={56}
+        title="Your client"
+        sub="https://dispatch.test/"
+      />
+      <Box
+        x={215}
+        y={10}
+        w={200}
+        h={50}
+        title="Ingress rules"
+        sub="dispatch.test/ → dispatch:8080"
+      />
+      <Box
+        x={230}
+        y={92}
+        w={170}
+        h={64}
+        title="Traefik"
+        sub="the ingress controller"
+        tone="focus"
+      />
+      <Box
+        x={230}
+        y={196}
+        w={170}
+        h={50}
+        title="Secret dispatch-tls"
+        sub="tls.crt and tls.key"
+        tone="warn"
+      />
+      <Arrow
+        points={[
+          [315, 60],
+          [315, 88],
+        ]}
+        dashed
+        label="reads"
+        labelAt={[350, 78]}
+      />
+      <Arrow
+        points={[
+          [315, 196],
+          [315, 160],
+        ]}
+        dashed
+        tone="warn"
+        label="certificate"
+        labelAt={[362, 182]}
+      />
+      <Arrow
+        points={[
+          [180, 124],
+          [226, 124],
+        ]}
+        tone="focus"
+        label="HTTPS"
+        labelAt={[203, 116]}
+      />
+      <Arrow
+        points={[
+          [400, 124],
+          [456, 124],
+        ]}
+        tone="good"
+        label="HTTP"
+        labelAt={[428, 116]}
+      />
+      <Box
+        x={460}
+        y={96}
+        w={170}
+        h={56}
+        title="Service dispatch"
+        sub="port 8080, then Pods"
+        tone="good"
+      />
+    </Diagram>
+  ),
+
+  "tls-checks": ({ step = 0 }) => {
+    const rows: [string, string, Tone][][] = [
+      [
+        ["Issued by someone trusted?", "yes, --cacert", "good"],
+        ["For the hostname requested?", "yes, dispatch.test", "good"],
+      ],
+      [
+        ["Issued by someone trusted?", "no: unknown issuer", "bad"],
+        ["For the hostname requested?", "not reached", "muted"],
+      ],
+      [
+        ["Issued by someone trusted?", "skipped", "warn"],
+        ["For the hostname requested?", "skipped", "warn"],
+      ],
+    ];
+    const outcomes: [string, Tone][] = [
+      ["Both checks pass, so the request continues.", "good"],
+      ["curl refuses to continue.", "bad"],
+      ["Encrypted, but you no longer know who answered.", "warn"],
+    ];
+    return (
+      <Diagram height={240} step={step}>
+        <Box
+          x={10}
+          y={20}
+          w={170}
+          h={56}
+          title="curl"
+          sub={
+            step === 2
+              ? "with --insecure"
+              : step === 1
+                ? "no --cacert"
+                : "with --cacert"
+          }
+          tone="focus"
+          mono
+        />
+        <Arrow
+          points={[
+            [180, 48],
+            [226, 48],
+          ]}
+          tone="muted"
+        />
+        <Box
+          x={230}
+          y={20}
+          w={180}
+          h={56}
+          title="certificate"
+          sub="dispatch.test, practice CA"
+          tone="warn"
+        />
+        <Arrow
+          points={[
+            [456, 48],
+            [414, 48],
+          ]}
+          tone="muted"
+        />
+        <Box x={460} y={20} w={170} h={56} title="Traefik" sub="presents it" />
+        {rows[step].map(([question, answer, tone], index) => (
+          <g key={question}>
+            <Label x={20} y={128 + index * 40}>
+              {`${index + 1}. ${question}`}
+            </Label>
+            <Tag x={430} y={124 + index * 40} text={answer} tone={tone} />
+          </g>
+        ))}
+        <Label x={20} y={222} size="small" tone={outcomes[step][1]}>
+          {outcomes[step][0]}
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "gateway-api": ({ step = 0 }) => {
+    const conditions: [string, string, Tone][] =
+      step === 0
+        ? [
+            ["Accepted", "True", "good"],
+            ["ResolvedRefs", "True", "good"],
+            ["Programmed", "True", "good"],
+          ]
+        : [
+            ["Accepted", "True", "good"],
+            ["ResolvedRefs", "False: no port 9090", "bad"],
+            ["Programmed", "True", "good"],
+          ];
+    return (
+      <Diagram height={298} step={step}>
+        <Box
+          x={10}
+          y={30}
+          w={170}
+          h={56}
+          title="GatewayClass"
+          sub="traefik: admins"
+        />
+        <Box
+          x={230}
+          y={30}
+          w={180}
+          h={56}
+          title="Gateway"
+          sub="listener :8080: platform"
+        />
+        <Box
+          x={460}
+          y={30}
+          w={170}
+          h={56}
+          title="HTTPRoute"
+          sub="app team"
+          tone="focus"
+        />
+        <Arrow
+          points={[
+            [230, 58],
+            [184, 58],
+          ]}
+          label="class"
+          labelAt={[207, 50]}
+        />
+        <Arrow
+          points={[
+            [460, 58],
+            [414, 58],
+          ]}
+          tone={step === 1 ? "bad" : "good"}
+          dashed={step === 1}
+          label="parentRefs"
+          labelAt={[437, 108]}
+        />
+        <Arrow
+          points={[
+            [545, 86],
+            [545, 150],
+          ]}
+          tone={step === 2 ? "bad" : "good"}
+          label="backendRefs"
+          labelAt={[545, 122]}
+        />
+        <Box
+          x={460}
+          y={154}
+          w={170}
+          h={56}
+          title="Service dispatch"
+          sub="port 8080"
+        />
+        <Region
+          x={10}
+          y={130}
+          w={410}
+          h={150}
+          label="HTTPRoute status, under Parents"
+        />
+        {step === 1 ? (
+          <>
+            <Label x={30} y={200} tone="bad">
+              No entry at all: parentRefs names a
+            </Label>
+            <Label x={30} y={222} tone="bad">
+              Gateway that does not exist.
+            </Label>
+          </>
+        ) : (
+          conditions.map(([name, value, tone], index) => (
+            <g key={name}>
+              <Label x={30} y={180 + index * 34} mono>
+                {name}
+              </Label>
+              <Tag x={300} y={176 + index * 34} text={value} tone={tone} />
+            </g>
+          ))
+        )}
+      </Diagram>
+    );
+  },
 } satisfies Drawings;
