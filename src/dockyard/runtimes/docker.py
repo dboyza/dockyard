@@ -129,7 +129,9 @@ class DockerRuntime:
             elif action == "clean":
                 args = [item["kind"], "rm"]
                 if item["kind"] == "container":
-                    args.append("--force")
+                    # Anonymous volumes belong to this exact recorded container; named ones
+                    # are separate inventory items and are never removed by this flag.
+                    args += ["--force", "--volumes"]
                 self.require(self.command([*args, item["id"]], timeout=45, cancel=cancel))
         if action == "clean":
             self.lab.resources["docker_inventory"] = "[]"

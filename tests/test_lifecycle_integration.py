@@ -95,6 +95,8 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
                 name + "-worker",
                 "--label",
                 label,
+                "-v",
+                "/cache",
                 env["DOCKYARD_PYTHON_IMAGE"],
                 "sleep",
                 "300",
@@ -103,10 +105,21 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
             result = runtime.command(args)
             assert result.ok, result.stderr
         outsider_result = runtime.command(
-            ["create", "--name", outsider, env["DOCKYARD_PYTHON_IMAGE"], "sleep", "300"]
+            [
+                "create",
+                "--name",
+                outsider,
+                "-v",
+                "/keep",
+                env["DOCKYARD_PYTHON_IMAGE"],
+                "sleep",
+                "300",
+            ]
         )
         assert outsider_result.ok, outsider_result.stderr
         outsider_id = outsider_result.stdout.strip()
+        anonymous = runtime.inspect("container", name + "-worker")["Mounts"][0]["Name"]
+        unrelated = runtime.inspect("container", outsider_id)["Mounts"][0]["Name"]
         inventory = runtime.discover()
         assert len(inventory) == 4
         service.perform(unit, "stop")
@@ -118,12 +131,16 @@ def test_inventory_tracks_multiple_resources_and_preserves_unrelated_identity(tm
         assert runtime.inspect("container", name) is None
         assert runtime.inspect("network", network) is None
         assert runtime.inspect("volume", volume) is None
+        assert runtime.inspect("volume", anonymous) is None
         assert runtime.inspect("container", outsider_id)["Id"] == outsider_id
+        assert runtime.inspect("volume", unrelated) is not None
     finally:
         service.perform(unit, "clean")
         if outsider_id:
             # This fixture created and recorded this ID itself; no broad cleanup.
-            runtime.require(runtime.command(["container", "rm", "--force", outsider_id]))
+            runtime.require(
+                runtime.command(["container", "rm", "--force", "--volumes", outsider_id])
+            )
 
 
 def test_interrupted_cli_reports_interruption_and_recovers_on_retry():

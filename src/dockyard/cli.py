@@ -502,8 +502,10 @@ def main() -> None:
                 if arguments.action == "check" and result.get("status") != "pass":
                     raise SystemExit(1)
     except KeyboardInterrupt:
-        print("Dockyard stopped. Your work and labs are kept.")
-        if arguments.command not in {None, "launch"}:
+        if arguments.command in {None, "launch"}:
+            print("Dockyard stopped. Your work and labs are kept.")
+        else:
+            print("Interrupted. Your files and lab resources are preserved; run the command again.")
             raise SystemExit(130) from None
     except (BusyError, RuntimeErrorBase, ValueError, FileNotFoundError) as error:
         print(f"Dockyard: {error}", file=sys.stderr)
