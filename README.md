@@ -69,12 +69,13 @@ dockyard/
 │   ├── service.py            Shared browser and CLI operations
 │   └── web.py                Authenticated loopback API
 ├── tests/                    Contracts and real-runtime integration gates
-├── scripts/                  Local installation and contract generation
+├── scripts/                  Installation, the fast check script, and contract generation
 ├── docs/                     Learning, operation, and verification guides
 └── pyproject.toml            Python package and development configuration
 ```
 
-Use the [maintenance guide](docs/maintenance.md) for source setup, generated contracts, and release checks.
+Run `./scripts/check.sh` for every fast check, including lint, types, tests, the structural audit, and dependency advisories.
+Use the [maintenance guide](docs/maintenance.md) for source setup, generated contracts, real-runtime suites, and release checks.
 The [platform validation](docs/platform-validation.md) records cross-platform checks and remaining verification limits.
 The [original release validation](docs/release-validation.md) preserves the macOS baseline.
 The [runtime evidence log](docs/runtime-evidence.md) records the underlying staged observations.
