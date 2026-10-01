@@ -68,9 +68,17 @@ DOCKYARD_PROJECT_INTEGRATION=1 npm --prefix frontend run test:e2e -- e2e/project
 npm --prefix frontend run test:e2e -- e2e/accessibility.spec.ts e2e/terminal-layout.spec.ts
 ```
 
-The exam browser suite additionally requires an explicitly prepared disposable exam profile in `DOCKYARD_EXAM_PROFILE`.
-It tests an actual scored submission, persisted flags and deadlines, and readable history after cleanup.
-Do not point it at personal learning progress.
+The exam browser suite needs a prepared disposable profile.
+The preparation script builds the CKAD release exam, applies its reference so a timed attempt scores 100, and records one earlier invalidated attempt for the history checks:
+
+```sh
+.runtime/installed/bin/python frontend/e2e/prepare_exam_profile.py .runtime/exam-check
+DOCKYARD_EXAM_PROFILE=$PWD/.runtime/exam-check npm --prefix frontend run test:e2e -- e2e/exam.spec.ts
+rm -rf .runtime/exam-check
+```
+
+It tests an actual scored submission, persisted flags and deadlines, and readable history after cleanup, and its second test cleans up the exam lab.
+Never point it at personal learning progress.
 Accessibility checks cover supported automated WCAG rules, both themes, narrow layouts, and confirmation dialogs; they do not certify complete accessibility or replace assistive-technology review.
 
 ## Authoring and version changes
@@ -90,8 +98,7 @@ Pin new downloads to verified upstream identities and test their declared archit
 Update both Kubernetes-version package manifests for both ARM64 and x86-64 when necessary.
 The base toolchain manifest targets macOS; the Linux platform overlays pin native binaries and matching guest images.
 Run `pwsh -NoProfile -File tests/windows-bridge.ps1` to validate the Windows launcher argument contract.
-The CI matrix checks macOS, Linux ARM64, Linux x86-64, and the Windows PowerShell bridge.
-A green contract matrix does not replace actual Docker, VM, or Windows desktop verification.
+There is no hosted CI; run the fast checks on each platform you change, and remember that they do not replace actual Docker, VM, or Windows desktop verification.
 A new external build or bootstrap step must appear in cache readiness until its offline dependency closure is verified.
 Never label a lab offline-ready merely because a base image exists.
 
