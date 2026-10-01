@@ -184,6 +184,7 @@ export type UnitKind = "lesson" | "mission" | "incident" | "exam";
 
 // Every figure a lesson can embed; the browser registry must draw each one.
 export type FigureId =
+  | "admission-vs-context"
   | "alert-states"
   | "apply-to-running"
   | "backup-restore"
@@ -232,10 +233,13 @@ export type FigureId =
   | "kubeconfig-contexts"
   | "kustomize-overlays"
   | "labels-selectors"
+  | "least-privilege"
   | "localhost-perspective"
   | "log-streams"
   | "multi-stage-build"
   | "namespaces"
+  | "netpol-and-or"
+  | "netpol-default-deny"
   | "operator-loop"
   | "ownership-mismatch"
   | "pdb-drain"
@@ -253,6 +257,7 @@ export type FigureId =
   | "qos-classes"
   | "quorum-model"
   | "rbac-request"
+  | "rbac-scope"
   | "reconciliation-model"
   | "recovery-point-time"
   | "replace-with-mount"

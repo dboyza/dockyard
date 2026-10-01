@@ -5,6 +5,10 @@ This lesson connects two separate controls:
 - **Pod Security Admission** decides whether a Pod is *allowed to be created* at all, based on rules set for its namespace.
 - **Security contexts** are the settings on the Pod and its containers that actually *restrict the running process*.
 
+```figure
+admission-vs-context
+```
+
 ## Pod Security Admission
 
 Kubernetes has three built-in **Pod Security Standards**:

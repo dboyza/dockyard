@@ -1163,5 +1163,59 @@
         "text": "git revert adds a commit that undoes the mistake, and Flux returns staging to the good digest."
       }
     ]
+  },
+  {
+    "id": "rbac-scope",
+    "title": "How far a binding reaches",
+    "caption": "Where a permission applies depends on the binding, not on where the rules were written.",
+    "description": "Three combinations and their reach across the dispatch namespace, other namespaces, and cluster-wide objects such as nodes and PersistentVolumes. A Role with a RoleBinding grants access only in dispatch. A ClusterRole with a RoleBinding also grants access only in dispatch. A ClusterRole with a ClusterRoleBinding grants access everywhere, including other namespaces and cluster-wide objects."
+  },
+  {
+    "id": "least-privilege",
+    "title": "Removing access the reader does not need",
+    "caption": "Least privilege keeps the useful permission and removes the rest, and you test both.",
+    "description": "A sequence in two steps showing the Role dispatch-pod-reader beside kubectl auth can-i answers for dispatch-reader. At first the rule allows get, list, and watch on pods and secrets, so listing Pods in dispatch says yes, getting Secrets in dispatch also says yes, which is too much, and listing Pods in kube-system says no. After removing secrets from the rule, the answers are yes, no, and no.",
+    "steps": [
+      {
+        "label": "Too much access",
+        "text": "The rule includes secrets, so the Pod reader can also read every Secret in the namespace."
+      },
+      {
+        "label": "Only what it needs",
+        "text": "With secrets removed, listing Pods still works, and reading Secrets is refused."
+      }
+    ]
+  },
+  {
+    "id": "netpol-default-deny",
+    "title": "From open, to closed, to exactly what is needed",
+    "caption": "Start from default deny, then allow each path the application really uses.",
+    "description": "A sequence in three steps with a frontend namespace holding trusted and untrusted Pods, DNS in kube-system, and a dispatch namespace holding the API, a worker, PostgreSQL, and Redis. With no policy, every connection is allowed. With default deny, every connection is blocked, including DNS lookups. With allow rules added, the trusted frontend can reach the API, the API can reach PostgreSQL, the worker can reach Redis and DNS, and the untrusted frontend Pod is still blocked.",
+    "steps": [
+      {
+        "label": "No policy",
+        "text": "Without any NetworkPolicy, every Pod can connect to every other Pod."
+      },
+      {
+        "label": "Default deny",
+        "text": "A policy selecting every Pod with no rules blocks everything, including DNS lookups."
+      },
+      {
+        "label": "Allow what is needed",
+        "text": "Specific allow rules reopen only the paths Dispatch uses. The untrusted Pod stays blocked."
+      }
+    ]
+  },
+  {
+    "id": "netpol-and-or",
+    "title": "One dash changes the meaning",
+    "caption": "Selectors in one list item must all match; selectors in separate items each allow traffic on their own.",
+    "description": "Two versions of a from list. In the first, namespaceSelector for the frontend namespace and podSelector for app trusted are in one list item, so both must match: a trusted Pod in frontend is allowed, and any other Pod is not. In the second, a dash before podSelector makes them two list items, so either is enough: any Pod in frontend is allowed, and so is a trusted Pod anywhere in the policy's own namespace."
+  },
+  {
+    "id": "admission-vs-context",
+    "title": "Admission at creation, restrictions while running",
+    "caption": "Admission decides whether a Pod may exist; its security context limits what it can do.",
+    "description": "A new Pod from a Deployment goes to Pod Security Admission, which enforces the restricted standard for its namespace and is checked once, when the Pod is created. The Pod is either accepted and created, or rejected and never runs. An accepted Pod's running container keeps its securityContext restrictions for its whole life: runAsUser 12000, no capabilities, no new privileges, the RuntimeDefault seccomp profile, and a read-only root filesystem."
   }
 ]

@@ -28,6 +28,10 @@ spec:
 With `policyTypes` listed and no rules, nothing is allowed.
 Be careful: `ingress: [{}]`, a rule with nothing in it, means the opposite: allow all ingress.
 
+```figure
+netpol-default-deny
+```
+
 ## Allowing specific traffic
 
 ```yaml
@@ -57,6 +61,10 @@ The indentation of the `from` list is the single most common NetworkPolicy mista
 
 A `podSelector` with no `namespaceSelector` means Pods in the policy’s own namespace.
 Every namespace automatically has the label `kubernetes.io/metadata.name` set to its name, which makes it easy to select.
+
+```figure
+netpol-and-or
+```
 
 ## Don’t forget DNS
 

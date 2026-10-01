@@ -1352,4 +1352,316 @@ export const platform = {
       </Diagram>
     );
   },
+  "rbac-scope": () => {
+    const rows: [string, string, [string, Tone][]][] = [
+      [
+        "Role + RoleBinding",
+        "rules and grant in one namespace",
+        [
+          ["✓", "good"],
+          ["✗", "muted"],
+          ["✗", "muted"],
+        ],
+      ],
+      [
+        "ClusterRole + RoleBinding",
+        "shared rules, granted in one namespace",
+        [
+          ["✓", "good"],
+          ["✗", "muted"],
+          ["✗", "muted"],
+        ],
+      ],
+      [
+        "ClusterRole + ClusterRoleBinding",
+        "granted across the whole cluster",
+        [
+          ["✓", "warn"],
+          ["✓", "warn"],
+          ["✓", "warn"],
+        ],
+      ],
+    ];
+    return (
+      <Diagram height={262}>
+        {["dispatch", "other namespaces", "nodes, PVs"].map((name, index) => (
+          <Label
+            key={name}
+            x={400 + index * 100}
+            y={24}
+            anchor="middle"
+            size="small"
+            tone="muted"
+          >
+            {name}
+          </Label>
+        ))}
+        {rows.map(([title, sub, reach], row) => (
+          <g key={title}>
+            <Box
+              x={10}
+              y={40 + row * 74}
+              w={300}
+              h={58}
+              title={title}
+              sub={sub}
+            />
+            {reach.map(([mark, tone], index) => (
+              <Tag
+                key={index}
+                x={400 + index * 100}
+                y={69 + row * 74}
+                text={mark}
+                tone={tone}
+              />
+            ))}
+          </g>
+        ))}
+      </Diagram>
+    );
+  },
+
+  "least-privilege": ({ step = 0 }) => {
+    const answers: [string, string, Tone][][] = [
+      [
+        ["list pods in dispatch", "yes", "good"],
+        ["get secrets in dispatch", "yes", "bad"],
+        ["list pods in kube-system", "no", "good"],
+      ],
+      [
+        ["list pods in dispatch", "yes", "good"],
+        ["get secrets in dispatch", "no", "good"],
+        ["list pods in kube-system", "no", "good"],
+      ],
+    ];
+    return (
+      <Diagram height={222} step={step}>
+        <Label x={10} y={22} size="small" tone="muted">
+          Role dispatch-pod-reader
+        </Label>
+        <Code
+          x={10}
+          y={32}
+          w={280}
+          lines={[
+            { text: "rules:" },
+            {
+              text:
+                step === 0
+                  ? "- resources: [pods, secrets]"
+                  : "- resources: [pods]",
+              tone: step === 0 ? "warn" : "good",
+            },
+            { text: "  verbs: [get, list, watch]" },
+          ]}
+        />
+        <Label x={330} y={22} size="small" tone="muted">
+          kubectl auth can-i … as dispatch-reader
+        </Label>
+        {answers[step].map(([question, answer, tone], index) => (
+          <g key={question}>
+            <Label x={330} y={60 + index * 34}>
+              {question}
+            </Label>
+            <Tag x={600} y={56 + index * 34} text={answer} tone={tone} />
+          </g>
+        ))}
+        <Label x={10} y={196} size="small" tone={step === 0 ? "bad" : "good"}>
+          {step === 0
+            ? "The Pod reader can also read every Secret in the namespace."
+            : "The useful read still works; the unneeded one is refused."}
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "netpol-default-deny": ({ step = 0 }) => {
+    const edges: [string, [number, number][], boolean][] = [
+      [
+        "trusted → API",
+        [
+          [140, 70],
+          [186, 82],
+        ],
+        true,
+      ],
+      [
+        "untrusted → API",
+        [
+          [140, 130],
+          [186, 98],
+        ],
+        false,
+      ],
+      [
+        "API → PostgreSQL",
+        [
+          [310, 80],
+          [476, 80],
+        ],
+        true,
+      ],
+      [
+        "worker → Redis",
+        [
+          [310, 205],
+          [476, 205],
+        ],
+        true,
+      ],
+      [
+        "worker → DNS",
+        [
+          [190, 222],
+          [144, 232],
+        ],
+        true,
+      ],
+    ];
+    const footer: [string, Tone][] = [
+      ["No policy: every Pod can reach every other Pod.", "muted"],
+      ["Default deny: nothing connects, not even DNS lookups.", "bad"],
+      [
+        "Only the listed paths are allowed; everything else stays blocked.",
+        "good",
+      ],
+    ];
+    return (
+      <Diagram height={286} step={step}>
+        <Region x={10} y={14} w={130} h={156} label="frontend" />
+        <Box x={22} y={50} w={106} h={40} title="trusted" />
+        <Box x={22} y={110} w={106} h={40} title="untrusted" />
+        <Box x={10} y={206} w={130} h={48} title="DNS" sub="kube-system" />
+        <Region x={160} y={14} w={470} h={250} label="dispatch" tone="focus" />
+        <Box x={190} y={60} w={120} h={50} title="API" />
+        <Box x={190} y={186} w={120} h={50} title="worker" />
+        <Cylinder x={480} y={44} w={130} h={72} title="PostgreSQL" />
+        <Box x={480} y={182} w={130} h={50} title="Redis" />
+        {edges.map(([name, points, allowed]) => (
+          <Arrow
+            key={name}
+            points={points}
+            tone={step === 0 ? "muted" : step === 2 && allowed ? "good" : "bad"}
+            dashed={step === 1 || (step === 2 && !allowed)}
+          />
+        ))}
+        <Label
+          x={320}
+          y={280}
+          anchor="middle"
+          size="small"
+          tone={footer[step][1]}
+        >
+          {footer[step][0]}
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "netpol-and-or": () => (
+    <Diagram height={262}>
+      {(
+        [
+          [10, "One list item: both must match", "  podSelector:", "focus"],
+          [330, "Two list items: either is enough", "- podSelector:", "warn"],
+        ] as [number, string, string, Tone][]
+      ).map(([x, heading, pod, tone]) => (
+        <g key={heading}>
+          <Label x={x} y={20} size="small" tone={tone}>
+            {heading}
+          </Label>
+          <Code
+            x={x}
+            y={30}
+            w={300}
+            spacing={26}
+            lines={[
+              { text: "from:" },
+              { text: "- namespaceSelector:" },
+              { text: "    matchLabels: {…: frontend}" },
+              { text: pod, tone },
+              { text: "    matchLabels: {app: trusted}" },
+            ]}
+          />
+        </g>
+      ))}
+      <Tag x={160} y={198} text="trusted Pod in frontend: ✓" tone="good" />
+      <Tag x={160} y={230} text="any other Pod: ✗" tone="good" />
+      <Tag x={480} y={198} text="any Pod in frontend: ✓" tone="warn" />
+      <Tag x={480} y={230} text="trusted Pod anywhere here: ✓" tone="warn" />
+    </Diagram>
+  ),
+
+  "admission-vs-context": () => (
+    <Diagram height={286}>
+      <Label x={315} y={22} anchor="middle" size="small" tone="muted">
+        checked once, when the Pod is created
+      </Label>
+      <Box
+        x={10}
+        y={42}
+        w={150}
+        h={60}
+        title="new Pod"
+        sub="from a Deployment"
+      />
+      <Arrow
+        points={[
+          [160, 72],
+          [206, 72],
+        ]}
+      />
+      <Box
+        x={210}
+        y={34}
+        w={210}
+        h={76}
+        title="Pod Security Admission"
+        sub="namespace enforces restricted"
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [420, 72],
+          [456, 72],
+        ]}
+        tone="good"
+      />
+      <Tag x={535} y={72} text="accepted: created" tone="good" />
+      <Arrow
+        points={[
+          [315, 110],
+          [315, 128],
+        ]}
+        tone="bad"
+      />
+      <Tag x={315} y={140} text="rejected: never runs" tone="bad" />
+      <Arrow
+        points={[
+          [535, 84],
+          [535, 156],
+        ]}
+        tone="good"
+      />
+      <Region
+        x={10}
+        y={160}
+        w={620}
+        h={110}
+        label="The running container’s securityContext, for its whole life"
+        tone="good"
+      />
+      {(
+        [
+          [110, 204, "runAsUser 12000"],
+          [320, 204, "capabilities: none"],
+          [530, 204, "no new privileges"],
+          [215, 240, "seccomp: RuntimeDefault"],
+          [425, 240, "read-only root filesystem"],
+        ] as [number, number, string][]
+      ).map(([x, y, text]) => (
+        <Tag key={text} x={x} y={y} text={text} tone="good" />
+      ))}
+    </Diagram>
+  ),
 } satisfies Drawings;
