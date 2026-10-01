@@ -26,10 +26,10 @@ trap 'rm -rf "$audit_profile"' EXIT
 
 step "Dependency advisories"
 requirements="$audit_profile/requirements.txt"
-NO_COLOR=1 uv export --format requirements-txt --no-hashes --no-header --no-emit-project \
-  --no-annotate --cache-dir .tools/uv-cache | grep -E '^[A-Za-z]' | sed 's/ *;.*//' > "$requirements"
-NO_COLOR=1 uvx --cache-dir .tools/uv-cache pip-audit --progress-spinner off --no-deps \
-  --disable-pip -r "$requirements"
+NO_COLOR=1 uv export --quiet --format requirements-txt --no-header --no-emit-project \
+  --no-annotate --cache-dir .tools/uv-cache > "$requirements"
+NO_COLOR=1 uvx --quiet --cache-dir .tools/uv-cache pip-audit --progress-spinner off \
+  --disable-pip --require-hashes -r "$requirements"
 npm --prefix frontend audit --audit-level=low
 
 printf '\nAll fast checks passed.\n'
