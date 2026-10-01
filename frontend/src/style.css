@@ -702,7 +702,8 @@ pre {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 12px 20px;
   margin: 0 0 19px;
 }
 .section-heading h2 {
@@ -3323,4 +3324,7 @@ button.stat:hover:not(:disabled) {
 .exam-clock.low {
   border-color: var(--amber);
   background: var(--amber-soft);
+}
+.section-heading > button {
+  white-space: nowrap;
 }

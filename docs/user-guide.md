@@ -25,7 +25,8 @@ The Overview page explains the project before you start.
 The sidebar has five main destinations: Overview, Your course, Practice, Your progress, and Lab manager.
 Placement lives within Your course; troubleshooting and exams live within Practice; reviews and saved projects live within Your progress.
 Reference desk and Settings and data stay at the bottom of the sidebar.
-Find a lesson using the search field at the top of the page.
+Find a lesson using the search field at the top of the page, or press `/` from anywhere to jump to it and Escape to clear it.
+The sidebar shows how many labs exist on this computer, so a forgotten cluster is easy to spot.
 
 ## Complete a lab
 
@@ -35,7 +36,11 @@ Find a lesson using the search field at the top of the page.
 4. Edit files and run commands using your preferred terminal tools.
 5. Select **Check work** and start with any item marked Needs attention.
    Open Check details to see the expected and observed values.
-6. Save observations and use the debrief to explain why the repair worked.
+6. Write observations and use the debrief to explain why the repair worked.
+   Observations save when you click out of the notes box, or with Save observations.
+7. Use Previous and Next at the bottom of the lesson to move through the course in order.
+
+Every command block has a copy button in its top corner.
 
 A terminal retains its original lab identity when the browser switches lessons.
 Reopen the terminal after Reset or Independent retake so the workspace and attempt agree.
@@ -75,7 +80,8 @@ Each scenario asks for diagnostic evidence and a repair with a verifiable result
 
 Open **Practice → Exam practice** for two CKAD-oriented and two CKA-oriented original task sets.
 Prepare the environment before starting its 120-minute timer.
-The interface shows task weights, allowed-reference policy, flags, remaining time, and a saved report with remediation links.
+The interface shows task points, allowed-reference policy, flags, remaining time, and a saved report with links to the lessons to revisit.
+While an attempt is running, the remaining time also appears in the top bar on every other page.
 Task weights total 100 and permit partial credit where an assessed task has multiple criteria.
 
 Browser reload does not reset the deadline.
@@ -89,7 +95,7 @@ These exercises do not reproduce certification proctoring or estimate a probabil
 
 ## Operate your labs
 
-Lab Manager reports Docker health, architecture, host memory, free disk, and saved environment states.
+Lab Manager lists the labs that exist on this computer, with Stop all when several are running, and reports Docker health, architecture, host memory, and free disk.
 Dockyard permits one active application cluster or native VM lab across its registered profiles.
 Switching within one profile stops its previous ready owned cluster.
 A cluster in another profile must be stopped or cleaned from that profile before another starts.
