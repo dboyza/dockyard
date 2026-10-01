@@ -86,3 +86,36 @@ def test_clean_all_needs_confirmation_and_reports_nothing_to_clean(tmp_path, mon
     )
     cli.main()
     assert capsys.readouterr().out.strip() == "No labs to clean."
+
+
+def test_lab_status_without_a_unit_lists_labs(tmp_path, monkeypatch, capsys):
+    import sys
+
+    from dockyard import cli
+
+    monkeypatch.delenv("DOCKYARD_UNIT", raising=False)
+    monkeypatch.setattr(sys, "argv", ["dockyard", "--data-dir", str(tmp_path), "lab", "status"])
+    cli.main()
+    assert capsys.readouterr().out.startswith("No labs yet.")
+
+
+def test_progress_import_previews_readably_then_merges(tmp_path, monkeypatch, capsys):
+    import sys
+
+    from dockyard import cli
+
+    archive = tmp_path / "backup.zip"
+    source, target = tmp_path / "source", tmp_path / "target"
+
+    def run(*args: str) -> str:
+        monkeypatch.setattr(sys, "argv", ["dockyard", "--data-dir", *args])
+        cli.main()
+        return capsys.readouterr().out
+
+    run(str(source), "progress", "export", str(archive))
+    preview = run(str(target), "progress", "import", str(archive))
+    assert "Activities" in preview and "repeat this command with --yes" in preview
+    assert not (target / "imports").exists()
+    merged = run(str(target), "progress", "import", str(archive), "--yes")
+    assert "Merged." in merged and "progress database was saved" in merged
+    assert "already imported" in run(str(target), "progress", "import", str(archive), "--yes")

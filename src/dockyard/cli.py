@@ -10,6 +10,7 @@ import sys
 import textwrap
 import threading
 import webbrowser
+from datetime import datetime
 from pathlib import Path
 from types import FrameType
 from typing import TYPE_CHECKING, Any
@@ -95,6 +96,7 @@ def parser() -> argparse.ArgumentParser:
     imported = transfers.add_parser("import", help="preview a backup, then merge it with --yes")
     imported.add_argument("source", type=Path, help="the backup .zip to read")
     imported.add_argument("--yes", action="store_true", help="merge after showing the preview")
+    imported.add_argument("--json", action="store_true", help="print machine-readable JSON")
     cache = commands.add_parser("cache", help="check or download what lessons need ahead of time")
     caches = cache.add_subparsers(dest="cache_action", required=True, metavar="ACTION")
     for name, text in (
@@ -123,7 +125,8 @@ def parser() -> argparse.ArgumentParser:
             "unit",
             nargs="?",
             default=os.environ.get("DOCKYARD_UNIT"),
-            help="activity ID, such as m01-processes (default: the current lab shell's)",
+            help="activity ID, such as m01-processes (default: the current lab shell's"
+            + ("; outside one, list every lab)" if action == "status" else ")"),
         )
         if action != "shell":
             operation.add_argument(
@@ -225,6 +228,42 @@ def print_lab(unit_id: str, lab: dict[str, Any] | None) -> None:
         print(f"  Next       dockyard lab resume {unit_id}")
     elif lab["state"] == "absent":
         print(f"  Next       dockyard lab prepare {unit_id}")
+
+
+def print_labs(labs: list[dict[str, Any]]) -> None:
+    present = [lab for lab in labs if lab["state"] != "absent"]
+    if not present:
+        print("No labs yet. Start one with: dockyard lab prepare UNIT")
+        return
+    for lab in present:
+        print(f"  {lab['unit_id']:24} {LAB_STATE_NAMES.get(lab['state'], lab['state'])}")
+    print("Details: dockyard lab status UNIT")
+
+
+def print_import(report: dict[str, Any], merged: bool) -> None:
+    if report.get("already_imported"):
+        print("This backup was already imported; nothing changed.")
+        return
+    created = datetime.fromisoformat(report["created_at"]).astimezone()
+    print(f"Backup made {created:%Y-%m-%d %H:%M}")
+    rows = (
+        ("Activities", f"{report['progress_units']} ({report['new_progress_units']} new here)"),
+        ("Check results", report["assessments"]),
+        ("Exam attempts", report["exams"]),
+        ("Mission files", report["checkpoints"]),
+        ("Draft files", report["draft_files"]),
+        ("Notes", f"{report['notes']} ({report['preserved_local_notes']} differ; yours are kept)"),
+    )
+    for label, value in rows:
+        print(f"  {label:14} {value}")
+    if report["older_revisions"]:
+        print(f"  {report['older_revisions']} activities changed since; they need a new check.")
+    if merged:
+        print(f"Merged. Imported drafts are in {report['directory']}")
+        print(f"Your earlier progress database was saved to {report['backup']}")
+    else:
+        print(textwrap.fill(report["policy"], width=88))
+        print("To merge it, repeat this command with --yes.")
 
 
 def open_local_browser(url: str) -> None:
@@ -365,11 +404,13 @@ def main() -> None:
                     raise ValueError("Choose a progress archive no larger than 64 MiB.")
                 body = arguments.source.read_bytes()
                 preview = preview_import(service, body)
-                if arguments.yes:
-                    print(json.dumps(import_bundle(service, body, preview["digest"]), indent=2))
+                report = (
+                    import_bundle(service, body, preview["digest"]) if arguments.yes else preview
+                )
+                if arguments.json:
+                    print(json.dumps(report, indent=2))
                 else:
-                    print(json.dumps(preview, indent=2))
-                    print("Review this merge, then repeat with --yes to import.")
+                    print_import(report, arguments.yes)
         elif arguments.command == "catalog":
             kinds = {"lesson": "", "mission": "mission", "incident": "incident", "exam": "exam"}
             for module in service.catalog.modules:
@@ -397,6 +438,12 @@ def main() -> None:
                 print(f"Cleaning {item.unit_id}…", flush=True)
                 service.perform(item.unit_id, "clean")
             print(f"Cleaned {len(owned)} {plural}.")
+        elif arguments.command == "lab" and arguments.action == "status" and not arguments.unit:
+            labs = [service.public_lab(item) for item in service.store.labs()]
+            if arguments.json:
+                print(json.dumps(labs, indent=2))
+            else:
+                print_labs(labs)
         elif arguments.command == "lab":
             if not arguments.unit:
                 raise LabError("Name a unit, or run this command inside its Dockyard lab shell.")

@@ -154,6 +154,7 @@ Older curriculum evidence stays historical and remains due for reassessment wher
 ./dockyard lab shell m01-processes
 ./dockyard lab check m01-processes
 ./dockyard lab stop m01-processes
+./dockyard lab status
 ./dockyard cache status module:1
 ./dockyard cache prepare track:1
 ./dockyard progress export ./my-learning.zip
@@ -164,9 +165,11 @@ Older curriculum evidence stays historical and remains due for reassessment wher
 
 Export destinations must not already exist.
 The import command previews by default; `--yes` merges the validated archive.
+`lab status` without an activity lists every lab in the profile.
+Most commands print a readable summary; add `--json` for scripts.
 Use `--data-dir PATH` before the subcommand for a separate profile.
 Native VM profiles require short paths because Lima Unix socket paths have a fixed length limit.
-The default profile is `~/Library/Application Support/Dockyard`.
+The default profile is `~/Library/Application Support/Dockyard` on macOS and `~/.local/share/dockyard` on Linux and WSL.
 The app uses a private tools directory inside an installed profile, and never edits the default kubeconfig.
 
 ## Recover from an interrupted operation
