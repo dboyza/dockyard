@@ -704,5 +704,68 @@
       "m18-recovery"
     ],
     "primer": "linux"
+  },
+  {
+    "id": "taint",
+    "term": "Taint and toleration",
+    "definition": "A taint on a node keeps Pods away unless they carry a matching toleration, which permits, but does not require, scheduling there.",
+    "watch_for": "A toleration only allows a Pod onto a tainted node; add a nodeSelector or affinity if the Pod must run there.",
+    "units": [
+      "m13-placement",
+      "m13-mission"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "node-affinity",
+    "term": "Node affinity",
+    "definition": "Rules in a Pod spec that require or prefer nodes with particular labels, a more expressive form of nodeSelector.",
+    "watch_for": "requiredDuringScheduling rules can leave a Pod Pending forever if no node matches; preferred rules never block scheduling.",
+    "units": [
+      "m13-placement"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "priorityclass",
+    "term": "PriorityClass",
+    "definition": "A cluster-wide object giving Pods a priority number; when nodes are full, higher-priority Pods are scheduled first and can preempt lower ones.",
+    "watch_for": "Pods only use a class that names it in priorityClassName; for a Deployment, set it in the Pod template.",
+    "units": [
+      "m13-placement"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "pdb",
+    "term": "PodDisruptionBudget",
+    "definition": "A rule limiting how many matching Pods voluntary disruptions, such as a node drain, may evict at once.",
+    "watch_for": "A budget that allows zero disruptions makes kubectl drain wait forever; it does nothing about crashes or node failures.",
+    "units": [
+      "m13-autoscaling",
+      "m21-drain",
+      "m24-decisions"
+    ],
+    "primer": "exam"
+  },
+  {
+    "id": "init-container",
+    "term": "Init container",
+    "definition": "A container that runs to completion before a Pod’s main containers start, used for setup such as writing configuration or waiting for a dependency.",
+    "watch_for": "If an init container keeps failing, the Pod stays in Init status and the main containers never start.",
+    "units": [
+      "m08-patterns"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "sidecar",
+    "term": "Sidecar container",
+    "definition": "A helper container that runs alongside the main container in the same Pod, sharing its network and volumes, for jobs such as shipping logs.",
+    "watch_for": "Containers in one Pod share localhost and any mounted volumes, but each has its own filesystem otherwise.",
+    "units": [
+      "m08-patterns"
+    ],
+    "primer": "yaml"
   }
 ]

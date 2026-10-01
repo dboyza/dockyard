@@ -50,6 +50,10 @@ Many tasks can be finished entirely with imperative commands:
 | Role | `kubectl create role NAME --verb=get,list --resource=pods` |
 | RoleBinding | `kubectl create rolebinding NAME --role=ROLE --serviceaccount=NS:NAME` |
 | Ingress | `kubectl create ingress NAME --rule="HOST/PATH=SERVICE:PORT"` |
+| ExternalName Service | `kubectl create service externalname NAME --external-name=HOST` |
+| PodDisruptionBudget | `kubectl create pdb NAME --selector=KEY=VALUE --min-available=1` |
+| PriorityClass | `kubectl create priorityclass NAME --value=1000` |
+| Short-lived ServiceAccount token | `kubectl create token NAME --duration=10m` |
 | Change image | `kubectl set image deployment/NAME CONTAINER=IMAGE` |
 | Scale | `kubectl scale deployment/NAME --replicas=N` |
 | Add a label | `kubectl label pod NAME KEY=VALUE` |

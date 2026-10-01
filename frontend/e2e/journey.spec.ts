@@ -183,7 +183,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await navigateTo(page, 'Reference desk');
   await expect(page.getByRole('heading', { name: 'A reference you can work with.' })).toBeVisible();
-  await page.getByRole('button', { name: 'Glossary 66 terms' }).click();
+  await page.getByRole('button', { name: /^Glossary \d+ terms$/ }).click();
   await page.getByRole('textbox', { name: 'Search glossary' }).fill('quorum');
   await expect(page.locator('.glossary-term')).toHaveCount(1);
   await expect(page.getByRole('heading', { name: 'Quorum', exact: true })).toBeVisible();
