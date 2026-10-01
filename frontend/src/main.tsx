@@ -354,16 +354,54 @@ function App() {
         onCancel={() => setDialog(null)}
         className="confirm-dialog"
       >
-        <h2>{dialog?.title}</h2>
-        <p>{dialog?.body}</p>
-        <div className="button-row">
-          <button onClick={() => setDialog(null)}>Keep working</button>
-          <button className="primary" onClick={() => dialog?.action()}>
-            Continue
-          </button>
-        </div>
+        {dialog && (
+          <ConfirmContent dialog={dialog} onCancel={() => setDialog(null)} />
+        )}
       </dialog>
     </div>
+  );
+}
+
+type Confirmation = NonNullable<ReturnType<typeof useWorkbench>["dialog"]>;
+
+// Mounted only while the dialog is open, so a typed phrase never carries over.
+function ConfirmContent({
+  dialog,
+  onCancel,
+}: {
+  dialog: Confirmation;
+  onCancel: () => void;
+}) {
+  const [typed, setTyped] = useState("");
+  const blocked = !!dialog.requireText && typed.trim() !== dialog.requireText;
+  return (
+    <>
+      <h2>{dialog.title}</h2>
+      <p>{dialog.body}</p>
+      {dialog.requireText && (
+        <label className="confirm-phrase">
+          <span>
+            Type <strong>{dialog.requireText}</strong> to confirm
+          </span>
+          <input
+            value={typed}
+            autoComplete="off"
+            spellCheck={false}
+            onChange={(event) => setTyped(event.target.value)}
+          />
+        </label>
+      )}
+      <div className="button-row">
+        <button onClick={onCancel}>Keep working</button>
+        <button
+          className={dialog.danger ? "danger" : "primary"}
+          disabled={blocked}
+          onClick={dialog.action}
+        >
+          {dialog.confirmLabel ?? "Continue"}
+        </button>
+      </div>
+    </>
   );
 }
 

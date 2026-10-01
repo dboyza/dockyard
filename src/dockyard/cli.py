@@ -43,6 +43,7 @@ examples:
   dockyard cache prepare module:7       download what module 7 needs ahead of time
   dockyard cache clean                  list, then with --yes remove, downloaded images
   dockyard progress export backup.zip   back up your progress
+  dockyard reset                        show, then with --yes erase, all learning data
 """
 
 LAB_ACTIONS = {
@@ -121,6 +122,15 @@ def parser() -> argparse.ArgumentParser:
     )
     removal.add_argument("--yes", action="store_true", help="remove after showing the list")
     removal.add_argument("--json", action="store_true", help="print machine-readable JSON")
+    fresh = commands.add_parser(
+        "reset",
+        help="erase all local learning data and start fresh",
+        description="Clean up every lab, then erase progress, check results, exam attempts, "
+        "notes, mission files, and workspaces. Your theme and downloaded tools and images "
+        "are kept.",
+    )
+    fresh.add_argument("--yes", action="store_true", help="reset after showing what is erased")
+    fresh.add_argument("--json", action="store_true", help="print machine-readable JSON")
     portfolio = commands.add_parser(
         "portfolio", help="export your passed missions' files as a readable portfolio"
     )
@@ -276,6 +286,25 @@ def print_import(report: dict[str, Any], merged: bool) -> None:
         print("To merge it, repeat this command with --yes.")
 
 
+def print_reset_preview(report: dict[str, Any], directory: Path) -> None:
+    print(f"This erases everything Dockyard saved in {directory}:")
+    rows = (
+        ("Activities", report["activities"]),
+        ("Check results", report["assessments"]),
+        ("Exam attempts", report["exams"]),
+        ("Notes", report["notes"]),
+        ("Mission files", report["checkpoints"]),
+        ("Labs", ", ".join(report["labs"]) or "none"),
+    )
+    for label, value in rows:
+        print(f"  {label:14} {value}")
+    if report["labs"]:
+        print("Each lab is cleaned up first, including its containers, clusters, and VMs.")
+    print("Your theme and downloaded tools and images are kept.")
+    print("Back up first with: dockyard progress export FILE.zip")
+    print("To reset, repeat this command with --yes.")
+
+
 def open_local_browser(url: str) -> None:
     import shutil
 
@@ -413,6 +442,25 @@ def main() -> None:
                 print(json.dumps(report, indent=2))
             else:
                 print_cache(report)
+        elif arguments.command == "reset":
+            from dockyard.profile_reset import reset_profile, summary
+
+            if not arguments.yes:
+                preview = summary(service)
+                if arguments.json:
+                    print(json.dumps(preview, indent=2))
+                else:
+                    print_reset_preview(preview, service.directory)
+            else:
+                outcome = reset_profile(service)
+                if arguments.json:
+                    print(json.dumps(outcome, indent=2))
+                else:
+                    cleaned = len(outcome["cleaned_labs"])
+                    plural = "lab" if cleaned == 1 else "labs"
+                    print(f"Dockyard was reset. Cleaned up {cleaned} {plural}.")
+                    for path in outcome["remaining"]:
+                        print(f"  Could not delete {path}; remove it yourself.")
         elif arguments.command == "portfolio":
             from dockyard.progress_bundle import save_export
             from dockyard.projects import export_portfolio

@@ -89,6 +89,8 @@ class Exams:
         return None
 
     def start(self, exam_id: str) -> ExamAttempt:
+        if self.service.resetting.is_set():
+            raise BusyError("Dockyard is resetting this profile. Try again when it finishes.")
         exam = self.definition(exam_id)
         unit = self.service.catalog.get(exam.unit_id)
         lab = self.store.lab(exam.unit_id)

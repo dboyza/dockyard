@@ -23,7 +23,15 @@ export type Page =
   | "settings"
   | "checkpoints"
   | "reference";
-type Dialog = { title: string; body: string; action: () => void } | null;
+type Dialog = {
+  title: string;
+  body: string;
+  action: () => void;
+  // Optional: label the confirm button, mark it destructive, or require a typed phrase.
+  confirmLabel?: string;
+  danger?: boolean;
+  requireText?: string;
+} | null;
 const emptyState: State = {
   exams: [],
   exam_readiness: {},

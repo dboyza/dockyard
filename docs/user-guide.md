@@ -146,6 +146,18 @@ Unfinished imported exams are invalidated without a score.
 Repeated import of the same archive is idempotent.
 Older curriculum evidence stays historical and remains due for reassessment where revisions differ.
 
+## Start fresh
+
+**Settings and data → Start fresh** erases everything Dockyard has saved about your learning, so you can begin again as on your first launch.
+Dockyard first cleans up every lab through its recorded ownership, including containers, clusters, and VMs.
+It then erases progress, check results, exam attempts, notes, saved mission files, backups, and lab workspaces.
+Your theme and the tools and images Dockyard downloaded are kept, so labs start quickly again.
+
+You confirm by typing `erase`, and the change cannot be undone, so download a backup first if you might want this history later.
+Finish any running lab operation and any timed exam before you reset.
+If any lab cannot be cleaned up, Dockyard stops and erases nothing, so no resource is left without its ownership record.
+From a terminal, `./dockyard reset` shows what would be erased and `./dockyard reset --yes` performs it.
+
 ## Use the CLI
 
 ```sh
@@ -162,6 +174,7 @@ Older curriculum evidence stays historical and remains due for reassessment wher
 ./dockyard progress import ./my-learning.zip
 ./dockyard progress import ./my-learning.zip --yes
 ./dockyard portfolio ./dispatch-portfolio.zip
+./dockyard reset
 ```
 
 Export destinations must not already exist.

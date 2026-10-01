@@ -32,7 +32,7 @@ from dockyard.process import ProcessResult, run
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.runtimes.kubernetes import KubernetesRuntime
 from dockyard.runtimes.linux import LinuxRuntime, vm_prefix
-from dockyard.store import Store, timestamp
+from dockyard.store import BusyError, Store, timestamp
 from dockyard.workspace import atomic_write, reset, snapshot, write_files
 
 COMPATIBILITY = json.loads((CONTENT / "compatibility.json").read_text())
@@ -56,6 +56,8 @@ class Service:
         self._cancels: dict[str, threading.Event] = {}
         self._lock = threading.Lock()
         self.closing = threading.Event()
+        # Set while every lab is cleaned and learning data is erased.
+        self.resetting = threading.Event()
         from dockyard.exams import Exams
 
         self.exams = Exams(self)
@@ -244,6 +246,8 @@ class Service:
     def perform(
         self, unit_id: str, action: str, *, exam_submission: bool = False
     ) -> dict[str, Any]:
+        if self.resetting.is_set() and action != "clean":
+            raise BusyError("Dockyard is resetting this profile. Try again when it finishes.")
         self.exams.guard(unit_id, action, exam_submission=exam_submission)
         self.catalog.get(unit_id)
         with operation_lock(self.directory / "locks", unit_id):

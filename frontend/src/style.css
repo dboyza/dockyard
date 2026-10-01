@@ -19,6 +19,7 @@
   --red: #f85149;
   --red-soft: #f8514926;
   --red-strong: #b62324;
+  --red-text: #ff7b72;
   --amber: #d29922;
   --amber-soft: #bb800926;
   --code: #010409;
@@ -53,6 +54,7 @@
   --red: #d1242f;
   --red-soft: #d1242f1a;
   --red-strong: #a40e26;
+  --red-text: #d1242f;
   --amber: #9a6700;
   --amber-soft: #9a67001a;
   --code: #f6f8fa;
@@ -1625,6 +1627,28 @@ pre {
 .confirm-dialog .button-row {
   justify-content: flex-end;
 }
+.confirm-phrase {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 18px;
+  font-size: 14px;
+}
+.confirm-phrase input {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+  font-family: var(--mono);
+}
+/* The final step of a destructive confirmation is the dialog's primary action. */
+.confirm-dialog button.danger:not(.text-button) {
+  background: var(--red-strong);
+  border-color: var(--red-strong);
+  color: #fff;
+  font-weight: 600;
+}
+.confirm-dialog button.danger:not(.text-button):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--red-strong) 85%, #000);
+}
 .connection {
   max-width: 650px;
   margin: 15vh auto;
@@ -2714,6 +2738,20 @@ pre {
   color: var(--blue);
   margin-bottom: 16px;
 }
+.start-fresh {
+  margin-top: 20px;
+  border-left: 3px solid var(--red);
+}
+.start-fresh .settings-icon {
+  color: var(--red);
+}
+.start-fresh ul {
+  margin: 0 0 16px;
+  padding-left: 20px;
+}
+.start-fresh li + li {
+  margin-top: 6px;
+}
 .archive-picker {
   display: grid;
   gap: 12px;
@@ -3070,7 +3108,7 @@ button:not(.text-button)[aria-pressed="true"] {
   }
 }
 button.danger:not(.text-button) {
-  color: var(--red);
+  color: var(--red-text);
 }
 button.danger:not(.text-button):hover:not(:disabled) {
   background: var(--red-strong);
@@ -3078,7 +3116,7 @@ button.danger:not(.text-button):hover:not(:disabled) {
   color: #fff;
 }
 .text-button.danger {
-  color: var(--red);
+  color: var(--red-text);
 }
 .lesson-pager {
   display: grid;

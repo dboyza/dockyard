@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Download, FileArchive, Sun, Moon, Upload } from "lucide-react";
+import {
+  Download,
+  FileArchive,
+  Moon,
+  RotateCcw,
+  Sun,
+  Upload,
+} from "lucide-react";
 import { api } from "./api";
 import type { Workbench } from "./useWorkbench";
 
@@ -17,6 +24,15 @@ type Preview = {
   older_revisions: number;
   policy: string;
 };
+type ResetSummary = {
+  labs: string[];
+  activities: number;
+  assessments: number;
+  notes: number;
+  checkpoints: number;
+  exams: number;
+};
+type ResetResult = { cleaned_labs: string[]; remaining: string[] };
 type Receipt = Preview & {
   directory: string;
   backup: string;
@@ -33,6 +49,8 @@ export function SettingsPage({ model }: { model: Workbench }) {
     setDialog,
     refresh,
     opened,
+    navigate,
+    setNotice,
   } = model;
   const [preview, setPreview] = useState<Preview | null>(null);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
@@ -87,13 +105,58 @@ export function SettingsPage({ model }: { model: Workbench }) {
       if (sequence === opened.current) setBusy("");
     }
   };
+  const erase = async () => {
+    setDialog(null);
+    setError("");
+    setBusy("Cleaning up labs and erasing local data");
+    try {
+      const result = await api<ResetResult>("/profile/reset", {
+        confirmed: true,
+      });
+      await refresh();
+      navigate("home");
+      setNotice("Dockyard was reset. You’re starting fresh.");
+      if (result.remaining.length)
+        setError(
+          `Some files could not be deleted. Remove them yourself: ${result.remaining.join(", ")}`,
+        );
+    } catch (error) {
+      setError((error as Error).message);
+    } finally {
+      setBusy("");
+    }
+  };
+  const confirmErase = async () => {
+    setError("");
+    try {
+      const found = await api<ResetSummary>("/profile/reset");
+      const count = (n: number, one: string, many = one + "s") =>
+        `${n} ${n === 1 ? one : many}`;
+      const erased = `your progress on ${count(found.activities, "activity", "activities")}, ${count(found.assessments, "check result")}, ${count(found.exams, "exam attempt")}, ${count(found.notes, "note")}, and ${count(found.checkpoints, "saved mission file")}`;
+      const labs = found.labs.length;
+      setDialog({
+        title: "Erase all local data?",
+        body: `${
+          labs
+            ? `First, ${count(labs, "lab is", "labs are")} cleaned up, including containers, clusters, and VMs. Then ${erased} are permanently erased.`
+            : `This permanently erases ${erased}.`
+        } This cannot be undone.`,
+        requireText: "erase",
+        confirmLabel: "Erase everything",
+        danger: true,
+        action: () => void erase(),
+      });
+    } catch (error) {
+      setError((error as Error).message);
+    }
+  };
   return (
     <>
       <div className="page-heading">
         <div className="eyebrow">Settings</div>
         <h1>Settings and data</h1>
         <p className="intro">
-          Choose a theme, and back up or move your progress to another computer.
+          Choose a theme, back up or move your progress, or start fresh.
         </p>
       </div>
       <section className="panel" aria-label="Appearance settings">
@@ -159,6 +222,36 @@ export function SettingsPage({ model }: { model: Workbench }) {
           </p>
         </section>
       </div>
+      <section className="panel start-fresh" aria-label="Start fresh">
+        <RotateCcw className="settings-icon" size={24} />
+        <h2>Start fresh</h2>
+        <p className="muted">
+          Erase everything Dockyard has saved about your learning and begin
+          again, as on your first launch.
+        </p>
+        <ul className="muted">
+          <li>
+            <strong>Erased:</strong> progress, check results, exam attempts,
+            notes, saved mission files, backups, and every lab with its
+            workspace files. Labs are cleaned up first, including their
+            containers, clusters, and VMs.
+          </li>
+          <li>
+            <strong>Kept:</strong> your theme, and the tools and images Dockyard
+            downloaded, so labs start quickly again.
+          </li>
+        </ul>
+        <p className="muted">
+          Download a backup first if you might want this history later.
+        </p>
+        <button
+          className="danger"
+          disabled={!!busy}
+          onClick={() => void confirmErase()}
+        >
+          Erase all local data
+        </button>
+      </section>
       <p className="small muted settings-version">
         Dockyard {model.catalog?.version}. Include this version and the output
         of <code>./dockyard doctor</code> when you report a problem.

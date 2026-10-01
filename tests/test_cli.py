@@ -119,3 +119,21 @@ def test_progress_import_previews_readably_then_merges(tmp_path, monkeypatch, ca
     merged = run(str(target), "progress", "import", str(archive), "--yes")
     assert "Merged." in merged and "progress database was saved" in merged
     assert "already imported" in run(str(target), "progress", "import", str(archive), "--yes")
+
+
+def test_reset_previews_before_erasing(tmp_path, monkeypatch, capsys):
+    import sys
+
+    from dockyard import cli
+    from dockyard.service import Service
+
+    Service(tmp_path).store.save_note("m01-processes", "keep until confirmed")
+    monkeypatch.setattr(sys, "argv", ["dockyard", "--data-dir", str(tmp_path), "reset"])
+    cli.main()
+    preview = capsys.readouterr().out
+    assert "Notes          1" in preview and "repeat this command with --yes" in preview
+    assert Service(tmp_path).store.note("m01-processes") == "keep until confirmed"
+    monkeypatch.setattr(sys, "argv", ["dockyard", "--data-dir", str(tmp_path), "reset", "--yes"])
+    cli.main()
+    assert capsys.readouterr().out.startswith("Dockyard was reset. Cleaned up 0 labs.")
+    assert Service(tmp_path).store.note("m01-processes") == ""

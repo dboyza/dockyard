@@ -49,6 +49,10 @@ class ImportAction(Body):
     confirmed: bool = False
 
 
+class Confirmation(Body):
+    confirmed: bool = False
+
+
 class CacheAction(Body):
     scope: str
 
@@ -216,6 +220,20 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
         if not body.confirmed:
             raise HTTPException(400, "Review and confirm this progress merge first.")
         return import_staged(service, body.digest)
+
+    @app.get("/api/profile/reset")
+    def reset_preview() -> dict[str, Any]:
+        from dockyard.profile_reset import summary
+
+        return summary(service)
+
+    @app.post("/api/profile/reset")
+    def reset_profile(body: Confirmation) -> dict[str, Any]:
+        from dockyard.profile_reset import reset_profile
+
+        if not body.confirmed:
+            raise HTTPException(400, "Confirm that you want to erase all local learning data.")
+        return reset_profile(service)
 
     @app.get("/api/cache")
     def cache_status(scope: str = "all") -> dict[str, Any]:
