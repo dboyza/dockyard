@@ -96,7 +96,7 @@ def test_lab_status_without_a_unit_lists_labs(tmp_path, monkeypatch, capsys):
     monkeypatch.delenv("DOCKYARD_UNIT", raising=False)
     monkeypatch.setattr(sys, "argv", ["dockyard", "--data-dir", str(tmp_path), "lab", "status"])
     cli.main()
-    assert capsys.readouterr().out.startswith("No labs yet.")
+    assert capsys.readouterr().out.startswith("No prepared labs.")
 
 
 def test_progress_import_previews_readably_then_merges(tmp_path, monkeypatch, capsys):

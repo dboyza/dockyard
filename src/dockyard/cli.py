@@ -243,7 +243,7 @@ def print_lab(unit_id: str, lab: dict[str, Any] | None) -> None:
 def print_labs(labs: list[dict[str, Any]]) -> None:
     present = [lab for lab in labs if lab["state"] != "absent"]
     if not present:
-        print("No labs yet. Start one with: dockyard lab prepare UNIT")
+        print("No prepared labs. Start one with: dockyard lab prepare UNIT")
         return
     for lab in present:
         print(f"  {lab['unit_id']:24} {LAB_STATE_NAMES.get(lab['state'], lab['state'])}")
