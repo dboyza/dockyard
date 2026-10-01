@@ -9,6 +9,10 @@ Containers attached to it can communicate, and Docker provides name lookup betwe
 A **network alias** is an extra name for a container on that network.
 The supplied API expects the name `dependency`.
 
+```figure
+bridge-network
+```
+
 ## Connect both ends
 
 Prepare creates the two containers, but their intended connection is missing.

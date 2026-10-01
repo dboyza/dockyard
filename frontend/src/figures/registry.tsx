@@ -4,6 +4,7 @@ import { QuorumModel } from "../QuorumModel";
 import { ReconciliationModel } from "../ReconciliationModel";
 import { StorageModel } from "../StorageModel";
 import { dispatch } from "./dispatch";
+import { docker } from "./docker";
 import { foundations } from "./foundations";
 
 export type Drawing = (props: { step?: number }) => ReactElement;
@@ -20,6 +21,7 @@ const models = {
 export const drawings: Record<FigureId, Drawing> = {
   ...foundations,
   ...dispatch,
+  ...docker,
   ...models,
 };
 

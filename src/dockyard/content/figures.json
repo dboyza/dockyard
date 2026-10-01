@@ -185,5 +185,203 @@
     "title": "Dispatch’s first version in this lab",
     "caption": "The same pattern as the foundations web server: a published port in, and a read-only folder of code mounted.",
     "description": "On your computer, a curl request to /healthz goes to 127.0.0.1 on an assigned port such as 54321, which is published with -p to port 8080 in the container. Inside the container, python app.py runs the Dispatch API on port 8080 and replies with status ok. The workspace folder containing app.py is bind mounted read-only at /app inside the container."
+  },
+  {
+    "id": "container-states",
+    "title": "A container’s states and the commands that move it",
+    "caption": "Stopping a container keeps it. Only docker rm removes it.",
+    "description": "A state diagram. docker create makes a Created container from an image; docker start moves it to Running; docker stop, or the process ending, moves it to Exited; docker start runs an exited container again; and docker rm moves an exited container to Removed. A dashed shortcut shows docker run as create plus start. Notes say docker ps lists running containers and docker ps -a lists created and exited ones too."
+  },
+  {
+    "id": "container-identity",
+    "title": "Same name, same container?",
+    "caption": "A name is just a label. The ID tells you whether it is really the same container.",
+    "description": "A sequence in four steps. A container named dispatch has the ID 3f2a9c and its own logs and files. Stopping and starting it keeps the same ID. Removing it deletes its ID, logs, and files, and frees the name. Running a new container with the same name produces a different ID, 9d41e7, with no logs or files yet.",
+    "steps": [
+      {
+        "label": "A new container",
+        "text": "Docker gives the container a unique ID. The name is a friendlier label pointing at it."
+      },
+      {
+        "label": "Stop and start",
+        "text": "Stopping and starting keeps the same container, so the ID, logs, and files are all unchanged."
+      },
+      {
+        "label": "Remove it",
+        "text": "docker rm deletes the container, including its logs and writable layer. Its name is now free."
+      },
+      {
+        "label": "Run again with the same name",
+        "text": "A new container can reuse the name, but it gets a new ID and starts with no logs or files. It only looks like the old one."
+      }
+    ]
+  },
+  {
+    "id": "log-streams",
+    "title": "Where a container’s logs come from",
+    "caption": "Docker records both output streams of the main process, so you can read them later.",
+    "description": "Inside a container, the main process python app.py writes to standard output and standard error. Docker stores both streams as the container's logs. docker logs in your terminal reads them back, for example a line showing GET /healthz 200. A note says logs remain after the container stops, until it is removed."
+  },
+  {
+    "id": "stop-signals",
+    "title": "What docker stop actually does",
+    "caption": "SIGTERM asks the process to finish. SIGKILL ends it without asking.",
+    "description": "A sequence in three steps. docker stop sends SIGTERM to process 1. A well-behaved process closes its connections and exits, leaving Exited (0). A process that ignores SIGTERM is sent SIGKILL after about ten seconds and is killed with no clean-up, leaving Exited (137).",
+    "steps": [
+      {
+        "label": "docker stop sends SIGTERM",
+        "text": "Docker asks the main process to finish by sending it the SIGTERM signal."
+      },
+      {
+        "label": "A well-behaved process exits",
+        "text": "The process closes its connections and exits by itself. The container shows Exited (0)."
+      },
+      {
+        "label": "A process that ignores it",
+        "text": "If the process does not exit, Docker waits about ten seconds, then sends SIGKILL. The process ends immediately with no clean-up, and the container shows Exited (137)."
+      }
+    ]
+  },
+  {
+    "id": "dockerfile-layers",
+    "title": "What each Dockerfile instruction contributes",
+    "caption": "Some instructions add layers of files; CMD only records a setting for later.",
+    "description": "A sequence in four steps beside the worked example Dockerfile. ARG and FROM start from the supplied Python image, whose Python and Alpine Linux layers form the base. WORKDIR and COPY add a layer containing /tool/report.py. CMD records the setting start: python report.py, which adds no files. Finally, docker run starts containers from the finished image.",
+    "steps": [
+      {
+        "label": "FROM picks the starting image",
+        "text": "The build begins with every layer of the supplied Python image."
+      },
+      {
+        "label": "WORKDIR and COPY add files",
+        "text": "WORKDIR sets the folder, and COPY adds report.py there as a new layer on top."
+      },
+      {
+        "label": "CMD records the start command",
+        "text": "CMD adds no files. It records which command a container should run when it starts."
+      },
+      {
+        "label": "Run containers from the image",
+        "text": "The build is finished. Every container made from this image starts with report.py and runs python report.py."
+      }
+    ]
+  },
+  {
+    "id": "build-context",
+    "title": "The build context",
+    "caption": "Docker builds only from the files it was sent; .dockerignore keeps the rest on your computer.",
+    "description": "Your folder, the build context, contains Dockerfile, app.py, VERSION, .dockerignore, secret.env, and a cache folder. The folder is sent to docker build, where COPY can use only what it was sent. A note says .dockerignore lists secret.env and cache, so they are never sent."
+  },
+  {
+    "id": "file-image-container",
+    "title": "A change has to travel through three things",
+    "caption": "Editing a file changes neither the image nor the container, and building a new image does not change a running container.",
+    "description": "A sequence in four steps with three columns: your VERSION file, images, and containers. At first the file, the image tagged practice, and the running container all have dispatch-1. Editing the file to dispatch-2 changes only the file. docker build creates a new image with dispatch-2 and moves the practice tag to it, but the container still serves dispatch-1 from the old, now untagged image. Replacing the container creates a new one from the new image, which serves dispatch-2.",
+    "steps": [
+      {
+        "label": "Everything matches",
+        "text": "The file, the image tagged practice, and the running container all hold dispatch-1."
+      },
+      {
+        "label": "Edit the file",
+        "text": "Saving VERSION changes only the file in your workspace. The image and container are unchanged."
+      },
+      {
+        "label": "Build the image",
+        "text": "docker build makes a new image with dispatch-2 and moves the practice tag to it. The running container still uses the old image."
+      },
+      {
+        "label": "Replace the container",
+        "text": "Removing the old container and running a new one from the tag finally serves dispatch-2."
+      }
+    ]
+  },
+  {
+    "id": "build-cache",
+    "title": "Which build steps run again",
+    "caption": "Put files that change rarely before files that change often, so slow steps stay cached.",
+    "description": "A sequence in three steps beside a five-line Dockerfile: FROM, WORKDIR, COPY requirements.txt, RUN pip install, and COPY service. On the first build every step runs. After editing only the service source, the first four steps are reused from the cache and only COPY service runs again. After editing requirements.txt, FROM and WORKDIR are reused, but COPY requirements.txt and every later step run again.",
+    "steps": [
+      {
+        "label": "The first build",
+        "text": "With nothing cached yet, every step runs."
+      },
+      {
+        "label": "Edit the source code",
+        "text": "Only the final COPY used a changed file, so the slow package installation is reused from the cache."
+      },
+      {
+        "label": "Edit requirements.txt",
+        "text": "The second COPY now sees a changed file, so it and every later step run again, including the installation."
+      }
+    ]
+  },
+  {
+    "id": "multi-stage-build",
+    "title": "Two stages, one final image",
+    "caption": "The verify stage can hold anything the build needs; the final stage receives only what you copy into it.",
+    "description": "Two regions. Stage 1, verify, starts from the base image, holds app.py, VERSION, and generated __pycache__ files in /source, and runs py_compile on app.py. Stage 2, the final image, starts from the base image again, receives only app.py and VERSION in /app through COPY --from=verify, and sets USER 10001:10001. A note says only the final stage becomes the image you run."
+  },
+  {
+    "id": "port-mapping-mismatch",
+    "title": "A running container behind the wrong mapping",
+    "caption": "The host side of a mapping can be right while the container side points where nothing listens.",
+    "description": "A sequence in two steps. At first, a curl request to 127.0.0.1 port 49152 is forwarded to port 8081 in the container, but Dispatch listens on 8080, so nothing answers and the request fails. After the container is replaced with a mapping to 8080, the same request reaches Dispatch and returns status ok.",
+    "steps": [
+      {
+        "label": "Forwarded to 8081",
+        "text": "Docker forwards the request to port 8081, where nothing is listening. The container is running, but the request fails."
+      },
+      {
+        "label": "Replaced with a mapping to 8080",
+        "text": "The replacement container forwards the same host port to 8080, where Dispatch listens, so the request succeeds."
+      }
+    ]
+  },
+  {
+    "id": "localhost-perspective",
+    "title": "127.0.0.1 depends on where you stand",
+    "caption": "Each container has its own network environment, so its localhost is itself.",
+    "description": "Three side-by-side places: your computer, the API container, and another container. In each, a request to 127.0.0.1 arrives back in that same place: this computer, the API container, or that container. A note says 127.0.0.1 always means the place making the request, never a neighbor."
+  },
+  {
+    "id": "bridge-network",
+    "title": "Connecting two containers by name",
+    "caption": "A shared user-defined network gives containers a path and a name to use; no published port is needed between them.",
+    "description": "A sequence in three steps. Your terminal requests /dependency from the API through its published port. With no shared network, the API cannot resolve the name dependency. After both containers join the lab network, with the alias dependency on the dependency container, the API's request to dependency:8080 succeeds because Docker's DNS turns the name into the current address. The dependency still has no published port.",
+    "steps": [
+      {
+        "label": "No shared network",
+        "text": "The API can be reached from your computer, but it has no network in common with the dependency, so the name dependency means nothing to it."
+      },
+      {
+        "label": "Join one network",
+        "text": "Both containers are attached to the lab network, and the dependency’s connection carries the alias dependency."
+      },
+      {
+        "label": "Call it by name",
+        "text": "The API asks for dependency:8080. Docker’s DNS answers with the dependency’s current address, and the request succeeds."
+      }
+    ]
+  },
+  {
+    "id": "wrong-upstream",
+    "title": "Why the API’s request never leaves its container",
+    "caption": "Test from the caller’s own network environment, then fix the setting by replacing the caller.",
+    "description": "A sequence in three steps on the lab network. The API's upstream setting is 127.0.0.1:8081, so its request loops back into the API container, where nothing listens, and is refused. A docker exec test from inside the API container shows that http://dependency:8080 works. The API container is replaced with the upstream setting dependency:8080, and its request now reaches the dependency.",
+    "steps": [
+      {
+        "label": "The configured address",
+        "text": "127.0.0.1:8081 points back into the API’s own container. Nothing listens there, so the connection is refused."
+      },
+      {
+        "label": "Test from inside the API",
+        "text": "docker exec runs a request from the API container’s own network environment. The dependency’s name and port work."
+      },
+      {
+        "label": "Replace the API",
+        "text": "A replacement API container with the corrected setting reaches the dependency over the lab network."
+      }
+    ]
   }
 ]

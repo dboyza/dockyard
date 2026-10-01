@@ -10,6 +10,10 @@ A container uses the image selected when that container was created.
 An **image tag** is a name that can be moved to a newer image; it does not update existing containers.
 Even stopping and starting an existing container keeps its original image.
 
+```figure
+file-image-container
+```
+
 ## Watch the release through three changes
 
 Prepare the lab and open its terminal.
@@ -69,6 +73,10 @@ COPY service/ ./service/
 `requirements.txt` lists the packages, and `service/` contains the application source.
 A source-only edit can reuse the earlier package-installation step.
 A changed requirements file causes the installation and later steps to run again.
+
+```figure
+build-cache
+```
 This small Dispatch version has no third-party packages yet, so you do not need to add that example to its Dockerfile.
 
 When the wrong release appears, compare the file, image, and container before disabling the cache.

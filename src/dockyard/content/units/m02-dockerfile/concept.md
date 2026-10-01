@@ -46,6 +46,12 @@ CMD ["python", "report.py"]
 Dockyard supplies a specific Python image so everyone builds on exactly the same starting point.
 Your Dispatch Dockerfile will follow the same pattern, but with `/app`, both of Dispatch’s files, and Dispatch’s start command.
 
+Step through the worked example to see what each instruction contributes to the image.
+
+```figure
+dockerfile-layers
+```
+
 Build it like this:
 
 ```sh
@@ -62,6 +68,10 @@ Read the last lines of the output to confirm the build succeeded before you run 
 The final `.` in the build command is the **build context**: the folder whose files Docker is allowed to copy.
 `COPY` can only use files inside it.
 A `.dockerignore` file in that folder lists files to leave out, such as passwords, caches, or large folders the image does not need.
+
+```figure
+build-context
+```
 
 ## Ports are still chosen at run time
 

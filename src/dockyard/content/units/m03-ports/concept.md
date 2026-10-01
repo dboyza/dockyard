@@ -13,6 +13,10 @@ Read a mapping such as `127.0.0.1:49152:8080` from left to right:
 The mapping forwards traffic; it does not change the port the application listens on.
 For example, forwarding to 8081 would be wrong for this application even if the host port were correct.
 
+```figure
+port-mapping-mismatch
+```
+
 ## Inspect before replacing
 
 Prepare the lab, open its terminal, and run:
@@ -52,6 +56,10 @@ Inside a container, it refers to that container’s own network environment, not
 The server listens on `0.0.0.0` inside the container so it can receive forwarded traffic through its container interface.
 On the host side, we deliberately publish only to `127.0.0.1` for local practice.
 Those addresses serve different purposes.
+
+```figure
+localhost-perspective
+```
 
 Use the published host endpoint for requests from your computer.
 A container’s private IP is not the portable host-access method across Docker Desktop and native Linux.

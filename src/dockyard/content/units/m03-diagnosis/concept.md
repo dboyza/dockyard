@@ -4,6 +4,10 @@ In this lab both containers are already connected correctly.
 The API instead has a wrong `UPSTREAM_URL`, the setting telling it which dependency to call.
 It uses `127.0.0.1`, so it looks inside its own container rather than at its neighbor.
 
+```figure
+wrong-upstream
+```
+
 A **network namespace** is a process’s separate view of network interfaces, addresses, and routes.
 You have already used the practical consequence: localhost means the environment making the request.
 To diagnose the API’s problem, test from the API container.

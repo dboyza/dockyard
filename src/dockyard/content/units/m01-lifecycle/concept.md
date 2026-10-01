@@ -18,6 +18,10 @@ Four commands move a container between those states:
 
 `docker run`, which you used in the last lesson, is simply `create` and `start` in one command.
 
+```figure
+container-states
+```
+
 Each container also has a small private area for any files its program changes, called its **writable layer**.
 Stopping keeps that area; removing the container deletes it.
 The image the container was made from is not affected either way.
@@ -29,6 +33,10 @@ A **name** is a friendlier label that points at one container.
 Starting and stopping the same container keeps its ID.
 If you remove a container and run a new one with the same name, you get a new ID: it is a different container that happens to reuse the name.
 That difference matters later, when you wonder why old logs or files have disappeared.
+
+```figure
+container-identity
+```
 
 ## Ask Docker what it has
 

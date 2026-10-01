@@ -301,12 +301,7 @@ export function Terminal({
       <circle cx={x + 13} cy={y + 12} r="3.5" />
       <circle cx={x + 25} cy={y + 12} r="3.5" />
       <circle cx={x + 37} cy={y + 12} r="3.5" />
-      <text
-        className="fig-terminal-title"
-        x={x + w / 2}
-        y={y + 16}
-        textAnchor="middle"
-      >
+      <text className="fig-terminal-title" x={x + 50} y={y + 16}>
         {title}
       </text>
       {lines.map((line, index) => (

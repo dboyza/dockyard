@@ -4,6 +4,10 @@ A program running in a container still prints messages, even though you cannot s
 Programs have two output channels: **standard output** for ordinary messages and **standard error** for errors and warnings.
 Docker collects both, and `docker logs` shows them to you.
 
+```figure
+log-streams
+```
+
 ```sh
 docker logs --tail 20 --timestamps "$DOCKYARD_CONTAINER"
 ```
@@ -38,6 +42,10 @@ When a process ends it reports an **exit code**.
 Zero means it finished normally; any other number means something went wrong.
 Dispatch handles SIGTERM and exits with code 0, so a normal `docker stop` should leave it `Exited (0)`.
 A process killed with SIGKILL usually shows `Exited (137)`.
+
+```figure
+stop-signals
+```
 
 Be careful what you conclude from exit code 0.
 It means the program finished without an error.
