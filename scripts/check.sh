@@ -1,6 +1,6 @@
 #!/bin/bash
-# Run every fast check: lint, types, formatting, unit tests, the structural audit,
-# and dependency advisory scans. Real-runtime suites are listed in docs/maintenance.md.
+# Run every fast check: lint, types, formatting, unit tests, figure screenshots,
+# the structural audit, and dependency advisory scans. Real-runtime suites are listed in docs/maintenance.md.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 step() { printf '\n== %s\n' "$1"; }
@@ -18,6 +18,16 @@ npm --prefix frontend run -s lint
 npm --prefix frontend run -s format:check
 npm --prefix frontend run -s check
 npm --prefix frontend run -s test
+
+step "Figure screenshots"
+# Reference images are per platform because the interface uses system fonts.
+platform="$(node -p process.platform)"
+if compgen -G "frontend/e2e/figures.spec.ts-snapshots/light/*-$platform.png" > /dev/null; then
+  npm --prefix frontend run -s test:figures
+else
+  printf 'No reviewed figure images for %s yet. Create them, inspect them, and commit them:\n' "$platform"
+  printf '  npm --prefix frontend run test:figures -- --update-snapshots\n'
+fi
 
 step "Structural curriculum audit"
 audit_profile="$(mktemp -d)"

@@ -98,6 +98,10 @@ Lesson and primer Markdown embed a figure with a fenced block whose language is 
 The drawings live in `frontend/src/figures`, built from the shared SVG kit so they follow both themes; primer drawings are in `reference.tsx`.
 After changing `figures.json`, regenerate the contracts; TypeScript then requires a drawing for every figure.
 Review drawings with `npm --prefix frontend run dev` and `/gallery.html`, which shows every step; add `?theme=light` or `?figure=ID` as needed.
+`./scripts/check.sh` compares every drawing and step in both themes with the reviewed images in `frontend/e2e/figures.spec.ts-snapshots`, which hide the surrounding text so only drawings are compared.
+A failure leaves the expected, actual, and difference images under `.artifacts/playwright`; inspect them before deciding.
+After an intended drawing change, run `npm --prefix frontend run test:figures -- --update-snapshots`, inspect the changed images, and commit them with the change.
+Reference images are per platform because the interface uses system fonts; a platform without them is skipped with the command that creates them.
 Draw on a 640-unit-wide canvas, keep text at its rendered size, and check both themes before relying on a figure.
 The structural audit requires at least one figure in every lesson's concept and every foundation primer; missions, incidents, and exams stay figure-free so they do not hint at answers.
 Use a stepped figure when the idea is a sequence or a change of state, and keep each figure's description complete enough to stand in for the drawing.
