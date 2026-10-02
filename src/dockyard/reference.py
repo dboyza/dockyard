@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from dockyard.catalog import Catalog
+from dockyard.catalog import Catalog, figure_references
 from dockyard.workspace import safe_relative
 
 
@@ -19,6 +19,9 @@ def library(catalog: Catalog) -> dict[str, Any]:
     for item in primers:
         filename = safe_relative(item["id"] + ".md")
         item["content"] = (root / "primers").joinpath(*filename.parts).read_text()
+        for figure in figure_references(item["content"]):
+            if figure not in catalog.figures:
+                raise ValueError(f"The {item['id']} primer embeds an unknown figure: {figure}")
     for item in glossary:
         if item["primer"] not in identifiers or not set(item["units"]) <= catalog.units.keys():
             raise ValueError("Reference links must identify available primers and course units.")

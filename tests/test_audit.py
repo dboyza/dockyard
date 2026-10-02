@@ -85,13 +85,33 @@ def test_audit_requires_a_figure_in_every_lesson(catalog):
     )
 
 
-def test_every_figure_is_used_by_some_lesson(catalog):
-    used = {
-        figure
+def test_reference_library_rejects_a_primer_that_embeds_an_unknown_figure(tmp_path):
+    content = tmp_path / "content"
+    shutil.copytree(CONTENT, content)
+    primer = content / "reference/primers/http.md"
+    primer.write_text(primer.read_text() + "\n```figure\nno-such-figure\n```\n")
+    with pytest.raises(ValueError, match="http primer embeds an unknown figure: no-such-figure"):
+        library(Catalog(content))
+
+
+def test_audit_requires_a_figure_in_every_primer(tmp_path):
+    content = tmp_path / "content"
+    shutil.copytree(CONTENT, content)
+    (content / "reference/primers/dns.md").write_text("# Names and DNS\n\nWords only.\n")
+    assert (
+        "dns primer: a primer must explain its central idea with a figure."
+        in (curriculum(Catalog(content))["issues"])
+    )
+
+
+def test_every_figure_is_used_by_some_lesson_or_primer(catalog):
+    texts = [
+        text
         for unit in catalog.units.values()
         for text in (unit.concept, unit.brief, unit.debrief, *unit.hints)
-        for figure in figure_references(text)
-    }
+    ]
+    texts += [primer["content"] for primer in library(catalog)["primers"]]
+    used = {figure for text in texts for figure in figure_references(text)}
     assert set(catalog.figures) == used
 
 

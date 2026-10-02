@@ -55,6 +55,11 @@ chown 10001:10001 /data
 
 Numeric modes add up read = 4, write = 2, execute = 1 for each of owner, group, and others.
 So `600` is owner read and write, and `755` is owner everything, everyone else read and enter.
+
+```figure
+file-mode-bits
+```
+
 `chown` changes owner and group, and usually needs root.
 
 Resist `chmod 777`, which lets every user change the file.
@@ -112,6 +117,10 @@ Two kernel features create the isolation:
 - **Namespaces** give a process its own view of things such as the process list, network, and files. That is why a container sees only its own processes and has its own `localhost`.
 - **cgroups** (control groups) limit and measure resources such as memory and CPU. That is how memory and CPU limits work.
 
+```figure
+container-shared-kernel
+```
+
 Every process’s cgroup is visible in `/proc/PID/cgroup`, which shows which limits actually apply to it.
 
 ## Check the thing that matters
@@ -119,6 +128,10 @@ Every process’s cgroup is visible in `/proc/PID/cgroup`, which shows which lim
 Linux often has several layers that can disagree:
 a file can hold a new setting while the running program still uses the old one, and a certificate can be renewed on disk while the server still presents the previous one until it restarts.
 After a change, check the running process or a real request, not just the file.
+
+```figure
+file-vs-running
+```
 
 ## Check your understanding
 

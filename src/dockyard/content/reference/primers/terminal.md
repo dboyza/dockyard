@@ -4,6 +4,10 @@ A **terminal** is a window where you type commands instead of clicking.
 The program that reads what you type and runs it is called the **shell**.
 Docker and kubectl are ordinary programs that you start from the shell.
 
+```figure
+shell-role
+```
+
 When Dockyard opens a lab terminal, it starts you in the lab’s own folder with some helpful values already set.
 
 ## Where am I?
@@ -20,6 +24,12 @@ A **path** is a file’s location.
 `Dockerfile` on its own means “the file called Dockerfile in the current folder”; this is a **relative path**.
 A path starting with `/`, such as `/tmp/example`, is an **absolute path**: it means the same place wherever you are.
 `cd folder` moves into a folder, and `cd ..` moves up one level.
+
+Your home folder may be under `/Users` on macOS rather than `/home`; the idea is the same.
+
+```figure
+relative-absolute-paths
+```
 
 ## Reading and writing files
 
@@ -70,6 +80,10 @@ In `kubectl get pods -n dispatch`:
 When a lesson shows a placeholder such as `<the digest you found>`, replace the whole thing, including the angle brackets.
 The shell treats `<` and `>` specially, so never type them literally.
 
+```figure
+command-anatomy
+```
+
 A long command can be split over several lines by ending each line with a backslash, `\`.
 You can paste such a block all at once.
 
@@ -90,6 +104,10 @@ Every command finishes with an **exit status**, a number the shell keeps.
 Zero means success; anything else means the program reported a problem.
 `echo $?` shows the status of the command you just ran.
 `first && second` runs the second command only if the first succeeded.
+
+```figure
+shell-streams
+```
 
 A command reporting success does not always mean the result is what you wanted.
 Check the file, container, or response you care about.

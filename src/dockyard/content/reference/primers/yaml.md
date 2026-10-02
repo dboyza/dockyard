@@ -27,6 +27,10 @@ Everything indented under a key belongs to it.
 Use spaces, never tabs, and keep items at the same level lined up exactly.
 Moving `labels:` two spaces to the left would make it a sibling of `service` instead of part of it, and YAML would not warn you.
 
+```figure
+yaml-building-blocks
+```
+
 YAML guesses the type of unquoted values.
 `2` is a number, `true` is a yes/no value, and `1.0` would become a number too, which is why the example quotes `"1.0"` to keep it as text.
 When in doubt, quote values that must stay as text.
@@ -47,6 +51,10 @@ There are three separate questions:
 A file can pass the first two and still fail the third.
 For example, Kubernetes will happily accept a Service that points at labels no Pod has.
 Always check the running result, not just that the file was accepted.
+
+```figure
+yaml-three-checks
+```
 
 ## How Kubernetes files are laid out
 
@@ -75,6 +83,10 @@ Notice there are two sets of labels.
 `owner: practice` labels the Deployment itself.
 `app: example`, inside `spec.template`, labels the Pods the Deployment will create.
 A Service that should find those Pods must look for `app: example`.
+
+```figure
+yaml-two-label-sets
+```
 
 `kubectl explain deployment.spec.template` describes any field from the command line, which is handy when you forget where something goes.
 

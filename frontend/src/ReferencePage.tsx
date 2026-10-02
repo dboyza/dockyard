@@ -178,7 +178,7 @@ export function ReferencePage({ model }: { model: Workbench }) {
             <span className="eyebrow">
               FOUNDATION PRIMER · {primer.minutes} MIN
             </span>
-            <Markdown>{primer.content}</Markdown>
+            <Markdown key={primer.id}>{primer.content}</Markdown>
           </article>
         </div>
       )}

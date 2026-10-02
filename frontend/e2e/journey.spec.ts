@@ -225,6 +225,12 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await page.getByRole('combobox', { name: 'Foundation primer' }).selectOption('yaml');
   await expect(page.getByRole('heading', { name: 'Reading YAML' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const blocks = page.getByRole('figure', { name: 'Mappings, lists, and scalars' });
+  await blocks.getByRole('button', { name: 'Next step' }).click();
+  await expect(blocks).toContainText('Step 2 of 4');
+  await page.getByRole('combobox', { name: 'Foundation primer' }).selectOption('http');
+  await expect(page.getByRole('figure', { name: 'How far did the request get?' })).toContainText('Step 1 of 4');
+  await expect(page.locator('.reference-article .lesson-figure')).toHaveCount(4);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await navigateTo(page, 'Troubleshooting');
   await expect(page.getByRole('heading', { name: 'Follow the evidence.' })).toBeVisible();

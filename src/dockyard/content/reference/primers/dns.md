@@ -20,6 +20,10 @@ Programs usually use the short name `dispatch`, and the Pod’s DNS settings fil
 That shortcut assumes the same namespace.
 From a Pod in a different namespace, use at least `dispatch.dispatch`.
 
+```figure
+dns-search-suffixes
+```
+
 Your own computer does not use the cluster’s DNS, so these names only work from inside the cluster.
 
 ## Looking a name up
@@ -45,6 +49,10 @@ Some images do not include `nslookup`.
 
 So a Service name can resolve perfectly while the Service has no ready endpoints behind it, and every request still fails.
 
+```figure
+service-name-to-pod
+```
+
 A **headless** Service has no ClusterIP; DNS returns the Pods’ own addresses instead.
 StatefulSets use this so each Pod has its own name.
 
@@ -53,6 +61,10 @@ StatefulSets use this so each Pod has its own name.
 A network policy that blocks all outgoing traffic also blocks DNS lookups.
 DNS uses port 53 over UDP, and sometimes TCP.
 If you allow a Pod to reach its database port but not DNS, it still cannot find the database by name.
+
+```figure
+dns-blocked-by-policy
+```
 
 ## DNS needs to stay available
 

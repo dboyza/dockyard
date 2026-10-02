@@ -14,6 +14,10 @@ A **request** says what you want:
 
 The server replies with a **response**: a **status code** saying how it went, headers, and a body.
 
+```figure
+http-exchange
+```
+
 ## Reading a URL
 
 In `http://127.0.0.1:8080/jobs`:
@@ -23,9 +27,17 @@ In `http://127.0.0.1:8080/jobs`:
 - `8080` is the **port**, which service on that machine to talk to;
 - `/jobs` is the path within that service.
 
+```figure
+url-anatomy
+```
+
 `127.0.0.1`, also called **localhost**, always means “the machine making this request”.
 Inside a container, that is the container itself, not your computer or a neighbouring container.
 Containers in the same Kubernetes Pod share one network, so for them localhost does reach each other.
+
+```figure
+localhost-perspective
+```
 
 ## curl
 
@@ -48,6 +60,7 @@ Add `--fail` to make it treat error statuses as failures, or `--fail-with-body` 
 | Status | Meaning |
 | --- | --- |
 | 200 | Success. |
+| 201 | Success, and something new was created, such as a job. |
 | 400 | The server thinks the request itself is wrong. |
 | 401 | You need to log in, or your login was not accepted. |
 | 403 | You are identified, but not allowed to do this. |
@@ -68,6 +81,10 @@ The error message tells you how far the request got:
 - **An HTTP status**: the service answered. Read the status and body to see what it said.
 
 Work out which of these you have before changing anything.
+
+```figure
+request-stages
+```
 
 ## Dispatch’s check addresses
 

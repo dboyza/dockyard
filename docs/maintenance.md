@@ -91,15 +91,15 @@ Use an independent mission to assess prior teaching and a distinct incident faul
 Keep explanations ahead of the prerequisites used by a task.
 An exam's task titles and text come from its unit's `brief.md`, one `## N. Title (W%)` section per task in `exams.json` order; `exams.json` holds only weights, criteria, and remediation.
 
-### Lesson figures
+### Lesson and primer figures
 
-Lesson Markdown embeds a figure with a fenced block whose language is `figure` and whose only line is the figure ID.
-`src/dockyard/content/figures.json` holds each figure's title, caption, screen-reader description, and optional steps; the catalog rejects unknown or malformed references.
-The drawings live in `frontend/src/figures`, built from the shared SVG kit so they follow both themes.
+Lesson and primer Markdown embed a figure with a fenced block whose language is `figure` and whose only line is the figure ID.
+`src/dockyard/content/figures.json` holds each figure's title, caption, screen-reader description, and optional steps; the catalog and the reference library reject unknown or malformed references, and every figure must be used somewhere.
+The drawings live in `frontend/src/figures`, built from the shared SVG kit so they follow both themes; primer drawings are in `reference.tsx`.
 After changing `figures.json`, regenerate the contracts; TypeScript then requires a drawing for every figure.
 Review drawings with `npm --prefix frontend run dev` and `/gallery.html`, which shows every step; add `?theme=light` or `?figure=ID` as needed.
 Draw on a 640-unit-wide canvas, keep text at its rendered size, and check both themes before relying on a figure.
-The structural audit requires at least one figure in every lesson's concept; missions, incidents, and exams stay figure-free so they do not hint at answers.
+The structural audit requires at least one figure in every lesson's concept and every foundation primer; missions, incidents, and exams stay figure-free so they do not hint at answers.
 Use a stepped figure when the idea is a sequence or a change of state, and keep each figure's description complete enough to stand in for the drawing.
 
 Change an activity revision when its learning contract or grading behavior changes after release.

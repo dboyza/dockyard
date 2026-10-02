@@ -9,6 +9,7 @@ import { docker } from "./docker";
 import { foundations } from "./foundations";
 import { kubernetes } from "./kubernetes";
 import { platform } from "./platform";
+import { reference } from "./reference";
 
 export type Drawing = (props: { step?: number }) => ReactElement;
 export type Drawings = Partial<Record<FigureId, Drawing>>;
@@ -28,6 +29,7 @@ export const drawings: Record<FigureId, Drawing> = {
   ...kubernetes,
   ...platform,
   ...cluster,
+  ...reference,
   ...models,
 };
 

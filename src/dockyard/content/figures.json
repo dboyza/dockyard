@@ -1589,5 +1589,227 @@
         "text": "After the rollback, desired, up-to-date, available, and total all show 2."
       }
     ]
+  },
+  {
+    "id": "shell-role",
+    "title": "What happens when you press Enter",
+    "caption": "The terminal shows text, the shell reads your command, and the program does the work.",
+    "description": "Three parts from left to right. The terminal window shows the line docker ps that you typed. The shell reads that line, fills in any variables, and starts the program it names. The docker program does the work and prints its output, which appears back in the terminal window for you to read."
+  },
+  {
+    "id": "relative-absolute-paths",
+    "title": "Relative and absolute paths",
+    "caption": "A relative path starts where you are; an absolute path starts at the top, written /.",
+    "description": "A folder tree in four steps. The top folder, written /, holds home and tmp. Inside home is you, inside that is lab, and lab holds a Dockerfile and a site folder with index.html in it. First, the working directory is lab, and pwd prints /home/you/lab. Second, the relative path site/index.html is followed down from lab. Third, the absolute path /tmp/example is followed down from the top, wherever you are. Fourth, cd .. moves the working directory up to you.",
+    "steps": [
+      {
+        "label": "Where you are",
+        "text": "Your working directory is lab. pwd prints its absolute path, /home/you/lab."
+      },
+      {
+        "label": "A relative path",
+        "text": "site/index.html starts from where you are: into site, then the file."
+      },
+      {
+        "label": "An absolute path",
+        "text": "/tmp/example starts from the top folder, so it means the same file wherever you are."
+      },
+      {
+        "label": "Moving up",
+        "text": "cd .. moves you up one level, so the working directory becomes you."
+      }
+    ]
+  },
+  {
+    "id": "command-anatomy",
+    "title": "Reading a command before you run it",
+    "caption": "Name the program, its arguments, and its options, and replace every placeholder in full.",
+    "description": "The command kubectl get pods -n dispatch split into its parts: kubectl is the program, get and pods are arguments, and -n dispatch is an option with its value. Below it, the lesson text docker logs <container name> becomes docker logs web when typed: the whole placeholder, including the angle brackets, is replaced."
+  },
+  {
+    "id": "shell-streams",
+    "title": "Where a command’s output goes",
+    "caption": "Output and error messages travel separately, and the exit status reports how the command finished.",
+    "description": "A sequence in four steps around a command. First, its standard output and standard error both appear in the terminal. Second, > file sends standard output into a file while error messages still reach the screen. Third, a pipe sends the output of printf into sort, which prints the sorted lines. Fourth, every command finishes with an exit status: 0 means success and lets && run the next command, while any other number means a reported problem, and && skips the next command.",
+    "steps": [
+      {
+        "label": "Two channels",
+        "text": "By default, standard output and standard error both appear in your terminal."
+      },
+      {
+        "label": "Redirect to a file",
+        "text": "With > file, standard output goes into the file, while error messages still appear on screen."
+      },
+      {
+        "label": "A pipe",
+        "text": "With first | second, the first command’s output becomes the second command’s input."
+      },
+      {
+        "label": "The exit status",
+        "text": "A finished command leaves an exit status: 0 for success, anything else for a problem. && runs the next command only after a 0."
+      }
+    ]
+  },
+  {
+    "id": "yaml-building-blocks",
+    "title": "Mappings, lists, and scalars",
+    "caption": "Indentation decides what belongs to what, and nothing warns you when it changes.",
+    "description": "The example YAML from this guide, with its parts marked in four steps. First, service holds a mapping of six keys indented beneath it. Second, ports holds a list whose one item starts with a dash. Third, values such as 2, true, and the quoted \"1.0\" are scalars, and the quotes keep 1.0 as text. Fourth, the same file with labels moved two spaces left: labels now sits beside service instead of inside it, and no error appears.",
+    "steps": [
+      {
+        "label": "A mapping",
+        "text": "service holds a mapping: the six keys indented beneath it, from name to ports."
+      },
+      {
+        "label": "A list",
+        "text": "ports holds a list. Each item starts with a dash; this one is itself a small mapping."
+      },
+      {
+        "label": "Scalars",
+        "text": "Single values. Unquoted 2 and true become a number and a yes/no value; quotes keep \"1.0\" as text."
+      },
+      {
+        "label": "Indentation decides",
+        "text": "Move labels two spaces left and it belongs beside service instead of inside it. The file is still valid, so nothing warns you."
+      }
+    ]
+  },
+  {
+    "id": "yaml-three-checks",
+    "title": "Three separate checks",
+    "caption": "Passing one check says nothing about the next.",
+    "description": "Three gates in a row. First, is it valid YAML: can the text be read at all? Indenting with a tab fails here. Second, is it a valid object: does it have the fields the tool expects? A misspelled field such as replica fails here. Third, does it work: does the running system behave as intended? A Service whose selector matches no Pods passes the first two checks and fails here."
+  },
+  {
+    "id": "yaml-two-label-sets",
+    "title": "Two sets of labels in one Deployment",
+    "caption": "A Service selector must match the Pod template’s labels, not the Deployment’s own.",
+    "description": "On the left, the Deployment file with its own label owner: practice under metadata, and the Pod template label app: example under spec.template.metadata. The first label tags the Deployment; the second tags each Pod it creates. On the right, a Service with the selector app: example finds both Pods. A selector of owner: practice would find nothing, because no Pod carries that label."
+  },
+  {
+    "id": "http-exchange",
+    "title": "One request, one response",
+    "caption": "The request says what you want; the response’s status says how it went.",
+    "description": "On the left, curl sends a request to Dispatch: the method POST, the path /jobs, the header Content-Type: application/json, and the body {\"title\":\"hello\"}. On the right, Dispatch sends back a response: the status 201 Created, a Content-Type header, and a body describing the new job with its id and title."
+  },
+  {
+    "id": "url-anatomy",
+    "title": "Reading a URL",
+    "caption": "The address picks a machine, the port picks a service on it, and the path picks what you ask for.",
+    "description": "The URL http://127.0.0.1:8080/jobs split into four parts: http is the protocol, 127.0.0.1 is the machine’s address, 8080 is the port, and /jobs is the path. Below, the machine at 127.0.0.1 runs two services, Dispatch listening on port 8080 and a database on port 5432. The port 8080 selects Dispatch, and the path /jobs selects the jobs list within it rather than /healthz."
+  },
+  {
+    "id": "request-stages",
+    "title": "How far did the request get?",
+    "caption": "Each error message points at the stage where the request stopped.",
+    "description": "A request’s journey from curl to the application in four stages, revealed one at a time. Resolving the name fails with Could not resolve host. Connecting to the port fails with Connection refused when nothing listens there, or Timed out when nothing answers. For https, verifying the certificate fails with a certificate or TLS error. Once the service answers, any status code, even an error status, shows the request arrived.",
+    "steps": [
+      {
+        "label": "Find the address",
+        "text": "Could not resolve host: the name never became an address, so nothing was contacted."
+      },
+      {
+        "label": "Connect to the port",
+        "text": "Connection refused: the machine answered, but nothing listens on that port. Timed out: no answer came back at all."
+      },
+      {
+        "label": "Secure the connection",
+        "text": "For https, a certificate or TLS error means the connection could not be verified."
+      },
+      {
+        "label": "The service answers",
+        "text": "Any HTTP status means the request arrived and the service replied. Read the status and body."
+      }
+    ]
+  },
+  {
+    "id": "dns-search-suffixes",
+    "title": "How a short name is completed",
+    "caption": "A Pod’s DNS settings try its own namespace first.",
+    "description": "A sequence in three steps. First, a Pod in the dispatch namespace looks up dispatch; its first search suffix makes dispatch.dispatch.svc.cluster.local, which exists, and DNS returns the Service’s ClusterIP. Second, a Pod in the web namespace looks up dispatch; the suffixes make names such as dispatch.web.svc.cluster.local, none of which exist, so the lookup fails. Third, the same Pod looks up dispatch.dispatch, which becomes dispatch.dispatch.svc.cluster.local and resolves.",
+    "steps": [
+      {
+        "label": "Same namespace",
+        "text": "From the dispatch namespace, dispatch becomes dispatch.dispatch.svc.cluster.local, which exists."
+      },
+      {
+        "label": "Another namespace",
+        "text": "From the web namespace, dispatch becomes dispatch.web.svc.cluster.local and similar names. None exists."
+      },
+      {
+        "label": "Name the namespace",
+        "text": "dispatch.dispatch becomes dispatch.dispatch.svc.cluster.local from any namespace."
+      }
+    ]
+  },
+  {
+    "id": "service-name-to-pod",
+    "title": "From a Service name to a Pod",
+    "caption": "Resolving the name is only the first of three steps.",
+    "description": "A sequence in three steps. First, a client Pod asks DNS for dispatch and gets the Service’s ClusterIP. Second, traffic sent to that ClusterIP is forwarded to one of the two ready dispatch Pods, its endpoints, and the application answers. Third, both Pods are not ready, so the Service has no ready endpoints: the name still resolves to the same ClusterIP, but the request has nowhere to go and fails.",
+    "steps": [
+      {
+        "label": "Resolve the name",
+        "text": "DNS turns dispatch into the Service’s ClusterIP."
+      },
+      {
+        "label": "Forward to an endpoint",
+        "text": "Traffic to the ClusterIP goes to one of the Service’s ready Pods, and the application answers."
+      },
+      {
+        "label": "No ready endpoints",
+        "text": "With no ready Pods, the name still resolves, but the request has nowhere to go and fails."
+      }
+    ]
+  },
+  {
+    "id": "dns-blocked-by-policy",
+    "title": "Allowing the database but not DNS",
+    "caption": "A name lookup is traffic too, so an egress policy must allow it.",
+    "description": "The api Pod has an egress network policy that allows only TCP port 5432 to the database. Its first step, asking CoreDNS on port 53 what postgres means, is blocked, so it never learns the address and the allowed connection to port 5432 is never made. A note says to also allow port 53 over UDP and TCP to the cluster’s DNS."
+  },
+  {
+    "id": "file-mode-bits",
+    "title": "Reading a file’s mode",
+    "caption": "Three sets of three: the owner, the group, and everyone else.",
+    "description": "The mode -rw-r----- from the example jobs.db line, in two steps. The first character, a dash, means an ordinary file. The next nine split into three sets: rw- lets the owner, UID 10001, read and write; r-- lets members of group 10001 read; and --- gives everyone else no access. In the second step each set is added up, with r worth 4, w worth 2, and x worth 1, giving 6, 4, and 0: the numeric mode 640.",
+    "steps": [
+      {
+        "label": "The letters",
+        "text": "After the type, the nine letters split into three sets: rw- for the owner, r-- for the group, --- for everyone else."
+      },
+      {
+        "label": "The numbers",
+        "text": "Add r = 4, w = 2, and x = 1 in each set. 6, 4, and 0 make the mode 640."
+      }
+    ]
+  },
+  {
+    "id": "container-shared-kernel",
+    "title": "Containers are isolated processes on one kernel",
+    "caption": "Namespaces limit what a process can see; cgroups limit what it can use.",
+    "description": "One Linux machine with a single kernel along the bottom. Above it run an ordinary process and two containers. Each container is a process wrapped in namespaces, which give it its own process list starting at PID 1, its own network with its own localhost, and its own files. Each also sits in a cgroup with limits, such as 256 MiB of memory for one and half a CPU for the other. Every one of them uses the same kernel."
+  },
+  {
+    "id": "file-vs-running",
+    "title": "The file changed; the process did not",
+    "caption": "A program reads its settings when it starts, so check the running process after a change.",
+    "description": "A sequence in two steps. First, a configuration file on disk is edited to say port 9090, but the running service read the file when it started and still listens on 8080, so systemctl reports active (running) while requests to 9090 fail. Second, after a restart the service reads the file again and listens on 9090, so the file and the running process agree.",
+    "steps": [
+      {
+        "label": "Edit the file",
+        "text": "The file now says 9090, but the service read it at startup and still listens on 8080. systemctl still says active (running)."
+      },
+      {
+        "label": "Restart, then check",
+        "text": "After a restart the service reads the file again. A request to 9090 confirms the running process now agrees with the file."
+      }
+    ]
+  },
+  {
+    "id": "exam-task-loop",
+    "title": "The routine for every task",
+    "caption": "Set the place first and check the result last; flag a task that runs long.",
+    "description": "Six steps in a loop. Read the whole task and note its context, namespace, and names. Switch to its context and namespace. Generate a starting YAML file with a client dry run. Edit and apply it. Check the working result. Then move on to the next task. A side path flags a task that is taking much longer than its share of the time, so you can return to it at the end."
   }
 ]

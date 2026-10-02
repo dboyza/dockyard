@@ -96,7 +96,11 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
         for task in exam.tasks:
             if any(identity not in units for identity in task.remediation):
                 issues.append(f"{exam.id}/{task.id}: unknown remediation unit.")
-    library(catalog)
+    for primer in library(catalog)["primers"]:
+        if not figure_references(primer["content"]):
+            issues.append(
+                f"{primer['id']} primer: a primer must explain its central idea with a figure."
+            )
     return {
         "status": "pass" if not issues else "incomplete",
         "course_units": len(course),

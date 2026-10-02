@@ -27,7 +27,7 @@
 
 - Write as a patient teacher in plain English: explain the purpose, introduce terms before using them, show an action, then explain the expected observation.
 - Teach container fundamentals before Dispatch; introduce Dispatch as the supplied background job application and distinguish its current stage from components added later.
-- Explain each lesson's central ideas with embedded figures as well as prose, introducing one new idea at a time.
+- Explain the central ideas of each lesson and reference primer with embedded figures as well as prose, introducing one new idea at a time.
 - Make prerequisites, workspace files, command placeholders, and completion criteria visible where they are needed.
 - Keep learner walkthroughs without hints or reference solutions separate from automated fixture audits.
 - Describe passes as observed task results, not proof of reasoning, retention, or unaided work outside the app.

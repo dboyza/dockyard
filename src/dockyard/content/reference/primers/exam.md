@@ -6,6 +6,10 @@ Knowing Kubernetes is necessary but not enough: you also need to work quickly, c
 This guide collects the habits that make the difference.
 Practise them in the lessons and the timed practice exams until they are automatic.
 
+```figure
+exam-task-loop
+```
+
 Exam rules and the exam environment change over time.
 Before booking, read the current Linux Foundation candidate handbook and the CKA/CKAD instructions, including which documentation sites you may use.
 
@@ -23,6 +27,10 @@ kubectl config get-contexts
 
 The last command marks the current context with `*` and shows its namespace.
 If you prefer not to change the default namespace, add `-n NAMESPACE` to every command instead; just be consistent.
+
+```figure
+kubeconfig-contexts
+```
 
 ## Generate YAML instead of typing it
 
