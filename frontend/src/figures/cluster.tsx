@@ -1,9 +1,12 @@
 import {
   Arrow,
   Box,
+  Cylinder,
   Diagram,
+  File,
   Label,
   Region,
+  Reveal,
   Tag,
   Terminal,
   type Tone,
@@ -331,6 +334,289 @@ export const cluster = {
       </Label>
       <Label x={369} y={232} anchor="middle" size="small" tone="muted">
         file brings it back.
+      </Label>
+    </Diagram>
+  ),
+  "kubeadm-init": ({ step = 0 }) => {
+    const phases: [string, string][] = [
+      ["preflight", "runtime works, swap off, ports free"],
+      ["certificates", "a cluster CA and a certificate per component"],
+      ["static Pods", "manifests written; the kubelet starts them"],
+      ["credentials", "admin.conf and the stored configuration"],
+    ];
+    return (
+      <Diagram height={286} step={step}>
+        {phases.map(([title, sub], index) => (
+          <Box
+            key={title}
+            x={10}
+            y={14 + index * 54}
+            w={300}
+            h={46}
+            title={title}
+            sub={sub}
+            tone={index < step ? "good" : index === step ? "focus" : "muted"}
+            dashed={index > step}
+          />
+        ))}
+        <Region x={340} y={14} w={290} h={256} label="control-plane VM" />
+        <Reveal from={1}>
+          <File x={380} y={46} name="pki/ca.crt" tone="good" />
+        </Reveal>
+        <Reveal from={2}>
+          {["API server", "controller manager", "scheduler", "etcd"].map(
+            (name, index) => (
+              <Box
+                key={name}
+                x={450}
+                y={42 + index * 40}
+                w={164}
+                h={32}
+                title={name}
+                tone="good"
+              />
+            ),
+          )}
+        </Reveal>
+        <Reveal from={3}>
+          <File x={380} y={130} name="admin.conf" tone="warn" />
+          <Tag x={485} y={222} text="node NotReady: no CNI" tone="warn" />
+          <Label x={485} y={250} anchor="middle" size="small" tone="muted">
+            expected until the next lesson
+          </Label>
+        </Reveal>
+        <Label x={10} y={242} size="small" tone="muted">
+          kubeadm init does not install a Pod
+        </Label>
+        <Label x={10} y={260} size="small" tone="muted">
+          network or add other machines.
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "cidr-separation": () => (
+    <Diagram height={250}>
+      <Region
+        x={10}
+        y={14}
+        w={620}
+        h={180}
+        label="VM network: 192.168.104.0/24"
+      />
+      {(
+        [
+          [30, "control-plane VM", "", "10.244.0.0/24"],
+          [330, "worker VM", "", "10.244.1.0/24"],
+        ] as [number, string, string, string][]
+      ).map(([x, name, ip, pods]) => (
+        <g key={name}>
+          <Region
+            x={x}
+            y={44}
+            w={280}
+            h={134}
+            label={ip ? `${name}: ${ip}` : name}
+            tone="focus"
+          />
+          <Box
+            x={x + 20}
+            y={84}
+            w={240}
+            h={74}
+            title="its Pods"
+            sub={`addresses from ${pods}`}
+            tone="good"
+          />
+        </g>
+      ))}
+      <Tag
+        x={320}
+        y={220}
+        text="Pod network 10.244.0.0/16 does not overlap"
+        tone="good"
+      />
+    </Diagram>
+  ),
+
+  "kubeadm-join": ({ step = 0 }) => (
+    <Diagram height={250} step={step}>
+      <Box
+        x={10}
+        y={80}
+        w={180}
+        h={66}
+        title="worker VM"
+        sub={step === 3 ? "joined: NotReady until CNI" : "kubeadm join"}
+        tone={step === 3 ? "warn" : "focus"}
+      />
+      <Box
+        x={450}
+        y={80}
+        w={180}
+        h={66}
+        title="API server"
+        sub="control-plane VM"
+      />
+      <Reveal from={0}>
+        <Arrow
+          points={[
+            [190, 96],
+            [446, 96],
+          ]}
+          tone={step === 0 ? "focus" : "good"}
+          label="1. is this the right cluster? (CA hash)"
+          labelAt={[318, 86]}
+        />
+      </Reveal>
+      <Reveal from={1}>
+        <Arrow
+          points={[
+            [190, 130],
+            [446, 130],
+          ]}
+          tone={step === 1 ? "focus" : "good"}
+          label="2. am I allowed to join? (bootstrap token)"
+          labelAt={[318, 152]}
+        />
+      </Reveal>
+      <Reveal from={2}>
+        <Arrow
+          points={[
+            [540, 146],
+            [540, 200],
+            [100, 200],
+            [100, 150],
+          ]}
+          tone="good"
+          label="3. permanent kubelet credentials"
+          labelAt={[320, 192]}
+        />
+      </Reveal>
+      <Label x={320} y={34} anchor="middle" size="small" tone="muted">
+        Skipping the CA hash check removes the protection against an impostor.
+      </Label>
+    </Diagram>
+  ),
+
+  "cni-vxlan": () => (
+    <Diagram height={258}>
+      <Region x={10} y={14} w={280} h={170} label="control-plane VM" />
+      <Region x={350} y={14} w={280} h={170} label="worker VM" />
+      <Box
+        x={40}
+        y={54}
+        w={220}
+        h={56}
+        title="frontend Pod"
+        sub="10.244.0.12"
+        tone="focus"
+      />
+      <Box
+        x={380}
+        y={54}
+        w={220}
+        h={56}
+        title="API Pod"
+        sub="10.244.1.7"
+        tone="good"
+      />
+      <Box x={40} y={128} w={220} h={40} title="calico-node" mono />
+      <Box x={380} y={128} w={220} h={40} title="calico-node" mono />
+      <Arrow
+        points={[
+          [150, 110],
+          [150, 124],
+        ]}
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [260, 148],
+          [376, 148],
+        ]}
+        tone="focus"
+      />
+      <Arrow
+        points={[
+          [490, 128],
+          [490, 114],
+        ]}
+        tone="focus"
+      />
+      <Label x={318} y={140} anchor="middle" size="small" tone="focus">
+        VXLAN
+      </Label>
+      <Tag
+        x={320}
+        y={212}
+        text="Pod to Pod, wrapped in a VM-to-VM packet"
+        tone="focus"
+      />
+      <Label x={320} y={246} anchor="middle" size="small" tone="muted">
+        Ready nodes do not prove this path works; a real cross-node request
+        does.
+      </Label>
+    </Diagram>
+  ),
+
+  "ha-topology": () => (
+    <Diagram height={262}>
+      <Box x={10} y={20} w={150} h={50} title="kubectl" sub="and kubelets" />
+      <Arrow
+        points={[
+          [160, 45],
+          [226, 45],
+        ]}
+      />
+      <Box
+        x={230}
+        y={16}
+        w={180}
+        h={58}
+        title="HAProxy"
+        sub="one stable address"
+        tone="focus"
+      />
+      {[0, 1, 2].map((index) => (
+        <g key={index}>
+          <Region
+            x={10 + index * 210}
+            y={110}
+            w={200}
+            h={150}
+            label={`control plane ${index + 1}`}
+            labelBelow
+          />
+          <Box
+            x={30 + index * 210}
+            y={140}
+            w={160}
+            h={36}
+            title="API server"
+            tone="good"
+          />
+          <Cylinder
+            x={30 + index * 210}
+            y={186}
+            w={160}
+            h={46}
+            title="etcd member"
+          />
+          <Arrow
+            points={[
+              [320, 74],
+              [110 + index * 210, 136],
+            ]}
+            tone="muted"
+          />
+        </g>
+      ))}
+      <Label x={430} y={50} size="small" tone="muted">
+        forwards only to healthy
+      </Label>
+      <Label x={430} y={68} size="small" tone="muted">
+        API servers
       </Label>
     </Diagram>
   ),

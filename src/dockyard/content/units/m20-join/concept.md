@@ -15,6 +15,10 @@ A running kubelet is not enough to make a machine part of a cluster.
 The token is a secret; the hash is a fingerprint of the cluster’s CA.
 Skipping the hash check (`--discovery-token-unsafe-skip-ca-verification`) removes that protection and is never the fix for a wrong address.
 
+```figure
+kubeadm-join
+```
+
 ## Worked example
 
 Before joining, only the control plane is in the cluster:
@@ -56,6 +60,10 @@ Once Calico runs on each node, the nodes turn Ready and CoreDNS starts.
 `bootstrap.sh` then deploys Dispatch, with its frontend on the control plane and its API on the worker, so a request must cross between machines.
 
 Ready nodes are not proof that networking works.
+
+```figure
+cni-vxlan
+```
 A new job travelling from the frontend, through Service DNS, to the API, queue, worker, and database is.
 
 ## In the exam

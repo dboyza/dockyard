@@ -28,6 +28,10 @@ They use one stable address, usually a **load balancer** in front of all the API
 Here that is **HAProxy** running on the worker VM.
 HAProxy checks each API server and only forwards connections to healthy ones.
 
+```figure
+ha-topology
+```
+
 A healthy etcd majority does not help if the load balancer only knows about the failed server.
 That is exactly this lab’s problem.
 

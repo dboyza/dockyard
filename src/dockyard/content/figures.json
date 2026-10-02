@@ -1321,5 +1321,71 @@
     "title": "Static Pods come from files",
     "caption": "The kubelet runs whatever manifests are in the folder; the API only shows mirrors of them.",
     "description": "The folder /etc/kubernetes/manifests holds kube-apiserver.yaml, kube-controller-manager.yaml, kube-scheduler.yaml, and etcd.yaml. The kubelet reads them and runs them, and they appear in the kube-system namespace as the API server, controller manager, scheduler, and etcd. A note says deleting one with kubectl does nothing lasting, because the file brings it back."
+  },
+  {
+    "id": "kubeadm-init",
+    "title": "What kubeadm init does",
+    "caption": "Each phase builds on the last; the result is a control plane with no Pod network yet.",
+    "description": "A sequence in four steps. Preflight checks that the runtime works, swap is off, and the required ports are free. Certificates creates a cluster CA, pki/ca.crt, and a certificate for each component. Static Pods writes manifests that the kubelet starts: the API server, controller manager, scheduler, and etcd. Credentials writes admin.conf and stores the configuration. The node is then NotReady because there is no CNI, which is expected until the next lesson. A note says kubeadm init does not install a Pod network or add other machines.",
+    "steps": [
+      {
+        "label": "Preflight",
+        "text": "kubeadm checks the machine is ready: a working runtime, swap off, and free ports."
+      },
+      {
+        "label": "Certificates",
+        "text": "It creates the cluster’s certificate authority and a certificate for each control-plane component."
+      },
+      {
+        "label": "Static Pods",
+        "text": "It writes the control-plane manifests, and the kubelet starts the API server, controller manager, scheduler, and etcd."
+      },
+      {
+        "label": "Credentials",
+        "text": "It writes admin.conf. The node stays NotReady until a Pod network is installed."
+      }
+    ]
+  },
+  {
+    "id": "cidr-separation",
+    "title": "Two address ranges that must not overlap",
+    "caption": "Machines get addresses from one range, Pods from another.",
+    "description": "Both VMs have addresses on the VM network, 192.168.104.0/24. Each VM's Pods get addresses from its own part of the Pod network, 10.244.0.0/24 on the control plane and 10.244.1.0/24 on the worker. The Pod network 10.244.0.0/16 does not overlap the VM network."
+  },
+  {
+    "id": "kubeadm-join",
+    "title": "The checks in kubeadm join",
+    "caption": "The worker checks the cluster, the cluster checks the worker, then the kubelet gets its own credentials.",
+    "description": "A sequence in four steps between the worker VM running kubeadm join and the API server on the control-plane VM. First the worker checks it has the right cluster, using the CA certificate hash. Second it proves it may join, using the bootstrap token. Third it receives permanent kubelet credentials. Finally it has joined but stays NotReady until a CNI plugin is installed. A note says skipping the CA hash check removes the protection against an impostor.",
+    "steps": [
+      {
+        "label": "Is this the right cluster?",
+        "text": "The worker compares the API server’s CA with the hash it was given, so it cannot join an impostor."
+      },
+      {
+        "label": "May I join?",
+        "text": "The worker presents the short-lived bootstrap token to prove it is allowed."
+      },
+      {
+        "label": "Permanent credentials",
+        "text": "The cluster gives the worker’s kubelet credentials of its own, so the token is no longer needed."
+      },
+      {
+        "label": "Joined",
+        "text": "The worker appears as a node, NotReady until the Pod network is installed."
+      }
+    ]
+  },
+  {
+    "id": "cni-vxlan",
+    "title": "A request between Pods on different machines",
+    "caption": "Calico wraps Pod traffic in ordinary packets between the VMs.",
+    "description": "The frontend Pod, for example at 10.244.0.12 on the control-plane VM, sends a request to the API Pod, for example at 10.244.1.7 on the worker VM. calico-node on each VM wraps the Pod-to-Pod packet with VXLAN inside an ordinary packet between the two VMs' own addresses. A note says Ready nodes do not prove this path works; a real cross-node request does."
+  },
+  {
+    "id": "ha-topology",
+    "title": "A highly available control plane",
+    "caption": "Clients use one address; each control-plane node runs its own API server and etcd member.",
+    "description": "kubectl and the kubelets connect to HAProxy, one stable address, which forwards only to healthy API servers. Behind it are three control-plane nodes, each running an API server and a stacked etcd member."
   }
 ]

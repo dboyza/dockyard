@@ -14,6 +14,10 @@ In this lesson you create the **control plane** on the first machine with `kubea
 It does **not** install a Pod network, and it does not add other machines.
 Those come next lesson.
 
+```figure
+kubeadm-init
+```
+
 ## The configuration file
 
 kubeadm can take its settings from a YAML file with two documents:
@@ -23,6 +27,10 @@ kubeadm can take its settings from a YAML file with two documents:
 
 The Pod subnet here is `10.244.0.0/16`, separate from the VMs’ own `192.168.104.0/24` network.
 If the two overlapped, traffic could be routed to the wrong place and fail in confusing ways.
+
+```figure
+cidr-separation
+```
 
 ## Worked example
 
