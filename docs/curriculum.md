@@ -93,7 +93,7 @@ Sources: [CKA domains](https://github.com/cncf/curriculum/blob/master/cka/README
 
 ## Required curriculum evidence
 
-Every lesson should explain its central ideas with embedded figures as well as prose; step-through figures suit sequences and changing state.
+Every lesson must explain its central ideas with embedded figures as well as prose; step-through figures suit sequences and changing state.
 Every unit must declare measurable outcomes, prerequisites, runtime profile, resource needs, versions, starter state, worked example, instructions, hints, references, checks, expected failure modes, and source attribution.
 Every independent mission must define acceptable alternatives and what evidence earns completion.
 Every capstone must connect to earlier Dispatch checkpoints and produce a useful export.

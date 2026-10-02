@@ -74,6 +74,17 @@ def test_catalog_rejects_a_lesson_that_embeds_an_unknown_figure(tmp_path):
         Catalog(content)
 
 
+def test_audit_requires_a_figure_in_every_lesson(catalog):
+    broken = copy.copy(catalog)
+    lesson = catalog.units["m00-first-container"]
+    plain = lesson.model_copy(update={"concept": "## Words only\n\nNo picture here.\n"})
+    broken.units = {**catalog.units, lesson.id: plain}
+    assert (
+        "m00-first-container: a lesson must explain its central idea with a figure."
+        in (curriculum(broken)["issues"])
+    )
+
+
 def test_every_figure_is_used_by_some_lesson(catalog):
     used = {
         figure

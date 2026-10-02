@@ -6,7 +6,7 @@ import json
 from collections import Counter
 from typing import Any
 
-from dockyard.catalog import Catalog
+from dockyard.catalog import Catalog, figure_references
 from dockyard.models import UnitKind
 from dockyard.reference import library
 
@@ -55,6 +55,8 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
             issues.append(f"{unit.id}: acceptable alternatives and failure modes are required.")
         if unit.runtime == "linux" and unit.nodes not in {2, 3, 4}:
             issues.append(f"{unit.id}: unsupported native node topology.")
+        if unit.kind == UnitKind.LESSON and not figure_references(unit.concept):
+            issues.append(f"{unit.id}: a lesson must explain its central idea with a figure.")
     objectives = json.loads((catalog.root / "objectives.json").read_text())["objectives"]
     known = {entry["id"] for entry in objectives}
     if len(known) != len(objectives):
