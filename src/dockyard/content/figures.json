@@ -1437,5 +1437,43 @@
         "text": "Stopping the container makes the kubelet start a fresh one, which loads and serves serial B."
       }
     ]
+  },
+  {
+    "id": "two-paths",
+    "title": "Node status and Pod traffic travel differently",
+    "caption": "A firewall rule can block Pod traffic while node health still looks perfect.",
+    "description": "The kubelet on the worker VM reports Ready to the API server on the control-plane VM over the node network. Separately, traffic between the frontend Pod on the control plane and the API Pod on the worker travels as VXLAN on UDP port 4789. An iptables rule in raw PREROUTING on the control plane drops UDP 4789, so the worker's replies never reach the frontend, even though both nodes stay Ready."
+  },
+  {
+    "id": "testing-layers",
+    "title": "Each test adds a layer",
+    "caption": "Start with the narrowest test and add layers until something fails.",
+    "description": "Four tests, each adding a layer. Requesting the API Pod IP tests packet delivery between nodes. Requesting the Service name adds DNS and Service routing. GET /healthz adds whether the process answers. GET /readyz or a real job adds its database and queue."
+  },
+  {
+    "id": "dns-vs-proxy",
+    "title": "Naming and routing are separate jobs",
+    "caption": "CoreDNS turns a name into a ClusterIP; kube-proxy’s rules turn that IP into a Pod.",
+    "description": "The frontend Pod asks CoreDNS, which reads Services, what dispatch is, and gets back a ClusterIP. It then connects to that ClusterIP, and node rules programmed by kube-proxy send the connection to a dispatch Pod. If DNS fails but the IP works, look at CoreDNS; if DNS works but the IP fails, look at kube-proxy. A note says to test with a new Service, because routes kube-proxy set up earlier keep working after it stops."
+  },
+  {
+    "id": "csi-chain",
+    "title": "A volume that cannot follow its Pod",
+    "caption": "The hostpath volume lives on one worker, so the database must run there.",
+    "description": "A sequence in three steps. The CSI node plugin is registered on the worker VM, where the hostpath folder holds PV data-db-0. At first db-0 runs on the worker with its volume attached and mounted. After the StatefulSet is changed to run on the control plane, db-0 there cannot use its volume, because the driver is not there and the data lives on the worker. When it is placed on the worker again, db-0 reuses the original claim and data.",
+    "steps": [
+      {
+        "label": "Healthy",
+        "text": "The volume was created, attached, and mounted on the worker, where db-0 runs."
+      },
+      {
+        "label": "Moved away",
+        "text": "The StatefulSet now places db-0 on the control plane, which has neither the driver nor the data."
+      },
+      {
+        "label": "Placed back",
+        "text": "With the worker required again and the failed Pod deleted, db-0 returns and mounts the same volume."
+      }
+    ]
   }
 ]

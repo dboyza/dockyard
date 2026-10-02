@@ -8,6 +8,10 @@ That is because node health and Pod traffic travel differently:
 
 Block UDP 4789 and the nodes stay Ready, but Pods on different nodes can no longer reach each other.
 
+```figure
+two-paths
+```
+
 ## This lab
 
 Dispatch’s API and database run on the worker.
@@ -36,6 +40,10 @@ Testing at different layers tells you different things:
 - A request straight to the API **Pod IP** tests packet delivery alone, without DNS or Services.
 - A request to the **Service name** adds DNS and Service routing back in.
 - `/healthz` shows the process answers; `/readyz` or a real job also tests its dependencies.
+
+```figure
+testing-layers
+```
 
 ## Remove only that rule
 

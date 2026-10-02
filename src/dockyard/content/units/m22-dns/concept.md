@@ -8,6 +8,10 @@ When a Pod connects to `dispatch:8080`, two separate systems are involved:
 Either can fail on its own.
 DNS can return the right IP while nothing routes it; and routes kube-proxy already set up keep working after it stops, until something changes.
 
+```figure
+dns-vs-proxy
+```
+
 ## This lab
 
 Two things are broken:

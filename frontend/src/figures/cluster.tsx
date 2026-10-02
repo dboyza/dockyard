@@ -818,4 +818,240 @@ export const cluster = {
       </Diagram>
     );
   },
+  "two-paths": () => (
+    <Diagram height={262}>
+      <Region x={10} y={14} w={250} h={200} label="control-plane VM" />
+      <Region x={380} y={14} w={250} h={200} label="worker VM" />
+      <Box
+        x={26}
+        y={46}
+        w={218}
+        h={44}
+        title="API server"
+        sub="receives node status"
+      />
+      <Box
+        x={396}
+        y={46}
+        w={218}
+        h={44}
+        title="kubelet"
+        sub="reports Ready"
+        tone="good"
+      />
+      <Box x={26} y={146} w={218} h={44} title="frontend Pod" tone="focus" />
+      <Box x={396} y={146} w={218} h={44} title="API Pod" tone="good" />
+      <Arrow
+        points={[
+          [392, 68],
+          [248, 68],
+        ]}
+        tone="good"
+        label="node network: status"
+        labelAt={[320, 58]}
+      />
+      <Arrow
+        points={[
+          [392, 162],
+          [248, 162],
+        ]}
+        tone="bad"
+        dashed
+        label="VXLAN, UDP 4789"
+        labelAt={[320, 152]}
+      />
+      <Arrow
+        points={[
+          [248, 176],
+          [392, 176],
+        ]}
+        tone="focus"
+        dashed
+      />
+      <Tag x={135} y={122} text="raw PREROUTING: DROP udp 4789" tone="bad" />
+      <Label x={320} y={240} anchor="middle" size="small" tone="muted">
+        Both nodes stay Ready, yet replies from the worker never reach the
+        frontend.
+      </Label>
+    </Diagram>
+  ),
+
+  "testing-layers": () => {
+    const tests: [string, string][] = [
+      ["request the API Pod IP", "packet delivery between nodes"],
+      ["request the Service name", "+ DNS and Service routing"],
+      ["GET /healthz", "+ the process answers"],
+      ["GET /readyz, or a real job", "+ its database and queue"],
+    ];
+    return (
+      <Diagram height={232}>
+        {tests.map(([test, proves], index) => (
+          <g key={test}>
+            <Box
+              x={10 + index * 40}
+              y={14 + index * 52}
+              w={250}
+              h={42}
+              title={test}
+              tone="focus"
+            />
+            <Label x={290 + index * 40} y={40 + index * 52} size="small">
+              {proves}
+            </Label>
+          </g>
+        ))}
+      </Diagram>
+    );
+  },
+
+  "dns-vs-proxy": () => (
+    <Diagram height={286}>
+      <Box
+        x={10}
+        y={100}
+        w={150}
+        h={60}
+        title="frontend Pod"
+        sub="dispatch:8080"
+        tone="focus"
+      />
+      <Box x={250} y={14} w={180} h={60} title="CoreDNS" sub="reads Services" />
+      <Arrow
+        points={[
+          [90, 100],
+          [90, 44],
+          [246, 44],
+        ]}
+        label="1. what is dispatch?"
+        labelAt={[160, 34]}
+      />
+      <Arrow
+        points={[
+          [340, 74],
+          [340, 96],
+          [164, 112],
+        ]}
+        tone="good"
+        label="ClusterIP 10.96.…"
+        labelAt={[256, 92]}
+      />
+      <Box
+        x={250}
+        y={170}
+        w={180}
+        h={60}
+        title="node rules"
+        sub="programmed by kube-proxy"
+      />
+      <Arrow
+        points={[
+          [160, 140],
+          [246, 190],
+        ]}
+        label="2. connect"
+        labelAt={[190, 182]}
+      />
+      <Box x={480} y={170} w={150} h={60} title="dispatch Pod" tone="good" />
+      <Arrow
+        points={[
+          [430, 200],
+          [476, 200],
+        ]}
+        tone="good"
+      />
+      <Label x={480} y={40} size="small" tone="muted">
+        DNS fails, IP works:
+      </Label>
+      <Label x={480} y={58} size="small" tone="warn">
+        look at CoreDNS
+      </Label>
+      <Label x={480} y={100} size="small" tone="muted">
+        DNS works, IP fails:
+      </Label>
+      <Label x={480} y={118} size="small" tone="warn">
+        look at kube-proxy
+      </Label>
+      <Label x={320} y={268} anchor="middle" size="small" tone="muted">
+        Test with a new Service: routes kube-proxy set up earlier keep working
+        after it stops.
+      </Label>
+    </Diagram>
+  ),
+
+  "csi-chain": ({ step = 0 }) => {
+    const onWorker = step !== 1;
+    return (
+      <Diagram height={298} step={step}>
+        <Region x={10} y={14} w={290} h={250} label="control-plane VM" />
+        <Region x={340} y={14} w={290} h={250} label="worker VM" tone="focus" />
+        <Box
+          x={360}
+          y={44}
+          w={250}
+          h={40}
+          title="CSI node plugin"
+          sub="registered here"
+          tone="good"
+        />
+        <Box
+          x={360}
+          y={186}
+          w={250}
+          h={60}
+          title="volume: hostpath folder"
+          sub="PV data-db-0, same handle"
+          tone="focus"
+        />
+        {onWorker ? (
+          <Box
+            x={360}
+            y={104}
+            w={250}
+            h={56}
+            title="db-0"
+            sub="attached and mounted"
+            tone="good"
+            mono
+          />
+        ) : (
+          <>
+            <Box
+              x={30}
+              y={104}
+              w={250}
+              h={56}
+              title="db-0"
+              sub="cannot use its volume"
+              tone="bad"
+              mono
+            />
+            <Label x={155} y={196} anchor="middle" size="small" tone="bad">
+              no driver here, and the
+            </Label>
+            <Label x={155} y={214} anchor="middle" size="small" tone="bad">
+              data lives on the worker
+            </Label>
+          </>
+        )}
+        {onWorker && (
+          <Arrow
+            points={[
+              [485, 160],
+              [485, 182],
+            ]}
+            tone="good"
+          />
+        )}
+        <Label x={320} y={290} anchor="middle" size="small" tone="muted">
+          {
+            [
+              "Provisioned, attached, and mounted on the worker: the whole chain works.",
+              "Moved to the control plane, db-0 cannot reach its volume.",
+              "Placed on the worker again, db-0 reuses the original claim and data.",
+            ][step]
+          }
+        </Label>
+      </Diagram>
+    );
+  },
 } satisfies Drawings;

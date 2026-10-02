@@ -40,6 +40,10 @@ The replacement `db-0` cannot use its volume there.
 Fix the StatefulSet so the database is placed on the worker again, with a `nodeSelector` or required node affinity.
 Keep the original claim and volume; replacing them would lose the data.
 
+```figure
+csi-chain
+```
+
 A StatefulSet can stay stuck on a broken Pod even after you fix its template.
 Once the template is right, delete only the failed `db-0` Pod so its controller recreates it:
 
