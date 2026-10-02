@@ -767,5 +767,486 @@
       "m08-patterns"
     ],
     "primer": "yaml"
+  },
+  {
+    "id": "shell",
+    "term": "Shell",
+    "definition": "The program in a terminal that reads each command you type, fills in variables, and starts the program the command names.",
+    "watch_for": "The shell treats some characters specially, such as $, <, >, |, and spaces, so quote values that contain them.",
+    "units": [
+      "m00-first-container",
+      "m00-layers"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "path",
+    "term": "Path",
+    "definition": "A file or folder’s location. A relative path starts from your working directory; an absolute path starts at the top folder, written /.",
+    "watch_for": "The same relative path means different files from different folders; check where you are with pwd.",
+    "units": [
+      "m00-web-server",
+      "m02-dockerfile"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "environment-variable",
+    "term": "Environment variable",
+    "definition": "A named value that a process receives when it starts, such as DOCKYARD_PORT in your lab terminal or DB_HOST inside a container.",
+    "watch_for": "A running process keeps the values it started with; changing the variable later does not reach it until it restarts.",
+    "units": [
+      "m00-first-container",
+      "m05-services",
+      "m09-configmaps"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "standard-streams",
+    "term": "Standard output and standard error",
+    "definition": "The two channels a program prints to: one for normal output and one for error messages. Docker keeps both as a container’s logs.",
+    "watch_for": "Redirecting with > captures only standard output; add 2>&1 to capture error messages too.",
+    "units": [
+      "m01-signals"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "exit-status",
+    "term": "Exit status",
+    "definition": "The number a process leaves when it finishes: 0 for success and anything else for a reported problem. A stopped container shows it as Exited (N).",
+    "watch_for": "Exit status 0 means the program reported success, not that it produced the result you wanted.",
+    "units": [
+      "m00-first-container",
+      "m01-signals"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "yaml",
+    "term": "YAML",
+    "definition": "A text format for structured settings, built from mappings of keys to values, lists, and single values, with indentation showing what belongs to what.",
+    "watch_for": "Indentation changes meaning without any warning, and unquoted values such as 1.0 or yes may not stay as text.",
+    "units": [
+      "m05-services",
+      "m07-declarative"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "manifest",
+    "term": "Manifest",
+    "definition": "A file, usually YAML, that describes the objects you want, such as a Deployment and a Service, so a tool can create or update them to match.",
+    "watch_for": "Applying a manifest records what you want; check the running objects to see whether it happened.",
+    "units": [
+      "m07-declarative",
+      "m07-reconciliation",
+      "m14-kustomize"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "status-code",
+    "term": "HTTP status code",
+    "definition": "The three-digit number at the start of an HTTP response: 2xx means success, 4xx a problem with the request, and 5xx a problem on the server.",
+    "watch_for": "Any status, even 500, means the request arrived and the server answered; connection errors happen before there is a status.",
+    "units": [
+      "m01-processes",
+      "m12-probes",
+      "m17-rbac"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "port",
+    "term": "Port",
+    "definition": "A number that picks one service on a machine. A server listens on a port, and a client connects to an address and a port together.",
+    "watch_for": "A listening port shows that something accepts connections, not that the application behind it is ready.",
+    "units": [
+      "m00-web-server",
+      "m03-ports",
+      "m10-services"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "localhost",
+    "term": "Localhost",
+    "definition": "The name for 127.0.0.1, which always means the machine or container making the request.",
+    "watch_for": "Inside a container, localhost is that container, not your computer or a neighbouring container.",
+    "units": [
+      "m00-web-server",
+      "m03-ports",
+      "m03-diagnosis"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "dns",
+    "term": "DNS",
+    "definition": "The Domain Name System, which turns a name such as dispatch into an address. In a cluster, CoreDNS answers names for Services.",
+    "watch_for": "A name that resolves only proves the lookup worked; the connection and the application still need checking.",
+    "units": [
+      "m03-bridges",
+      "m10-services",
+      "m22-dns"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "cluster-ip",
+    "term": "ClusterIP",
+    "definition": "The stable virtual address Kubernetes gives a normal Service. Traffic sent to it is forwarded to one of the Service’s ready Pods.",
+    "watch_for": "A ClusterIP exists even when no Pod is ready, so connecting to it can still fail.",
+    "units": [
+      "m10-services",
+      "m22-dns"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "headless-service",
+    "term": "Headless Service",
+    "definition": "A Service with clusterIP: None. Instead of one virtual address, DNS returns the Pods’ own addresses, giving each StatefulSet Pod its own name.",
+    "watch_for": "A headless Service does no load balancing of its own; clients connect to Pod addresses directly.",
+    "units": [
+      "m11-statefulsets"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "kube-proxy",
+    "term": "kube-proxy",
+    "definition": "The node component that programs each node’s network rules so traffic to a Service’s ClusterIP reaches one of its Pods.",
+    "watch_for": "Rules kube-proxy already wrote can keep working after it stops; test with a newly created Service.",
+    "units": [
+      "m22-dns",
+      "m22-packets"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "linux-namespace",
+    "term": "Linux namespace",
+    "definition": "A kernel feature that gives a process its own view of something, such as the process list, the network, or the files. Containers are built from them.",
+    "watch_for": "This is different from a Kubernetes namespace, which groups objects inside a cluster.",
+    "units": [
+      "m00-layers",
+      "m03-ports"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "cgroup",
+    "term": "cgroup",
+    "definition": "A control group: a kernel feature that measures and limits the memory, CPU, and number of processes a group of processes may use.",
+    "watch_for": "A container that reaches its memory limit is killed, while one that reaches its CPU limit is slowed down.",
+    "units": [
+      "m06-limits",
+      "m13-resources",
+      "m19-runtime"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "uid",
+    "term": "UID and GID",
+    "definition": "The numeric user and group IDs Linux uses to decide what a process may do. UID 0 is root.",
+    "watch_for": "Linux checks the numbers, not the names, so a container’s UID 10001 must match the owner of the files it writes.",
+    "units": [
+      "m02-multistage",
+      "m04-permissions"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "file-mode",
+    "term": "File mode",
+    "definition": "A file’s permissions: read, write, and execute, set separately for its owner, its group, and everyone else, such as -rw-r----- or 640.",
+    "watch_for": "chmod 777 lets every user change the file; give the one user that needs access exactly what it needs.",
+    "units": [
+      "m04-permissions"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "systemd",
+    "term": "systemd",
+    "definition": "The Linux service manager that starts background services, restarts them if they fail, and collects their logs for journalctl.",
+    "watch_for": "active (running) means the process is running, not that the service works or uses your latest settings.",
+    "units": [
+      "m19-runtime",
+      "m19-kubelet",
+      "m21-upgrade"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "signal",
+    "term": "Signal",
+    "definition": "A short message the kernel delivers to a process. SIGTERM asks it to stop cleanly; SIGKILL ends it immediately and cannot be ignored.",
+    "watch_for": "A process that ignores SIGTERM is killed when the grace period ends, without finishing its work.",
+    "units": [
+      "m01-signals",
+      "m13-autoscaling"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "docker-engine",
+    "term": "Docker Engine",
+    "definition": "The background service that stores images and creates and runs containers. The docker command sends it requests.",
+    "watch_for": "If the engine is not running, every docker command fails, even though the docker command itself is installed.",
+    "units": [
+      "m00-first-container"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "writable-layer",
+    "term": "Writable layer",
+    "definition": "The thin layer each container adds on top of its image’s read-only layers. Files a container creates or changes are stored there.",
+    "watch_for": "Removing the container deletes its writable layer; keep data that must survive in a volume or bind mount.",
+    "units": [
+      "m00-layers",
+      "m01-lifecycle",
+      "m04-mounts"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "dockerfile",
+    "term": "Dockerfile",
+    "definition": "A text file of instructions, such as FROM, COPY, RUN, and CMD, that docker build follows to make an image.",
+    "watch_for": "Editing a Dockerfile changes nothing until you rebuild the image and replace the running container.",
+    "units": [
+      "m02-dockerfile",
+      "m02-cache",
+      "m02-multistage"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "tag",
+    "term": "Image tag",
+    "definition": "A readable name for an image version, such as dispatch:release, written after a colon in an image reference.",
+    "watch_for": "A tag can be moved to a different image at any time; use a digest when you need exactly the same content.",
+    "units": [
+      "m02-dockerfile",
+      "m06-registry"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "platform",
+    "term": "Image platform",
+    "definition": "The operating system and processor type an image is built for, such as linux/arm64 or linux/amd64. One image name can cover several platforms.",
+    "watch_for": "An image built only for another processor type may fail to start or run slowly under emulation.",
+    "units": [
+      "m06-artifacts"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "dispatch",
+    "term": "Dispatch",
+    "definition": "The background job application supplied with this course: an API that accepts jobs, a queue, workers that process them, and a database that stores them.",
+    "watch_for": "Dispatch grows through the course; each lab says which parts exist at that stage.",
+    "units": [
+      "m01-processes",
+      "m05-services",
+      "m07-reconciliation"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "api-server",
+    "term": "API server",
+    "definition": "The front door of a Kubernetes cluster. kubectl, controllers, and kubelets all read and change cluster objects through it, and it stores them in etcd.",
+    "watch_for": "The API server accepting a change means it was stored, not that Pods are already running.",
+    "units": [
+      "m07-reconciliation",
+      "m19-control-plane",
+      "m23-api"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "port-forward",
+    "term": "Port forward",
+    "definition": "kubectl port-forward listens on a port on your computer and tunnels each connection through the API server to one Pod, chosen from a Service if you name one.",
+    "watch_for": "It reaches a single Pod and stops when the command ends; it is for testing, not for real users.",
+    "units": [
+      "m08-workloads"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "rolling-update",
+    "term": "Rolling update",
+    "definition": "The Deployment strategy that replaces old Pods with new ones a few at a time, within limits set by maxSurge and maxUnavailable.",
+    "watch_for": "A rollout stuck on a bad image can leave old Pods serving while the update never finishes; check rollout status.",
+    "units": [
+      "m12-rollouts",
+      "m24-handoff"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "canary",
+    "term": "Canary release",
+    "definition": "Running a small number of copies of a new release beside the stable one, so a share of real traffic tests it before everyone gets it.",
+    "watch_for": "With Service-based splitting, the share follows the Pod count, not an exact percentage.",
+    "units": [
+      "m12-strategies"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "blue-green",
+    "term": "Blue-green release",
+    "definition": "Running the new release fully beside the old one, then switching all traffic at once, for example by changing a Service’s selector.",
+    "watch_for": "It needs room for two full copies, and switching back is fast only while the old copy is still running.",
+    "units": [
+      "m12-strategies"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "qos-class",
+    "term": "QoS class",
+    "definition": "The quality of service class Kubernetes gives a Pod from its requests and limits: Guaranteed, Burstable, or BestEffort.",
+    "watch_for": "When a node runs short of memory, BestEffort Pods are evicted first and Guaranteed Pods last.",
+    "units": [
+      "m13-resources"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "topology-spread",
+    "term": "Topology spread constraint",
+    "definition": "A scheduling rule that keeps copies of a workload spread across nodes or zones, within a maximum difference called maxSkew.",
+    "watch_for": "Without one, the scheduler may place every copy on the same node, so one node failure stops them all.",
+    "units": [
+      "m13-placement"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "drain",
+    "term": "Cordon and drain",
+    "definition": "Cordoning marks a node so no new Pods are scheduled there; draining also evicts its Pods so they are replaced elsewhere before maintenance.",
+    "watch_for": "A drain waits for PodDisruptionBudgets, and Pods with local data cannot simply move to another node.",
+    "units": [
+      "m13-autoscaling",
+      "m21-drain",
+      "m21-upgrade"
+    ],
+    "primer": "exam"
+  },
+  {
+    "id": "event",
+    "term": "Kubernetes event",
+    "definition": "A short record of something Kubernetes noticed about an object, such as Scheduled, Pulled, or a failed probe, shown by kubectl describe.",
+    "watch_for": "Events expire after a while, so look soon after a problem and keep other evidence for later.",
+    "units": [
+      "m07-reconciliation",
+      "m15-observation"
+    ],
+    "primer": "exam"
+  },
+  {
+    "id": "metric",
+    "term": "Metric",
+    "definition": "A number measured over time, such as requests served or memory used, collected by tools such as Prometheus.",
+    "watch_for": "A metric shows how much or how often, not why; pair it with logs and events to explain a change.",
+    "units": [
+      "m13-autoscaling",
+      "m15-observation"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "counter",
+    "term": "Counter",
+    "definition": "A metric that only goes up, such as the total number of requests, and resets to zero when its process restarts.",
+    "watch_for": "Read a counter through rate() over a time window; its raw value says little on its own.",
+    "units": [
+      "m15-observation"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "histogram",
+    "term": "Histogram",
+    "definition": "A metric that counts observations, such as request durations, in cumulative buckets like at or under 0.1 seconds.",
+    "watch_for": "Each bucket includes everything below it, so subtract buckets to count requests between two limits.",
+    "units": [
+      "m15-alerts"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "alert",
+    "term": "Alert",
+    "definition": "A rule that watches a condition in metrics and notifies people when it stays true for long enough: pending first, then firing, then resolved.",
+    "watch_for": "An alert that fires on every brief blip trains people to ignore it; set a sensible waiting period.",
+    "units": [
+      "m15-alerts",
+      "m15-slo"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "error-budget",
+    "term": "Error budget",
+    "definition": "The number of bad events an objective allows. An SLO of 95% good over 200 requests leaves a budget of 10 bad ones.",
+    "watch_for": "Slow successful requests can count as bad if the objective includes speed.",
+    "units": [
+      "m15-slo"
+    ],
+    "primer": "http"
+  },
+  {
+    "id": "pipeline",
+    "term": "Delivery pipeline",
+    "definition": "An automated series of stages, such as build, test, push, and record, that every change passes through on its way to running.",
+    "watch_for": "A stage that is skipped or always passes gives false confidence; check that a failing test really stops the pipeline.",
+    "units": [
+      "m16-pipeline"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "pod-security-admission",
+    "term": "Pod Security Admission",
+    "definition": "A built-in check that accepts or rejects new Pods in a namespace against a standard such as restricted, when they are created.",
+    "watch_for": "It checks only at creation; Pods that are already running are not changed or removed.",
+    "units": [
+      "m17-contexts"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "cidr",
+    "term": "CIDR range",
+    "definition": "A block of addresses written as a starting address and a size, such as 10.244.0.0/16. Clusters use separate ranges for nodes, Pods, and Services.",
+    "watch_for": "If the Pod range overlaps the node network, traffic goes to the wrong place even though nodes show Ready.",
+    "units": [
+      "m20-init",
+      "m20-ha"
+    ],
+    "primer": "dns"
+  },
+  {
+    "id": "triage",
+    "term": "Triage",
+    "definition": "A repeatable way to find a fault: observe the symptom, guess one cause, test it, change one thing, and check whether the symptom changed.",
+    "watch_for": "Changing several things at once hides which change mattered, and can add a new fault.",
+    "units": [
+      "m24-triage"
+    ],
+    "primer": "exam"
   }
 ]

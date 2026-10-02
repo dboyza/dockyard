@@ -13,6 +13,7 @@ If you already know some Docker or Kubernetes, open **Your course → Find your 
 Try a mission to see which topics need practice; every lesson remains available.
 Your course remains freely browsable, with searchable explanations and supplied checkpoints for later modules.
 Reference desk contains supporting primers and a searchable glossary.
+Each lesson and primer figure lists its key terms beneath it; select one to read its glossary entry, then use **Back to the figure** to return to the same figure and step.
 
 ## Meet Dispatch
 

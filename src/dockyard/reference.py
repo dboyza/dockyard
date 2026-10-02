@@ -25,4 +25,9 @@ def library(catalog: Catalog) -> dict[str, Any]:
     for item in glossary:
         if item["primer"] not in identifiers or not set(item["units"]) <= catalog.units.keys():
             raise ValueError("Reference links must identify available primers and course units.")
+    terms = {item["id"] for item in glossary}
+    for drawing in catalog.figures.values():
+        if unknown := set(drawing.terms) - terms:
+            names = ", ".join(sorted(unknown))
+            raise ValueError(f"{drawing.id} names unknown glossary terms: {names}")
     return {"primers": primers, "glossary": sorted(glossary, key=lambda item: item["term"].lower())}

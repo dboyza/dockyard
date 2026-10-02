@@ -58,6 +58,16 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await expect(lifecycle).toContainText('docker run creates a container');
   await lifecycle.getByRole('button', { name: 'Step 4: The program finishes' }).click();
   await expect(lifecycle.getByRole('button', { name: 'Next step' })).toBeDisabled();
+  // A figure's terms open the glossary, and one button returns to the same figure and step.
+  await lifecycle.getByRole('button', { name: 'Writable layer, glossary entry' }).click();
+  await expect(page.getByRole('heading', { name: 'Writable layer', exact: true })).toBeVisible();
+  await expect(page.locator('.glossary-term')).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Return to your lesson' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Back to the figure “From image to finished program”' }).click();
+  await expect(page.getByRole('heading', { name: 'Your first container', exact: true })).toBeVisible();
+  await expect(lifecycle).toContainText('Step 4 of 4');
+  await expect(lifecycle).toBeFocused();
+  await expect(lifecycle).toBeInViewport();
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-processes');
   await page.getByRole('button', { name: /Meet Dispatch: run its first version/ }).click();
   await expect(page.getByRole('heading', { name: 'Meet Dispatch: run its first version', exact: true })).toBeVisible();
@@ -228,6 +238,13 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   const blocks = page.getByRole('figure', { name: 'Mappings, lists, and scalars' });
   await blocks.getByRole('button', { name: 'Next step' }).click();
   await expect(blocks).toContainText('Step 2 of 4');
+  await blocks.getByRole('button', { name: 'YAML, glossary entry' }).click();
+  await expect(page.getByRole('heading', { name: 'YAML', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Back to the figure “Mappings, lists, and scalars”' }).click();
+  await expect(page.getByRole('heading', { name: 'Reading YAML' })).toBeVisible();
+  await expect(blocks).toContainText('Step 2 of 4');
+  await expect(blocks).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('combobox', { name: 'Foundation primer' }).selectOption('http');
   await expect(page.getByRole('figure', { name: 'How far did the request get?' })).toContainText('Step 1 of 4');
   await expect(page.locator('.reference-article .lesson-figure')).toHaveCount(4);

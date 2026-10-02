@@ -579,13 +579,17 @@ export const kubernetes = {
         w={150}
         h={56}
         title="Service dispatch"
-        sub="port 8080"
+        sub="used to pick one Pod"
+        tone="muted"
+        dashed
       />
       <Arrow
         points={[
           [470, 84],
           [490, 84],
         ]}
+        tone="muted"
+        dashed
       />
       <Box
         x={494}
@@ -599,14 +603,17 @@ export const kubernetes = {
       <Arrow
         points={[
           [254, 158],
-          [395, 158],
-          [395, 116],
+          [554, 158],
+          [554, 116],
         ]}
         tone="focus"
         dashed
-        label="a temporary tunnel"
-        labelAt={[470, 162]}
+        label="a temporary tunnel to that Pod"
+        labelAt={[424, 150]}
       />
+      <Label x={465} y={192} anchor="middle" size="small" tone="muted">
+        Requests do not pass through the Service.
+      </Label>
     </Diagram>
   ),
 

@@ -2,6 +2,7 @@
 
 import copy
 import importlib.util
+import json
 import shutil
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ import pytest
 from dockyard import cli
 from dockyard.audit import curriculum
 from dockyard.catalog import CONTENT, Catalog, figure_references
+from dockyard.models import Figure
 from dockyard.reference import library
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -92,6 +94,26 @@ def test_reference_library_rejects_a_primer_that_embeds_an_unknown_figure(tmp_pa
     primer.write_text(primer.read_text() + "\n```figure\nno-such-figure\n```\n")
     with pytest.raises(ValueError, match="http primer embeds an unknown figure: no-such-figure"):
         library(Catalog(content))
+
+
+def test_reference_library_rejects_a_figure_naming_an_unknown_term(tmp_path):
+    content = tmp_path / "content"
+    shutil.copytree(CONTENT, content)
+    figures = json.loads((content / "figures.json").read_text())
+    figures[0]["terms"] = ["no-such-term"]
+    (content / "figures.json").write_text(json.dumps(figures))
+    with pytest.raises(ValueError, match="names unknown glossary terms: no-such-term"):
+        library(Catalog(content))
+
+
+@pytest.mark.parametrize(
+    ("terms", "message"),
+    [([], "at least 1 item"), (["image", "image"], "names each glossary term once")],
+)
+def test_figures_must_name_distinct_glossary_terms(terms, message):
+    figure = {"id": "example", "title": "T", "caption": "C", "description": "D" * 40}
+    with pytest.raises(ValueError, match=message):
+        Figure.model_validate({**figure, "terms": terms})
 
 
 def test_audit_requires_a_figure_in_every_primer(tmp_path):

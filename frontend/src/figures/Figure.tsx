@@ -1,9 +1,21 @@
 import { createContext, useContext, useId, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Figure, FigureId } from "../contracts.gen";
 import { drawings, isFigureId } from "./registry";
 
 export const FigureText = createContext<Record<string, Figure>>({});
+
+/**
+ * Glossary links beneath each figure. Without `openTerm`, as in the review
+ * gallery, the terms are listed as plain text.
+ */
+export type FigureLinkOptions = {
+  glossary: Record<string, string>;
+  openTerm?: (term: string, figure: FigureId, step: number) => void;
+  /** The figure and step to show again when the learner comes back to it. */
+  restore?: { figure: string; step: number } | null;
+};
+export const FigureLinks = createContext<FigureLinkOptions>({ glossary: {} });
 
 export function LessonFigure({ id }: { id: string }) {
   const text = useContext(FigureText)[id];
@@ -16,8 +28,13 @@ export function LessonFigure({ id }: { id: string }) {
   }
   const Drawing = drawings[id];
   return text.interactive ? (
-    <div className="lesson-figure interactive">
+    <div
+      className="lesson-figure interactive"
+      id={`figure-${id}`}
+      tabIndex={-1}
+    >
       <Drawing />
+      <FigureTerms id={id} terms={text.terms} step={0} />
     </div>
   ) : (
     <DrawnFigure id={id} text={text} />
@@ -26,13 +43,23 @@ export function LessonFigure({ id }: { id: string }) {
 
 function DrawnFigure({ id, text }: { id: FigureId; text: Figure }) {
   const Drawing = drawings[id];
-  const [step, setStep] = useState(0);
+  const { restore } = useContext(FigureLinks);
+  const [step, setStep] = useState(() =>
+    restore?.figure === id
+      ? Math.min(restore.step, Math.max(text.steps.length - 1, 0))
+      : 0,
+  );
   const label = useId();
   const description = useId();
   const steps = text.steps;
   const current = steps[step];
   return (
-    <figure className="lesson-figure" aria-labelledby={label}>
+    <figure
+      className="lesson-figure"
+      id={`figure-${id}`}
+      tabIndex={-1}
+      aria-labelledby={label}
+    >
       <header>
         <span className="eyebrow">
           {steps.length ? "Step through" : "Picture it"}
@@ -93,6 +120,44 @@ function DrawnFigure({ id, text }: { id: FigureId; text: Figure }) {
         </div>
       )}
       <figcaption>{text.caption}</figcaption>
+      <FigureTerms id={id} terms={text.terms} step={step} />
     </figure>
+  );
+}
+
+function FigureTerms({
+  id,
+  terms,
+  step,
+}: {
+  id: FigureId;
+  terms: string[];
+  step: number;
+}) {
+  const { glossary, openTerm } = useContext(FigureLinks);
+  return (
+    <div className="figure-terms">
+      <span className="figure-terms-label">
+        <BookOpen size={14} aria-hidden="true" /> In the glossary
+      </span>
+      <ul aria-label="Glossary terms in this figure">
+        {terms.map((term) => (
+          <li key={term}>
+            {openTerm ? (
+              <button
+                type="button"
+                className="figure-term"
+                aria-label={`${glossary[term] ?? term}, glossary entry`}
+                onClick={() => openTerm(term, id, step)}
+              >
+                {glossary[term] ?? term}
+              </button>
+            ) : (
+              <span className="figure-term">{glossary[term] ?? term}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

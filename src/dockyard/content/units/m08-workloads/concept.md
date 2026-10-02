@@ -77,6 +77,7 @@ kill %1
 ```
 
 `18080:8080` means “port 18080 on my computer goes to port 8080 of the Service”.
+kubectl uses the Service only to pick one of its Pods, then connects straight to that Pod, so the tunnel does not spread requests across Pods.
 Any free port on your computer will do; if 18080 is already in use, the command says so, and you can pick another.
 The `&` runs the tunnel in the background so you can keep typing; `kill %1` closes it when you are done.
 The worker’s log should show your job being completed.

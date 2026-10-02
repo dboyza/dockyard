@@ -1,9 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, expect, test } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
 import figures from "../../../src/dockyard/content/figures.json";
+import terms from "../../../src/dockyard/content/reference/glossary.json";
 import type { Figure } from "../contracts.gen";
 import { Markdown } from "../teaching";
-import { FigureText } from "./Figure";
+import { FigureLinks, type FigureLinkOptions, FigureText } from "./Figure";
 import { drawings } from "./registry";
 
 const all: Figure[] = figures.map((item) => ({
@@ -14,11 +15,14 @@ const all: Figure[] = figures.map((item) => ({
 afterEach(cleanup);
 
 const text = Object.fromEntries(all.map((item) => [item.id, item]));
+const glossary = Object.fromEntries(terms.map((term) => [term.id, term.term]));
 
-function lesson(markdown: string) {
+function lesson(markdown: string, links: FigureLinkOptions = { glossary }) {
   return render(
     <FigureText.Provider value={text}>
-      <Markdown>{markdown}</Markdown>
+      <FigureLinks.Provider value={links}>
+        <Markdown>{markdown}</Markdown>
+      </FigureLinks.Provider>
     </FigureText.Provider>,
   );
 }
@@ -66,4 +70,65 @@ test("an unknown figure explains itself instead of breaking the lesson", () => {
 test("ordinary code blocks are unaffected", () => {
   lesson("```sh\ndocker ps\n```");
   expect(screen.getByRole("button", { name: "Copy code" })).toBeTruthy();
+});
+
+test("a figure links each of its terms to the glossary at the current step", () => {
+  const figure = all.find(
+    (item) => item.steps.length > 1 && item.terms.length > 1,
+  )!;
+  const openTerm = vi.fn();
+  lesson(`\`\`\`figure\n${figure.id}\n\`\`\``, { glossary, openTerm });
+  const list = screen.getByRole("list", {
+    name: "Glossary terms in this figure",
+  });
+  expect(list.textContent).toBe(
+    figure.terms.map((term) => glossary[term]).join(""),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Next step" }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: `${glossary[figure.terms[1]]}, glossary entry`,
+    }),
+  );
+  expect(openTerm).toHaveBeenCalledWith(figure.terms[1], figure.id, 1);
+});
+
+test("every figure term names a glossary entry", () => {
+  for (const figure of all)
+    for (const term of figure.terms)
+      expect(glossary[term], `${figure.id}: ${term}`).toBeTruthy();
+});
+
+test("a returning learner sees the step they left", () => {
+  const figure = all.find((item) => item.steps.length > 2)!;
+  lesson(`\`\`\`figure\n${figure.id}\n\`\`\``, {
+    glossary,
+    restore: { figure: figure.id, step: 2 },
+  });
+  expect(screen.getByText(figure.steps[2].text)).toBeTruthy();
+});
+
+test("without a link handler, terms are listed as text", () => {
+  const figure = all[0];
+  lesson(`\`\`\`figure\n${figure.id}\n\`\`\``);
+  expect(screen.queryByRole("button", { name: /glossary entry/ })).toBeNull();
+  expect(
+    screen.getByRole("list", { name: "Glossary terms in this figure" })
+      .textContent,
+  ).toContain(glossary[figure.terms[0]]);
+});
+
+test("a figure keeps its step when the page around it re-renders", () => {
+  const figure = all.find((item) => item.steps.length > 2)!;
+  const markdown = `\`\`\`figure\n${figure.id}\n\`\`\``;
+  const view = lesson(markdown);
+  fireEvent.click(screen.getByRole("button", { name: "Next step" }));
+  view.rerender(
+    <FigureText.Provider value={{ ...text }}>
+      <FigureLinks.Provider value={{ glossary: { ...glossary } }}>
+        <Markdown>{markdown}</Markdown>
+      </FigureLinks.Provider>
+    </FigureText.Provider>,
+  );
+  expect(screen.getByText(figure.steps[1].text)).toBeTruthy();
 });

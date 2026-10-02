@@ -91,6 +91,7 @@ export type Figure = {
   "title": string;
   "caption": string;
   "description": string;
+  "terms": Array<string>;
   "steps": Array<FigureStep>;
   "interactive": boolean;
 };

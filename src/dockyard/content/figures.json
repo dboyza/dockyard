@@ -3,13 +3,23 @@
     "id": "why-containers",
     "title": "The same program, two ways of running it",
     "caption": "A container carries the software its program needs, so the computer underneath only needs Docker.",
-    "description": "Two panels. On the left, a Python program written for Python 3.13 runs directly on a computer that has Python 3.9 installed, and it fails or behaves differently. On the right, the same program runs inside a container that also holds Python 3.13, and it runs the same wherever Docker runs."
+    "description": "Two panels. On the left, a Python program written for Python 3.13 runs directly on a computer that has Python 3.9 installed, and it fails or behaves differently. On the right, the same program runs inside a container that also holds Python 3.13, and it runs the same wherever Docker runs.",
+    "terms": [
+      "container",
+      "image"
+    ]
   },
   {
     "id": "image-to-container",
     "title": "From image to finished program",
     "caption": "A container runs only as long as its main process. When that process finishes, the container stops but is not deleted.",
     "description": "A sequence in four steps. An image made of Python and Alpine Linux layers sits on disk. docker run creates a container holding the image's files plus an empty writable layer, in the Created state. Docker starts python as the main process and the container is Running. Python prints Hello from inside a container and exits with code 0, so the container shows Exited (0) and docker logs still shows the message.",
+    "terms": [
+      "image",
+      "container",
+      "writable-layer",
+      "exit-status"
+    ],
     "steps": [
       {
         "label": "Start with an image",
@@ -33,19 +43,32 @@
     "id": "docker-client-engine",
     "title": "The docker command and the Docker Engine",
     "caption": "You type docker commands; the Docker Engine does the work of storing images and running containers.",
-    "description": "A terminal on the left sends docker run and docker ps requests to the Docker Engine on the right. Inside the engine are stored images, such as python, postgres, and redis, which it uses to create containers, some running and one exited."
+    "description": "A terminal on the left sends docker run and docker ps requests to the Docker Engine on the right. Inside the engine are stored images, such as python, postgres, and redis, which it uses to create containers, some running and one exited.",
+    "terms": [
+      "docker-engine",
+      "image",
+      "container"
+    ]
   },
   {
     "id": "image-layers",
     "title": "An image is a stack of layers",
     "caption": "docker history lists the newest layer first, which is the same order as the top of the stack.",
-    "description": "On the left, simplified docker history output lists four rows from newest to oldest: a settings-only row of 0 bytes, a 44.1 MB layer that installs Python, a 2.94 MB layer that adds system packages, and a 9.31 MB layer that adds the Alpine Linux files. On the right, the same three file layers are drawn as a stack, with Python on top and Alpine Linux at the bottom, all read-only and shared by every container."
+    "description": "On the left, simplified docker history output lists four rows from newest to oldest: a settings-only row of 0 bytes, a 44.1 MB layer that installs Python, a 2.94 MB layer that adds system packages, and a 9.31 MB layer that adds the Alpine Linux files. On the right, the same three file layers are drawn as a stack, with Python on top and Alpine Linux at the bottom, all read-only and shared by every container.",
+    "terms": [
+      "layer",
+      "image"
+    ]
   },
   {
     "id": "writable-layers",
     "title": "Where a container’s changes go",
     "caption": "Each container has its own writable layer. The image underneath never changes.",
     "description": "A sequence in five steps. One read-only image sits at the bottom. Containers A and B are created from it, each with its own empty writable layer. A process in container A writes /tmp/note.txt, which appears only in A's writable layer. A process in container B runs cat /tmp/note.txt and gets No such file or directory. Finally container A is removed along with its writable layer and the note, while the image and container B are unchanged.",
+    "terms": [
+      "writable-layer",
+      "layer"
+    ],
     "steps": [
       {
         "label": "One image",
@@ -73,13 +96,22 @@
     "id": "exec-process",
     "title": "One main process, and extra ones from docker exec",
     "caption": "docker exec adds a process to a running container. The container’s life still depends only on process 1.",
-    "description": "A terminal runs docker run with sleep infinity, which starts process 1, the main process, inside a container. A second command, docker exec with ps, adds an extra process to the same container. Both processes see the same files. Notes explain that the extra process can finish without stopping the container, but the container stops when process 1 finishes."
+    "description": "A terminal runs docker run with sleep infinity, which starts process 1, the main process, inside a container. A second command, docker exec with ps, adds an extra process to the same container. Both processes see the same files. Notes explain that the extra process can finish without stopping the container, but the container stops when process 1 finishes.",
+    "terms": [
+      "pid-one",
+      "container"
+    ]
   },
   {
     "id": "port-publishing",
     "title": "How a request reaches a server in a container",
     "caption": "Publishing connects a port on your computer to a port inside the container. Using 127.0.0.1 keeps it private to your computer.",
     "description": "A sequence in four steps. A web server inside a container listens on port 8000. A curl request from the terminal on your computer cannot reach it, because the container has its own network. After publishing with -p, the request goes to 127.0.0.1 on an assigned port such as 54321 and Docker forwards it to port 8000 in the container. Another device on your network is refused, because 127.0.0.1 means this computer only.",
+    "terms": [
+      "published-port",
+      "port",
+      "localhost"
+    ],
     "steps": [
       {
         "label": "A server inside the container",
@@ -103,19 +135,33 @@
     "id": "bind-mount",
     "title": "A bind mount shares one folder with a container",
     "caption": "The container sees your folder directly. The ro option lets it read the files but not change them.",
-    "description": "On the left, your computer has the folder DOCKYARD_WORKSPACE/site containing index.html. On the right, the container sees the same folder at /site containing the same index.html. A two-way arrow says they are the same files, not a copy. Editing the file on your computer is seen by the server at once, and a tag says ro: cannot write."
+    "description": "On the left, your computer has the folder DOCKYARD_WORKSPACE/site containing index.html. On the right, the container sees the same folder at /site containing the same index.html. A two-way arrow says they are the same files, not a copy. Editing the file on your computer is seen by the server at once, and a tag says ro: cannot write.",
+    "terms": [
+      "bind-mount",
+      "path"
+    ]
   },
   {
     "id": "web-server-command",
     "title": "Every part of the web server command",
     "caption": "Everything before the image configures the container. Everything after it is the main process.",
-    "description": "The docker run command for the web server, one option per line, with a note beside each: -d runs in the background; --name gives the name used in later commands; --label marks it as this lab's container; -p connects your port on this computer to port 8000; -v makes your folder appear at /site read-only; -w starts the process in /site; the image variable is the image to start from; and python -m http.server 8000 is the main process."
+    "description": "The docker run command for the web server, one option per line, with a note beside each: -d runs in the background; --name gives the name used in later commands; --label marks it as this lab's container; -p connects your port on this computer to port 8000; -v makes your folder appear at /site read-only; -w starts the process in /site; the image variable is the image to start from; and python -m http.server 8000 is the main process.",
+    "terms": [
+      "published-port",
+      "bind-mount",
+      "environment-variable"
+    ]
   },
   {
     "id": "reconciliation-model",
     "title": "Intent survives a missing Pod",
     "caption": "A simplified model of a Deployment controller, separate from your real lab.",
     "description": "An interactive model with a desired replica count, a list of observed Pods that can be deleted, and a button that advances the controller one step toward the desired count.",
+    "terms": [
+      "reconciliation",
+      "deployment",
+      "replicaset"
+    ],
     "interactive": true
   },
   {
@@ -123,6 +169,11 @@
     "title": "The Pod and its data have different lifetimes",
     "caption": "A simplified model of Pods, claims, and volumes, separate from your real lab.",
     "description": "An interactive model in which you remove a Pod, its PersistentVolumeClaim, and its PersistentVolume, and change the reclaim policy to see which deletions destroy the stored records.",
+    "terms": [
+      "pvc",
+      "pv",
+      "pod"
+    ],
     "interactive": true
   },
   {
@@ -130,6 +181,11 @@
     "title": "A majority and a route are separate requirements",
     "caption": "A simplified model of etcd quorum and a load-balanced API endpoint, separate from your real lab.",
     "description": "An interactive model with three control-plane nodes, each running an etcd member, and a load balancer that can route to any of them; you stop members, choose routes, and try a write to see whether it succeeds.",
+    "terms": [
+      "quorum",
+      "etcd",
+      "control-plane"
+    ],
     "interactive": true
   },
   {
@@ -137,6 +193,9 @@
     "title": "How one job travels through Dispatch",
     "caption": "The finished Dispatch: the API accepts work, the worker does it, PostgreSQL remembers it, and Redis passes the news between them.",
     "description": "A sequence in four steps showing you, the API, Redis, PostgreSQL, and the worker. You send a job titled hello to the API. The API saves it in PostgreSQL with the status queued, notifies Redis, and replies that it was accepted. The worker hears about the new job, takes it, converts hello to HELLO, and saves the result in PostgreSQL with the status done. Finally you ask the API, which reads PostgreSQL and replies with status done.",
+    "terms": [
+      "dispatch"
+    ],
     "steps": [
       {
         "label": "Send a job",
@@ -161,6 +220,11 @@
     "title": "How Dispatch grows through the course",
     "caption": "Each stage adds the parts, and the skills, the next one depends on.",
     "description": "A timeline in four stages. In module 1, Dispatch is only its API, running in one container. In modules 2 to 6, all four parts, the API, Redis, the worker, and PostgreSQL, run together with Docker Compose. In modules 7 to 12, Kubernetes runs two copies each of the API and worker alongside Redis and PostgreSQL. In modules 13 to 24, three copies run on a cluster you build yourself, with monitoring and security added.",
+    "terms": [
+      "dispatch",
+      "compose-service",
+      "pod"
+    ],
     "steps": [
       {
         "label": "Module 1: the API alone",
@@ -184,19 +248,32 @@
     "id": "dispatch-first-run",
     "title": "Dispatch’s first version in this lab",
     "caption": "The same pattern as the foundations web server: a published port in, and a read-only folder of code mounted.",
-    "description": "On your computer, a curl request to /healthz goes to 127.0.0.1 on an assigned port such as 54321, which is published with -p to port 8080 in the container. Inside the container, python app.py runs the Dispatch API on port 8080 and replies with status ok. The workspace folder containing app.py is bind mounted read-only at /app inside the container."
+    "description": "On your computer, a curl request to /healthz goes to 127.0.0.1 on an assigned port such as 54321, which is published with -p to port 8080 in the container. Inside the container, python app.py runs the Dispatch API on port 8080 and replies with status ok. The workspace folder containing app.py is bind mounted read-only at /app inside the container.",
+    "terms": [
+      "dispatch",
+      "published-port",
+      "localhost"
+    ]
   },
   {
     "id": "container-states",
     "title": "A container’s states and the commands that move it",
     "caption": "Stopping a container keeps it. Only docker rm removes it.",
-    "description": "A state diagram. docker create makes a Created container from an image; docker start moves it to Running; docker stop, or the process ending, moves it to Exited; docker start runs an exited container again; and docker rm moves an exited container to Removed. A dashed shortcut shows docker run as create plus start. Notes say docker ps lists running containers and docker ps -a lists created and exited ones too."
+    "description": "A state diagram. docker create makes a Created container from an image; docker start moves it to Running; docker stop, or the process ending, moves it to Exited; docker start runs an exited container again; and docker rm moves an exited container to Removed. A dashed shortcut shows docker run as create plus start. Notes say docker ps lists running containers and docker ps -a lists created and exited ones too.",
+    "terms": [
+      "container",
+      "exit-status"
+    ]
   },
   {
     "id": "container-identity",
     "title": "Same name, same container?",
     "caption": "A name is just a label. The ID tells you whether it is really the same container.",
     "description": "A sequence in four steps. A container named dispatch has the ID 3f2a9c and its own logs and files. Stopping and starting it keeps the same ID. Removing it deletes its ID, logs, and files, and frees the name. Running a new container with the same name produces a different ID, 9d41e7, with no logs or files yet.",
+    "terms": [
+      "container",
+      "writable-layer"
+    ],
     "steps": [
       {
         "label": "A new container",
@@ -220,13 +297,22 @@
     "id": "log-streams",
     "title": "Where a container’s logs come from",
     "caption": "Docker records both output streams of the main process, so you can read them later.",
-    "description": "Inside a container, the main process python app.py writes to standard output and standard error. Docker stores both streams as the container's logs. docker logs in your terminal reads them back, for example a line showing GET /healthz 200. A note says logs remain after the container stops, until it is removed."
+    "description": "Inside a container, the main process python app.py writes to standard output and standard error. Docker stores both streams as the container's logs. docker logs in your terminal reads them back, for example a line showing GET /healthz 200. A note says logs remain after the container stops, until it is removed.",
+    "terms": [
+      "standard-streams",
+      "pid-one"
+    ]
   },
   {
     "id": "stop-signals",
     "title": "What docker stop actually does",
     "caption": "SIGTERM asks the process to finish. SIGKILL ends it without asking.",
     "description": "A sequence in three steps. docker stop sends SIGTERM to process 1. A well-behaved process closes its connections and exits, leaving Exited (0). A process that ignores SIGTERM is sent SIGKILL after about ten seconds and is killed with no clean-up, leaving Exited (137).",
+    "terms": [
+      "signal",
+      "pid-one",
+      "exit-status"
+    ],
     "steps": [
       {
         "label": "docker stop sends SIGTERM",
@@ -247,6 +333,10 @@
     "title": "What each Dockerfile instruction contributes",
     "caption": "Some instructions add layers of files; CMD only records a setting for later.",
     "description": "A sequence in four steps beside the worked example Dockerfile. ARG and FROM start from the supplied Python image, whose Python and Alpine Linux layers form the base. WORKDIR and COPY add a layer containing /tool/report.py. CMD records the setting start: python report.py, which adds no files. Finally, docker run starts containers from the finished image.",
+    "terms": [
+      "dockerfile",
+      "layer"
+    ],
     "steps": [
       {
         "label": "FROM picks the starting image",
@@ -270,13 +360,22 @@
     "id": "build-context",
     "title": "The build context",
     "caption": "Docker builds only from the files it was sent; .dockerignore keeps the rest on your computer.",
-    "description": "Your folder, the build context, contains Dockerfile, app.py, VERSION, .dockerignore, secret.env, and a cache folder. The folder is sent to docker build, where COPY can use only what it was sent. A note says .dockerignore lists secret.env and cache, so they are never sent."
+    "description": "Your folder, the build context, contains Dockerfile, app.py, VERSION, .dockerignore, secret.env, and a cache folder. The folder is sent to docker build, where COPY can use only what it was sent. A note says .dockerignore lists secret.env and cache, so they are never sent.",
+    "terms": [
+      "build-context",
+      "dockerfile"
+    ]
   },
   {
     "id": "file-image-container",
     "title": "A change has to travel through three things",
     "caption": "Editing a file changes neither the image nor the container, and building a new image does not change a running container.",
     "description": "A sequence in four steps with three columns: your VERSION file, images, and containers. At first the file, the image tagged practice, and the running container all have dispatch-1. Editing the file to dispatch-2 changes only the file. docker build creates a new image with dispatch-2 and moves the practice tag to it, but the container still serves dispatch-1 from the old, now untagged image. Replacing the container creates a new one from the new image, which serves dispatch-2.",
+    "terms": [
+      "image",
+      "container",
+      "tag"
+    ],
     "steps": [
       {
         "label": "Everything matches",
@@ -301,6 +400,10 @@
     "title": "Which build steps run again",
     "caption": "Put files that change rarely before files that change often, so slow steps stay cached.",
     "description": "A sequence in three steps beside a five-line Dockerfile: FROM, WORKDIR, COPY requirements.txt, RUN pip install, and COPY service. On the first build every step runs. After editing only the service source, the first four steps are reused from the cache and only COPY service runs again. After editing requirements.txt, FROM and WORKDIR are reused, but COPY requirements.txt and every later step run again.",
+    "terms": [
+      "build-cache",
+      "layer"
+    ],
     "steps": [
       {
         "label": "The first build",
@@ -320,13 +423,21 @@
     "id": "multi-stage-build",
     "title": "Two stages, one final image",
     "caption": "The verify stage can hold anything the build needs; the final stage receives only what you copy into it.",
-    "description": "Two regions. Stage 1, verify, starts from the base image, holds app.py, VERSION, and generated __pycache__ files in /source, and runs py_compile on app.py. Stage 2, the final image, starts from the base image again, receives only app.py and VERSION in /app through COPY --from=verify, and sets USER 10001:10001. A note says only the final stage becomes the image you run."
+    "description": "Two regions. Stage 1, verify, starts from the base image, holds app.py, VERSION, and generated __pycache__ files in /source, and runs py_compile on app.py. Stage 2, the final image, starts from the base image again, receives only app.py and VERSION in /app through COPY --from=verify, and sets USER 10001:10001. A note says only the final stage becomes the image you run.",
+    "terms": [
+      "multi-stage",
+      "uid"
+    ]
   },
   {
     "id": "port-mapping-mismatch",
     "title": "A running container behind the wrong mapping",
     "caption": "The host side of a mapping can be right while the container side points where nothing listens.",
     "description": "A sequence in two steps. At first, a curl request to 127.0.0.1 port 49152 is forwarded to port 8081 in the container, but Dispatch listens on 8080, so nothing answers and the request fails. After the container is replaced with a mapping to 8080, the same request reaches Dispatch and returns status ok.",
+    "terms": [
+      "published-port",
+      "port"
+    ],
     "steps": [
       {
         "label": "Forwarded to 8081",
@@ -342,13 +453,21 @@
     "id": "localhost-perspective",
     "title": "127.0.0.1 depends on where you stand",
     "caption": "Each container has its own network environment, so its localhost is itself.",
-    "description": "Three side-by-side places: your computer, the API container, and another container. In each, a request to 127.0.0.1 arrives back in that same place: this computer, the API container, or that container. A note says 127.0.0.1 always means the place making the request, never a neighbor."
+    "description": "Three side-by-side places: your computer, the API container, and another container. In each, a request to 127.0.0.1 arrives back in that same place: this computer, the API container, or that container. A note says 127.0.0.1 always means the place making the request, never a neighbor.",
+    "terms": [
+      "localhost",
+      "linux-namespace"
+    ]
   },
   {
     "id": "bridge-network",
     "title": "Connecting two containers by name",
     "caption": "A shared user-defined network gives containers a path and a name to use; no published port is needed between them.",
     "description": "A sequence in three steps. Your terminal requests /dependency from the API through its published port. With no shared network, the API cannot resolve the name dependency. After both containers join the lab network, with the alias dependency on the dependency container, the API's request to dependency:8080 succeeds because Docker's DNS turns the name into the current address. The dependency still has no published port.",
+    "terms": [
+      "bridge-network",
+      "dns"
+    ],
     "steps": [
       {
         "label": "No shared network",
@@ -369,6 +488,10 @@
     "title": "Why the API’s request never leaves its container",
     "caption": "Test from the caller’s own network environment, then fix the setting by replacing the caller.",
     "description": "A sequence in three steps on the lab network. The API's upstream setting is 127.0.0.1:8081, so its request loops back into the API container, where nothing listens, and is refused. A docker exec test from inside the API container shows that http://dependency:8080 works. The API container is replaced with the upstream setting dependency:8080, and its request now reaches the dependency.",
+    "terms": [
+      "localhost",
+      "bridge-network"
+    ],
     "steps": [
       {
         "label": "The configured address",
@@ -388,13 +511,22 @@
     "id": "storage-choices",
     "title": "Where /data can live",
     "caption": "A mount moves the data out of the container’s writable layer, so replacing the container leaves it behind.",
-    "description": "Three columns, each with a container writing /data/jobs.db. With no mount, the data goes into the container's own writable layer and is lost with the container. With a bind mount, it goes into a folder you chose on your computer and survives replacement. With a named volume, it goes into a Docker-managed volume and survives replacement. A note says neither mount protects against deleting or corrupting the data itself."
+    "description": "Three columns, each with a container writing /data/jobs.db. With no mount, the data goes into the container's own writable layer and is lost with the container. With a bind mount, it goes into a folder you chose on your computer and survives replacement. With a named volume, it goes into a Docker-managed volume and survives replacement. A note says neither mount protects against deleting or corrupting the data itself.",
+    "terms": [
+      "volume",
+      "bind-mount",
+      "writable-layer"
+    ]
   },
   {
     "id": "replace-with-mount",
     "title": "Replacing the container, keeping the data",
     "caption": "The storage outlives the container because it was never inside it.",
     "description": "A sequence in three steps. A container with /data mounted writes a job into separate storage holding jobs.db. The container is removed, and the storage remains. A replacement container with the same mount at /data reads the job back, so GET /jobs still returns keep this job.",
+    "terms": [
+      "volume",
+      "container"
+    ],
     "steps": [
       {
         "label": "Write a job",
@@ -415,6 +547,11 @@
     "title": "A numeric owner mismatch",
     "caption": "Linux compares numbers: the process’s UID must be allowed by the directory’s owner and mode.",
     "description": "A sequence in three steps. The Dispatch API runs as UID 10001, but /data on the volume is owned by 0, root, with mode 0700, so writing fails with permission denied. A temporary container runs chown 10001:10001 /data, making UID 10001 the owner. The write then succeeds while the API still runs as an ordinary user. A note says chmod 777 or running as root would also work by giving far more access than the API needs.",
+    "terms": [
+      "uid",
+      "file-mode",
+      "volume"
+    ],
     "steps": [
       {
         "label": "The write is denied",
@@ -435,6 +572,10 @@
     "title": "Back up, restore, and prove it",
     "caption": "The source stays untouched; the API is stopped only while its own database is replaced.",
     "description": "A sequence in four steps. A temporary container reads the source volume's jobs.db read-only and writes backup.tar into your workspace with tar -c. The Dispatch API that uses the target volume is stopped. Another temporary container extracts the archive into the target volume and changes the owner. The API is started again and GET /jobs finds the recovered job.",
+    "terms": [
+      "restore-test",
+      "volume"
+    ],
     "steps": [
       {
         "label": "Archive the source",
@@ -458,25 +599,41 @@
     "id": "recovery-point-time",
     "title": "Recovery point and recovery time",
     "caption": "A recent backup shrinks the lost data; a practised restore shrinks the outage.",
-    "description": "A timeline. A backup is taken, which is the recovery point; later a failure happens; later still service is restored. Changes made between the backup and the failure are lost. The time between the failure and the restored service is the recovery time."
+    "description": "A timeline. A backup is taken, which is the recovery point; later a failure happens; later still service is restored. Changes made between the backup and the failure are lost. The time between the failure and the restored service is the recovery time.",
+    "terms": [
+      "restore-test"
+    ]
   },
   {
     "id": "compose-project",
     "title": "Dispatch as one Compose project",
     "caption": "Compose starts all four roles on one network; only the API is published to your computer.",
-    "description": "compose.yaml is read by docker compose up, which starts four services on the network app. The api service has a published port reached from 127.0.0.1 on your computer. The worker, queue (Redis), and db (PostgreSQL, with the jobs volume) have no published ports. The api and worker each connect to the queue and the db by their service names."
+    "description": "compose.yaml is read by docker compose up, which starts four services on the network app. The api service has a published port reached from 127.0.0.1 on your computer. The worker, queue (Redis), and db (PostgreSQL, with the jobs volume) have no published ports. The api and worker each connect to the queue and the db by their service names.",
+    "terms": [
+      "compose-service",
+      "yaml",
+      "bridge-network"
+    ]
   },
   {
     "id": "compose-interpolation",
     "title": "Interpolation versus a container’s environment",
     "caption": "${…} is filled in from your terminal when Compose reads the file; only environment entries reach the container.",
-    "description": "Three stacked panels. Your lab terminal has variables such as DOCKYARD_DB_PASSWORD, DOCKYARD_PORT, and HOME. In compose.yaml, the environment section sets DB_HOST to db and DB_PASSWORD to ${DOCKYARD_DB_PASSWORD}, which Compose fills in while reading the file. Inside the api container, only DB_HOST and DB_PASSWORD exist; HOME and DOCKYARD_PORT are not passed in."
+    "description": "Three stacked panels. Your lab terminal has variables such as DOCKYARD_DB_PASSWORD, DOCKYARD_PORT, and HOME. In compose.yaml, the environment section sets DB_HOST to db and DB_PASSWORD to ${DOCKYARD_DB_PASSWORD}, which Compose fills in while reading the file. Inside the api container, only DB_HOST and DB_PASSWORD exist; HOME and DOCKYARD_PORT are not passed in.",
+    "terms": [
+      "environment-variable",
+      "compose-service"
+    ]
   },
   {
     "id": "health-wait",
     "title": "Running is not the same as ready",
     "caption": "service_healthy makes the API wait for its dependencies’ health checks, not just for their containers to exist.",
     "description": "A sequence in three steps with three services: db with the pg_isready check, queue with redis-cli ping, and api with GET /readyz, which depends on the other two. At first db and queue are running but still starting, and the api waits. Then db and queue become healthy, and the api starts. Finally the api's own check passes, all three are healthy, and docker compose up --wait finishes successfully.",
+    "terms": [
+      "healthcheck",
+      "compose-service"
+    ],
     "steps": [
       {
         "label": "Containers start",
@@ -496,25 +653,42 @@
     "id": "worker-replicas",
     "title": "Two workers, one jobs table",
     "caption": "Replicas share the queue and database; row locks decide which worker takes each job.",
-    "description": "Worker 1 and worker 2 both hear from the queue that work is available. In the jobs table in PostgreSQL, job 1 is locked by worker 1, job 2 is locked by worker 2, and job 3 is still queued. A note says each worker skips jobs another worker has locked, so a job is claimed once."
+    "description": "Worker 1 and worker 2 both hear from the queue that work is available. In the jobs table in PostgreSQL, job 1 is locked by worker 1, job 2 is locked by worker 2, and job 3 is still queued. A note says each worker skips jobs another worker has locked, so a job is claimed once.",
+    "terms": [
+      "compose-service",
+      "dispatch"
+    ]
   },
   {
     "id": "pg-dump-restore",
     "title": "A logical backup restored beside the live database",
     "caption": "The application keeps using dispatch; restored exists only to prove the backup works.",
-    "description": "One PostgreSQL server in the db container holds two databases. The api and workers use dispatch, the live database. pg_dump writes dispatch out to backup.sql in your workspace, and psql reads backup.sql into a separate database named restored, used only as a recovery test."
+    "description": "One PostgreSQL server in the db container holds two databases. The api and workers use dispatch, the live database. pg_dump writes dispatch out to backup.sql in your workspace, and psql reads backup.sql into a separate database named restored, used only as a recovery test.",
+    "terms": [
+      "restore-test"
+    ]
   },
   {
     "id": "image-reference",
     "title": "Reading an image reference",
     "caption": "A reference ends with either a tag, which can move, or a digest, which identifies fixed content.",
-    "description": "Two image references with their parts labelled. In 127.0.0.1:49804/dispatch:release, 127.0.0.1:49804 is the registry, dispatch is the repository, and release is a tag that can move. In 127.0.0.1:49804/dispatch@sha256:3f1a…, the registry and repository are the same, and sha256:3f1a… is a digest identifying fixed content."
+    "description": "Two image references with their parts labelled. In 127.0.0.1:49804/dispatch:release, 127.0.0.1:49804 is the registry, dispatch is the repository, and release is a tag that can move. In 127.0.0.1:49804/dispatch@sha256:3f1a…, the registry and repository are the same, and sha256:3f1a… is a digest identifying fixed content.",
+    "terms": [
+      "registry",
+      "tag",
+      "digest"
+    ]
   },
   {
     "id": "tags-vs-digests",
     "title": "A tag moves; a digest stays",
     "caption": "Deploy by digest when you need to know exactly which image will run.",
     "description": "A sequence in two steps. In the registry, the tag dispatch:release and the digest reference dispatch@sha256:3f1a… both point at image A. Then someone pushes image B, sha256:9c2e…, under the same tag. The tag now points at image B, so a deploy by tag gets image B, while the digest reference still points at image A, so a deploy by digest still gets image A.",
+    "terms": [
+      "tag",
+      "digest",
+      "registry"
+    ],
     "steps": [
       {
         "label": "After your push",
@@ -530,13 +704,21 @@
     "id": "image-platforms",
     "title": "One image name, several platforms",
     "caption": "Docker picks the image that matches your processor from the name’s list.",
-    "description": "The image name python points to a list of platform images. One is linux/arm64, for ARM64 processors, which an Apple Silicon Mac pulls. The other is linux/amd64, for x86-64 processors, which an x86-64 PC pulls."
+    "description": "The image name python points to a list of platform images. One is linux/arm64, for ARM64 processors, which an Apple Silicon Mac pulls. The other is linux/amd64, for x86-64 processors, which an x86-64 PC pulls.",
+    "terms": [
+      "platform",
+      "image"
+    ]
   },
   {
     "id": "secret-in-layers",
     "title": "Deleting a secret does not remove it",
     "caption": "Keep secrets out of the build context; a later layer can only hide what an earlier one stored.",
     "description": "A sequence in three steps showing image layers beside what the running container sees and what the image stores. COPY . . copies app.py and .env into a layer, so both the container and the image contain .env. Adding RUN rm .env hides .env from the running container, but the image still stores it in the COPY layer. With .env listed in .dockerignore, the COPY layer contains only app.py, and no layer stores .env.",
+    "terms": [
+      "layer",
+      "build-context"
+    ],
     "steps": [
       {
         "label": "COPY . . copies the secret",
@@ -556,19 +738,35 @@
     "id": "container-restrictions",
     "title": "Independent layers of restriction",
     "caption": "If one layer is bypassed, the others still apply.",
-    "description": "Nested layers around Dispatch, which runs as UID 10001. From the inside out: all capabilities dropped, no new privileges, a read-only filesystem, and cgroup limits of 128 MiB memory, half a CPU, and 64 processes. A note says each layer closes a different door and together they limit the damage."
+    "description": "Nested layers around Dispatch, which runs as UID 10001. From the inside out: all capabilities dropped, no new privileges, a read-only filesystem, and cgroup limits of 128 MiB memory, half a CPU, and 64 processes. A note says each layer closes a different door and together they limit the damage.",
+    "terms": [
+      "security-context",
+      "cgroup",
+      "uid"
+    ]
   },
   {
     "id": "k8s-object-chain",
     "title": "The objects behind one application",
     "caption": "You describe the Deployment; Kubernetes creates the ReplicaSet and Pods, and the Service sends requests to them.",
-    "description": "A Deployment with replicas 2 manages a ReplicaSet that keeps 2 Pods running. The ReplicaSet creates two Pods, each holding a Dispatch container. A Service, which provides a stable address, sends requests to both Pods. A note says you change the Deployment and Kubernetes creates and replaces the rest."
+    "description": "A Deployment with replicas 2 manages a ReplicaSet that keeps 2 Pods running. The ReplicaSet creates two Pods, each holding a Dispatch container. A Service, which provides a stable address, sends requests to both Pods. A note says you change the Deployment and Kubernetes creates and replaces the rest.",
+    "terms": [
+      "deployment",
+      "replicaset",
+      "pod",
+      "service"
+    ]
   },
   {
     "id": "apply-to-running",
     "title": "From kubectl apply to running Pods",
     "caption": "apply records what you want; controllers and the node do the work afterwards.",
     "description": "A sequence in four steps. kubectl apply sends the manifest to the API server, which stores the desired state and replies that the deployment is configured, though nothing is running yet. The Deployment controller notices it wants 2 Pods but sees 0. It creates two Pods, which start on the node. Finally both Pods are 1/1 ready and kubectl rollout status reports a successful rollout.",
+    "terms": [
+      "manifest",
+      "api-server",
+      "reconciliation"
+    ],
     "steps": [
       {
         "label": "apply is accepted",
@@ -593,6 +791,11 @@
     "title": "How a Service chooses its Pods",
     "caption": "A selector matches labels exactly; one wrong character leaves the Service with nowhere to send requests.",
     "description": "A sequence in two steps. The Service dispatch has the selector app=dispatch. Two Pods labelled app=dispatch are selected and a Pod labelled app=worker is not, so the EndpointSlice lists 2 ready Pod addresses. When the selector is mistyped as app=dispach, no Pod matches, and the EndpointSlice is empty.",
+    "terms": [
+      "label-selector",
+      "service",
+      "endpointslice"
+    ],
     "steps": [
       {
         "label": "The selector matches",
@@ -608,31 +811,52 @@
     "id": "namespaces",
     "title": "Namespaces inside one cluster",
     "caption": "Names only need to be unique within a namespace; some objects belong to the whole cluster.",
-    "description": "A cluster containing three namespaces. The dispatch namespace holds the Service dispatch and your Pods. A staging namespace also holds a Service named dispatch, which is allowed because it is a different namespace. The kube-system namespace holds Kubernetes itself and should be left alone. Nodes and other cluster-wide objects belong to no namespace."
+    "description": "A cluster containing three namespaces. The dispatch namespace holds the Service dispatch and your Pods. A staging namespace also holds a Service named dispatch, which is allowed because it is a different namespace. The kube-system namespace holds Kubernetes itself and should be left alone. Nodes and other cluster-wide objects belong to no namespace.",
+    "terms": [
+      "namespace"
+    ]
   },
   {
     "id": "kubeconfig-contexts",
     "title": "What a context combines",
     "caption": "Switching context changes which cluster, login, and namespace your next command uses.",
-    "description": "Inside the kubeconfig file named by KUBECONFIG, a cluster entry says where the API is, a user entry says how to log in, and a namespace such as dispatch is the default. A context combines the cluster, the user, and the namespace. The current-context setting points at one context, and every kubectl command goes to it."
+    "description": "Inside the kubeconfig file named by KUBECONFIG, a cluster entry says where the API is, a user entry says how to log in, and a namespace such as dispatch is the default. A context combines the cluster, the user, and the namespace. The current-context setting points at one context, and every kubectl command goes to it.",
+    "terms": [
+      "kubeconfig",
+      "namespace"
+    ]
   },
   {
     "id": "change-workflow",
     "title": "A careful change, step by step",
     "caption": "The first three steps cost nothing and catch most mistakes before they reach the cluster.",
-    "description": "Five steps in a row: render fills in the image, diff shows what would change, a server dry run checks the object, apply saves it in the cluster, and rollout status confirms the Pods are ready. The first three change nothing; the last two change the cluster. A note says to check which context you are using before any of these steps."
+    "description": "Five steps in a row: render fills in the image, diff shows what would change, a server dry run checks the object, apply saves it in the cluster, and rollout status confirms the Pods are ready. The first three change nothing; the last two change the cluster. A note says to check which context you are using before any of these steps.",
+    "terms": [
+      "manifest",
+      "kubeconfig"
+    ]
   },
   {
     "id": "workload-controllers",
     "title": "Five controllers, five shapes of work",
     "caption": "Choose the controller by how the work should behave, not by habit.",
-    "description": "Five panels. A Deployment runs interchangeable copies, as many as you ask for. A DaemonSet runs one Pod on each matching node, shown with node 1 and node 2. A StatefulSet runs db-0 and db-1, each with its own stable name and data volume. A Job runs a Pod that does its task until it succeeds and is Completed. A CronJob uses a schedule such as 0 2 * * * to create a new Job, which creates a Pod."
+    "description": "Five panels. A Deployment runs interchangeable copies, as many as you ask for. A DaemonSet runs one Pod on each matching node, shown with node 1 and node 2. A StatefulSet runs db-0 and db-1, each with its own stable name and data volume. A Job runs a Pod that does its task until it succeeds and is Completed. A CronJob uses a schedule such as 0 2 * * * to create a new Job, which creates a Pod.",
+    "terms": [
+      "deployment",
+      "daemonset",
+      "statefulset",
+      "job"
+    ]
   },
   {
     "id": "daemonset-selector",
     "title": "Why the DaemonSet wants zero Pods",
     "caption": "A DaemonSet’s desired count comes from the nodes it may use.",
     "description": "A sequence in two steps. The DaemonSet's node selector requires a label ending node=missing, which the lab's node does not have; its labels include kubernetes.io/os=linux. No label matches, so DESIRED is 0 and no Pod is placed. When the selector matches the node, DESIRED becomes 1 and a node-agent Pod runs on it.",
+    "terms": [
+      "daemonset",
+      "label-selector"
+    ],
     "steps": [
       {
         "label": "No node matches",
@@ -647,14 +871,23 @@
   {
     "id": "port-forward",
     "title": "What kubectl port-forward connects",
-    "caption": "The tunnel exists only while the command runs.",
-    "description": "On your computer, curl sends a request to 127.0.0.1 port 18080, where kubectl port-forward is listening. kubectl carries the request through a temporary tunnel into the cluster, to the Service dispatch on port 8080, which sends it to a Pod running the API on port 8080."
+    "caption": "The tunnel goes straight to one Pod, and exists only while the command runs.",
+    "description": "On your computer, curl sends a request to 127.0.0.1 port 18080, where kubectl port-forward is listening. kubectl uses the Service dispatch only to choose one of its Pods, then carries the request through a temporary tunnel straight to that Pod, where the API listens on port 8080. A note says requests do not pass through the Service.",
+    "terms": [
+      "port-forward",
+      "service"
+    ]
   },
   {
     "id": "pod-patterns",
     "title": "Init containers, sidecars, and a shared folder",
     "caption": "Init containers finish first; main containers and sidecars share files only through the same volume.",
     "description": "A sequence in three steps inside one worker Pod with the containers configure, worker, and observer and an emptyDir volume named shared. First the init container configure runs and writes worker.conf into shared while the others wait. Then configure has completed, and worker and the observer sidecar both read worker.conf from shared. In the broken version, the observer mounts a different emptyDir named scratch, which is empty, so it cannot see the file.",
+    "terms": [
+      "init-container",
+      "sidecar",
+      "volume"
+    ],
     "steps": [
       {
         "label": "The init container runs first",
@@ -674,25 +907,40 @@
     "id": "job-parallel",
     "title": "Completions, parallelism, and a retry",
     "caption": "At most two Pods run at once, and the Job keeps going until five have succeeded.",
-    "description": "A timeline with two slots for completions 5, parallelism 2, and backoffLimit 2. Slot 1 runs Pod 1, Pod 3, and Pod 5, all successful. Slot 2 runs Pod 2, which succeeds, then Pod 4, which fails, then a retry, which succeeds. The Job reaches 5 of 5 completions and is Complete. A note says a failed Pod counts toward backoffLimit and the Job retries with a new Pod."
+    "description": "A timeline with two slots for completions 5, parallelism 2, and backoffLimit 2. Slot 1 runs Pod 1, Pod 3, and Pod 5, all successful. Slot 2 runs Pod 2, which succeeds, then Pod 4, which fails, then a retry, which succeeds. The Job reaches 5 of 5 completions and is Complete. A note says a failed Pod counts toward backoffLimit and the Job retries with a new Pod.",
+    "terms": [
+      "job"
+    ]
   },
   {
     "id": "cron-runs",
     "title": "A schedule meeting a slow run",
     "caption": "concurrencyPolicy decides what happens when a run is still going at the next scheduled time.",
-    "description": "A timeline for the schedule */5 * * * * with concurrencyPolicy Forbid. At 02:00 a Job runs and succeeds. At 02:05 a Job starts and is still running at 02:10, so the 02:10 run is skipped. At 02:15 a new Job runs and succeeds. A note says kubectl create job --from=cronjob starts a run immediately without waiting."
+    "description": "A timeline for the schedule */5 * * * * with concurrencyPolicy Forbid. At 02:00 a Job runs and succeeds. At 02:05 a Job starts and is still running at 02:10, so the 02:10 run is skipped. At 02:15 a new Job runs and succeeds. A note says kubectl create job --from=cronjob starts a run immediately without waiting.",
+    "terms": [
+      "cronjob",
+      "job"
+    ]
   },
   {
     "id": "configmap-delivery",
     "title": "Two ways a ConfigMap reaches a container",
     "caption": "The same ConfigMap can feed an environment variable and a mounted file, and they behave differently.",
-    "description": "The ConfigMap dispatch-settings holds environment: learning and a banner.txt key. Inside the API container, the environment key becomes the environment variable DISPATCH_ENV, read once at start, and banner.txt becomes the mounted file /config/banner.txt, which is kept up to date. Dispatch's /config address shows both."
+    "description": "The ConfigMap dispatch-settings holds environment: learning and a banner.txt key. Inside the API container, the environment key becomes the environment variable DISPATCH_ENV, read once at start, and banner.txt becomes the mounted file /config/banner.txt, which is kept up to date. Dispatch's /config address shows both.",
+    "terms": [
+      "configmap",
+      "environment-variable"
+    ]
   },
   {
     "id": "config-update-timing",
     "title": "When a ConfigMap change arrives",
     "caption": "Mounted files follow the ConfigMap; environment variables wait for a new container.",
     "description": "A sequence in three steps. At first the ConfigMap has environment learning and banner v1, and the running Pod shows DISPATCH_ENV=learning and banner.txt v1. After the ConfigMap is edited to testing and v2, the mounted banner.txt updates to v2 within a minute or two, but DISPATCH_ENV still shows the old value learning because it is read only at start. After kubectl rollout restart, a new Pod shows DISPATCH_ENV=testing and banner v2.",
+    "terms": [
+      "configmap",
+      "environment-variable"
+    ],
     "steps": [
       {
         "label": "Pod and ConfigMap agree",
@@ -712,19 +960,33 @@
     "id": "secret-encoding",
     "title": "Base64 is not encryption",
     "caption": "A Secret is protected by who can read it, not by its encoding.",
-    "description": "You write password: example. The Secret stores it base64-encoded as ZXhhbXBsZQ==. Anyone who can read the Secret can decode it back to example. Real protection comes from controlling who may read Secrets, encryption at rest, and applications that never print them."
+    "description": "You write password: example. The Secret stores it base64-encoded as ZXhhbXBsZQ==. Anyone who can read the Secret can decode it back to example. Real protection comes from controlling who may read Secrets, encryption at rest, and applications that never print them.",
+    "terms": [
+      "secret",
+      "rbac"
+    ]
   },
   {
     "id": "projected-volume",
     "title": "A projected volume combines sources",
     "caption": "Several Secrets and ConfigMaps can appear as files in one folder.",
-    "description": "The Secret dispatch-database with its password key and the ConfigMap dispatch-settings with two keys both feed one projected volume. Mounted at /etc/dispatch in the container, it contains the files password, environment, and banner.txt."
+    "description": "The Secret dispatch-database with its password key and the ConfigMap dispatch-settings with two keys both feed one projected volume. Mounted at /etc/dispatch in the container, it contains the files password, environment, and banner.txt.",
+    "terms": [
+      "secret",
+      "configmap",
+      "volume"
+    ]
   },
   {
     "id": "rbac-request",
     "title": "How the API answers a Pod’s request",
     "caption": "Authentication names the caller; authorization checks what its bound Roles allow, in that namespace.",
     "description": "A sequence in four steps. The inventory Pod sends a request with the token for the ServiceAccount dispatch-reader. The API server's authentication step identifies it as system:serviceaccount:dispatch:dispatch-reader. Its authorization step follows the RoleBinding in dispatch to a Role that allows only listing Pods. Listing Pods in dispatch returns 200 OK. Listing Secrets in dispatch returns 403 Forbidden. Listing Pods in kube-system returns 403 Forbidden, because the binding applies only in dispatch.",
+    "terms": [
+      "service-account",
+      "rbac",
+      "api-server"
+    ],
     "steps": [
       {
         "label": "Who is asking?",
@@ -748,13 +1010,22 @@
     "id": "service-types",
     "title": "Where each Service type lets clients in",
     "caption": "ClusterIP serves the inside of the cluster; NodePort and LoadBalancer add doors from outside.",
-    "description": "A cluster containing the Service dispatch, which sends traffic to two Pods. Another Pod inside the cluster reaches the Service through its ClusterIP. Your computer reaches it through a node port such as node:30080, the NodePort path. An outside client reaches it through a load balancer address on port 8080, the LoadBalancer path. A note says each type builds on the one before it."
+    "description": "A cluster containing the Service dispatch, which sends traffic to two Pods. Another Pod inside the cluster reaches the Service through its ClusterIP. Your computer reaches it through a node port such as node:30080, the NodePort path. An outside client reaches it through a load balancer address on port 8080, the LoadBalancer path. A note says each type builds on the one before it.",
+    "terms": [
+      "service",
+      "cluster-ip",
+      "nodeport"
+    ]
   },
   {
     "id": "service-ports",
     "title": "port versus targetPort",
     "caption": "port is what clients use; targetPort must be where the application actually listens.",
     "description": "A sequence in two steps. A client connects to the Service on port 8080. With targetPort 8080, the Service forwards to port 8080 in the Pod, where Dispatch listens, and the request succeeds. With targetPort 9090, the Service forwards to port 9090, where nothing listens: endpoints still exist, but every connection is refused.",
+    "terms": [
+      "service",
+      "port"
+    ],
     "steps": [
       {
         "label": "targetPort matches the listener",
@@ -770,13 +1041,20 @@
     "id": "ingress-routing",
     "title": "How an Ingress request is served",
     "caption": "The Ingress is only rules; the controller reads them, terminates HTTPS, and forwards to the Service.",
-    "description": "Your client sends an HTTPS request for https://dispatch.test/ to Traefik, the ingress controller. Traefik reads the Ingress rules, which send dispatch.test/ to dispatch:8080, and takes its certificate from the Secret dispatch-tls holding tls.crt and tls.key. It forwards the request over HTTP to the Service dispatch on port 8080, and from there to the Pods."
+    "description": "Your client sends an HTTPS request for https://dispatch.test/ to Traefik, the ingress controller. Traefik reads the Ingress rules, which send dispatch.test/ to dispatch:8080, and takes its certificate from the Secret dispatch-tls holding tls.crt and tls.key. It forwards the request over HTTP to the Service dispatch on port 8080, and from there to the Pods.",
+    "terms": [
+      "ingress",
+      "tls"
+    ]
   },
   {
     "id": "tls-checks",
     "title": "The two checks HTTPS makes",
     "caption": "Trust and hostname are both checked before any data is exchanged.",
     "description": "A sequence in three steps. Traefik presents a certificate for dispatch.test from the practice certificate authority to curl. With --cacert, curl trusts the issuer and confirms the hostname, so the request continues. Without --cacert, the issuer is unknown and curl refuses before checking the hostname. With --insecure, both checks are skipped: the connection is encrypted, but you no longer know who answered.",
+    "terms": [
+      "tls"
+    ],
     "steps": [
       {
         "label": "Both checks pass",
@@ -797,6 +1075,9 @@
     "title": "Gateway API’s links and what breaks them",
     "caption": "parentRefs attaches a route to a Gateway; backendRefs sends it to a Service. Status shows which link failed.",
     "description": "A sequence in three steps. A GatewayClass named traefik is owned by admins, a Gateway with a listener on 8080 by the platform team, and an HTTPRoute by the app team. The HTTPRoute attaches to the Gateway through parentRefs and sends traffic to the Service dispatch on port 8080 through backendRefs. When everything links, the route's status shows Accepted, ResolvedRefs, and Programmed all True. When parentRefs names a Gateway that does not exist, there is no entry under Parents at all. When backendRefs uses a port the Service does not have, ResolvedRefs is False.",
+    "terms": [
+      "gateway-api"
+    ],
     "steps": [
       {
         "label": "Everything links",
@@ -816,13 +1097,23 @@
     "id": "storage-chain",
     "title": "From PostgreSQL’s folder to a disk",
     "caption": "Every link must be present; a claim the Pod does not use protects nothing.",
-    "description": "A chain of six links. PostgreSQL writes its data folder. The container's volumeMounts mount the volume named data there. The Pod's volumes entry says data uses the claim, through claimName. The PersistentVolumeClaim is the request in the dispatch namespace. It is Bound to a PersistentVolume, the real storage, which is cluster-wide. That volume is a disk on the node where the bytes live. A StorageClass named standard provisions the PersistentVolume."
+    "description": "A chain of six links. PostgreSQL writes its data folder. The container's volumeMounts mount the volume named data there. The Pod's volumes entry says data uses the claim, through claimName. The PersistentVolumeClaim is the request in the dispatch namespace. It is Bound to a PersistentVolume, the real storage, which is cluster-wide. That volume is a disk on the node where the bytes live. A StorageClass named standard provisions the PersistentVolume.",
+    "terms": [
+      "pvc",
+      "pv",
+      "storage-class"
+    ]
   },
   {
     "id": "wait-first-consumer",
     "title": "Why the claim waits",
     "caption": "With WaitForFirstConsumer, storage is created only once Kubernetes knows which node needs it.",
     "description": "A sequence in four steps. The claim dispatch-data uses a WaitForFirstConsumer class and is Pending while no Pod uses it. A db Pod that uses the claim is scheduled to a node. The provisioner creates a PersistentVolume on that node. The claim becomes Bound and the Pod runs.",
+    "terms": [
+      "pvc",
+      "storage-class",
+      "pv"
+    ],
     "steps": [
       {
         "label": "No Pod yet",
@@ -847,6 +1138,11 @@
     "title": "Same name, same claim, new Pod",
     "caption": "A replacement db-0 is a new Pod that takes over the old one’s name and storage.",
     "description": "A sequence in three steps. The StatefulSet db runs the Pod db-0, with UID 4c1e, attached to the claim data-db-0. The headless Service db-headless, with clusterIP None, gives it the DNS name db-0.db-headless.dispatch. When db-0 is deleted, its claim is kept. The replacement is again named db-0 and reattaches data-db-0, but it has a new UID, 9a7f, because it is a new Pod.",
+    "terms": [
+      "statefulset",
+      "pvc",
+      "headless-service"
+    ],
     "steps": [
       {
         "label": "db-0 and its claim",
@@ -866,13 +1162,22 @@
     "id": "independent-restore",
     "title": "Restore into something separate",
     "caption": "Prove a backup by restoring it next to the original, then comparing rows.",
-    "description": "pg_dump reads the source database in db-0, whose claim is data-db-0, and writes dispatch.sql on your computer. psql restores that file into db-restore-0, which has its own claim data-db-restore-0. Separate claims and volumes mean a bad restore cannot harm the source. A warning says --schema-only produces tables but no rows."
+    "description": "pg_dump reads the source database in db-0, whose claim is data-db-0, and writes dispatch.sql on your computer. psql restores that file into db-restore-0, which has its own claim data-db-restore-0. Separate claims and volumes mean a bad restore cannot harm the source. A warning says --schema-only produces tables but no rows.",
+    "terms": [
+      "restore-test",
+      "pvc"
+    ]
   },
   {
     "id": "probe-roles",
     "title": "What each probe does, and when",
     "caption": "Readiness controls traffic; liveness controls restarts. Only liveness should ignore dependencies.",
     "description": "A sequence in four steps showing the startup probe on /startupz, the liveness probe on /healthz, and the readiness probe on /readyz, beside the Pod's place in the Service endpoints and its restart count. While warming up, only the startup probe checks, and the Pod is not yet in the endpoints. Once started, liveness and readiness pass and the Pod is included. When the database is down, readiness fails and the Pod is removed from the endpoints, but liveness still passes, so nothing restarts. If liveness wrongly uses /readyz, the database outage makes liveness fail too, and restarts keep climbing.",
+    "terms": [
+      "startup-probe",
+      "liveness",
+      "readiness"
+    ],
     "steps": [
       {
         "label": "Warming up",
@@ -897,6 +1202,10 @@
     "title": "A rolling update, one Pod at a time",
     "caption": "With maxSurge 1 and maxUnavailable 0, two Pods stay ready throughout.",
     "description": "A sequence in five steps for two replicas with maxSurge 1 and maxUnavailable 0. The old ReplicaSet runs two ready v1 Pods. A new v2 Pod starts, making three Pods in total. When it is ready, one v1 Pod is removed. A second v2 Pod starts. When it is ready, the last v1 Pod is removed, leaving two ready v2 Pods. Throughout, two Pods are ready.",
+    "terms": [
+      "rolling-update",
+      "replicaset"
+    ],
     "steps": [
       {
         "label": "Before the update",
@@ -924,19 +1233,30 @@
     "id": "bad-rollout",
     "title": "How update settings limit the damage",
     "caption": "A bad image stalls both rollouts, but only one of them takes the service down.",
-    "description": "Two panels showing the same missing image. With maxUnavailable 2 and maxSurge 0, both v1 Pods are removed and both v2 Pods cannot start, leaving 0 ready Pods: an outage. With maxUnavailable 0 and maxSurge 1, both v1 Pods stay ready while one v2 Pod cannot start, leaving 2 ready Pods still serving. A note says either way the rollout is stuck, but only one setting keeps Dispatch up."
+    "description": "Two panels showing the same missing image. With maxUnavailable 2 and maxSurge 0, both v1 Pods are removed and both v2 Pods cannot start, leaving 0 ready Pods: an outage. With maxUnavailable 0 and maxSurge 1, both v1 Pods stay ready while one v2 Pod cannot start, leaving 2 ready Pods still serving. A note says either way the rollout is stuck, but only one setting keeps Dispatch up.",
+    "terms": [
+      "rolling-update"
+    ]
   },
   {
     "id": "canary-split",
     "title": "A canary beside the stable release",
     "caption": "The main Service selects both tracks; the preview Service selects only the canary.",
-    "description": "The Service dispatch selects app=dispatch and sends traffic to three Pods: two release 1 Pods from the Deployment dispatch with track=stable, and one release 2 Pod from dispatch-canary with track=canary. The Service dispatch-preview selects track=canary and reaches only the canary Pod. A note says about one in three connections to dispatch reaches the canary."
+    "description": "The Service dispatch selects app=dispatch and sends traffic to three Pods: two release 1 Pods from the Deployment dispatch with track=stable, and one release 2 Pod from dispatch-canary with track=canary. The Service dispatch-preview selects track=canary and reaches only the canary Pod. A note says about one in three connections to dispatch reaches the canary.",
+    "terms": [
+      "canary",
+      "label-selector"
+    ]
   },
   {
     "id": "blue-green",
     "title": "Blue-green: switch everything at once",
     "caption": "Changing one selector moves all traffic; changing it back undoes the switch.",
     "description": "A sequence in two steps. The Service dispatch has the selector version=blue, so all traffic goes to the two blue Pods running release 1, while the two green Pods running release 2 wait. After the selector changes to version=green, all traffic goes to the green Pods at once, and the blue Pods remain available for a quick switch back.",
+    "terms": [
+      "blue-green",
+      "label-selector"
+    ],
     "steps": [
       {
         "label": "Blue is live",
@@ -952,19 +1272,33 @@
     "id": "requests-limits",
     "title": "Requests reserve; limits cap",
     "caption": "Going over a CPU limit slows a container down; going over a memory limit kills it.",
-    "description": "Two bars. For CPU, a request of 50m is reserved and the limit is 300m; a busy container is held at the limit and slows down, which is called throttling. For memory, a request of 64Mi is reserved and the limit is 192Mi; a container that uses more than the limit is killed with OOMKilled."
+    "description": "Two bars. For CPU, a request of 50m is reserved and the limit is 300m; a busy container is held at the limit and slows down, which is called throttling. For memory, a request of 64Mi is reserved and the limit is 192Mi; a container that uses more than the limit is killed with OOMKilled.",
+    "terms": [
+      "request",
+      "limit",
+      "cgroup"
+    ]
   },
   {
     "id": "qos-classes",
     "title": "Quality of service classes",
     "caption": "Requests and limits decide which Pods are evicted first when memory runs short.",
-    "description": "Three classes from left to right: BestEffort, with no requests or limits; Burstable, with some requests or limits, which includes Dispatch's API; and Guaranteed, with requests equal to limits. When a node runs short of memory, BestEffort Pods are evicted first and Guaranteed Pods last."
+    "description": "Three classes from left to right: BestEffort, with no requests or limits; Burstable, with some requests or limits, which includes Dispatch's API; and Guaranteed, with requests equal to limits. When a node runs short of memory, BestEffort Pods are evicted first and Guaranteed Pods last.",
+    "terms": [
+      "qos-class",
+      "request",
+      "limit"
+    ]
   },
   {
     "id": "taints-affinity",
     "title": "Taints repel, tolerations allow, affinity attracts",
     "caption": "Dedicating nodes takes a taint on the nodes plus a toleration and affinity on the Pod.",
     "description": "A sequence in three steps with three nodes: the control plane, tainted control-plane:NoSchedule, and two workers, each tainted pool=apps:NoSchedule and labelled pool=apps. A Dispatch Pod with no toleration is refused by every node because of untolerated taints and stays Pending. With a toleration for pool=apps, the workers allow it but nothing sends it there, and the control plane still refuses. With the toleration and affinity for pool=apps, the control plane is excluded because it is not pool=apps, and Pods are placed on the workers.",
+    "terms": [
+      "taint",
+      "node-affinity"
+    ],
     "steps": [
       {
         "label": "Taints keep it out",
@@ -984,19 +1318,31 @@
     "id": "topology-spread",
     "title": "Spreading copies across nodes",
     "caption": "maxSkew limits how uneven the copies may be across the chosen topology.",
-    "description": "Two panels, each with two worker nodes. Without a spread rule, both Pods can land on one node, a skew of 2. With maxSkew 1 by hostname, the Pods are placed one on each node, a skew of 0."
+    "description": "Two panels, each with two worker nodes. Without a spread rule, both Pods can land on one node, a skew of 2. With maxSkew 1 by hostname, the Pods are placed one on each node, a skew of 0.",
+    "terms": [
+      "topology-spread"
+    ]
   },
   {
     "id": "hpa-math",
     "title": "How the HPA chooses a replica count",
     "caption": "Utilization is measured against the request, then the result is kept between min and max.",
-    "description": "The Metrics Server measures each Pod, the HPA compares the measurement with its target, and the Deployment is scaled from 2 to 4 replicas, repeating every few seconds. The calculation: the target is 50% of the 50m request, so aim for 25m per Pod; the measured average use is 100m per Pod, 200%; desired is 2 Pods times 200% divided by 50%, which is 8 Pods; capped at maxReplicas, that is 4 Pods, and the HPA reports ScalingLimited."
+    "description": "The Metrics Server measures each Pod, the HPA compares the measurement with its target, and the Deployment is scaled from 2 to 4 replicas, repeating every few seconds. The calculation: the target is 50% of the 50m request, so aim for 25m per Pod; the measured average use is 100m per Pod, 200%; desired is 2 Pods times 200% divided by 50%, which is 8 Pods; capped at maxReplicas, that is 4 Pods, and the HPA reports ScalingLimited.",
+    "terms": [
+      "hpa",
+      "request",
+      "metric"
+    ]
   },
   {
     "id": "pdb-drain",
     "title": "A drain that respects a PodDisruptionBudget",
     "caption": "Evictions wait whenever one more would take the application below its minimum.",
     "description": "A sequence in five steps with a PodDisruptionBudget of minAvailable 2. At first worker runs Pods A and B and worker2 runs Pod C, so 3 are ready. Draining cordons worker and evicts Pod A; its replacement A′ starts on worker2, leaving 2 ready. Pod B must wait, because evicting it would leave only 1 ready. Once A′ is ready, B is evicted and B′ starts, still 2 ready. Finally all three run on worker2 and 3 are ready.",
+    "terms": [
+      "pdb",
+      "drain"
+    ],
     "steps": [
       {
         "label": "Before the drain",
@@ -1024,25 +1370,40 @@
     "id": "prestop-timeline",
     "title": "Why a short preStop helps",
     "caption": "The pause lets the Service stop sending traffic before the process begins to exit.",
-    "description": "A timeline from the moment a Pod is deleted. On the Service lane, the endpoint is being removed for the first moments, and after that no new traffic arrives. On the container lane, the preStop hook sleeps for 5 seconds while still serving, then SIGTERM arrives and the process exits. The grace period ends at 20 seconds."
+    "description": "A timeline from the moment a Pod is deleted. On the Service lane, the endpoint is being removed for the first moments, and after that no new traffic arrives. On the container lane, the preStop hook sleeps for 5 seconds while still serving, then SIGTERM arrives and the process exits. The grace period ends at 20 seconds.",
+    "terms": [
+      "signal",
+      "endpointslice"
+    ]
   },
   {
     "id": "kustomize-overlays",
     "title": "One base, one overlay per environment",
     "caption": "Each overlay starts from the shared base and records only what differs.",
-    "description": "The base folder holds deployment.yaml, service.yaml, configmap.yaml, and kustomization.yaml. The development overlay uses the base and sets namespace dispatch, replicas 2, and environment development, producing the development manifests that are deployed in this lab. The staging overlay uses the same base and sets namespace staging and environment staging, producing manifests that are only rendered here."
+    "description": "The base folder holds deployment.yaml, service.yaml, configmap.yaml, and kustomization.yaml. The development overlay uses the base and sets namespace dispatch, replicas 2, and environment development, producing the development manifests that are deployed in this lab. The staging overlay uses the same base and sets namespace staging and environment staging, producing manifests that are only rendered here.",
+    "terms": [
+      "kustomize",
+      "manifest"
+    ]
   },
   {
     "id": "helm-render",
     "title": "From values to a release",
     "caption": "Helm fills the chart’s templates with the combined values, then records the result as a revision.",
-    "description": "Values come from three places, from lowest to highest priority: the chart's values.yaml defaults, a file passed with -f such as values-practice.yaml, and --set api.replicas=2; later values win. Helm fills the chart's templates with the combined values and installs the result as the release dispatch, recording revisions 1, 2, 3 and so on. A note says helm template shows the filled-in manifests without installing anything."
+    "description": "Values come from three places, from lowest to highest priority: the chart's values.yaml defaults, a file passed with -f such as values-practice.yaml, and --set api.replicas=2; later values win. Helm fills the chart's templates with the combined values and installs the result as the release dispatch, recording revisions 1, 2, 3 and so on. A note says helm template shows the filled-in manifests without installing anything.",
+    "terms": [
+      "helm",
+      "manifest"
+    ]
   },
   {
     "id": "helm-revisions",
     "title": "Revisions, a bad upgrade, and a rollback",
     "caption": "A rollback makes a new revision from an old one, but leaves your values file unchanged.",
     "description": "A sequence in three steps. Revision 1 runs 2 replicas and serves. Revision 2 sets 0 replicas; Helm reports it as deployed, but 0 Pods are serving. Rolling back to revision 1 creates revision 3, which reuses revision 1's manifests and values and serves again. The file values-practice.yaml still says replicas: 0.",
+    "terms": [
+      "helm"
+    ],
     "steps": [
       {
         "label": "A healthy release",
@@ -1063,6 +1424,10 @@
     "title": "An operator restoring drift",
     "caption": "The custom resource is the source of truth; the controller keeps the Deployment matching it.",
     "description": "A sequence in three steps. The WorkerPool dispatch asks for 2 replicas, the workerpool-controller watches it and manages the Deployment dispatch-workers at 2 replicas, and two worker Pods are ready, so the WorkerPool status shows Ready True. Someone scales the Deployment to 0 by hand, the worker Pods terminate, and status shows Ready False. The controller notices the drift and sets the Deployment back to 2, starting new workers and returning to Ready True.",
+    "terms": [
+      "operator",
+      "reconciliation"
+    ],
     "steps": [
       {
         "label": "Matching the WorkerPool",
@@ -1082,43 +1447,69 @@
     "id": "evidence-types",
     "title": "Three kinds of evidence",
     "caption": "Each source answers a different question; one alone can mislead you.",
-    "description": "Three panels. Events show what Kubernetes noticed, such as Scheduled, Pulled, and Unhealthy when a probe failed. Logs show what the application said, such as GET /jobs 200 lines taking 12, 15, and 640 milliseconds. Metrics show how it behaves over time, as a response-time line rising sharply. A note says a Pod can be Running, with clean-looking logs, and still serve every request slowly, so use all three."
+    "description": "Three panels. Events show what Kubernetes noticed, such as Scheduled, Pulled, and Unhealthy when a probe failed. Logs show what the application said, such as GET /jobs 200 lines taking 12, 15, and 640 milliseconds. Metrics show how it behaves over time, as a response-time line rising sharply. A note says a Pod can be Running, with clean-looking logs, and still serve every request slowly, so use all three.",
+    "terms": [
+      "event",
+      "metric"
+    ]
   },
   {
     "id": "counter-rate",
     "title": "Why you take the rate of a counter",
     "caption": "A counter drops to zero when its process restarts; rate() measures growth and copes with the reset.",
-    "description": "Two charts over the same time. The counter dispatch_http_requests_total climbs steadily, drops to zero when the Pod restarts, then climbs again. Below it, rate over two minutes, the requests per second, stays level through the restart."
+    "description": "Two charts over the same time. The counter dispatch_http_requests_total climbs steadily, drops to zero when the Pod restarts, then climbs again. Below it, rate over two minutes, the requests per second, stays level through the restart.",
+    "terms": [
+      "counter",
+      "metric"
+    ]
   },
   {
     "id": "prometheus-scrape",
     "title": "How Prometheus chooses what to scrape",
     "caption": "Relabel rules decide which Pods are targets and how their series are labelled.",
-    "description": "Prometheus asks the Kubernetes API which Pods exist, then applies relabel rules that keep only Pods labelled app=dispatch with a container port named http. Dispatch Pods A and B are kept and scraped directly, each with its own pod label; the db Pod is dropped. Prometheus scrapes every five seconds."
+    "description": "Prometheus asks the Kubernetes API which Pods exist, then applies relabel rules that keep only Pods labelled app=dispatch with a container port named http. Dispatch Pods A and B are kept and scraped directly, each with its own pod label; the db Pod is dropped. Prometheus scrapes every five seconds.",
+    "terms": [
+      "metric",
+      "label-selector"
+    ]
   },
   {
     "id": "histogram-buckets",
     "title": "From histogram buckets to a slow fraction",
     "caption": "Divide the bucket at your threshold by the total count, then subtract from one.",
-    "description": "A bar chart of 200 requests in cumulative buckets: 120 at or under 0.1 seconds, 170 at or under 0.25 seconds, 190 at or under 0.5 seconds, 198 at or under 1 second, and 200 in all. Each bucket counts every request at or under its limit. Fast enough is 170 divided by 200, which is 85%. Too slow is 1 minus 0.85, which is 15%. Since 15% is above the 10% threshold, the alert condition is true."
+    "description": "A bar chart of 200 requests in cumulative buckets: 120 at or under 0.1 seconds, 170 at or under 0.25 seconds, 190 at or under 0.5 seconds, 198 at or under 1 second, and 200 in all. Each bucket counts every request at or under its limit. Fast enough is 170 divided by 200, which is 85%. Too slow is 1 minus 0.85, which is 15%. Since 15% is above the 10% threshold, the alert condition is true.",
+    "terms": [
+      "histogram"
+    ]
   },
   {
     "id": "alert-states",
     "title": "Pending, firing, resolved",
     "caption": "for: 15s holds the alert in pending until the condition has lasted fifteen seconds.",
-    "description": "A timeline with two rows. The condition, slow fraction above 10%, is false at first, true from when the slowdown starts until speed is restored, then false again. The alert is inactive at first, pending for the first 15 seconds of the slowdown, firing from then until speed is restored, and then resolved."
+    "description": "A timeline with two rows. The condition, slow fraction above 10%, is false at first, true from when the slowdown starts until speed is restored, then false again. The alert is inactive at first, pending for the first 15 seconds of the slowdown, firing from then until speed is restored, and then resolved.",
+    "terms": [
+      "alert"
+    ]
   },
   {
     "id": "error-budget",
     "title": "An error budget of ten reads",
     "caption": "The objective decides how many bad events you can afford before the SLO is missed.",
-    "description": "A grid of 200 squares, one for each eligible GET /jobs read: 190 are good and the last 10 are marked as the error budget. With an objective of 95% good, at most 10 reads may be bad. A read is bad if it fails, or if it succeeds but takes over 250 milliseconds."
+    "description": "A grid of 200 squares, one for each eligible GET /jobs read: 190 are good and the last 10 are marked as the error budget. With an objective of 95% good, at most 10 reads may be bad. A read is bad if it fails, or if it succeeds but takes over 250 milliseconds.",
+    "terms": [
+      "error-budget",
+      "slo"
+    ]
   },
   {
     "id": "pipeline-gate",
     "title": "A test gate in the pipeline",
     "caption": "A gate only protects you if a failure really stops the steps after it.",
     "description": "A sequence in three steps through four pipeline stages: build, test, push, and record. With tests switched off, the test is skipped and anything that builds is pushed and recorded. With a failing test, the test reports FAIL with exit 1, and push and record do not run. With passing tests, the test reports OK with exit 0, the image is pushed, and release.json records the exact digest that passed.",
+    "terms": [
+      "pipeline",
+      "registry"
+    ],
     "steps": [
       {
         "label": "Tests switched off",
@@ -1138,13 +1529,21 @@
     "id": "gitops-loop",
     "title": "The GitOps loop",
     "caption": "To change what runs, change Git; changes made only in the cluster do not last.",
-    "description": "You commit and push to the Git repository delivery, which holds the desired state. Flux fetches it, builds it, and applies it to the dispatch namespace as the ServiceAccount dispatch-deployer, so the Deployment dispatch matches what Git declares. A change made by hand with kubectl, which Git does not know about, is undone on Flux's next pass."
+    "description": "You commit and push to the Git repository delivery, which holds the desired state. Flux fetches it, builds it, and applies it to the dispatch namespace as the ServiceAccount dispatch-deployer, so the Deployment dispatch matches what Git declares. A change made by hand with kubectl, which Git does not know about, is undone on Flux's next pass.",
+    "terms": [
+      "gitops",
+      "service-account"
+    ]
   },
   {
     "id": "promotion-flow",
     "title": "Promote by digest, roll back through Git",
     "caption": "Staging receives the exact image development tested, and a bad change is undone by a new commit.",
     "description": "A sequence in four steps with the Git history in delivery beside the development and staging environments. Commit a1 sets development to the image sha256:7c9…, which becomes ready. Commit b2 promotes the same digest to staging. Commit c3 sets staging to a missing image; the new staging Pod cannot pull it while the old Pod keeps serving. Commit d4 reverts c3, and staging is ready again on sha256:7c9….",
+    "terms": [
+      "gitops",
+      "digest"
+    ],
     "steps": [
       {
         "label": "Release to development",
@@ -1168,13 +1567,21 @@
     "id": "rbac-scope",
     "title": "How far a binding reaches",
     "caption": "Where a permission applies depends on the binding, not on where the rules were written.",
-    "description": "Three combinations and their reach across the dispatch namespace, other namespaces, and cluster-wide objects such as nodes and PersistentVolumes. A Role with a RoleBinding grants access only in dispatch. A ClusterRole with a RoleBinding also grants access only in dispatch. A ClusterRole with a ClusterRoleBinding grants access everywhere, including other namespaces and cluster-wide objects."
+    "description": "Three combinations and their reach across the dispatch namespace, other namespaces, and cluster-wide objects such as nodes and PersistentVolumes. A Role with a RoleBinding grants access only in dispatch. A ClusterRole with a RoleBinding also grants access only in dispatch. A ClusterRole with a ClusterRoleBinding grants access everywhere, including other namespaces and cluster-wide objects.",
+    "terms": [
+      "rbac",
+      "namespace"
+    ]
   },
   {
     "id": "least-privilege",
     "title": "Removing access the reader does not need",
     "caption": "Least privilege keeps the useful permission and removes the rest, and you test both.",
     "description": "A sequence in two steps showing the Role dispatch-pod-reader beside kubectl auth can-i answers for dispatch-reader. At first the rule allows get, list, and watch on pods and secrets, so listing Pods in dispatch says yes, getting Secrets in dispatch also says yes, which is too much, and listing Pods in kube-system says no. After removing secrets from the rule, the answers are yes, no, and no.",
+    "terms": [
+      "rbac",
+      "service-account"
+    ],
     "steps": [
       {
         "label": "Too much access",
@@ -1191,6 +1598,10 @@
     "title": "From open, to closed, to exactly what is needed",
     "caption": "Start from default deny, then allow each path the application really uses.",
     "description": "A sequence in three steps with a frontend namespace holding trusted and untrusted Pods, DNS in kube-system, and a dispatch namespace holding the API, a worker, PostgreSQL, and Redis. With no policy, every connection is allowed. With default deny, every connection is blocked, including DNS lookups. With allow rules added, the trusted frontend can reach the API, the API can reach PostgreSQL, the worker can reach Redis and DNS, and the untrusted frontend Pod is still blocked.",
+    "terms": [
+      "network-policy",
+      "dns"
+    ],
     "steps": [
       {
         "label": "No policy",
@@ -1210,19 +1621,30 @@
     "id": "netpol-and-or",
     "title": "One dash changes the meaning",
     "caption": "Selectors in one list item must all match; selectors in separate items each allow traffic on their own.",
-    "description": "Two versions of a from list. In the first, namespaceSelector for the frontend namespace and podSelector for app trusted are in one list item, so both must match: a trusted Pod in frontend is allowed, and any other Pod is not. In the second, a dash before podSelector makes them two list items, so either is enough: any Pod in frontend is allowed, and so is a trusted Pod anywhere in the policy's own namespace."
+    "description": "Two versions of a from list. In the first, namespaceSelector for the frontend namespace and podSelector for app trusted are in one list item, so both must match: a trusted Pod in frontend is allowed, and any other Pod is not. In the second, a dash before podSelector makes them two list items, so either is enough: any Pod in frontend is allowed, and so is a trusted Pod anywhere in the policy's own namespace.",
+    "terms": [
+      "network-policy",
+      "label-selector"
+    ]
   },
   {
     "id": "admission-vs-context",
     "title": "Admission at creation, restrictions while running",
     "caption": "Admission decides whether a Pod may exist; its security context limits what it can do.",
-    "description": "A new Pod from a Deployment goes to Pod Security Admission, which enforces the restricted standard for its namespace and is checked once, when the Pod is created. The Pod is either accepted and created, or rejected and never runs. An accepted Pod's running container keeps its securityContext restrictions for its whole life: runAsUser 12000, no capabilities, no new privileges, the RuntimeDefault seccomp profile, and a read-only root filesystem."
+    "description": "A new Pod from a Deployment goes to Pod Security Admission, which enforces the restricted standard for its namespace and is checked once, when the Pod is created. The Pod is either accepted and created, or rejected and never runs. An accepted Pod's running container keeps its securityContext restrictions for its whole life: runAsUser 12000, no capabilities, no new privileges, the RuntimeDefault seccomp profile, and a read-only root filesystem.",
+    "terms": [
+      "pod-security-admission",
+      "security-context"
+    ]
   },
   {
     "id": "sbom-scan",
     "title": "An SBOM, a scan, and an unused library",
     "caption": "Removing a component you never use removes its findings; the base image’s findings still need review.",
     "description": "A sequence in two steps. The image contains Alpine base packages, Python packages, Dispatch's code, and the unused library PyJWT 1.7.1. Its SBOM lists PyJWT 1.7.1, and the Trivy scanner, using a dated vulnerability database, reports CVE-2022-29217 along with other findings from the base image. After rebuilding without PyJWT, the SBOM no longer lists it and CVE-2022-29217 is gone, while the base image findings remain and still need review.",
+    "terms": [
+      "sbom"
+    ],
     "steps": [
       {
         "label": "Before",
@@ -1239,6 +1661,10 @@
     "title": "Rotating a password in the right order",
     "caption": "The server, the Secret, and every consumer must all change; restarting the consumers completes it.",
     "description": "A sequence in four steps with the API and worker, the Secret, and PostgreSQL. At first PostgreSQL accepts password A, the Secret holds A, and both consumers use A, so logins work. After PostgreSQL is changed to accept B, the consumers still use A and their logins fail. After the Secret is updated to B, the consumers still use A, because they read it only at start. After the consumers restart, they use B, logins work, and the old password A is rejected.",
+    "terms": [
+      "credential-rotation",
+      "secret"
+    ],
     "steps": [
       {
         "label": "Before",
@@ -1263,6 +1689,10 @@
     "title": "Restoring onto new storage, then switching",
     "caption": "Restore beside the original, verify the data, and only then move traffic.",
     "description": "A sequence in three steps. The original database db-0 is stopped with its storage data-db-0 kept, the encrypted backup backup.enc is in one place and its key in separate private lab data, and the Service db has no ready database. Restoring decrypts the backup in memory with the key and loads it into db-recovery, which has its own new claim, and the known record is found. Finally the Service db selects recovery: restored, so traffic goes to db-recovery, while the original storage is kept to switch back if needed.",
+    "terms": [
+      "restore-test",
+      "pvc"
+    ],
     "steps": [
       {
         "label": "After the loss",
@@ -1282,19 +1712,34 @@
     "id": "runtime-layers",
     "title": "The layers beneath Kubernetes",
     "caption": "kubectl talks to the API; crictl talks to the node’s runtime through the CRI.",
-    "description": "kubectl talks to the API server, which holds Kubernetes objects. On one node, the kubelet receives the Pods for that node and asks containerd, through the Container Runtime Interface, to run them; containerd listens on a socket under /run/containerd and runs the containers in kubepods.slice cgroups. crictl connects to containerd through the CRI, and ctr talks to containerd directly. A note says kubectl sees objects, while crictl sees what is really running on one node."
+    "description": "kubectl talks to the API server, which holds Kubernetes objects. On one node, the kubelet receives the Pods for that node and asks containerd, through the Container Runtime Interface, to run them; containerd listens on a socket under /run/containerd and runs the containers in kubepods.slice cgroups. crictl connects to containerd through the CRI, and ctr talks to containerd directly. A note says kubectl sees objects, while crictl sees what is really running on one node.",
+    "terms": [
+      "api-server",
+      "kubelet",
+      "cri"
+    ]
   },
   {
     "id": "lab-vms",
     "title": "This module’s two machines",
     "caption": "kubectl works from your lab terminal; limactl shell takes you inside a VM.",
-    "description": "On your computer, the lab terminal runs kubectl, which reaches the API server on the control-plane VM, and limactl shell, which opens a shell inside a VM. The control-plane VM runs the API server, etcd, and a kubelet. The worker VM runs Dispatch's Pods, the database on a local volume, and a kubelet."
+    "description": "On your computer, the lab terminal runs kubectl, which reaches the API server on the control-plane VM, and limactl shell, which opens a shell inside a VM. The control-plane VM runs the API server, etcd, and a kubelet. The worker VM runs Dispatch's Pods, the database on a local volume, and a kubelet.",
+    "terms": [
+      "control-plane",
+      "kubelet",
+      "kubeconfig"
+    ]
   },
   {
     "id": "kubelet-stopped",
     "title": "What changes when the kubelet stops",
     "caption": "The application keeps answering while supervision and reporting quietly stop.",
     "description": "A sequence in three steps tracking the kubelet service, Dispatch's containers, the node Lease, and the node status. Normally the kubelet is active, the containers answer, the Lease is renewed every few seconds, and the node is Ready. Just after the kubelet stops, the containers still run and answer, the Lease is no longer renewed, and the node still shows a stale Ready. About a minute later the Lease has expired and the node is NotReady, while the containers keep running with nothing to restart them.",
+    "terms": [
+      "kubelet",
+      "lease",
+      "systemd"
+    ],
     "steps": [
       {
         "label": "Healthy",
@@ -1314,19 +1759,34 @@
     "id": "kubectl-errors",
     "title": "Where each kubectl error comes from",
     "caption": "Each failure stops the request at a different stage.",
-    "description": "A request passes four stages. Connect asks whether anything is listening; failing it gives connection refused. TLS asks whether the client trusts the server; failing it gives an x509 certificate error. Authenticate asks who this is; failing it gives 401 Unauthorized. Authorize asks whether they may do it; failing it gives 403 Forbidden. A note says the error tells you how far the request got, and so which layer to fix."
+    "description": "A request passes four stages. Connect asks whether anything is listening; failing it gives connection refused. TLS asks whether the client trusts the server; failing it gives an x509 certificate error. Authenticate asks who this is; failing it gives 401 Unauthorized. Authorize asks whether they may do it; failing it gives 403 Forbidden. A note says the error tells you how far the request got, and so which layer to fix.",
+    "terms": [
+      "api-server",
+      "tls",
+      "kubeconfig",
+      "rbac"
+    ]
   },
   {
     "id": "static-pods",
     "title": "Static Pods come from files",
     "caption": "The kubelet runs whatever manifests are in the folder; the API only shows mirrors of them.",
-    "description": "The folder /etc/kubernetes/manifests holds kube-apiserver.yaml, kube-controller-manager.yaml, kube-scheduler.yaml, and etcd.yaml. The kubelet reads them and runs them, and they appear in the kube-system namespace as the API server, controller manager, scheduler, and etcd. A note says deleting one with kubectl does nothing lasting, because the file brings it back."
+    "description": "The folder /etc/kubernetes/manifests holds kube-apiserver.yaml, kube-controller-manager.yaml, kube-scheduler.yaml, and etcd.yaml. The kubelet reads them and runs them, and they appear in the kube-system namespace as the API server, controller manager, scheduler, and etcd. A note says deleting one with kubectl does nothing lasting, because the file brings it back.",
+    "terms": [
+      "static-pod",
+      "kubelet"
+    ]
   },
   {
     "id": "kubeadm-init",
     "title": "What kubeadm init does",
     "caption": "Each phase builds on the last; the result is a control plane with no Pod network yet.",
     "description": "A sequence in four steps. Preflight checks that the runtime works, swap is off, and the required ports are free. Certificates creates a cluster CA, pki/ca.crt, and a certificate for each component. Static Pods writes manifests that the kubelet starts: the API server, controller manager, scheduler, and etcd. Credentials writes admin.conf and stores the configuration. The node is then NotReady because there is no CNI, which is expected until the next lesson. A note says kubeadm init does not install a Pod network or add other machines.",
+    "terms": [
+      "kubeadm",
+      "static-pod",
+      "tls"
+    ],
     "steps": [
       {
         "label": "Preflight",
@@ -1350,13 +1810,21 @@
     "id": "cidr-separation",
     "title": "Two address ranges that must not overlap",
     "caption": "Machines get addresses from one range, Pods from another.",
-    "description": "Both VMs have addresses on the VM network, 192.168.104.0/24. Each VM's Pods get addresses from its own part of the Pod network, 10.244.0.0/24 on the control plane and 10.244.1.0/24 on the worker. The Pod network 10.244.0.0/16 does not overlap the VM network."
+    "description": "Both VMs have addresses on the VM network, 192.168.104.0/24. Each VM's Pods get addresses from its own part of the Pod network, 10.244.0.0/24 on the control plane and 10.244.1.0/24 on the worker. The Pod network 10.244.0.0/16 does not overlap the VM network.",
+    "terms": [
+      "cidr",
+      "cni"
+    ]
   },
   {
     "id": "kubeadm-join",
     "title": "The checks in kubeadm join",
     "caption": "The worker checks the cluster, the cluster checks the worker, then the kubelet gets its own credentials.",
     "description": "A sequence in four steps between the worker VM running kubeadm join and the API server on the control-plane VM. First the worker checks it has the right cluster, using the CA certificate hash. Second it proves it may join, using the bootstrap token. Third it receives permanent kubelet credentials. Finally it has joined but stays NotReady until a CNI plugin is installed. A note says skipping the CA hash check removes the protection against an impostor.",
+    "terms": [
+      "kubeadm",
+      "tls"
+    ],
     "steps": [
       {
         "label": "Is this the right cluster?",
@@ -1380,19 +1848,31 @@
     "id": "cni-vxlan",
     "title": "A request between Pods on different machines",
     "caption": "Calico wraps Pod traffic in ordinary packets between the VMs.",
-    "description": "The frontend Pod, for example at 10.244.0.12 on the control-plane VM, sends a request to the API Pod, for example at 10.244.1.7 on the worker VM. calico-node on each VM wraps the Pod-to-Pod packet with VXLAN inside an ordinary packet between the two VMs' own addresses. A note says Ready nodes do not prove this path works; a real cross-node request does."
+    "description": "The frontend Pod, for example at 10.244.0.12 on the control-plane VM, sends a request to the API Pod, for example at 10.244.1.7 on the worker VM. calico-node on each VM wraps the Pod-to-Pod packet with VXLAN inside an ordinary packet between the two VMs' own addresses. A note says Ready nodes do not prove this path works; a real cross-node request does.",
+    "terms": [
+      "cni"
+    ]
   },
   {
     "id": "ha-topology",
     "title": "A highly available control plane",
     "caption": "Clients use one address; each control-plane node runs its own API server and etcd member.",
-    "description": "kubectl and the kubelets connect to HAProxy, one stable address, which forwards only to healthy API servers. Behind it are three control-plane nodes, each running an API server and a stacked etcd member."
+    "description": "kubectl and the kubelets connect to HAProxy, one stable address, which forwards only to healthy API servers. Behind it are three control-plane nodes, each running an API server and a stacked etcd member.",
+    "terms": [
+      "control-plane",
+      "api-server",
+      "etcd"
+    ]
   },
   {
     "id": "cordon-drain",
     "title": "Cordon, evict, replace, schedule",
     "caption": "Four separate things happen during a drain; any of them can be where it gets stuck.",
     "description": "A sequence in four steps with a PodDisruptionBudget of minAvailable 1. Before, worker runs one API copy and PostgreSQL with its local volume, and worker2 runs the other API copy and calico-node. Cordoning marks worker2 SchedulingDisabled while its Pods stay. Evicting removes worker2's API copy, which the budget allows, and ignores the calico-node DaemonSet Pod. Finally the Deployment's replacement Pod is scheduled on worker.",
+    "terms": [
+      "drain",
+      "pdb"
+    ],
     "steps": [
       {
         "label": "Before",
@@ -1416,13 +1896,22 @@
     "id": "upgrade-order",
     "title": "The order of a kubeadm upgrade",
     "caption": "Upgrade the control plane first, then each worker, moving one minor version at a time.",
-    "description": "The upgrade goes from 1.34.12 to 1.35.8, one minor version. On the control-plane node: upgrade the kubeadm package, run kubeadm upgrade plan, run kubeadm upgrade apply v1.35.8, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. On each worker, one at a time: upgrade the kubeadm package, run kubeadm upgrade node, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. A warning says never to run kubeadm upgrade apply on a worker."
+    "description": "The upgrade goes from 1.34.12 to 1.35.8, one minor version. On the control-plane node: upgrade the kubeadm package, run kubeadm upgrade plan, run kubeadm upgrade apply v1.35.8, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. On each worker, one at a time: upgrade the kubeadm package, run kubeadm upgrade node, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. A warning says never to run kubeadm upgrade apply on a worker.",
+    "terms": [
+      "kubeadm",
+      "kubelet",
+      "drain"
+    ]
   },
   {
     "id": "cert-renewal",
     "title": "A renewed file is not a renewed server",
     "caption": "Renewing writes a new certificate; restarting the API server makes it serve it.",
     "description": "A sequence in three steps on the control-plane VM. At first apiserver.crt has serial A and kube-apiserver serves serial A. After kubeadm certs renew, the file has serial B, signed by the same cluster CA, but the running API server still serves serial A from memory. After its container is stopped with crictl and the kubelet starts it again, it serves serial B. A note says deleting its mirror Pod with kubectl would not reload anything.",
+    "terms": [
+      "tls",
+      "static-pod"
+    ],
     "steps": [
       {
         "label": "Before renewal",
@@ -1442,25 +1931,43 @@
     "id": "two-paths",
     "title": "Node status and Pod traffic travel differently",
     "caption": "A firewall rule can block Pod traffic while node health still looks perfect.",
-    "description": "The kubelet on the worker VM reports Ready to the API server on the control-plane VM over the node network. Separately, traffic between the frontend Pod on the control plane and the API Pod on the worker travels as VXLAN on UDP port 4789. An iptables rule in raw PREROUTING on the control plane drops UDP 4789, so the worker's replies never reach the frontend, even though both nodes stay Ready."
+    "description": "The kubelet on the worker VM reports Ready to the API server on the control-plane VM over the node network. Separately, traffic between the frontend Pod on the control plane and the API Pod on the worker travels as VXLAN on UDP port 4789. An iptables rule in raw PREROUTING on the control plane drops UDP 4789, so the worker's replies never reach the frontend, even though both nodes stay Ready.",
+    "terms": [
+      "kubelet",
+      "cni"
+    ]
   },
   {
     "id": "testing-layers",
     "title": "Each test adds a layer",
     "caption": "Start with the narrowest test and add layers until something fails.",
-    "description": "Four tests, each adding a layer. Requesting the API Pod IP tests packet delivery between nodes. Requesting the Service name adds DNS and Service routing. GET /healthz adds whether the process answers. GET /readyz or a real job adds its database and queue."
+    "description": "Four tests, each adding a layer. Requesting the API Pod IP tests packet delivery between nodes. Requesting the Service name adds DNS and Service routing. GET /healthz adds whether the process answers. GET /readyz or a real job adds its database and queue.",
+    "terms": [
+      "cni",
+      "dns",
+      "readiness"
+    ]
   },
   {
     "id": "dns-vs-proxy",
     "title": "Naming and routing are separate jobs",
     "caption": "CoreDNS turns a name into a ClusterIP; kube-proxy’s rules turn that IP into a Pod.",
-    "description": "The frontend Pod asks CoreDNS, which reads Services, what dispatch is, and gets back a ClusterIP. It then connects to that ClusterIP, and node rules programmed by kube-proxy send the connection to a dispatch Pod. If DNS fails but the IP works, look at CoreDNS; if DNS works but the IP fails, look at kube-proxy. A note says to test with a new Service, because routes kube-proxy set up earlier keep working after it stops."
+    "description": "The frontend Pod asks CoreDNS, which reads Services, what dispatch is, and gets back a ClusterIP. It then connects to that ClusterIP, and node rules programmed by kube-proxy send the connection to a dispatch Pod. If DNS fails but the IP works, look at CoreDNS; if DNS works but the IP fails, look at kube-proxy. A note says to test with a new Service, because routes kube-proxy set up earlier keep working after it stops.",
+    "terms": [
+      "dns",
+      "cluster-ip",
+      "kube-proxy"
+    ]
   },
   {
     "id": "csi-chain",
     "title": "A volume that cannot follow its Pod",
     "caption": "The hostpath volume lives on one worker, so the database must run there.",
     "description": "A sequence in three steps. The CSI node plugin is registered on the worker VM, where the hostpath folder holds PV data-db-0. At first db-0 runs on the worker with its volume attached and mounted. After the StatefulSet is changed to run on the control plane, db-0 there cannot use its volume, because the driver is not there and the data lives on the worker. When it is placed on the worker again, db-0 reuses the original claim and data.",
+    "terms": [
+      "csi",
+      "pv"
+    ],
     "steps": [
       {
         "label": "Healthy",
@@ -1480,13 +1987,20 @@
     "id": "etcd-scope",
     "title": "What an etcd snapshot holds",
     "caption": "etcd remembers what Kubernetes was told; it does not hold your application’s data.",
-    "description": "An etcd snapshot holds Kubernetes objects: Deployments and Services, ConfigMaps and Secrets, the database's StatefulSet, and its PersistentVolumeClaim. Dispatch's jobs are rows in PostgreSQL on the worker's volume, which are not in any etcd snapshot. A note says application data needs its own backups."
+    "description": "An etcd snapshot holds Kubernetes objects: Deployments and Services, ConfigMaps and Secrets, the database's StatefulSet, and its PersistentVolumeClaim. Dispatch's jobs are rows in PostgreSQL on the worker's volume, which are not in any etcd snapshot. A note says application data needs its own backups.",
+    "terms": [
+      "etcd",
+      "pvc"
+    ]
   },
   {
     "id": "etcd-restore",
     "title": "Snapshot, loss, restore, switch",
     "caption": "Restore into a new directory, then point etcd at it; the original object returns with its original UID.",
     "description": "A sequence in four steps in /var/lib/etcd on the control-plane VM. etcd's live data is in member/, and snapshot save writes dockyard-recovery.db while the ConfigMap maintenance-sentinel exists with UID 7f3…. The ConfigMap is then deleted. snapshot restore writes a new directory, dockyard-restored, with the revision bumped ahead. Finally the etcd.yaml hostPath points to the restored directory, member/ is no longer used, and maintenance-sentinel is back with its original UID 7f3…. A note says recreating it by hand would give it a new UID.",
+    "terms": [
+      "etcd"
+    ],
     "steps": [
       {
         "label": "Take a snapshot",
@@ -1511,6 +2025,10 @@
     "title": "Two faults, each blocking the other’s fix",
     "caption": "The scheduler needs both its file in the folder and a kubelet watching the folder.",
     "description": "A sequence in three steps. At first /etc/kubernetes/manifests holds etcd, kube-apiserver, and kube-controller-manager, because kube-scheduler.yaml was moved away, and the kubelet is stopped, so the scheduler is not running and a brand-new Pod stays Pending with no node. After the file is moved back, the kubelet is still stopped, so nothing changes. After the kubelet starts, it runs the scheduler again and a new Pod gets a node. Pods that already had a node keep running throughout.",
+    "terms": [
+      "static-pod",
+      "kubelet"
+    ],
     "steps": [
       {
         "label": "Both broken",
@@ -1531,6 +2049,10 @@
     "title": "An API server that cannot reach etcd",
     "caption": "etcd is healthy; the API server is simply looking in the wrong place.",
     "description": "A sequence in two steps on the control-plane VM. etcd listens on 127.0.0.1:2379. With --etcd-servers set to a wrong port, the API server cannot reach etcd and exits and restarts again and again, while kubectl cannot connect. With --etcd-servers set to port 2379, the API server connects and becomes ready, and /readyz reports ok.",
+    "terms": [
+      "api-server",
+      "etcd"
+    ],
     "steps": [
       {
         "label": "The wrong address",
@@ -1546,13 +2068,21 @@
     "id": "triage-loop",
     "title": "The triage loop",
     "caption": "One guess, one test, one change at a time, so you always know what helped.",
-    "description": "Five stages in a loop: observe the symptom in a user's words, guess one cause that explains it, test with a command that proves it either way, change one thing if the test agrees, and check whether the symptom changed. Repeat until the symptom is gone. A note says if a test disagrees with your guess, change the guess, not the cluster."
+    "description": "Five stages in a loop: observe the symptom in a user's words, guess one cause that explains it, test with a command that proves it either way, change one thing if the test agrees, and check whether the symptom changed. Repeat until the symptom is gone. A note says if a test disagrees with your guess, change the guess, not the cluster.",
+    "terms": [
+      "triage"
+    ]
   },
   {
     "id": "request-path-steps",
     "title": "One fault can hide the next",
     "caption": "Follow the request through every step until a new job reaches done.",
     "description": "A sequence in three steps along the path Service, API, worker, PostgreSQL. At first the Service has no endpoints because of a selector mismatch, so the healthy API is never reached and the later steps cannot be tested. After fixing the selector, the API stores the job as queued, but the worker Deployment is scaled to zero, so the job waits. After the workers are scaled up, the worker processes the job and PostgreSQL saves the result as done.",
+    "terms": [
+      "triage",
+      "endpointslice",
+      "label-selector"
+    ],
     "steps": [
       {
         "label": "The route is broken",
@@ -1572,13 +2102,21 @@
     "id": "capacity-sums",
     "title": "Doing the sums before scaling",
     "caption": "Multiply each copy’s requests and limits by the replica count, then compare with the budget.",
-    "description": "Each copy requests 25m CPU and 32 MiB, with limits of 300m CPU and 192 MiB. Bars compare totals for 2, 3, and 4 copies with the team's budget. CPU requests total 50m, 75m, and 100m against a budget of 1 CPU. Memory requests total 64, 96, and 128 MiB against 512 MiB. Memory limits total 384, 576, and 768 MiB against 1 GiB. All fit within the budget."
+    "description": "Each copy requests 25m CPU and 32 MiB, with limits of 300m CPU and 192 MiB. Bars compare totals for 2, 3, and 4 copies with the team's budget. CPU requests total 50m, 75m, and 100m against a budget of 1 CPU. Memory requests total 64, 96, and 128 MiB against 512 MiB. Memory limits total 384, 576, and 768 MiB against 1 GiB. All fit within the budget.",
+    "terms": [
+      "request",
+      "limit"
+    ]
   },
   {
     "id": "rollout-columns",
     "title": "Still answering, but not finished",
     "caption": "Compare all four counts; available Pods alone do not mean the release succeeded.",
     "description": "A sequence in two steps. With the bad image, the Deployment shows desired 2, up-to-date 1, available 2, and total 3: the previous ReplicaSet's two Pods are ready and serving while the newest ReplicaSet's Pod is stuck in ErrImageNeverPull, so the rollout is stuck. After rolling back, all four counts are 2: the newest ReplicaSet's two Pods are ready and serving, the old Pods are scaled away, and the rollout has finished.",
+    "terms": [
+      "rolling-update",
+      "replicaset"
+    ],
     "steps": [
       {
         "label": "Stuck",
@@ -1594,13 +2132,19 @@
     "id": "shell-role",
     "title": "What happens when you press Enter",
     "caption": "The terminal shows text, the shell reads your command, and the program does the work.",
-    "description": "Three parts from left to right. The terminal window shows the line docker ps that you typed. The shell reads that line, fills in any variables, and starts the program it names. The docker program does the work and prints its output, which appears back in the terminal window for you to read."
+    "description": "Three parts from left to right. The terminal window shows the line docker ps that you typed. The shell reads that line, fills in any variables, and starts the program it names. The docker program does the work and prints its output, which appears back in the terminal window for you to read.",
+    "terms": [
+      "shell"
+    ]
   },
   {
     "id": "relative-absolute-paths",
     "title": "Relative and absolute paths",
     "caption": "A relative path starts where you are; an absolute path starts at the top, written /.",
     "description": "A folder tree in four steps. The top folder, written /, holds home and tmp. Inside home is you, inside that is lab, and lab holds a Dockerfile and a site folder with index.html in it. First, the working directory is lab, and pwd prints /home/you/lab. Second, the relative path site/index.html is followed down from lab. Third, the absolute path /tmp/example is followed down from the top, wherever you are. Fourth, cd .. moves the working directory up to you.",
+    "terms": [
+      "path"
+    ],
     "steps": [
       {
         "label": "Where you are",
@@ -1624,13 +2168,21 @@
     "id": "command-anatomy",
     "title": "Reading a command before you run it",
     "caption": "Name the program, its arguments, and its options, and replace every placeholder in full.",
-    "description": "The command kubectl get pods -n dispatch split into its parts: kubectl is the program, get and pods are arguments, and -n dispatch is an option with its value. Below it, the lesson text docker logs <container name> becomes docker logs web when typed: the whole placeholder, including the angle brackets, is replaced."
+    "description": "The command kubectl get pods -n dispatch split into its parts: kubectl is the program, get and pods are arguments, and -n dispatch is an option with its value. Below it, the lesson text docker logs <container name> becomes docker logs web when typed: the whole placeholder, including the angle brackets, is replaced.",
+    "terms": [
+      "shell",
+      "namespace"
+    ]
   },
   {
     "id": "shell-streams",
     "title": "Where a command’s output goes",
     "caption": "Output and error messages travel separately, and the exit status reports how the command finished.",
     "description": "A sequence in four steps around a command. First, its standard output and standard error both appear in the terminal. Second, > file sends standard output into a file while error messages still reach the screen. Third, a pipe sends the output of printf into sort, which prints the sorted lines. Fourth, every command finishes with an exit status: 0 means success and lets && run the next command, while any other number means a reported problem, and && skips the next command.",
+    "terms": [
+      "standard-streams",
+      "exit-status"
+    ],
     "steps": [
       {
         "label": "Two channels",
@@ -1655,6 +2207,9 @@
     "title": "Mappings, lists, and scalars",
     "caption": "Indentation decides what belongs to what, and nothing warns you when it changes.",
     "description": "The example YAML from this guide, with its parts marked in four steps. First, service holds a mapping of six keys indented beneath it. Second, ports holds a list whose one item starts with a dash. Third, values such as 2, true, and the quoted \"1.0\" are scalars, and the quotes keep 1.0 as text. Fourth, the same file with labels moved two spaces left: labels now sits beside service instead of inside it, and no error appears.",
+    "terms": [
+      "yaml"
+    ],
     "steps": [
       {
         "label": "A mapping",
@@ -1678,31 +2233,55 @@
     "id": "yaml-three-checks",
     "title": "Three separate checks",
     "caption": "Passing one check says nothing about the next.",
-    "description": "Three gates in a row. First, is it valid YAML: can the text be read at all? Indenting with a tab fails here. Second, is it a valid object: does it have the fields the tool expects? A misspelled field such as replica fails here. Third, does it work: does the running system behave as intended? A Service whose selector matches no Pods passes the first two checks and fails here."
+    "description": "Three gates in a row. First, is it valid YAML: can the text be read at all? Indenting with a tab fails here. Second, is it a valid object: does it have the fields the tool expects? A misspelled field such as replica fails here. Third, does it work: does the running system behave as intended? A Service whose selector matches no Pods passes the first two checks and fails here.",
+    "terms": [
+      "yaml",
+      "manifest",
+      "label-selector"
+    ]
   },
   {
     "id": "yaml-two-label-sets",
     "title": "Two sets of labels in one Deployment",
     "caption": "A Service selector must match the Pod template’s labels, not the Deployment’s own.",
-    "description": "On the left, the Deployment file with its own label owner: practice under metadata, and the Pod template label app: example under spec.template.metadata. The first label tags the Deployment; the second tags each Pod it creates. On the right, a Service with the selector app: example finds both Pods. A selector of owner: practice would find nothing, because no Pod carries that label."
+    "description": "On the left, the Deployment file with its own label owner: practice under metadata, and the Pod template label app: example under spec.template.metadata. The first label tags the Deployment; the second tags each Pod it creates. On the right, a Service with the selector app: example finds both Pods. A selector of owner: practice would find nothing, because no Pod carries that label.",
+    "terms": [
+      "label-selector",
+      "deployment",
+      "service"
+    ]
   },
   {
     "id": "http-exchange",
     "title": "One request, one response",
     "caption": "The request says what you want; the response’s status says how it went.",
-    "description": "On the left, curl sends a request to Dispatch: the method POST, the path /jobs, the header Content-Type: application/json, and the body {\"title\":\"hello\"}. On the right, Dispatch sends back a response: the status 201 Created, a Content-Type header, and a body describing the new job with its id and title."
+    "description": "On the left, curl sends a request to Dispatch: the method POST, the path /jobs, the header Content-Type: application/json, and the body {\"title\":\"hello\"}. On the right, Dispatch sends back a response: the status 201 Created, a Content-Type header, and a body describing the new job with its id and title.",
+    "terms": [
+      "status-code",
+      "dispatch"
+    ]
   },
   {
     "id": "url-anatomy",
     "title": "Reading a URL",
     "caption": "The address picks a machine, the port picks a service on it, and the path picks what you ask for.",
-    "description": "The URL http://127.0.0.1:8080/jobs split into four parts: http is the protocol, 127.0.0.1 is the machine’s address, 8080 is the port, and /jobs is the path. Below, the machine at 127.0.0.1 runs two services, Dispatch listening on port 8080 and a database on port 5432. The port 8080 selects Dispatch, and the path /jobs selects the jobs list within it rather than /healthz."
+    "description": "The URL http://127.0.0.1:8080/jobs split into four parts: http is the protocol, 127.0.0.1 is the machine’s address, 8080 is the port, and /jobs is the path. Below, the machine at 127.0.0.1 runs two services, Dispatch listening on port 8080 and a database on port 5432. The port 8080 selects Dispatch, and the path /jobs selects the jobs list within it rather than /healthz.",
+    "terms": [
+      "port",
+      "localhost"
+    ]
   },
   {
     "id": "request-stages",
     "title": "How far did the request get?",
     "caption": "Each error message points at the stage where the request stopped.",
     "description": "A request’s journey from curl to the application in four stages, revealed one at a time. Resolving the name fails with Could not resolve host. Connecting to the port fails with Connection refused when nothing listens there, or Timed out when nothing answers. For https, verifying the certificate fails with a certificate or TLS error. Once the service answers, any status code, even an error status, shows the request arrived.",
+    "terms": [
+      "dns",
+      "port",
+      "tls",
+      "status-code"
+    ],
     "steps": [
       {
         "label": "Find the address",
@@ -1727,6 +2306,11 @@
     "title": "How a short name is completed",
     "caption": "A Pod’s DNS settings try its own namespace first.",
     "description": "A sequence in three steps. First, a Pod in the dispatch namespace looks up dispatch; its first search suffix makes dispatch.dispatch.svc.cluster.local, which exists, and DNS returns the Service’s ClusterIP. Second, a Pod in the web namespace looks up dispatch; the suffixes make names such as dispatch.web.svc.cluster.local, none of which exist, so the lookup fails. Third, the same Pod looks up dispatch.dispatch, which becomes dispatch.dispatch.svc.cluster.local and resolves.",
+    "terms": [
+      "dns",
+      "namespace",
+      "service"
+    ],
     "steps": [
       {
         "label": "Same namespace",
@@ -1747,6 +2331,11 @@
     "title": "From a Service name to a Pod",
     "caption": "Resolving the name is only the first of three steps.",
     "description": "A sequence in three steps. First, a client Pod asks DNS for dispatch and gets the Service’s ClusterIP. Second, traffic sent to that ClusterIP is forwarded to one of the two ready dispatch Pods, its endpoints, and the application answers. Third, both Pods are not ready, so the Service has no ready endpoints: the name still resolves to the same ClusterIP, but the request has nowhere to go and fails.",
+    "terms": [
+      "dns",
+      "cluster-ip",
+      "endpointslice"
+    ],
     "steps": [
       {
         "label": "Resolve the name",
@@ -1766,13 +2355,21 @@
     "id": "dns-blocked-by-policy",
     "title": "Allowing the database but not DNS",
     "caption": "A name lookup is traffic too, so an egress policy must allow it.",
-    "description": "The api Pod has an egress network policy that allows only TCP port 5432 to the database. Its first step, asking CoreDNS on port 53 what postgres means, is blocked, so it never learns the address and the allowed connection to port 5432 is never made. A note says to also allow port 53 over UDP and TCP to the cluster’s DNS."
+    "description": "The api Pod has an egress network policy that allows only TCP port 5432 to the database. Its first step, asking CoreDNS on port 53 what postgres means, is blocked, so it never learns the address and the allowed connection to port 5432 is never made. A note says to also allow port 53 over UDP and TCP to the cluster’s DNS.",
+    "terms": [
+      "network-policy",
+      "dns"
+    ]
   },
   {
     "id": "file-mode-bits",
     "title": "Reading a file’s mode",
     "caption": "Three sets of three: the owner, the group, and everyone else.",
     "description": "The mode -rw-r----- from the example jobs.db line, in two steps. The first character, a dash, means an ordinary file. The next nine split into three sets: rw- lets the owner, UID 10001, read and write; r-- lets members of group 10001 read; and --- gives everyone else no access. In the second step each set is added up, with r worth 4, w worth 2, and x worth 1, giving 6, 4, and 0: the numeric mode 640.",
+    "terms": [
+      "file-mode",
+      "uid"
+    ],
     "steps": [
       {
         "label": "The letters",
@@ -1788,13 +2385,21 @@
     "id": "container-shared-kernel",
     "title": "Containers are isolated processes on one kernel",
     "caption": "Namespaces limit what a process can see; cgroups limit what it can use.",
-    "description": "One Linux machine with a single kernel along the bottom. Above it run an ordinary process and two containers. Each container is a process wrapped in namespaces, which give it its own process list starting at PID 1, its own network with its own localhost, and its own files. Each also sits in a cgroup with limits, such as 256 MiB of memory for one and half a CPU for the other. Every one of them uses the same kernel."
+    "description": "One Linux machine with a single kernel along the bottom. Above it run an ordinary process and two containers. Each container is a process wrapped in namespaces, which give it its own process list starting at PID 1, its own network with its own localhost, and its own files. Each also sits in a cgroup with limits, such as 256 MiB of memory for one and half a CPU for the other. Every one of them uses the same kernel.",
+    "terms": [
+      "linux-namespace",
+      "cgroup",
+      "container"
+    ]
   },
   {
     "id": "file-vs-running",
     "title": "The file changed; the process did not",
     "caption": "A program reads its settings when it starts, so check the running process after a change.",
     "description": "A sequence in two steps. First, a configuration file on disk is edited to say port 9090, but the running service read the file when it started and still listens on 8080, so systemctl reports active (running) while requests to 9090 fail. Second, after a restart the service reads the file again and listens on 9090, so the file and the running process agree.",
+    "terms": [
+      "systemd"
+    ],
     "steps": [
       {
         "label": "Edit the file",
@@ -1810,6 +2415,11 @@
     "id": "exam-task-loop",
     "title": "The routine for every task",
     "caption": "Set the place first and check the result last; flag a task that runs long.",
-    "description": "Six steps in a loop. Read the whole task and note its context, namespace, and names. Switch to its context and namespace. Generate a starting YAML file with a client dry run. Edit and apply it. Check the working result. Then move on to the next task. A side path flags a task that is taking much longer than its share of the time, so you can return to it at the end."
+    "description": "Six steps in a loop. Read the whole task and note its context, namespace, and names. Switch to its context and namespace. Generate a starting YAML file with a client dry run. Edit and apply it. Check the working result. Then move on to the next task. A side path flags a task that is taking much longer than its share of the time, so you can return to it at the end.",
+    "terms": [
+      "kubeconfig",
+      "namespace",
+      "manifest"
+    ]
   }
 ]

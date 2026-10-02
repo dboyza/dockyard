@@ -2,8 +2,9 @@
 // It shows every lesson figure, and every step of stepped figures, in one theme.
 import { createRoot } from "react-dom/client";
 import figures from "../../src/dockyard/content/figures.json";
+import terms from "../../src/dockyard/content/reference/glossary.json";
 import type { Figure } from "./contracts.gen";
-import { FigureText, LessonFigure } from "./figures/Figure";
+import { FigureLinks, FigureText, LessonFigure } from "./figures/Figure";
 import { drawings, isFigureId } from "./figures/registry";
 import "./style.css";
 
@@ -22,30 +23,38 @@ function Gallery() {
     <FigureText.Provider
       value={Object.fromEntries(all.map((item) => [item.id, item]))}
     >
-      <main className="prose" style={{ maxWidth: 680, margin: "24px auto" }}>
-        {all
-          .filter((item) => !only || item.id === only)
-          .map((item) => {
-            const Drawing = isFigureId(item.id) ? drawings[item.id] : null;
-            return (
-              <section key={item.id} id={item.id}>
-                <h2>{item.id}</h2>
-                <LessonFigure id={item.id} />
-                {Drawing &&
-                  item.steps.slice(1).map((step, index) => (
-                    <div className="lesson-figure" key={step.label}>
-                      <strong>
-                        Step {index + 2}: {step.label}
-                      </strong>
-                      <div className="figure-canvas">
-                        <Drawing step={index + 1} />
+      <FigureLinks.Provider
+        value={{
+          glossary: Object.fromEntries(
+            terms.map((term) => [term.id, term.term]),
+          ),
+        }}
+      >
+        <main className="prose" style={{ maxWidth: 680, margin: "24px auto" }}>
+          {all
+            .filter((item) => !only || item.id === only)
+            .map((item) => {
+              const Drawing = isFigureId(item.id) ? drawings[item.id] : null;
+              return (
+                <section key={item.id} id={item.id}>
+                  <h2>{item.id}</h2>
+                  <LessonFigure id={item.id} />
+                  {Drawing &&
+                    item.steps.slice(1).map((step, index) => (
+                      <div className="lesson-figure" key={step.label}>
+                        <strong>
+                          Step {index + 2}: {step.label}
+                        </strong>
+                        <div className="figure-canvas">
+                          <Drawing step={index + 1} />
+                        </div>
                       </div>
-                    </div>
-                  ))}
-              </section>
-            );
-          })}
-      </main>
+                    ))}
+                </section>
+              );
+            })}
+        </main>
+      </FigureLinks.Provider>
     </FigureText.Provider>
   );
 }

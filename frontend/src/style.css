@@ -1343,6 +1343,91 @@ pre {
   font-size: 13px;
   line-height: 1.5;
 }
+.figure-terms {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.lesson-figure.interactive .figure-terms {
+  margin-top: 4px;
+  border-top: 0;
+}
+.figure-terms-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.figure-terms ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.prose .figure-terms li {
+  margin: 0;
+}
+.figure-term {
+  display: inline-flex;
+  min-height: 28px;
+  padding: 3px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 500;
+}
+button.figure-term {
+  color: var(--blue);
+}
+button.figure-term:hover {
+  border-color: var(--blue);
+  background: var(--surface);
+}
+.lesson-figure:focus {
+  outline: none;
+}
+.lesson-figure.figure-returned {
+  animation: figure-returned 2s ease-out;
+}
+@keyframes figure-returned {
+  from {
+    box-shadow: 0 0 0 3px var(--blue);
+  }
+  to {
+    box-shadow: 0 0 0 3px transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lesson-figure.figure-returned {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--blue);
+  }
+}
+.reference-returns {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-bottom: 14px;
+}
+button.return-to-figure {
+  border-color: var(--blue);
+  color: var(--blue);
+  background: var(--surface);
+  text-align: left;
+}
 .figure-missing {
   padding: 12px 14px;
   border: 1px dashed var(--line);

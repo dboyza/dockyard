@@ -59,11 +59,15 @@ class Figure(Contract):
     title: str
     caption: str
     description: str = Field(min_length=40)
+    # Glossary entries for the ideas the figure shows, linked beneath it.
+    terms: list[Identifier] = Field(min_length=1, max_length=4)
     steps: list[FigureStep] = Field(default_factory=list)
     interactive: bool = False
 
     @model_validator(mode="after")
     def meaningful_steps(self) -> Figure:
+        if len(set(self.terms)) != len(self.terms):
+            raise ValueError("A figure names each glossary term once.")
         if len(self.steps) == 1:
             raise ValueError("A stepped figure needs at least two steps.")
         if self.interactive and self.steps:

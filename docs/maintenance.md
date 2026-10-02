@@ -101,6 +101,8 @@ Review drawings with `npm --prefix frontend run dev` and `/gallery.html`, which 
 Draw on a 640-unit-wide canvas, keep text at its rendered size, and check both themes before relying on a figure.
 The structural audit requires at least one figure in every lesson's concept and every foundation primer; missions, incidents, and exams stay figure-free so they do not hint at answers.
 Use a stepped figure when the idea is a sequence or a change of state, and keep each figure's description complete enough to stand in for the drawing.
+Each figure names one to four glossary terms in `terms`, shown as links beneath it; add a glossary entry first when a figure introduces a term the glossary lacks.
+Following a term link remembers the figure and its step, and the reference desk's back button returns there; the reference library rejects unknown terms.
 
 Change an activity revision when its learning contract or grading behavior changes after release.
 Preserve older attempts as historical evidence and require reassessment for the new revision.

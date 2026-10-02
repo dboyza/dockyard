@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Assessment } from "./contracts.gen";
+import type { Assessment, FigureId } from "./contracts.gen";
 import { currentPractice } from "./learning";
 import {
   api,
@@ -32,6 +32,14 @@ type Dialog = {
   danger?: boolean;
   requireText?: string;
 } | null;
+// Where a learner was when they followed a figure's glossary link.
+type FigureReturn = {
+  figure: FigureId;
+  title: string;
+  step: number;
+  lessonId: string | null;
+  primer: string | null;
+};
 const emptyState: State = {
   exams: [],
   exam_readiness: {},
@@ -47,6 +55,11 @@ export function useWorkbench() {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [library, setLibrary] = useState<ReferenceLibrary | null>(null);
   const [referenceFocus, setReferenceFocus] = useState("primer/terminal");
+  const [figureReturn, setFigureReturn] = useState<FigureReturn | null>(null);
+  const [figureRestore, setFigureRestore] = useState<{
+    figure: string;
+    step: number;
+  } | null>(null);
   const [state, setState] = useState<State>(emptyState);
   const [page, setPage] = useState<Page>("home");
   const [examId, setExamId] = useState<string | null>(null);
@@ -131,6 +144,7 @@ export function useWorkbench() {
       setBusy("");
     }
     setSearch("");
+    if (destination !== "reference") setFigureReturn(null);
     setPage(destination);
     setRailOpen(false);
     setError("");
@@ -144,6 +158,53 @@ export function useWorkbench() {
   const openReference = (focus = "primer/terminal") => {
     setReferenceFocus(focus);
     navigate("reference");
+    setFigureReturn(null);
+  };
+  // Opens a glossary entry from a figure, remembering where to come back to.
+  const openFigureTerm = (term: string, figure: FigureId, step: number) => {
+    const point: FigureReturn = {
+      figure,
+      title: catalog?.figures.find((item) => item.id === figure)?.title ?? "",
+      step,
+      lessonId: page === "lesson" ? (lesson?.id ?? null) : null,
+      primer:
+        page === "reference" && referenceFocus.startsWith("primer/")
+          ? referenceFocus.slice("primer/".length)
+          : null,
+    };
+    setReferenceFocus(`term/${term}`);
+    navigate("reference");
+    setFigureReturn(point);
+  };
+  const returnToFigure = async () => {
+    if (!figureReturn) return;
+    const point = figureReturn;
+    setFigureReturn(null);
+    setFigureRestore({ figure: point.figure, step: point.step });
+    if (point.primer) {
+      setReferenceFocus(`primer/${point.primer}`);
+    } else if (point.lessonId && lesson?.id === point.lessonId) {
+      setTab("learn");
+      navigate("lesson");
+    } else if (point.lessonId) {
+      await openLesson(point.lessonId);
+    }
+    revealFigure(point.figure);
+  };
+  // Waits for the figure to render, then scrolls it into view and focuses it.
+  const revealFigure = (figure: string, frames = 60) => {
+    const element = document.getElementById(`figure-${figure}`);
+    if (!element) {
+      if (frames > 0)
+        requestAnimationFrame(() => revealFigure(figure, frames - 1));
+      else setFigureRestore(null);
+      return;
+    }
+    element.scrollIntoView({ block: "center", behavior: "instant" });
+    element.focus({ preventScroll: true });
+    element.classList.add("figure-returned");
+    window.setTimeout(() => element.classList.remove("figure-returned"), 2000);
+    setFigureRestore(null);
   };
   const openExam = (id: string | null) => {
     setExamId(id);
@@ -319,6 +380,10 @@ export function useWorkbench() {
     referenceFocus,
     setReferenceFocus,
     openReference,
+    openFigureTerm,
+    figureReturn,
+    returnToFigure,
+    figureRestore,
     catalog,
     setCatalog,
     state,
