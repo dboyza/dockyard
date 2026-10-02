@@ -105,6 +105,7 @@ The health request should return:
 
 This is **JSON**, a common text format for data: each name in quotes is paired with a value.
 Here it says the service is `dispatch` and its status is `ok`.
+Dispatch’s replies do not end with a new line, so your prompt may appear right after the reply, or your shell may mark the missing line ending with a `%`; neither is part of the reply.
 If you ask immediately after starting the container, Dispatch may still be starting; wait a moment and try again.
 
 Try the main address too:

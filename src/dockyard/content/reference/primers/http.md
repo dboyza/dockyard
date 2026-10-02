@@ -76,6 +76,7 @@ The error message tells you how far the request got:
 
 - **Could not resolve host**: the name could not be turned into an address. See the DNS primer.
 - **Connection refused**: the address was reached, but nothing is listening on that port.
+- **Empty reply from server**: something accepted the connection but closed it without answering. With Docker, this often means a published port leads to a container port where nothing is listening.
 - **Timed out**: no answer came back in time. Something along the way is dropping or blocking traffic, or the service is stuck.
 - **Certificate or TLS error**: a secure connection could not be verified.
 - **An HTTP status**: the service answered. Read the status and body to see what it said.

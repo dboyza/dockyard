@@ -95,7 +95,8 @@ Ask Docker to list that image:
 docker image ls "$DOCKYARD_PYTHON_IMAGE"
 ```
 
-You should see one row describing it, including its size.
+You should see one row describing it.
+Depending on your Docker version, it shows one size or two: the space the unpacked image takes on disk, and the smaller size of its compressed download.
 Dockyard downloaded it when you prepared the lab, so it is already on your computer.
 
 ## Run your first container
@@ -136,9 +137,17 @@ docker ps -a
 `docker ps` lists containers that are **running** right now, so yours is not there.
 `docker ps -a` lists **all** containers, including stopped ones.
 Yours appears with a status such as `Exited (0) 10 seconds ago`.
+Its IMAGE column shows a short ID rather than `python`, because the lab names the image by its digest.
 
 The number in brackets is the **exit code**, a number every process reports when it finishes.
 Zero means it finished successfully; any other number means something went wrong.
+
+If you have used Docker before, other containers appear too.
+Find yours by the name in the NAMES column, or list only yours:
+
+```sh
+docker ps -a --filter "name=$DOCKYARD_CONTAINER"
+```
 
 The container still exists, with its name, its settings, and a record of what it printed.
 Read that record with:

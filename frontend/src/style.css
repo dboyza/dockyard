@@ -433,6 +433,14 @@ pre {
   margin: 4px 0 0;
   color: var(--muted);
 }
+.course-step-link {
+  color: var(--ink);
+  font-weight: 600;
+  text-align: left;
+}
+.course-step-link:hover:not(:disabled) {
+  color: var(--blue);
+}
 .lesson-rhythm {
   max-width: 310px;
   padding-left: 28px;

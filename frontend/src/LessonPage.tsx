@@ -261,8 +261,20 @@ export function LessonPage({ model }: { model: Workbench }) {
                     unfamiliar.
                   </p>
                   <div className="button-row">
-                    {model.library?.glossary
-                      .filter((term) => term.units.includes(lesson.id))
+                    {[
+                      // This activity's own terms first, then those of the
+                      // lessons it builds on, so missions offer help too.
+                      ...(model.library?.glossary ?? []).filter((term) =>
+                        term.units.includes(lesson.id),
+                      ),
+                      ...(model.library?.glossary ?? []).filter(
+                        (term) =>
+                          !term.units.includes(lesson.id) &&
+                          term.units.some((unit) =>
+                            lesson.prerequisites.includes(unit),
+                          ),
+                      ),
+                    ]
                       .slice(0, 6)
                       .map((term) => (
                         <button

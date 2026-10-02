@@ -19,7 +19,7 @@ Look at the one that exists and answer these questions first:
 
 `docker ps --no-trunc` shows the full command a container runs.
 `docker port` shows its published ports.
-`docker inspect` shows everything else, including its mounts.
+`docker inspect` shows everything else as a long JSON document; scroll to its `Mounts` section, where `"RW": true` means the container can write to that folder.
 
 Remember that **Up** only tells you the main process is running.
 It says nothing about whether requests can reach that process.

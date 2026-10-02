@@ -19,6 +19,7 @@ Read the output from the bottom up.
 The bottom layer adds the basic files of Alpine Linux, a small Linux distribution.
 Layers above it install some system packages and then Python itself.
 Rows showing `0B` change settings rather than files, so they add no size.
+`<missing>` in the IMAGE column is normal: those layers were built on another computer, so they have no separate image ID on yours.
 
 ```figure
 image-layers

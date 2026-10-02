@@ -108,6 +108,10 @@ docker port "$DOCKYARD_CONTAINER"
 
 The PORTS column shows something like `127.0.0.1:54321->8000/tcp`: port 54321 on this computer leads to port 8000 in the container.
 Your number will be different.
+`docker port` shows the same connection starting from the container’s side: `8000/tcp -> 127.0.0.1:54321`.
+
+If the previous lesson’s container is still running, `docker ps` lists it too, under its own name.
+It does no harm, and you can stop that lab from **Lab manager** when you no longer need it.
 
 ## Send a request
 
@@ -126,6 +130,7 @@ docker logs "$DOCKYARD_CONTAINER"
 
 Look for a line containing `"GET / HTTP/1.1" 200`.
 `GET /` means the request asked for the main page, and `200` is the HTTP code for success.
+The address at the start of the line is not `127.0.0.1`: inside its own network, the server sees the request arriving from Docker, which forwarded it.
 
 You can also open the page in your browser.
 Print its address, then copy it into the address bar:
@@ -158,7 +163,7 @@ That is the `ro` option doing its job.
 
 ## If something goes wrong
 
-- **`curl` reports “Connection refused” or “Failed to connect”**: compare `docker port "$DOCKYARD_CONTAINER"` with the `-p` option above. The number after the arrow must be your assigned port, and the container side must be `8000`.
+- **`curl` reports “Connection refused”, “Failed to connect”, or “Empty reply from server”**: compare `docker port "$DOCKYARD_CONTAINER"` with the `-p` option above. The number after the arrow must be your assigned port, and the container side must be `8000`.
 - **You see a list of files instead of your page**: the server started in the wrong folder. Check the `-v` and `-w` options.
 - **The container is missing from `docker ps`**: read `docker logs "$DOCKYARD_CONTAINER"` to see why it stopped.
 

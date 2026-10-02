@@ -99,7 +99,7 @@ export function LiveLabMap({
           : ""}
         {error ||
           (snapshot
-            ? `${resources.length} resources. Refreshes every 8 seconds while open.`
+            ? `${resources.length} ${resources.length === 1 ? "resource" : "resources"}. Refreshes every 8 seconds while open.`
             : "Reading the local runtime…")}
       </p>
       {resources.length > 0 && (

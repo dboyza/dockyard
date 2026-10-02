@@ -113,7 +113,13 @@ export function OverviewPage({ model }: { model: Workbench }) {
           <li key={unit.id}>
             <span>{index + 1}</span>
             <div>
-              <strong>{unit.title}</strong>
+              <button
+                className="text-button course-step-link"
+                disabled={!!busy}
+                onClick={() => void openLesson(unit.id)}
+              >
+                {unit.title}
+              </button>
               <p>{unit.summary}</p>
             </div>
           </li>

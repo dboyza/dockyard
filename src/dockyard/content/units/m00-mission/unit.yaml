@@ -103,6 +103,11 @@ checks:
     - --show-error
     - --max-time
     - '3'
+    - --retry
+    - '5'
+    - --retry-delay
+    - '1'
+    - --retry-all-errors
     - http://127.0.0.1:{{port}}/
   expected: Welcome aboard
   diagnostic: The welcome page did not come back from http://127.0.0.1:$DOCKYARD_PORT/. Compare where Docker forwards traffic with the port the server listens on, and check which folder the server is serving.

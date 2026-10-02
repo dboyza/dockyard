@@ -84,9 +84,14 @@ checks:
     - --show-error
     - --max-time
     - '3'
+    - --retry
+    - '5'
+    - --retry-delay
+    - '1'
+    - --retry-all-errors
     - http://127.0.0.1:{{port}}/
   expected: Hello from your workspace
-  diagnostic: Your page did not come back from http://127.0.0.1:$DOCKYARD_PORT/. Run that curl command yourself. "Connection refused" or "Failed to connect" points at the port mapping, so compare docker port "$DOCKYARD_CONTAINER" with Understand. A directory listing instead of your page means the server is serving a different folder, so check the -v and -w options.
+  diagnostic: Your page did not come back from http://127.0.0.1:$DOCKYARD_PORT/. Run that curl command yourself. "Connection refused", "Failed to connect", or "Empty reply from server" points at the port mapping, so compare docker port "$DOCKYARD_CONTAINER" with Understand. A directory listing instead of your page means the server is serving a different folder, so check the -v and -w options.
 - id: published-port
   title: The server's port is published on your assigned port
   explanation: Port 8000 inside the container must be connected to the port Dockyard assigned on your computer.

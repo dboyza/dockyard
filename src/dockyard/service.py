@@ -108,6 +108,8 @@ class Service:
         env["KIND_EXPERIMENTAL_PROVIDER"] = "docker"
         env["DOCKYARD_ARCH"] = host.architecture()
         env["DOCKER_DEFAULT_PLATFORM"] = "linux/" + host.architecture()
+        # Docker's "What's next" suggestions advertise other products after errors.
+        env["DOCKER_CLI_HINTS"] = "false"
         env["PATH"] = (
             f"{self.tools / 'bin'}:{Path(sys.executable).parent}:{env.get('PATH', '/usr/bin:/bin')}"
         )

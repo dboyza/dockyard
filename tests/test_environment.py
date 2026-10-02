@@ -53,6 +53,11 @@ def test_scanner_uses_private_offline_defaults_without_telemetry(tmp_path, monke
         assert env[key] == "true"
 
 
+def test_docker_cli_suggestions_are_off_in_lab_commands(tmp_path, monkeypatch):
+    monkeypatch.setenv("DOCKER_CLI_HINTS", "true")
+    assert Service(tmp_path).environment()["DOCKER_CLI_HINTS"] == "false"
+
+
 def test_linux_shell_is_scoped_to_its_own_guest_home(tmp_path, monkeypatch):
     from dockyard.models import Lab, Runtime
     from dockyard.store import timestamp
