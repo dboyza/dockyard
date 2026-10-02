@@ -252,9 +252,9 @@ function App() {
                 <Search size={16} />
                 <input
                   ref={searchRef}
-                  aria-label="Search lessons"
+                  aria-label="Search lessons and terms"
                   aria-keyshortcuts="/"
-                  placeholder="Search lessons"
+                  placeholder="Search lessons and terms"
                   value={search}
                   onChange={(event) => {
                     setSearch(event.target.value);

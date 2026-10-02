@@ -68,6 +68,17 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await expect(lifecycle).toContainText('Step 4 of 4');
   await expect(lifecycle).toBeFocused();
   await expect(lifecycle).toBeInViewport();
+  // The header search also finds glossary terms, by name first.
+  const search = page.getByRole('textbox', { name: 'Search lessons and terms' });
+  await search.fill('cgroup');
+  const termMatches = page.getByRole('group', { name: 'Glossary matches' });
+  await expect(termMatches.getByRole('listitem').first()).toContainText('A control group');
+  await termMatches.getByRole('button', { name: /^cgroup/ }).click();
+  await expect(page.getByRole('heading', { name: 'cgroup', exact: true })).toBeVisible();
+  await search.fill('probe');
+  await page.getByRole('group', { name: 'Glossary matches' }).getByRole('button', { name: /^All \d+ matching terms$/ }).click();
+  await expect(page.getByRole('textbox', { name: 'Search glossary' })).toHaveValue('probe');
+  await expect(page.locator('.glossary-term').first()).toContainText('probe');
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-processes');
   await page.getByRole('button', { name: /Meet Dispatch: run its first version/ }).click();
   await expect(page.getByRole('heading', { name: 'Meet Dispatch: run its first version', exact: true })).toBeVisible();

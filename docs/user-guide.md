@@ -26,7 +26,8 @@ The Overview page explains the project before you start.
 The sidebar has five main destinations: Overview, Your course, Practice, Your progress, and Lab manager.
 Placement lives within Your course; troubleshooting and exams live within Practice; reviews and saved projects live within Your progress.
 Reference desk and Settings and data stay at the bottom of the sidebar.
-Find a lesson using the search field at the top of the page, or press `/` from anywhere to jump to it and Escape to clear it.
+Find a lesson or glossary term using the search field at the top of the page, or press `/` from anywhere to jump to it and Escape to clear it.
+Matching glossary terms appear above the lessons, with the closest names first.
 The sidebar shows how many labs exist on this computer, so a forgotten cluster is easy to spot.
 
 ## Complete a lab

@@ -433,6 +433,58 @@ pre {
   margin: 4px 0 0;
   color: var(--muted);
 }
+.search-terms {
+  margin: 4px 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: var(--surface-alt);
+}
+.search-terms-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-bottom: 8px;
+}
+.search-terms-heading .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.search-terms ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+button.search-term {
+  display: grid;
+  justify-content: stretch;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+}
+button.search-term:hover {
+  border-color: var(--line);
+  background: var(--surface);
+}
+.search-term strong {
+  color: var(--blue);
+}
+.search-term span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .course-step-link {
   color: var(--ink);
   font-weight: 600;

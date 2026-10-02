@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight, BookOpen, Search } from "lucide-react";
 import type { GlossaryTerm } from "./api";
 import type { Workbench } from "./useWorkbench";
+import { glossaryMatches } from "./learning";
 import { Markdown } from "./teaching";
 
 export function ReferencePage({ model }: { model: Workbench }) {
@@ -130,15 +131,19 @@ function Glossary({ model }: { model: Workbench }) {
   const initialTerm = terms.find(
     (item) => referenceFocus === `term/${item.id}`,
   );
-  const [query, setQuery] = useState(initialTerm?.term || "");
+  // "term/?query" opens the glossary already searching for that query.
+  const [query, setQuery] = useState(
+    initialTerm?.term ??
+      (referenceFocus.startsWith("term/?")
+        ? decodeURIComponent(referenceFocus.slice("term/?".length))
+        : ""),
+  );
   const matching =
     initialTerm && query === initialTerm.term
       ? [initialTerm]
-      : terms.filter((term) =>
-          `${term.term} ${term.definition} ${term.watch_for}`
-            .toLowerCase()
-            .includes(query.trim().toLowerCase()),
-        );
+      : query.trim()
+        ? glossaryMatches(terms, query)
+        : terms;
   return (
     <section className="reference-glossary" aria-label="Glossary">
       <label className="reference-search">

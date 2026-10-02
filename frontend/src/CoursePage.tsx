@@ -1,7 +1,7 @@
-import { coursePhases, currentPractice } from "./learning";
+import { coursePhases, currentPractice, glossaryMatches } from "./learning";
 import { UnitRow } from "./UnitRow";
 import type { Workbench } from "./useWorkbench";
-import { ChevronDown } from "lucide-react";
+import { ArrowRight, BookOpen, ChevronDown } from "lucide-react";
 import type { UnitSummary } from "./api";
 export function CoursePage({ model }: { model: Workbench }) {
   const {
@@ -13,7 +13,10 @@ export function CoursePage({ model }: { model: Workbench }) {
     state,
     openLesson,
     continueUnit,
+    library,
+    openReference,
   } = model;
+  const terms = glossaryMatches(library?.glossary ?? [], search);
   const openModule = lesson?.module ?? continueUnit?.module ?? 0;
   const phases = coursePhases(catalog?.modules ?? []);
   const unitRow = (unit: UnitSummary) => (
@@ -50,10 +53,51 @@ export function CoursePage({ model }: { model: Workbench }) {
           <div className="section-heading">
             <h2>Search results</h2>
             <span className="muted small" role="status">
-              {filtered.length === 1 ? "1 match" : `${filtered.length} matches`}{" "}
+              {filtered.length === 1
+                ? "1 lesson"
+                : `${filtered.length} lessons`}
+              {terms.length > 0 &&
+                ` and ${terms.length === 1 ? "1 glossary term" : `${terms.length} glossary terms`}`}{" "}
               for “{search}”
             </span>
           </div>
+          {terms.length > 0 && (
+            <div
+              className="search-terms"
+              aria-label="Glossary matches"
+              role="group"
+            >
+              <div className="search-terms-heading">
+                <span className="eyebrow">
+                  <BookOpen size={13} aria-hidden="true" /> In the glossary
+                </span>
+                <button
+                  className="text-button"
+                  onClick={() =>
+                    openReference(`term/?${encodeURIComponent(search.trim())}`)
+                  }
+                >
+                  {terms.length === 1
+                    ? "Open in the glossary"
+                    : `All ${terms.length} matching terms`}
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+              <ul>
+                {terms.slice(0, 4).map((term) => (
+                  <li key={term.id}>
+                    <button
+                      className="search-term"
+                      onClick={() => openReference(`term/${term.id}`)}
+                    >
+                      <strong>{term.term}</strong>
+                      <span>{term.definition}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {filtered.length ? (
             filtered.map((unit) => (
               <UnitRow
