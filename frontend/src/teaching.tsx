@@ -2,7 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Check, Copy, ExternalLink } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
-import type { ExtraProps } from "react-markdown";
+import type { Components, ExtraProps } from "react-markdown";
 import { LessonFigure } from "./figures/Figure";
 
 export function CodeBlock({ children }: { children: ReactNode }) {
@@ -59,32 +59,37 @@ function figureId(node: ExtraProps["node"]): string | null {
   return text?.type === "text" ? text.value.trim() : "";
 }
 
+// Defined once so React keeps each rendered block, such as a figure partway
+// through its steps, when the page around it re-renders.
+const markdownComponents: Components = {
+  h1: ({ children }) => <h2>{children}</h2>,
+  h2: ({ children }) => <h3>{children}</h3>,
+  h3: ({ children }) => <h4>{children}</h4>,
+  h4: ({ children }) => <h5>{children}</h5>,
+  h5: ({ children }) => <h6>{children}</h6>,
+  pre: ({ node, children }) => {
+    const figure = figureId(node);
+    return figure === null ? (
+      <CodeBlock>{children}</CodeBlock>
+    ) : (
+      <LessonFigure id={figure} />
+    );
+  },
+  a: ({ children, ...props }) => (
+    <a {...props} target="_blank" rel="noreferrer">
+      {children}
+      <ExternalLink size={12} />
+    </a>
+  ),
+};
+const remarkPlugins = [remarkGfm];
+
 export function Markdown({ children }: { children: string }) {
   return (
     <div className="prose">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={{
-          h1: ({ children }) => <h2>{children}</h2>,
-          h2: ({ children }) => <h3>{children}</h3>,
-          h3: ({ children }) => <h4>{children}</h4>,
-          h4: ({ children }) => <h5>{children}</h5>,
-          h5: ({ children }) => <h6>{children}</h6>,
-          pre: ({ node, children }) => {
-            const figure = figureId(node);
-            return figure === null ? (
-              <CodeBlock>{children}</CodeBlock>
-            ) : (
-              <LessonFigure id={figure} />
-            );
-          },
-          a: ({ children, ...props }) => (
-            <a {...props} target="_blank" rel="noreferrer">
-              {children}
-              <ExternalLink size={12} />
-            </a>
-          ),
-        }}
+        remarkPlugins={remarkPlugins}
+        components={markdownComponents}
       >
         {children}
       </ReactMarkdown>
