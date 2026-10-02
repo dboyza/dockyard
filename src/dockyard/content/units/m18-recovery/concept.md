@@ -19,6 +19,10 @@ Encryption creates a new responsibility: **the key**.
 Lose the key and the backup is useless; store the key right next to the backup and anyone who steals one has both.
 Real systems keep keys in a separate, protected, recoverable key-management service.
 
+```figure
+encrypted-restore
+```
+
 ## Restoring
 
 `restore.py`:

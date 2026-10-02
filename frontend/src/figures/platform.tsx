@@ -1664,4 +1664,220 @@ export const platform = {
       ))}
     </Diagram>
   ),
+  "sbom-scan": ({ step = 0 }) => {
+    const layers: [string, Tone][] = [
+      ...(step === 0 ? [["PyJWT 1.7.1, unused", "bad"] as [string, Tone]] : []),
+      ["Dispatch code", "default"],
+      ["Python packages", "default"],
+      ["Alpine base packages", "default"],
+    ];
+    return (
+      <Diagram height={262} step={step}>
+        <Label x={110} y={24} anchor="middle" size="small" tone="muted">
+          the image
+        </Label>
+        {layers.map(([name, tone], index) => (
+          <Box
+            key={name}
+            x={10}
+            y={36 + index * 40}
+            w={200}
+            h={32}
+            title={name}
+            tone={tone}
+          />
+        ))}
+        <Arrow
+          points={[
+            [210, 70],
+            [246, 70],
+          ]}
+        />
+        <Box
+          x={250}
+          y={40}
+          w={170}
+          h={60}
+          title="SBOM"
+          sub={step === 0 ? "lists PyJWT 1.7.1" : "no PyJWT"}
+          tone={step === 0 ? "warn" : "good"}
+        />
+        <Arrow
+          points={[
+            [335, 100],
+            [335, 136],
+          ]}
+        />
+        <Box
+          x={250}
+          y={140}
+          w={170}
+          h={60}
+          title="Trivy"
+          sub="matches known CVEs"
+          tone="focus"
+        />
+        <Tag x={335} y={226} text="database dated 2026-…" />
+        <Arrow
+          points={[
+            [420, 170],
+            [456, 170],
+          ]}
+        />
+        <Region x={460} y={20} w={170} h={230} label="Findings" />
+        {step === 0 ? (
+          <Tag x={545} y={70} text="CVE-2022-29217" tone="bad" />
+        ) : (
+          <Label x={545} y={74} anchor="middle" size="small" tone="good">
+            CVE-2022-29217 gone
+          </Label>
+        )}
+        <Tag x={545} y={120} text="base image: others" tone="warn" />
+        <Label x={545} y={150} anchor="middle" size="small" tone="muted">
+          still need review
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "rotation-steps": ({ step = 0 }) => {
+    const server = step === 0 ? "A" : "B";
+    const secret = step >= 2 ? "B" : "A";
+    const using = step === 3 ? "B" : "A";
+    const works = server === using;
+    return (
+      <Diagram height={244} step={step}>
+        {(["API", "worker"] as const).map((name, index) => (
+          <g key={name}>
+            <Box
+              x={10}
+              y={30 + index * 96}
+              w={170}
+              h={50}
+              title={name}
+              sub={`using password ${using}`}
+              tone={works ? "good" : "bad"}
+            />
+            <Tag
+              x={95}
+              y={98 + index * 96}
+              text={works ? "login OK" : "login fails"}
+              tone={works ? "good" : "bad"}
+            />
+          </g>
+        ))}
+        <Box
+          x={235}
+          y={60}
+          w={170}
+          h={60}
+          title="Secret"
+          sub={`password: ${secret}`}
+          tone={step === 2 ? "focus" : "default"}
+        />
+        <Label x={320} y={146} anchor="middle" size="small" tone="muted">
+          consumers read it only at start
+        </Label>
+        <Cylinder
+          x={460}
+          y={50}
+          w={170}
+          h={80}
+          title="PostgreSQL"
+          sub={`accepts: ${server}`}
+          tone={step === 1 ? "focus" : "default"}
+        />
+        <Reveal from={3}>
+          <Tag x={545} y={160} text="old password A: rejected" tone="good" />
+        </Reveal>
+      </Diagram>
+    );
+  },
+
+  "encrypted-restore": ({ step = 0 }) => (
+    <Diagram height={290} step={step}>
+      <Box
+        x={10}
+        y={30}
+        w={170}
+        h={56}
+        title="db-0"
+        sub="stopped, storage kept"
+        tone="muted"
+        dashed
+        mono
+      />
+      <Cylinder x={10} y={100} w={170} h={60} title="data-db-0" tone="muted" />
+      <File x={248} y={34} name="backup.enc" tone="focus" />
+      <Box
+        x={220}
+        y={110}
+        w={140}
+        h={50}
+        title="key"
+        sub="private lab data"
+        tone="warn"
+      />
+      <Reveal from={1}>
+        <Box
+          x={450}
+          y={30}
+          w={180}
+          h={56}
+          title="db-recovery"
+          sub="known record found"
+          tone="good"
+          mono
+        />
+        <Cylinder
+          x={450}
+          y={100}
+          w={180}
+          h={60}
+          title="its own new claim"
+          tone="good"
+        />
+        <Arrow
+          points={[
+            [286, 60],
+            [446, 60],
+          ]}
+          tone="focus"
+          label="decrypt in memory, load"
+          labelAt={[366, 52]}
+        />
+        <Arrow
+          points={[
+            [360, 135],
+            [400, 135],
+            [400, 66],
+          ]}
+          tone="warn"
+          dashed
+        />
+      </Reveal>
+      <Box
+        x={220}
+        y={214}
+        w={200}
+        h={56}
+        title="Service db"
+        sub={step === 2 ? "selects recovery: restored" : "no ready database"}
+        tone={step === 2 ? "good" : "warn"}
+      />
+      <Reveal from={2}>
+        <Arrow
+          points={[
+            [420, 242],
+            [540, 242],
+            [540, 164],
+          ]}
+          tone="good"
+        />
+        <Label x={95} y={190} anchor="middle" size="small" tone="muted">
+          kept, to switch back if needed
+        </Label>
+      </Reveal>
+    </Diagram>
+  ),
 } satisfies Drawings;

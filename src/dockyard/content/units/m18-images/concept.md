@@ -34,6 +34,10 @@ The supplied helpers wrap these for the lab, working offline:
 
 Restarting matters: building a new image changes nothing that is already running.
 
+```figure
+sbom-scan
+```
+
 ## Reading the results
 
 Look in `scan-before.json` for CVE-2022-29217 and the package it belongs to, and find PyJWT in `sbom-before.json`.

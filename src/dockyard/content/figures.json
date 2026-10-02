@@ -1217,5 +1217,65 @@
     "title": "Admission at creation, restrictions while running",
     "caption": "Admission decides whether a Pod may exist; its security context limits what it can do.",
     "description": "A new Pod from a Deployment goes to Pod Security Admission, which enforces the restricted standard for its namespace and is checked once, when the Pod is created. The Pod is either accepted and created, or rejected and never runs. An accepted Pod's running container keeps its securityContext restrictions for its whole life: runAsUser 12000, no capabilities, no new privileges, the RuntimeDefault seccomp profile, and a read-only root filesystem."
+  },
+  {
+    "id": "sbom-scan",
+    "title": "An SBOM, a scan, and an unused library",
+    "caption": "Removing a component you never use removes its findings; the base image’s findings still need review.",
+    "description": "A sequence in two steps. The image contains Alpine base packages, Python packages, Dispatch's code, and the unused library PyJWT 1.7.1. Its SBOM lists PyJWT 1.7.1, and the Trivy scanner, using a dated vulnerability database, reports CVE-2022-29217 along with other findings from the base image. After rebuilding without PyJWT, the SBOM no longer lists it and CVE-2022-29217 is gone, while the base image findings remain and still need review.",
+    "steps": [
+      {
+        "label": "Before",
+        "text": "The SBOM lists PyJWT 1.7.1, and the scan reports CVE-2022-29217 in it, even though Dispatch never imports it."
+      },
+      {
+        "label": "After the rebuild",
+        "text": "Without the unused library, its entry and its finding disappear. The base image’s own findings remain."
+      }
+    ]
+  },
+  {
+    "id": "rotation-steps",
+    "title": "Rotating a password in the right order",
+    "caption": "The server, the Secret, and every consumer must all change; restarting the consumers completes it.",
+    "description": "A sequence in four steps with the API and worker, the Secret, and PostgreSQL. At first PostgreSQL accepts password A, the Secret holds A, and both consumers use A, so logins work. After PostgreSQL is changed to accept B, the consumers still use A and their logins fail. After the Secret is updated to B, the consumers still use A, because they read it only at start. After the consumers restart, they use B, logins work, and the old password A is rejected.",
+    "steps": [
+      {
+        "label": "Before",
+        "text": "PostgreSQL, the Secret, and both consumers all use password A."
+      },
+      {
+        "label": "Change PostgreSQL",
+        "text": "PostgreSQL now accepts only B, so the consumers still using A can no longer log in."
+      },
+      {
+        "label": "Update the Secret",
+        "text": "The Secret now holds B, but the running consumers read it only when they started, so they still fail."
+      },
+      {
+        "label": "Restart the consumers",
+        "text": "After restarting, both use B and log in. The old password A is rejected, which proves the rotation."
+      }
+    ]
+  },
+  {
+    "id": "encrypted-restore",
+    "title": "Restoring onto new storage, then switching",
+    "caption": "Restore beside the original, verify the data, and only then move traffic.",
+    "description": "A sequence in three steps. The original database db-0 is stopped with its storage data-db-0 kept, the encrypted backup backup.enc is in one place and its key in separate private lab data, and the Service db has no ready database. Restoring decrypts the backup in memory with the key and loads it into db-recovery, which has its own new claim, and the known record is found. Finally the Service db selects recovery: restored, so traffic goes to db-recovery, while the original storage is kept to switch back if needed.",
+    "steps": [
+      {
+        "label": "After the loss",
+        "text": "The original database is stopped but its storage is kept. The backup and its key are stored separately."
+      },
+      {
+        "label": "Restore into new storage",
+        "text": "The backup is decrypted in memory and loaded into db-recovery, on its own claim. The known record is checked before anything else changes."
+      },
+      {
+        "label": "Switch traffic",
+        "text": "The Service now selects the restored database. The original storage stays, so you can switch back."
+      }
+    ]
   }
 ]

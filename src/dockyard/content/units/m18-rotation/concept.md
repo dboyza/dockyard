@@ -11,6 +11,10 @@ Changing PostgreSQL alone breaks every consumer still holding the old password.
 And consumers do not always notice a changed Secret: environment variables are fixed when a container starts, and even mounted files may be cached by the application.
 So rotation is planned as separate steps, with a restart of the consumers.
 
+```figure
+rotation-steps
+```
+
 Some systems accept two passwords for a while, so consumers can switch over with no interruption.
 This practice database only has one, so rotating it causes a short interruption.
 
