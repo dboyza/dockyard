@@ -1277,5 +1277,49 @@
         "text": "The Service now selects the restored database. The original storage stays, so you can switch back."
       }
     ]
+  },
+  {
+    "id": "runtime-layers",
+    "title": "The layers beneath Kubernetes",
+    "caption": "kubectl talks to the API; crictl talks to the node’s runtime through the CRI.",
+    "description": "kubectl talks to the API server, which holds Kubernetes objects. On one node, the kubelet receives the Pods for that node and asks containerd, through the Container Runtime Interface, to run them; containerd listens on a socket under /run/containerd and runs the containers in kubepods.slice cgroups. crictl connects to containerd through the CRI, and ctr talks to containerd directly. A note says kubectl sees objects, while crictl sees what is really running on one node."
+  },
+  {
+    "id": "lab-vms",
+    "title": "This module’s two machines",
+    "caption": "kubectl works from your lab terminal; limactl shell takes you inside a VM.",
+    "description": "On your computer, the lab terminal runs kubectl, which reaches the API server on the control-plane VM, and limactl shell, which opens a shell inside a VM. The control-plane VM runs the API server, etcd, and a kubelet. The worker VM runs Dispatch's Pods, the database on a local volume, and a kubelet."
+  },
+  {
+    "id": "kubelet-stopped",
+    "title": "What changes when the kubelet stops",
+    "caption": "The application keeps answering while supervision and reporting quietly stop.",
+    "description": "A sequence in three steps tracking the kubelet service, Dispatch's containers, the node Lease, and the node status. Normally the kubelet is active, the containers answer, the Lease is renewed every few seconds, and the node is Ready. Just after the kubelet stops, the containers still run and answer, the Lease is no longer renewed, and the node still shows a stale Ready. About a minute later the Lease has expired and the node is NotReady, while the containers keep running with nothing to restart them.",
+    "steps": [
+      {
+        "label": "Healthy",
+        "text": "The kubelet runs, renews the node’s Lease, and the node is Ready."
+      },
+      {
+        "label": "Just after it stops",
+        "text": "Containers keep running and answering, but the Lease stops being renewed. The node still looks Ready."
+      },
+      {
+        "label": "About a minute later",
+        "text": "The Lease has expired, so the node is marked NotReady. Nothing will restart failed containers or start new Pods here."
+      }
+    ]
+  },
+  {
+    "id": "kubectl-errors",
+    "title": "Where each kubectl error comes from",
+    "caption": "Each failure stops the request at a different stage.",
+    "description": "A request passes four stages. Connect asks whether anything is listening; failing it gives connection refused. TLS asks whether the client trusts the server; failing it gives an x509 certificate error. Authenticate asks who this is; failing it gives 401 Unauthorized. Authorize asks whether they may do it; failing it gives 403 Forbidden. A note says the error tells you how far the request got, and so which layer to fix."
+  },
+  {
+    "id": "static-pods",
+    "title": "Static Pods come from files",
+    "caption": "The kubelet runs whatever manifests are in the folder; the API only shows mirrors of them.",
+    "description": "The folder /etc/kubernetes/manifests holds kube-apiserver.yaml, kube-controller-manager.yaml, kube-scheduler.yaml, and etcd.yaml. The kubelet reads them and runs them, and they appear in the kube-system namespace as the API server, controller manager, scheduler, and etcd. A note says deleting one with kubectl does nothing lasting, because the file brings it back."
   }
 ]

@@ -3,6 +3,7 @@ import type { FigureId } from "../contracts.gen";
 import { QuorumModel } from "../QuorumModel";
 import { ReconciliationModel } from "../ReconciliationModel";
 import { StorageModel } from "../StorageModel";
+import { cluster } from "./cluster";
 import { dispatch } from "./dispatch";
 import { docker } from "./docker";
 import { foundations } from "./foundations";
@@ -26,6 +27,7 @@ export const drawings: Record<FigureId, Drawing> = {
   ...docker,
   ...kubernetes,
   ...platform,
+  ...cluster,
   ...models,
 };
 

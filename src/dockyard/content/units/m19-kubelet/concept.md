@@ -12,6 +12,10 @@ The API server also does not notice straight away.
 Every node renews a small **Lease** object in the `kube-node-lease` namespace every few seconds.
 When renewals stop, it can take up to about a minute before the node is marked `NotReady`, so for a while a stale `Ready` status can outlive the kubelet itself.
 
+```figure
+kubelet-stopped
+```
+
 ## Reading a systemd service
 
 These commands work for any systemd service, and you will use them on the kubelet in the CKA:

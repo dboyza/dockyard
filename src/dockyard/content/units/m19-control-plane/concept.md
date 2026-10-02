@@ -10,6 +10,10 @@ Learn to read these, because each needs a different fix:
 
 Never “fix” a certificate error by turning off verification; that hides the problem and removes the protection.
 
+```figure
+kubectl-errors
+```
+
 A **kubeconfig** file holds everything a client needs: the server’s address, the certificate authority (CA) to trust, and the user’s credentials.
 Because it can contain a private key, keep it readable only by its owner (`chmod 600`).
 
@@ -19,6 +23,10 @@ kubeadm runs the control-plane components, the API server, controller manager, s
 Their manifests are plain files in `/etc/kubernetes/manifests` on the control-plane node, and the kubelet runs whatever it finds there.
 They also appear in `kubectl get pods -n kube-system`, but deleting them there does not remove them; the kubelet recreates them from the files.
 If `kubectl` itself is broken, `sudo crictl ps` on the node still shows whether they are running.
+
+```figure
+static-pods
+```
 
 ## Worked example: check the API server’s certificate
 

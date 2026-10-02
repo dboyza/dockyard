@@ -17,6 +17,10 @@ It finds the runtime through a small config file, `/etc/crictl.yaml`, which name
 On these nodes that is `/run/containerd/containerd.sock`.
 If `crictl` is pointed at the wrong socket it fails, but that does not stop any container: running Pods carry on.
 
+```figure
+runtime-layers
+```
+
 ## cgroups: how Linux limits and tracks containers
 
 Linux **cgroups** group processes so the kernel can measure and limit their resources.
@@ -65,3 +69,7 @@ This is how most self-managed clusters are built, and it is what the CKA exam us
 - The database keeps its data on a local volume on the worker, so it is tied to that one machine and not replicated.
 
 Use the VM names in those two variables; do not point commands at other VMs.
+
+```figure
+lab-vms
+```
