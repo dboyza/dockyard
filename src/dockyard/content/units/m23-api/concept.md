@@ -11,6 +11,10 @@ If any of those are wrong, the API server starts, fails to reach its database, a
 In this lab someone changed the API server's etcd address.
 etcd itself is still running normally.
 
+```figure
+apiserver-etcd
+```
+
 ## Read the error message carefully
 
 Different problems produce different errors, and each points to a different fix:

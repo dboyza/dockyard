@@ -1054,4 +1054,268 @@ export const cluster = {
       </Diagram>
     );
   },
+  "etcd-scope": () => (
+    <Diagram height={254}>
+      <Region
+        x={10}
+        y={14}
+        w={300}
+        h={210}
+        label="etcd snapshot: Kubernetes objects"
+        tone="focus"
+      />
+      {[
+        "Deployments and Services",
+        "ConfigMaps and Secrets",
+        "the database’s StatefulSet",
+        "its PersistentVolumeClaim",
+      ].map((text, index) => (
+        <Tag key={text} x={160} y={60 + index * 40} text={text} tone="good" />
+      ))}
+      <Region
+        x={330}
+        y={14}
+        w={300}
+        h={210}
+        label="PostgreSQL on the worker’s volume"
+      />
+      <Cylinder
+        x={385}
+        y={60}
+        w={190}
+        h={90}
+        title="Dispatch’s jobs"
+        sub="rows in the database"
+      />
+      <Label x={480} y={186} anchor="middle" size="small" tone="warn">
+        not in any etcd snapshot
+      </Label>
+      <Label x={320} y={246} anchor="middle" size="small" tone="muted">
+        Application data needs its own backups.
+      </Label>
+    </Diagram>
+  ),
+
+  "etcd-restore": ({ step = 0 }) => {
+    const sentinel: [string, Tone][] = [
+      ["maintenance-sentinel, UID 7f3…", "good"],
+      ["deleted", "bad"],
+      ["deleted", "bad"],
+      ["maintenance-sentinel, UID 7f3…", "good"],
+    ];
+    return (
+      <Diagram height={272} step={step}>
+        <Region
+          x={10}
+          y={14}
+          w={620}
+          h={190}
+          label="control-plane VM: /var/lib/etcd"
+        />
+        <Box
+          x={30}
+          y={46}
+          w={170}
+          h={56}
+          title="member/"
+          sub={step === 3 ? "no longer used" : "etcd’s live data"}
+          tone={step === 3 ? "muted" : "default"}
+          dashed={step === 3}
+          mono
+        />
+        <Reveal from={0}>
+          <File x={290} y={50} name="dockyard-recovery.db" tone="focus" />
+          <Arrow
+            points={[
+              [200, 74],
+              [280, 74],
+            ]}
+            tone="focus"
+            label="snapshot save"
+            labelAt={[240, 66]}
+          />
+        </Reveal>
+        <Reveal from={2}>
+          <Box
+            x={430}
+            y={46}
+            w={180}
+            h={56}
+            title="dockyard-restored/"
+            sub="revision bumped ahead"
+            tone="good"
+            mono
+          />
+          <Arrow
+            points={[
+              [330, 74],
+              [426, 74],
+            ]}
+            tone="good"
+            label="snapshot restore"
+            labelAt={[378, 66]}
+          />
+        </Reveal>
+        <Reveal from={3}>
+          <Box
+            x={300}
+            y={130}
+            w={310}
+            h={56}
+            title="etcd.yaml hostPath"
+            sub="now the restored directory"
+            tone="good"
+            mono
+          />
+          <Arrow
+            points={[
+              [520, 130],
+              [520, 106],
+            ]}
+            tone="good"
+          />
+        </Reveal>
+        <Label x={10} y={232} size="small" tone="muted">
+          the ConfigMap in the API:
+        </Label>
+        <Tag
+          x={340}
+          y={228}
+          text={sentinel[step][0]}
+          tone={sentinel[step][1]}
+        />
+        <Label x={10} y={262} size="small" tone="muted">
+          Recreating it by hand would give it a new UID; only the restore brings
+          back the original.
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "static-pod-repair": ({ step = 0 }) => {
+    const filesIn =
+      step === 0
+        ? ["etcd", "kube-apiserver", "kube-controller-manager"]
+        : [
+            "etcd",
+            "kube-apiserver",
+            "kube-controller-manager",
+            "kube-scheduler",
+          ];
+    const kubelet = step === 2;
+    return (
+      <Diagram height={286} step={step}>
+        <Region
+          x={10}
+          y={14}
+          w={290}
+          h={220}
+          label="/etc/kubernetes/manifests"
+          tone="focus"
+        />
+        {filesIn.map((name, index) => (
+          <Tag
+            key={name}
+            x={155}
+            y={56 + index * 40}
+            text={`${name}.yaml`}
+            tone={name === "kube-scheduler" ? "good" : "default"}
+          />
+        ))}
+        {step === 0 && (
+          <Label x={30} y={214} size="small" tone="bad">
+            kube-scheduler.yaml was moved away
+          </Label>
+        )}
+        <Box
+          x={340}
+          y={30}
+          w={290}
+          h={56}
+          title="kubelet"
+          sub={
+            kubelet
+              ? "running: watches the folder"
+              : "stopped: nothing watches the folder"
+          }
+          tone={kubelet ? "good" : "bad"}
+        />
+        <Box
+          x={340}
+          y={104}
+          w={290}
+          h={56}
+          title="scheduler"
+          sub={kubelet ? "running again" : "not running"}
+          tone={kubelet ? "good" : "bad"}
+        />
+        <Box
+          x={340}
+          y={178}
+          w={290}
+          h={56}
+          title="a brand-new Pod"
+          sub={kubelet ? "gets a node" : "Pending, no node"}
+          tone={kubelet ? "good" : "warn"}
+        />
+        <Label x={320} y={268} anchor="middle" size="small" tone="muted">
+          Pods that already had a node keep running throughout.
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "apiserver-etcd": ({ step = 0 }) => {
+    const fixed = step === 1;
+    return (
+      <Diagram height={250} step={step}>
+        <Region x={10} y={14} w={620} h={176} label="control-plane VM" />
+        <Box
+          x={30}
+          y={50}
+          w={250}
+          h={70}
+          title="kube-apiserver"
+          sub={
+            fixed ? "connected: ready" : "exits and restarts, again and again"
+          }
+          tone={fixed ? "good" : "bad"}
+        />
+        <Box
+          x={380}
+          y={50}
+          w={230}
+          h={70}
+          title="etcd"
+          sub="listening on 127.0.0.1:2379"
+          tone="good"
+        />
+        <Arrow
+          points={[
+            [280, 85],
+            [376, 85],
+          ]}
+          tone={fixed ? "good" : "bad"}
+          dashed={!fixed}
+          label={fixed ? "2379" : "wrong port"}
+          labelAt={[328, 77]}
+        />
+        <Tag
+          x={155}
+          y={152}
+          text={fixed ? "--etcd-servers=…:2379" : "--etcd-servers=…:WRONG"}
+          tone={fixed ? "good" : "bad"}
+        />
+        <Label x={10} y={222}>
+          kubectl says:
+        </Label>
+        <Tag
+          x={330}
+          y={218}
+          text={fixed ? "/readyz: ok" : "cannot connect"}
+          tone={fixed ? "good" : "bad"}
+        />
+      </Diagram>
+    );
+  },
 } satisfies Drawings;

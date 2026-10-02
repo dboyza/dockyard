@@ -11,6 +11,10 @@ Dispatch's jobs live in PostgreSQL, on a volume on the worker.
 An etcd snapshot remembers that the database's StatefulSet and claim exist, but not the rows inside the database.
 Application data needs its own backups, like the ones you practised in module 11.
 
+```figure
+etcd-scope
+```
+
 ## Identity: why "the same name" is not enough
 
 Every Kubernetes object gets a **UID**, a unique ID assigned when it is created.
@@ -19,6 +23,10 @@ A real restore brings back the original object, with its original UID.
 
 In this lab you will take a snapshot, then delete an original ConfigMap called `maintenance-sentinel`, and bring it back from the snapshot.
 Recreating it by hand would give it a new UID and would not pass.
+
+```figure
+etcd-restore
+```
 
 ## Worked example: find etcd on the node
 

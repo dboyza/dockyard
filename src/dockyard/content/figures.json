@@ -1475,5 +1475,71 @@
         "text": "With the worker required again and the failed Pod deleted, db-0 returns and mounts the same volume."
       }
     ]
+  },
+  {
+    "id": "etcd-scope",
+    "title": "What an etcd snapshot holds",
+    "caption": "etcd remembers what Kubernetes was told; it does not hold your application’s data.",
+    "description": "An etcd snapshot holds Kubernetes objects: Deployments and Services, ConfigMaps and Secrets, the database's StatefulSet, and its PersistentVolumeClaim. Dispatch's jobs are rows in PostgreSQL on the worker's volume, which are not in any etcd snapshot. A note says application data needs its own backups."
+  },
+  {
+    "id": "etcd-restore",
+    "title": "Snapshot, loss, restore, switch",
+    "caption": "Restore into a new directory, then point etcd at it; the original object returns with its original UID.",
+    "description": "A sequence in four steps in /var/lib/etcd on the control-plane VM. etcd's live data is in member/, and snapshot save writes dockyard-recovery.db while the ConfigMap maintenance-sentinel exists with UID 7f3…. The ConfigMap is then deleted. snapshot restore writes a new directory, dockyard-restored, with the revision bumped ahead. Finally the etcd.yaml hostPath points to the restored directory, member/ is no longer used, and maintenance-sentinel is back with its original UID 7f3…. A note says recreating it by hand would give it a new UID.",
+    "steps": [
+      {
+        "label": "Take a snapshot",
+        "text": "etcdctl snapshot save writes the whole database to one file, while the ConfigMap still exists."
+      },
+      {
+        "label": "Lose something",
+        "text": "The original maintenance-sentinel ConfigMap is deleted."
+      },
+      {
+        "label": "Restore into a new directory",
+        "text": "etcdutl writes a complete new data directory from the snapshot, with the revision moved far ahead."
+      },
+      {
+        "label": "Point etcd at it",
+        "text": "Changing the manifest’s hostPath makes etcd restart on the restored data, and the original ConfigMap returns with its original UID."
+      }
+    ]
+  },
+  {
+    "id": "static-pod-repair",
+    "title": "Two faults, each blocking the other’s fix",
+    "caption": "The scheduler needs both its file in the folder and a kubelet watching the folder.",
+    "description": "A sequence in three steps. At first /etc/kubernetes/manifests holds etcd, kube-apiserver, and kube-controller-manager, because kube-scheduler.yaml was moved away, and the kubelet is stopped, so the scheduler is not running and a brand-new Pod stays Pending with no node. After the file is moved back, the kubelet is still stopped, so nothing changes. After the kubelet starts, it runs the scheduler again and a new Pod gets a node. Pods that already had a node keep running throughout.",
+    "steps": [
+      {
+        "label": "Both broken",
+        "text": "The scheduler’s file is missing and the kubelet is stopped, so new Pods stay Pending."
+      },
+      {
+        "label": "Put the file back",
+        "text": "The file is in place, but with the kubelet stopped nothing reads the folder, so nothing changes yet."
+      },
+      {
+        "label": "Start the kubelet",
+        "text": "The kubelet reads the folder, starts the scheduler, and new Pods get nodes again."
+      }
+    ]
+  },
+  {
+    "id": "apiserver-etcd",
+    "title": "An API server that cannot reach etcd",
+    "caption": "etcd is healthy; the API server is simply looking in the wrong place.",
+    "description": "A sequence in two steps on the control-plane VM. etcd listens on 127.0.0.1:2379. With --etcd-servers set to a wrong port, the API server cannot reach etcd and exits and restarts again and again, while kubectl cannot connect. With --etcd-servers set to port 2379, the API server connects and becomes ready, and /readyz reports ok.",
+    "steps": [
+      {
+        "label": "The wrong address",
+        "text": "The API server looks for etcd on the wrong port, fails, and restarts endlessly. kubectl can only report that it cannot connect."
+      },
+      {
+        "label": "The right address",
+        "text": "Pointed at port 2379, where etcd really listens, the API server connects and reports ready."
+      }
+    ]
   }
 ]

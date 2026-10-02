@@ -26,6 +26,10 @@ Two separate things have happened on the control-plane node:
 Each fix needs the other.
 Starting the kubelet will not bring back a scheduler whose file is missing, and putting the file back does nothing while no kubelet is watching the directory.
 
+```figure
+static-pod-repair
+```
+
 Notice also what keeps working.
 Containers that were already running carry on without the kubelet, and Pods that already have a node keep running without the scheduler.
 So "my existing Pods are fine" says nothing about whether the cluster can start anything new.
