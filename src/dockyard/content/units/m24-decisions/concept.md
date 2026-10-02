@@ -31,6 +31,10 @@ With 4 copies: 100m CPU and 128 MiB requested, 768 MiB of memory limits.
 Both fit, so the existing settings work with anything from 2 to 4 copies.
 A fifth copy would still fit the requests, but it is outside the 2 to 4 range the team agreed.
 
+```figure
+capacity-sums
+```
+
 These numbers are the team's rules for this lab, not measurements.
 In real life you would base them on how much the application actually uses, with `kubectl top` and monitoring.
 

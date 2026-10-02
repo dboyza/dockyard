@@ -15,12 +15,20 @@ A calmer approach is a short loop:
 If the test disagrees with your guess, change the guess, not the cluster.
 Write each loop down in a line or two; it becomes your handoff later.
 
+```figure
+triage-loop
+```
+
 ## Follow the request through each step
 
 A Dispatch job only succeeds if every step works:
 the request reaches the API through its Service, the API stores the job, a worker picks it up, and the result is saved in PostgreSQL.
 A healthy API Pod proves only the second step.
 So test the steps in order, and do not stop at the first one that looks fine.
+
+```figure
+request-path-steps
+```
 
 ## Worked example
 

@@ -1541,5 +1541,53 @@
         "text": "Pointed at port 2379, where etcd really listens, the API server connects and reports ready."
       }
     ]
+  },
+  {
+    "id": "triage-loop",
+    "title": "The triage loop",
+    "caption": "One guess, one test, one change at a time, so you always know what helped.",
+    "description": "Five stages in a loop: observe the symptom in a user's words, guess one cause that explains it, test with a command that proves it either way, change one thing if the test agrees, and check whether the symptom changed. Repeat until the symptom is gone. A note says if a test disagrees with your guess, change the guess, not the cluster."
+  },
+  {
+    "id": "request-path-steps",
+    "title": "One fault can hide the next",
+    "caption": "Follow the request through every step until a new job reaches done.",
+    "description": "A sequence in three steps along the path Service, API, worker, PostgreSQL. At first the Service has no endpoints because of a selector mismatch, so the healthy API is never reached and the later steps cannot be tested. After fixing the selector, the API stores the job as queued, but the worker Deployment is scaled to zero, so the job waits. After the workers are scaled up, the worker processes the job and PostgreSQL saves the result as done.",
+    "steps": [
+      {
+        "label": "The route is broken",
+        "text": "The Service selects no Pods, so requests never reach the healthy API. Nothing after it can be tested yet."
+      },
+      {
+        "label": "The next fault appears",
+        "text": "Requests reach the API and the job is stored, but no worker runs, so it stays queued."
+      },
+      {
+        "label": "Every step works",
+        "text": "With workers running, the job is processed and saved as done."
+      }
+    ]
+  },
+  {
+    "id": "capacity-sums",
+    "title": "Doing the sums before scaling",
+    "caption": "Multiply each copy’s requests and limits by the replica count, then compare with the budget.",
+    "description": "Each copy requests 25m CPU and 32 MiB, with limits of 300m CPU and 192 MiB. Bars compare totals for 2, 3, and 4 copies with the team's budget. CPU requests total 50m, 75m, and 100m against a budget of 1 CPU. Memory requests total 64, 96, and 128 MiB against 512 MiB. Memory limits total 384, 576, and 768 MiB against 1 GiB. All fit within the budget."
+  },
+  {
+    "id": "rollout-columns",
+    "title": "Still answering, but not finished",
+    "caption": "Compare all four counts; available Pods alone do not mean the release succeeded.",
+    "description": "A sequence in two steps. With the bad image, the Deployment shows desired 2, up-to-date 1, available 2, and total 3: the previous ReplicaSet's two Pods are ready and serving while the newest ReplicaSet's Pod is stuck in ErrImageNeverPull, so the rollout is stuck. After rolling back, all four counts are 2: the newest ReplicaSet's two Pods are ready and serving, the old Pods are scaled away, and the rollout has finished.",
+    "steps": [
+      {
+        "label": "Stuck",
+        "text": "Two old Pods still serve, so health checks pass, but one new Pod cannot start and the counts disagree."
+      },
+      {
+        "label": "Finished",
+        "text": "After the rollback, desired, up-to-date, available, and total all show 2."
+      }
+    ]
   }
 ]

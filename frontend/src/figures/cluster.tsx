@@ -5,6 +5,7 @@ import {
   Diagram,
   File,
   Label,
+  Line,
   Region,
   Reveal,
   Tag,
@@ -1315,6 +1316,286 @@ export const cluster = {
           text={fixed ? "/readyz: ok" : "cannot connect"}
           tone={fixed ? "good" : "bad"}
         />
+      </Diagram>
+    );
+  },
+  "triage-loop": () => {
+    const stages: [string, string][] = [
+      ["observe", "the symptom, in a user’s words"],
+      ["guess", "one cause that explains it"],
+      ["test", "a command that proves it either way"],
+      ["change", "one thing, if the test agrees"],
+      ["check", "did the symptom change?"],
+    ];
+    return (
+      <Diagram height={232}>
+        {stages.map(([title, sub], index) => (
+          <g key={title}>
+            <Box
+              x={10 + index * 126}
+              y={30}
+              w={116}
+              h={76}
+              title={title}
+              tone={index === 3 ? "warn" : "focus"}
+            />
+            <Label
+              x={68 + index * 126}
+              y={126}
+              anchor="middle"
+              size="small"
+              tone="muted"
+            >
+              {sub.split(" ").slice(0, 3).join(" ")}
+            </Label>
+            <Label
+              x={68 + index * 126}
+              y={144}
+              anchor="middle"
+              size="small"
+              tone="muted"
+            >
+              {sub.split(" ").slice(3).join(" ")}
+            </Label>
+            {index > 0 && (
+              <Arrow
+                points={[
+                  [index * 126, 68],
+                  [index * 126 + 8, 68],
+                ]}
+              />
+            )}
+          </g>
+        ))}
+        <Arrow
+          points={[
+            [625, 106],
+            [625, 178],
+            [15, 178],
+            [15, 110],
+          ]}
+          tone="muted"
+          dashed
+          label="repeat until the symptom is gone"
+          labelAt={[320, 170]}
+        />
+        <Label x={320} y={222} anchor="middle" size="small" tone="muted">
+          If a test disagrees with your guess, change the guess, not the
+          cluster.
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "request-path-steps": ({ step = 0 }) => {
+    const parts: [string, string, Tone][][] = [
+      [
+        ["Service", "no endpoints", "bad"],
+        ["API", "healthy, but unreached", "muted"],
+        ["worker", "unknown yet", "muted"],
+        ["PostgreSQL", "unknown yet", "muted"],
+      ],
+      [
+        ["Service", "endpoints found", "good"],
+        ["API", "stores the job: queued", "good"],
+        ["worker", "0/0: scaled to zero", "bad"],
+        ["PostgreSQL", "job waits, queued", "warn"],
+      ],
+      [
+        ["Service", "endpoints found", "good"],
+        ["API", "stores the job", "good"],
+        ["worker", "processes it", "good"],
+        ["PostgreSQL", "result saved: done", "good"],
+      ],
+    ];
+    return (
+      <Diagram height={176} step={step}>
+        {parts[step].map(([title, sub, tone], index) => (
+          <g key={title}>
+            <Box
+              x={10 + index * 158}
+              y={30}
+              w={146}
+              h={66}
+              title={title}
+              sub={sub}
+              tone={tone}
+            />
+            {index > 0 && (
+              <Arrow
+                points={[
+                  [index * 158 - 2, 63],
+                  [index * 158 + 8, 63],
+                ]}
+                tone={tone === "muted" ? "muted" : "default"}
+              />
+            )}
+          </g>
+        ))}
+        <Label x={320} y={140} anchor="middle" size="small" tone="muted">
+          {
+            [
+              "The first broken step hides everything after it.",
+              "Fixing the route reveals the next fault: jobs stay queued.",
+              "Every step works, so a new job reaches done.",
+            ][step]
+          }
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "capacity-sums": () => {
+    const metrics: [string, string, number[]][] = [
+      ["CPU requests", "budget 1 CPU", [50 / 1000, 75 / 1000, 100 / 1000]],
+      ["memory requests", "budget 512 MiB", [64 / 512, 96 / 512, 128 / 512]],
+      ["memory limits", "budget 1 GiB", [384 / 1024, 576 / 1024, 768 / 1024]],
+    ];
+    const totals = [
+      ["50m", "75m", "100m"],
+      ["64 MiB", "96 MiB", "128 MiB"],
+      ["384 MiB", "576 MiB", "768 MiB"],
+    ];
+    const width = 400;
+    return (
+      <Diagram height={300}>
+        <Label x={10} y={20} size="small" tone="muted">
+          per copy: requests 25m CPU and 32 MiB, limits 300m CPU and 192 MiB;
+          bars show 2, 3, and 4 copies
+        </Label>
+        {metrics.map(([name, budget, values], row) => (
+          <g key={name}>
+            <Label x={10} y={58 + row * 82}>
+              {name}
+            </Label>
+            <Label x={10} y={76 + row * 82} size="small" tone="muted">
+              {budget}
+            </Label>
+            {values.map((value, index) => (
+              <g key={index}>
+                <Box
+                  x={180}
+                  y={42 + row * 82 + index * 20}
+                  w={Math.max(4, value * width)}
+                  h={14}
+                  tone={index === 2 ? "focus" : "default"}
+                />
+                <Label
+                  x={186 + value * width}
+                  y={53 + row * 82 + index * 20}
+                  size="small"
+                  tone="muted"
+                >
+                  {totals[row][index]}
+                </Label>
+              </g>
+            ))}
+            <Line
+              points={[
+                [180 + width, 38 + row * 82],
+                [180 + width, 104 + row * 82],
+              ]}
+              tone="warn"
+            />
+          </g>
+        ))}
+        <Label x={580} y={290} anchor="middle" size="small" tone="warn">
+          budget
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "rollout-columns": ({ step = 0 }) => {
+    const fixed = step === 1;
+    const columns: [string, number][] = [
+      ["desired", 2],
+      ["UP-TO-DATE", fixed ? 2 : 1],
+      ["AVAILABLE", 2],
+      ["total", fixed ? 2 : 3],
+    ];
+    return (
+      <Diagram height={264} step={step}>
+        {columns.map(([name, value], index) => (
+          <g key={name}>
+            <Label
+              x={90 + index * 150}
+              y={24}
+              anchor="middle"
+              size="small"
+              tone="muted"
+              mono
+            >
+              {name}
+            </Label>
+            <Label
+              x={90 + index * 150}
+              y={56}
+              anchor="middle"
+              size="large"
+              tone={fixed ? "good" : value === 2 ? "default" : "warn"}
+            >
+              {String(value)}
+            </Label>
+          </g>
+        ))}
+        <Region x={10} y={80} w={300} h={130} label="previous ReplicaSet" />
+        <Region
+          x={330}
+          y={80}
+          w={300}
+          h={130}
+          label="newest ReplicaSet"
+          tone={fixed ? "good" : "bad"}
+        />
+        {[0, 1].map((index) => (
+          <Box
+            key={index}
+            x={30 + index * 140}
+            y={124}
+            w={120}
+            h={50}
+            title="Pod"
+            sub={fixed ? "scaled away" : "ready, serving"}
+            tone={fixed ? "muted" : "good"}
+            dashed={fixed}
+          />
+        ))}
+        {fixed ? (
+          [0, 1].map((index) => (
+            <Box
+              key={index}
+              x={350 + index * 140}
+              y={124}
+              w={120}
+              h={50}
+              title="Pod"
+              sub="ready, serving"
+              tone="good"
+            />
+          ))
+        ) : (
+          <Box
+            x={350}
+            y={124}
+            w={260}
+            h={50}
+            title="Pod"
+            sub="ErrImageNeverPull"
+            tone="bad"
+          />
+        )}
+        <Label
+          x={320}
+          y={246}
+          anchor="middle"
+          size="small"
+          tone={fixed ? "good" : "warn"}
+        >
+          {fixed
+            ? "All four agree: the rollout has finished."
+            : "Still answering, but the counts disagree: the rollout is stuck."}
+        </Label>
       </Diagram>
     );
   },

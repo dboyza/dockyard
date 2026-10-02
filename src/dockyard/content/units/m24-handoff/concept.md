@@ -18,6 +18,10 @@ A Deployment reports four numbers, and together they tell you whether a rollout 
 
 A rollout is done only when all four agree.
 
+```figure
+rollout-columns
+```
+
 ## Worked example: read the rollout
 
 ```sh
