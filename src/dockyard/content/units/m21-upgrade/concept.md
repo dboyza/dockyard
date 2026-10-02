@@ -42,6 +42,10 @@ Before a real upgrade, check your add-ons support the new version, look for APIs
 2. Drain it, upgrade the kubelet and kubectl packages, reload systemd, restart the kubelet.
 3. Uncordon it.
 
+```figure
+upgrade-order
+```
+
 ## Packages in this lab
 
 Ubuntu’s package manager usually installs these with `apt-get install kubeadm=1.35.8-1.1`, and they are **held** (`apt-mark hold`) so a routine update never upgrades them by accident.

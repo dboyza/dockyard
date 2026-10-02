@@ -1387,5 +1387,55 @@
     "title": "A highly available control plane",
     "caption": "Clients use one address; each control-plane node runs its own API server and etcd member.",
     "description": "kubectl and the kubelets connect to HAProxy, one stable address, which forwards only to healthy API servers. Behind it are three control-plane nodes, each running an API server and a stacked etcd member."
+  },
+  {
+    "id": "cordon-drain",
+    "title": "Cordon, evict, replace, schedule",
+    "caption": "Four separate things happen during a drain; any of them can be where it gets stuck.",
+    "description": "A sequence in four steps with a PodDisruptionBudget of minAvailable 1. Before, worker runs one API copy and PostgreSQL with its local volume, and worker2 runs the other API copy and calico-node. Cordoning marks worker2 SchedulingDisabled while its Pods stay. Evicting removes worker2's API copy, which the budget allows, and ignores the calico-node DaemonSet Pod. Finally the Deployment's replacement Pod is scheduled on worker.",
+    "steps": [
+      {
+        "label": "Before",
+        "text": "One API copy runs on each worker. PostgreSQL stays with its local volume on worker."
+      },
+      {
+        "label": "Cordon",
+        "text": "worker2 is marked unschedulable, so nothing new lands there. Its Pods keep running."
+      },
+      {
+        "label": "Evict",
+        "text": "The budget allows one disruption, so the API copy is evicted. The DaemonSet Pod is ignored."
+      },
+      {
+        "label": "Replace and schedule",
+        "text": "The Deployment creates a replacement, and the scheduler places it on worker."
+      }
+    ]
+  },
+  {
+    "id": "upgrade-order",
+    "title": "The order of a kubeadm upgrade",
+    "caption": "Upgrade the control plane first, then each worker, moving one minor version at a time.",
+    "description": "The upgrade goes from 1.34.12 to 1.35.8, one minor version. On the control-plane node: upgrade the kubeadm package, run kubeadm upgrade plan, run kubeadm upgrade apply v1.35.8, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. On each worker, one at a time: upgrade the kubeadm package, run kubeadm upgrade node, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. A warning says never to run kubeadm upgrade apply on a worker."
+  },
+  {
+    "id": "cert-renewal",
+    "title": "A renewed file is not a renewed server",
+    "caption": "Renewing writes a new certificate; restarting the API server makes it serve it.",
+    "description": "A sequence in three steps on the control-plane VM. At first apiserver.crt has serial A and kube-apiserver serves serial A. After kubeadm certs renew, the file has serial B, signed by the same cluster CA, but the running API server still serves serial A from memory. After its container is stopped with crictl and the kubelet starts it again, it serves serial B. A note says deleting its mirror Pod with kubectl would not reload anything.",
+    "steps": [
+      {
+        "label": "Before renewal",
+        "text": "The certificate file and the running API server both have serial A."
+      },
+      {
+        "label": "Renew the file",
+        "text": "kubeadm writes a new certificate, serial B, from the same CA. The running server still uses A."
+      },
+      {
+        "label": "Restart the container",
+        "text": "Stopping the container makes the kubelet start a fresh one, which loads and serves serial B."
+      }
+    ]
   }
 ]

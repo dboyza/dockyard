@@ -39,6 +39,10 @@ Look at the certificate again: the serial number should have changed, and the is
 Renewing writes a new file, but the running API server still has the old certificate loaded.
 It only picks up the new one when it restarts.
 
+```figure
+cert-renewal
+```
+
 The API server is a static Pod, so the kubelet restarts it if its container stops.
 Find the real container and stop it:
 

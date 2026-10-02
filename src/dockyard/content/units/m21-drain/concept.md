@@ -11,6 +11,10 @@ Four separate things happen, and it helps to keep them apart when something gets
 A **PodDisruptionBudget (PDB)** can refuse an eviction if it would leave too few Pods running.
 It protects availability, but it cannot create spare capacity or move storage that belongs to one node.
 
+```figure
+cordon-drain
+```
+
 ```sh
 kubectl cordon NODE
 kubectl drain NODE --ignore-daemonsets --delete-emptydir-data --timeout=180s

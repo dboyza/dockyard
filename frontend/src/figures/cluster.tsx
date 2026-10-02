@@ -620,4 +620,202 @@ export const cluster = {
       </Label>
     </Diagram>
   ),
+  "cordon-drain": ({ step = 0 }) => {
+    const worker: [string, string, Tone][] = [
+      ["API copy", "ready", "good"],
+      ["PostgreSQL", "local volume", "good"],
+      ...(step === 3
+        ? [["API copy", "replacement, ready", "good"] as [string, string, Tone]]
+        : []),
+    ];
+    const worker2: [string, string, Tone][] =
+      step < 2
+        ? [
+            ["API copy", "ready", "good"],
+            ["calico-node", "DaemonSet", "default"],
+          ]
+        : [["calico-node", "DaemonSet, ignored", "muted"]];
+    const notes: [string, Tone][] = [
+      ["Before: one API copy on each worker.", "muted"],
+      ["Cordon: no new Pods may land on worker2. Running Pods stay.", "warn"],
+      [
+        "Evict: the budget allows one disruption, so the API copy leaves.",
+        "warn",
+      ],
+      [
+        "Replace and schedule: the Deployment’s new Pod lands on worker.",
+        "good",
+      ],
+    ];
+    return (
+      <Diagram height={262} step={step}>
+        <Tag x={160} y={20} text="PDB: minAvailable 1" tone="focus" />
+        <Region x={10} y={40} w={300} h={180} label="worker" />
+        <Region
+          x={330}
+          y={40}
+          w={300}
+          h={180}
+          label={step === 0 ? "worker2" : "worker2: SchedulingDisabled"}
+          tone={step === 0 ? "default" : "warn"}
+        />
+        {worker.map(([title, sub, tone], index) => (
+          <Box
+            key={`${title}-${index}`}
+            x={30}
+            y={72 + index * 48}
+            w={260}
+            h={40}
+            title={title}
+            sub={sub}
+            tone={tone}
+          />
+        ))}
+        {worker2.map(([title, sub, tone], index) => (
+          <Box
+            key={`${title}-${index}`}
+            x={350}
+            y={72 + index * 48}
+            w={260}
+            h={40}
+            title={title}
+            sub={sub}
+            tone={tone}
+            dashed={tone === "muted"}
+          />
+        ))}
+        <Label
+          x={320}
+          y={248}
+          anchor="middle"
+          size="small"
+          tone={notes[step][1]}
+        >
+          {notes[step][0]}
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "upgrade-order": () => {
+    const control = [
+      "upgrade the kubeadm package",
+      "kubeadm upgrade plan",
+      "kubeadm upgrade apply v1.35.8",
+      "drain, then upgrade kubelet and kubectl",
+      "daemon-reload, restart kubelet",
+      "uncordon",
+    ];
+    const worker = [
+      "upgrade the kubeadm package",
+      "kubeadm upgrade node",
+      "drain, then upgrade kubelet and kubectl",
+      "daemon-reload, restart kubelet",
+      "uncordon",
+    ];
+    return (
+      <Diagram height={308}>
+        <Tag x={160} y={18} text="1.34.12" />
+        <Arrow
+          points={[
+            [206, 18],
+            [266, 18],
+          ]}
+          label="one minor version"
+          labelAt={[236, 36]}
+        />
+        <Tag x={310} y={18} text="1.35.8" tone="good" />
+        <Region
+          x={10}
+          y={50}
+          w={300}
+          h={236}
+          label="1. Control-plane node"
+          tone="focus"
+        />
+        {control.map((text, index) => (
+          <Label
+            key={text}
+            x={26}
+            y={100 + index * 30}
+            size="small"
+            mono={index > 0 && index < 3}
+          >
+            {`${index + 1}. ${text}`}
+          </Label>
+        ))}
+        <Region
+          x={330}
+          y={50}
+          w={300}
+          h={236}
+          label="2. Each worker, one at a time"
+        />
+        {worker.map((text, index) => (
+          <Label
+            key={text}
+            x={346}
+            y={100 + index * 30}
+            size="small"
+            mono={index === 1}
+          >
+            {`${index + 1}. ${text}`}
+          </Label>
+        ))}
+        <Label x={346} y={264} size="small" tone="warn">
+          never kubeadm upgrade apply on a worker
+        </Label>
+      </Diagram>
+    );
+  },
+
+  "cert-renewal": ({ step = 0 }) => {
+    const file = step === 0 ? "A" : "B";
+    const served = step === 2 ? "B" : "A";
+    return (
+      <Diagram height={250} step={step}>
+        <Region x={10} y={14} w={620} h={190} label="control-plane VM" />
+        <File
+          x={50}
+          y={50}
+          name="apiserver.crt"
+          tone={step >= 1 ? "good" : "default"}
+        />
+        <Label x={130} y={62}>
+          {`serial ${file}`}
+        </Label>
+        <Label x={130} y={82} size="small" tone="muted">
+          signed by the same cluster CA
+        </Label>
+        <Box
+          x={360}
+          y={44}
+          w={250}
+          h={64}
+          title="kube-apiserver"
+          sub={`serving serial ${served}`}
+          tone={step === 1 ? "warn" : step === 2 ? "good" : "default"}
+        />
+        <Reveal from={1} until={1}>
+          <Label x={485} y={136} anchor="middle" size="small" tone="warn">
+            still holds the old certificate in memory
+          </Label>
+        </Reveal>
+        <Reveal from={2}>
+          <Arrow
+            points={[
+              [485, 170],
+              [485, 112],
+            ]}
+            tone="good"
+            label="crictl stop; the kubelet starts it again"
+            labelAt={[400, 186]}
+          />
+        </Reveal>
+        <Label x={320} y={236} anchor="middle" size="small" tone="muted">
+          Deleting its mirror Pod with kubectl would not reload anything.
+        </Label>
+      </Diagram>
+    );
+  },
 } satisfies Drawings;
