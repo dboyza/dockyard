@@ -597,7 +597,8 @@ class Service:
             # Just after a rollout, old Pods are still terminating and the runtime keeps
             # changing for a few seconds. Observe again until it holds still, rather than
             # reporting a stale check to a learner who did everything right.
-            settle_until = time.monotonic() + SETTLE_SECONDS
+            # Measured from the first observation, so a slow check still gets another look.
+            settle_until: float | None = None
             while True:
                 runtime_before = runtime.fingerprint()
                 observations: dict[str, ProcessResult] = {}
@@ -607,10 +608,12 @@ class Service:
                 ]
                 if all(item.status == CheckStatus.PASS for item in evidence):
                     runtime.discover()
+                if settle_until is None:
+                    settle_until = time.monotonic() + SETTLE_SECONDS
                 if (
                     cancel.is_set()
-                    or time.monotonic() >= settle_until
                     or runtime.fingerprint() == runtime_before
+                    or time.monotonic() >= settle_until
                 ):
                     break
                 time.sleep(2)

@@ -24,7 +24,7 @@ class ChangingRuntime:
         return []
 
 
-def checked(tmp_path, monkeypatch, runtime):
+def checked(tmp_path, monkeypatch, runtime, probe_seconds=0):
     service = Service(tmp_path)
     unit = service.catalog.get("m00-first-container")
     criterion = Criterion(
@@ -50,9 +50,15 @@ def checked(tmp_path, monkeypatch, runtime):
         resources={"port": "1", "docker_endpoint": "unix:///unused"},
     )
     service.store.save_lab(lab)
-    monkeypatch.setattr(
-        service_module, "run", lambda args, **_: ProcessResult(tuple(args), 0, "ok", "", 0)
-    )
+    clock = [0.0]
+
+    def run(args, **_):
+        clock[0] += probe_seconds
+        return ProcessResult(tuple(args), 0, "ok", "", 0)
+
+    monkeypatch.setattr(service_module, "run", run)
+    if probe_seconds:
+        monkeypatch.setattr(service_module.time, "monotonic", lambda: clock[0])
     monkeypatch.setattr(service_module.time, "sleep", lambda seconds: None)
     monkeypatch.setattr(service, "runtime", lambda lab: runtime)
     return service._check(lab, threading.Event())
@@ -73,3 +79,10 @@ def test_a_runtime_that_never_settles_is_still_reported_stale(tmp_path, monkeypa
     clock = iter(range(0, 1000, 10))
     monkeypatch.setattr(service_module.time, "monotonic", lambda: next(clock))
     assert checked(tmp_path, monkeypatch, Restless(0)).status == CheckStatus.STALE
+
+
+def test_a_slow_check_still_gets_another_look(tmp_path, monkeypatch):
+    # Each observation takes longer than the whole settling window.
+    runtime = ChangingRuntime(changes=1)
+    result = checked(tmp_path, monkeypatch, runtime, probe_seconds=45)
+    assert result.status == CheckStatus.PASS
