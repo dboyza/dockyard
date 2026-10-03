@@ -91,3 +91,34 @@ test('the browser Back and Forward buttons, reloads, and bookmarks keep the lear
   await expect(heading).toHaveText('Meet Dispatch: run its first version');
   expect(failures).toEqual([]);
 });
+
+test('a bookmark opened before signing in opens once the launcher signs in', async ({ browser }) => {
+  const profile = await mkdtemp(path.join(os.tmpdir(), 'dockyard-history-signin-'));
+  const launch = spawn(path.join(root, '.runtime/installed/bin/dockyard'), ['--data-dir', profile, 'launch', '--port', '0', '--no-open'], { cwd: root });
+  try {
+    const link = await new Promise<string>((resolve, reject) => {
+      let output = '';
+      const timeout = setTimeout(() => reject(new Error('Second launcher did not become ready')), 15000);
+      launch.stdout!.on('data', data => {
+        output += data.toString();
+        const match = output.match(/http:\/\/127\.0\.0\.1:\d+\/#session=[A-Za-z0-9_-]+/);
+        if (match) { clearTimeout(timeout); resolve(match[0]); }
+      });
+    });
+    const context = await browser.newContext();
+    const bookmark = await context.newPage();
+    await bookmark.goto(`${new URL(link).origin}/#/lesson/m01-processes`);
+    await expect(bookmark.getByRole('heading', { name: 'This browser is not connected.' })).toBeVisible();
+    await expect(bookmark.getByRole('main')).toContainText('brings you back to this page');
+    // The launcher opens its sign-in link in a new tab.
+    const signedIn = await context.newPage();
+    await signedIn.goto(link);
+    await expect(signedIn.getByRole('heading', { level: 1 })).toHaveText('Meet Dispatch: run its first version');
+    expect(new URL(signedIn.url()).hash).toBe('#/lesson/m01-processes');
+    await context.close();
+  } finally {
+    launch.kill('SIGINT');
+    await once(launch, 'exit');
+    await rm(profile, { recursive: true, force: true });
+  }
+});

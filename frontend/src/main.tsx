@@ -35,6 +35,7 @@ import { FigureLinks, FigureText } from "./figures/Figure";
 import { navigationSection, pageLabels, sectionPages } from "./navigation";
 import "./style.css";
 import { InPageLink } from "./InPageLink";
+import { parseRoute } from "./routing";
 function App() {
   const model = useWorkbench();
   const figures = useMemo(
@@ -124,8 +125,11 @@ function App() {
             </p>
             <pre className="connection-command">./dockyard</pre>
             <p className="muted small">
-              It opens a fresh link in your browser. Your files and progress
-              stay on this computer. ({error})
+              It opens a fresh link in your browser
+              {parseRoute(location.hash)
+                ? " and brings you back to this page"
+                : ""}
+              . Your files and progress stay on this computer. ({error})
             </p>
           </>
         ) : (

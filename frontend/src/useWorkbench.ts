@@ -52,6 +52,36 @@ const emptyState: State = {
   last_unit: null,
 };
 
+// A bookmarked address opened before signing in is kept briefly, so the
+// launcher's sign-in link can open it instead of the overview.
+const savedAddress = "dockyard-address-before-sign-in";
+function saveAddressForSignIn() {
+  if (!parseRoute(location.hash)) return;
+  try {
+    localStorage.setItem(
+      savedAddress,
+      JSON.stringify({ hash: location.hash, at: Date.now() }),
+    );
+  } catch {
+    // Without storage the learner simply starts from the overview.
+  }
+}
+function resumeSavedAddress() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(savedAddress) ?? "null");
+    localStorage.removeItem(savedAddress);
+    if (
+      saved &&
+      Date.now() - saved.at < 15 * 60 * 1000 &&
+      parseRoute(saved.hash) &&
+      !parseRoute(location.hash)
+    )
+      history.replaceState(null, "", saved.hash);
+  } catch {
+    // An unreadable saved address is ignored.
+  }
+}
+
 export function useWorkbench() {
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [library, setLibrary] = useState<ReferenceLibrary | null>(null);
@@ -110,7 +140,8 @@ export function useWorkbench() {
     let alive = true;
     let events: EventSource | undefined;
     connect()
-      .then(async () => {
+      .then(async (signedIn) => {
+        if (signedIn) resumeSavedAddress();
         const [course, current, referenceLibrary] = await Promise.all([
           api<Catalog>("/catalog"),
           api<State>("/state"),
@@ -132,7 +163,11 @@ export function useWorkbench() {
         events.onopen = () => setOffline(false);
         events.onerror = () => setOffline(true);
       })
-      .catch((reason) => alive && setError(reason.message));
+      .catch((reason) => {
+        if (!alive) return;
+        saveAddressForSignIn();
+        setError(reason.message);
+      });
     return () => {
       alive = false;
       events?.close();

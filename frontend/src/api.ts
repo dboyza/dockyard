@@ -145,11 +145,13 @@ export async function api<T>(path: string, body?: unknown): Promise<T> {
   return response.json();
 }
 
-export async function connect(): Promise<void> {
+/** Signs in with the launcher's one-time token, if the address carries one. */
+export async function connect(): Promise<boolean> {
   const fragment = new URLSearchParams(window.location.hash.slice(1));
   const token = fragment.get("session");
   if (token) {
     history.replaceState(null, "", location.pathname);
     await api("/session", { token });
   }
+  return !!token;
 }
