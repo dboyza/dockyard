@@ -234,6 +234,19 @@ def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
             container = spec["containers"][0]
             container["image"] = runtime.env["DOCKYARD_METRICS_SERVER_LOCAL_IMAGE"]
             container["imagePullPolicy"] = "Never"
+            # Cluster add-ons run on the control plane, so a learner's worker taints
+            # and drains never strand the metrics that autoscaling depends on.
+            spec["nodeSelector"] = {
+                **spec.get("nodeSelector", {}),
+                "node-role.kubernetes.io/control-plane": "",
+            }
+            spec.setdefault("tolerations", []).append(
+                {
+                    "key": "node-role.kubernetes.io/control-plane",
+                    "operator": "Exists",
+                    "effect": "NoSchedule",
+                }
+            )
             container["args"] += [
                 "--kubelet-certificate-authority=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
                 "--tls-cert-file=/var/run/metrics-tls/tls.crt",

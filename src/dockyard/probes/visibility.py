@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import time
 import urllib.parse
 from contextlib import suppress
 from datetime import datetime
@@ -30,6 +31,19 @@ def request(url: str) -> dict[str, Any]:
             )
         )
     )
+
+
+# Four of the lab's five-second scrape intervals.
+SCRAPE_WAIT_SECONDS = 20
+
+
+def serve(pod: str) -> None:
+    """Send one GET /jobs to this API Pod, from inside it, so it counts a request."""
+    script = (
+        "import urllib.request; "
+        "urllib.request.urlopen('http://127.0.0.1:8080/jobs', timeout=8).read()"
+    )
+    kubectl("exec", pod, "-c", "api", "--", "python", "-c", script, timeout=20)
 
 
 def prometheus(path: str) -> dict[str, Any]:
@@ -90,16 +104,30 @@ def visibility() -> dict[str, Any]:
         )
         details["signals"] = {"request_id": identity, "matching_events": matched}
     with suppress(RuntimeError, ValueError, KeyError):
-        targets = prometheus("/api/v1/targets")["data"]["activeTargets"]
-        actual = {pod["metadata"]["uid"] for pod in pods}
-        healthy = {
-            t["discoveredLabels"].get("__meta_kubernetes_pod_uid")
-            for t in targets
-            if t["health"] == "up" and t["labels"].get("job") == "dispatch"
-        }
-        traffic = query('dispatch_http_requests_total{job="dispatch",route="/jobs",status="200"}')
-        measured = {v["metric"].get("pod") for v in traffic if float(v["value"][1]) > 0}
-        result["scraping"] = actual <= healthy and {p["metadata"]["name"] for p in pods} <= measured
+        # Each Pod only reports a request counter once it has served a request, and
+        # Prometheus only sees it at its next scrape: serve every Pod, then allow a
+        # few scrape intervals rather than depending on where earlier traffic landed.
+        for pod in pods:
+            serve(pod["metadata"]["name"])
+        settle_until = time.monotonic() + SCRAPE_WAIT_SECONDS
+        while True:
+            targets = prometheus("/api/v1/targets")["data"]["activeTargets"]
+            actual = {pod["metadata"]["uid"] for pod in pods}
+            healthy = {
+                t["discoveredLabels"].get("__meta_kubernetes_pod_uid")
+                for t in targets
+                if t["health"] == "up" and t["labels"].get("job") == "dispatch"
+            }
+            traffic = query(
+                'dispatch_http_requests_total{job="dispatch",route="/jobs",status="200"}'
+            )
+            measured = {v["metric"].get("pod") for v in traffic if float(v["value"][1]) > 0}
+            result["scraping"] = (
+                actual <= healthy and {p["metadata"]["name"] for p in pods} <= measured
+            )
+            if result["scraping"] or time.monotonic() >= settle_until:
+                break
+            time.sleep(2)
         details["scraping"] = {
             "targets": [
                 {
