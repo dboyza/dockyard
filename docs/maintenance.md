@@ -41,7 +41,7 @@ A restricted execution sandbox may require explicit local-network permission eve
 ## Real-runtime verification
 
 Run integration tests serially within each host environment.
-They create disposable owned environments, and cleanup belongs in the test's `finally` block.
+They create disposable owned environments through the `lab_profile` fixture, which releases every lab even when a test fails.
 Native test profiles use short paths under `/private/tmp` on macOS and `/tmp` on Linux to stay inside Lima's Unix socket length limit.
 
 ```sh
@@ -50,6 +50,11 @@ DOCKYARD_INTEGRATION=1 .venv/bin/pytest -q tests/test_lifecycle_integration.py t
 DOCKYARD_INTEGRATION=1 .venv/bin/pytest -q tests/test_kubernetes_integration.py
 DOCKYARD_VM_INTEGRATION=1 .venv/bin/pytest -q tests/test_linux_integration.py
 ```
+
+The curriculum suite also records what a learner would see if they checked once, straight after the reference's last command.
+Set `DOCKYARD_FIRST_CHECK_LOG` to a file path to collect one JSON line per unit, with the observations of any criterion that did not pass.
+A first check that fails or reports stale, while a later one passes, means a learner who checks promptly would be failed for timing alone; fix the check rather than the reference.
+Request checks retry briefly, checks re-observe while the runtime settles, and probes give a short grace period after a repair.
 
 The curriculum audit starts every activity's real fixture, verifies its declared failure criteria, applies the reference, and checks actual passing behavior.
 Additional suites test valid alternatives, ownership preservation, Stop/Resume, reset backups, and supported versus independent attempts.

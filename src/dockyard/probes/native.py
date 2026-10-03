@@ -16,15 +16,28 @@ from dockyard.native import current
 from dockyard.probes.kubernetes import get, owned_pods, sql
 from dockyard.probes.security import request
 
+# How long a job workflow may take to recover after a learner's repair.
+RECOVERY_SECONDS = 30
+
 
 def workflow() -> bool:
     job_id = None
     try:
         port = int(os.environ["DOCKYARD_PORT"])
         browser = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with browser.open(f"http://127.0.0.1:{port}/readyz", timeout=3) as response:
-            if response.status != 200 or json.load(response).get("ready") is not True:
+        # After a repair, readiness probes and worker reconnections take a little while;
+        # a learner checking straight away gets that recovery time, not a failure.
+        ready_until = time.monotonic() + RECOVERY_SECONDS
+        while True:
+            with (
+                suppress(OSError, ValueError),
+                browser.open(f"http://127.0.0.1:{port}/readyz", timeout=3) as response,
+            ):
+                if response.status == 200 and json.load(response).get("ready") is True:
+                    break
+            if time.monotonic() >= ready_until:
                 return False
+            time.sleep(1)
         title = "native-" + uuid.uuid4().hex
         job_id = request("/jobs", {"title": title}, "POST")["id"]
         if (
@@ -34,7 +47,7 @@ def workflow() -> bool:
         ):
             return False
         _, workers = owned_pods("worker")
-        deadline = time.monotonic() + 20
+        deadline = time.monotonic() + RECOVERY_SECONDS
         while time.monotonic() < deadline:
             rows = request("/jobs")["jobs"]
             visible = next((row for row in rows if row["id"] == job_id), None)

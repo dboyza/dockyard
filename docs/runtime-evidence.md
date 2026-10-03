@@ -681,3 +681,18 @@ A separate integration suite ran eleven alternative and failure-mode cases again
 Removing a container with `--rm`, a Python error, a writable mount, and publishing on every network each failed exactly the intended checks.
 The installed accessibility, journey, portability, recovery, and reset browser suites passed with the foundations-first overview.
 No lab containers remained afterwards.
+
+## 2026-10-03: learner-timed first checks across the course
+
+The curriculum suite recorded each unit's first check straight after its reference, as a learner checking promptly would see it.
+Across all 116 units, every reference eventually passed, but 16 first checks did not: 5 Docker request checks, 7 stale Kubernetes and Linux checks, and 4 probes that measured too early.
+Request checks now retry briefly, checks re-observe while only the runtime is changing, and the routing, scraping, network policy, and job workflow probes give a short settling period.
+Two problems were not timing alone.
+The m15 scraping check needed traffic on both API Pods, which a learner following the brief would provide only half the time; the probe now serves each Pod.
+Separately, the m13 mission's reference failed once because Metrics Server could start on a worker that the mission later tainted and drained, stranding it; it now runs on the control plane.
+Repeat runs after each fix passed every affected first check: Docker 32 of 32, Kubernetes batch reruns, five m13 and m15 runs, four network policy runs, and four m20-ha and m22-packets runs.
+The computer slept twice during the run.
+Docker Desktop's VM clock then lagged the host by about fifteen minutes, so a lab saw its own new network as older than itself and refused to adopt or clean it; labs now record the engine clock and compare creation times on it.
+Test profiles are released through `tests/release_profile.py`, which kept that profile rather than orphan its network; it was then released normally.
+No Dockyard-labelled containers, networks, or volumes remained afterwards.
+
