@@ -116,30 +116,40 @@ print(json.dumps(results))
         db = get("svc", "db")["spec"]["clusterIP"]
         queue = get("svc", "queue")["spec"]["clusterIP"]
         trap = get("svc", "egress-target", "dockyard-observer")["spec"]["clusterIP"]
-        measured = {
-            "trusted_frontend": connections(
-                "trusted-client", "frontend", [(api, 8080), (db, 5432), (trap, 8080)]
-            ),
-            "untrusted_frontend": connections("untrusted-client", "frontend", [(api, 8080)]),
-            "wrong_namespace": connections("outside-client", "dockyard-observer", [(api, 8080)]),
-            "api_egress": connections(
-                "dispatch", "dispatch", [(db, 5432), (queue, 6379), (trap, 8080)]
-            ),
-            "worker_egress": connections("worker", "dispatch", [(db, 5432), (queue, 6379)]),
-        }
-        _, api_pods = owned_pods("dispatch")
-        _, clients = owned_pods("trusted-client", "frontend")
-        different_nodes = all(
-            p["spec"]["nodeName"] != clients[0]["spec"]["nodeName"] for p in api_pods
-        )
-        details["network"] = {**measured, "cross_node": different_nodes}
-        result["network"] = different_nodes and measured == {
+        intended = {
             "trusted_frontend": [True, False, True],
             "untrusted_frontend": [False],
             "wrong_namespace": [False],
             "api_egress": [True, True, False],
             "worker_egress": [True, True],
         }
+        # A policy change takes a few seconds to reach every node's network plugin,
+        # so a learner checking straight after applying one gets a short grace period.
+        for attempt in range(3):
+            measured = {
+                "trusted_frontend": connections(
+                    "trusted-client", "frontend", [(api, 8080), (db, 5432), (trap, 8080)]
+                ),
+                "untrusted_frontend": connections("untrusted-client", "frontend", [(api, 8080)]),
+                "wrong_namespace": connections(
+                    "outside-client", "dockyard-observer", [(api, 8080)]
+                ),
+                "api_egress": connections(
+                    "dispatch", "dispatch", [(db, 5432), (queue, 6379), (trap, 8080)]
+                ),
+                "worker_egress": connections("worker", "dispatch", [(db, 5432), (queue, 6379)]),
+            }
+            if measured == intended:
+                break
+            if attempt < 2:
+                time.sleep(3)
+        _, api_pods = owned_pods("dispatch")
+        _, clients = owned_pods("trusted-client", "frontend")
+        different_nodes = all(
+            p["spec"]["nodeName"] != clients[0]["spec"]["nodeName"] for p in api_pods
+        )
+        details["network"] = {**measured, "cross_node": different_nodes}
+        result["network"] = different_nodes and measured == intended
         dns = execute(
             "dispatch",
             """import json, socket, struct

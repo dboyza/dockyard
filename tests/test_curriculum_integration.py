@@ -61,7 +61,11 @@ def assert_reference(tmp_path, unit_id):
         # A learner checks once, straight after the last command; record what they would see.
         first = service.perform(unit_id, "check")
         if log := os.environ.get("DOCKYARD_FIRST_CHECK_LOG"):
-            failed = [item["criterion"] for item in first["evidence"] if item["status"] != "pass"]
+            failed = {
+                item["criterion"]: (item.get("details") or item["observed"])[-600:]
+                for item in first["evidence"]
+                if item["status"] != "pass"
+            }
             with open(log, "a") as handle:
                 handle.write(
                     json.dumps({"unit": unit_id, "status": first["status"], "failed": failed})
