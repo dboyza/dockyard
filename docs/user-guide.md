@@ -28,6 +28,8 @@ Placement lives within Your course; troubleshooting and exams live within Practi
 Reference desk and Settings and data stay at the bottom of the sidebar.
 Find a lesson or glossary term using the search field at the top of the page, or press `/` from anywhere to jump to it and Escape to clear it.
 Matching glossary terms appear above the lessons, with the closest names first.
+Each page, lesson, exam, primer, and glossary entry has its own address, so the browser's Back and Forward buttons, reloading, and bookmarks keep your place.
+A bookmark opens in the browser you signed in with; after `./dockyard` starts a new session, sign in from its link first.
 The sidebar shows how many labs exist on this computer, so a forgotten cluster is easy to spot.
 
 ## Complete a lab

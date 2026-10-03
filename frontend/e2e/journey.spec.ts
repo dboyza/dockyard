@@ -100,7 +100,11 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   const notes = page.getByRole('textbox', { name: 'Notes for this lesson' });
   await notes.fill('The process and its published port are separate observations.');
   await page.getByRole('button', { name: 'Save observations' }).click();
+  // Reloading keeps the learner on the lesson, and the overview offers to continue it.
   await page.reload();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Meet Dispatch: run its first version');
+  await expect(notes).toHaveValue('The process and its published port are separate observations.');
+  await navigateTo(page, 'Overview');
   await page.getByRole('button', { name: 'Continue lesson' }).click();
   await expect(notes).toHaveValue('The process and its published port are separate observations.');
   for (const width of [760, 480]) {
@@ -134,7 +138,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
       await route.fulfill({ json: { ...info, options: [], automatic: null, selected: 'auto' } });
     });
     await page.reload();
-    await page.getByRole('button', { name: 'Continue lesson' }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Meet Dispatch: run its first version');
     await expect(terminal.getByRole('button', { name: 'Copy lab command' })).toBeVisible();
     await expect(terminal.getByRole('button', { name: 'Open terminal' })).toHaveCount(0);
     await page.unroute('**/api/units/m01-processes/terminal');

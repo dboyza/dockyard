@@ -34,6 +34,7 @@ import { ExamsPage } from "./ExamsPage";
 import { FigureLinks, FigureText } from "./figures/Figure";
 import { navigationSection, pageLabels, sectionPages } from "./navigation";
 import "./style.css";
+import { InPageLink } from "./InPageLink";
 function App() {
   const model = useWorkbench();
   const figures = useMemo(
@@ -144,9 +145,9 @@ function App() {
         }}
       >
         <div className="app">
-          <a className="skip" href="#main">
+          <InPageLink className="skip" target="main">
             Skip to content
-          </a>
+          </InPageLink>
           <aside id="sidebar" className={`sidebar ${railOpen ? "open" : ""}`}>
             <div className="sidebar-header">
               <button className="brand" onClick={() => navigate("home")}>
@@ -325,7 +326,13 @@ function App() {
                     <button
                       key={destination}
                       aria-current={page === destination ? "page" : undefined}
-                      onClick={() => navigate(destination)}
+                      onClick={() =>
+                        // A section's own button opens its index, such as
+                        // the exam list rather than the last exam opened.
+                        destination === "exams"
+                          ? model.openExam(null)
+                          : navigate(destination)
+                      }
                     >
                       {pageLabels[destination]}
                     </button>

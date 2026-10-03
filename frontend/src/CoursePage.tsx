@@ -3,6 +3,7 @@ import { UnitRow } from "./UnitRow";
 import type { Workbench } from "./useWorkbench";
 import { ArrowRight, BookOpen, ChevronDown } from "lucide-react";
 import type { UnitSummary } from "./api";
+import { InPageLink } from "./InPageLink";
 export function CoursePage({ model }: { model: Workbench }) {
   const {
     catalog,
@@ -41,10 +42,10 @@ export function CoursePage({ model }: { model: Workbench }) {
       {!search && (
         <nav className="phase-jump" aria-label="Course phases">
           {phases.map((item) => (
-            <a key={item.phase} href={`#phase-${item.phase}`}>
+            <InPageLink key={item.phase} target={`phase-${item.phase}`}>
               <span>0{item.phase}</span>
               {item.title}
-            </a>
+            </InPageLink>
           ))}
         </nav>
       )}

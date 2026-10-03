@@ -28,6 +28,7 @@ import {
   Square,
   Terminal,
 } from "lucide-react";
+import { InPageLink } from "./InPageLink";
 export function LessonPage({ model }: { model: Workbench }) {
   const {
     state,
@@ -132,9 +133,9 @@ export function LessonPage({ model }: { model: Workbench }) {
           </span>
         </div>
       </div>
-      <a className="mobile-lab-link" href="#lab-controls">
+      <InPageLink className="mobile-lab-link" target="lab-controls">
         Open lab controls <ArrowRight size={15} />
-      </a>
+      </InPageLink>
       {reviewNeeded(lesson.revision, state.progress[lesson.id]) && (
         <p className="notice" role="status">
           This lesson has changed since your last passing assessment. Your

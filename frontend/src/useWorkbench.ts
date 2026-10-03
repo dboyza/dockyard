@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Assessment, FigureId } from "./contracts.gen";
 import { currentPractice } from "./learning";
+import { parseRoute, routeHash, type Route } from "./routing";
 import {
   api,
   connect,
@@ -87,6 +88,10 @@ export function useWorkbench() {
   const [railOpen, setRailOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const opened = useRef(0);
+  // The fragment of a lesson the URL asked for while it is still loading.
+  const urlTarget = useRef<string | null>(null);
+  const currentHash = useRef("#/");
+  const applyLocationRef = useRef<(course?: Catalog | null) => void>(() => {});
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -116,6 +121,7 @@ export function useWorkbench() {
         setLibrary(referenceLibrary);
         setState(current);
         setConnected(true);
+        applyLocationRef.current(course);
         events = new EventSource("/api/events");
         events.addEventListener("state", (event) => {
           if (alive) {
@@ -141,6 +147,7 @@ export function useWorkbench() {
   const navigate = (destination: Page) => {
     if (destination !== "lesson") {
       opened.current++;
+      urlTarget.current = null;
       setBusy("");
     }
     setSearch("");
@@ -236,10 +243,79 @@ export function useWorkbench() {
       navigate("lesson");
     } catch (reason) {
       setError((reason as Error).message);
+      if (urlTarget.current !== null) {
+        urlTarget.current = null;
+        history.replaceState(null, "", currentHash.current);
+      }
     } finally {
       if (sequence === opened.current) setBusy("");
     }
   };
+  // Shows the location in the address bar: reloading, a bookmark, or the
+  // browser's Back and Forward buttons.
+  const applyLocation = (course: Catalog | null = catalog) => {
+    let route = parseRoute(location.hash);
+    if (!route) return;
+    if (route.page === "lesson") {
+      const unit = route.unit;
+      const exam = course?.exams.find((item) => item.unit_id === unit);
+      if (exam) route = { page: "exams", exam: exam.id };
+      else if (!course?.units.some((item) => item.id === unit)) route = null;
+    } else if (route.page === "exams" && route.exam) {
+      const exam = route.exam;
+      if (!course?.exams.some((item) => item.id === exam)) route = null;
+    }
+    if (!route) {
+      history.replaceState(null, "", currentHash.current);
+      return;
+    }
+    const target = routeHash(route);
+    if (target !== location.hash) history.replaceState(null, "", target);
+    if (target === currentHash.current) return;
+    if (route.page === "lesson") {
+      if (lesson?.id === route.unit) {
+        setTab("learn");
+        navigate("lesson");
+      } else {
+        urlTarget.current = target;
+        void openLesson(route.unit);
+      }
+    } else if (route.page === "exams") openExam(route.exam);
+    else if (route.page === "reference") {
+      setReferenceFocus(route.focus);
+      navigate("reference");
+    } else navigate(route.page);
+  };
+  useEffect(() => {
+    applyLocationRef.current = applyLocation;
+  });
+  const route: Route =
+    page === "lesson"
+      ? lesson
+        ? { page: "lesson", unit: lesson.id }
+        : { page: "home" }
+      : page === "exams"
+        ? { page: "exams", exam: examId }
+        : page === "reference"
+          ? { page: "reference", focus: referenceFocus }
+          : { page };
+  const hash = routeHash(route);
+  // Each new location becomes a browser history entry.
+  useEffect(() => {
+    currentHash.current = hash;
+    if (!connected || location.hash === hash) {
+      if (location.hash === hash) urlTarget.current = null;
+      return;
+    }
+    if (urlTarget.current !== null) return;
+    if (parseRoute(location.hash)) history.pushState(null, "", hash);
+    else history.replaceState(null, "", hash);
+  }, [connected, hash]);
+  useEffect(() => {
+    const followHistory = () => applyLocationRef.current();
+    window.addEventListener("popstate", followHistory);
+    return () => window.removeEventListener("popstate", followHistory);
+  }, []);
   const lab = state.labs.find((item) => item.unit_id === lesson?.id);
   const activeOperation = state.operations.find(
     (item) =>
