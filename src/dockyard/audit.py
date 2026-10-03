@@ -57,6 +57,11 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
             issues.append(f"{unit.id}: unsupported native node topology.")
         if unit.kind == UnitKind.LESSON and not figure_references(unit.concept):
             issues.append(f"{unit.id}: a lesson must explain its central idea with a figure.")
+        for check in unit.checks:
+            # A learner may check straight after starting a service; give it a moment.
+            args = check.command.args
+            if args[0] == "curl" and not {"--retry", "--retry-all-errors"} <= set(args):
+                issues.append(f"{unit.id}/{check.id}: a request check must retry briefly.")
     objectives = json.loads((catalog.root / "objectives.json").read_text())["objectives"]
     known = {entry["id"] for entry in objectives}
     if len(known) != len(objectives):

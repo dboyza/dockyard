@@ -116,6 +116,11 @@ checks:
     - --show-error
     - --max-time
     - '3'
+    - --retry
+    - '5'
+    - --retry-delay
+    - '1'
+    - --retry-all-errors
     - http://127.0.0.1:{{port}}/healthz
     timeout: 30.0
     stdin: null
@@ -219,6 +224,11 @@ checks:
     - --show-error
     - --max-time
     - '3'
+    - --retry
+    - '5'
+    - --retry-delay
+    - '1'
+    - --retry-all-errors
     - http://127.0.0.1:{{port}}/healthz
     timeout: 30.0
     stdin: null

@@ -19,7 +19,7 @@ from dockyard import host
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes import kubeclient
-from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
+from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase, ownership_start
 from dockyard.toolchain import Toolchain
 from dockyard.workspace import atomic_write
 
@@ -89,7 +89,7 @@ class KubernetesRuntime:
                 name not in intent
                 or labels.get(CLUSTER_LABEL) != self.name
                 or datetime.fromisoformat(created.replace("Z", "+00:00"))
-                < datetime.fromisoformat(self.lab.created_at)
+                < ownership_start(self.lab)
             ):
                 raise RuntimeErrorBase(
                     "This lab's cluster has a node Dockyard did not create, "

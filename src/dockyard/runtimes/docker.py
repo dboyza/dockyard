@@ -18,6 +18,18 @@ class RuntimeErrorBase(RuntimeError):
     pass
 
 
+def ownership_start(lab: Lab) -> datetime:
+    """When this lab began owning resources, on the Docker engine's own clock when recorded.
+
+    Docker Desktop's VM clock pauses while the computer sleeps and can lag the host
+    for minutes afterwards, so resource creation times are compared with a time read
+    from the same engine. Labs recorded before that reading existed use host time.
+    """
+    return datetime.fromisoformat(
+        (lab.resources.get("docker_clock") or lab.created_at).replace("Z", "+00:00")
+    )
+
+
 class DockerRuntime:
     def __init__(self, lab: Lab, env: dict[str, str], save: Callable[[Lab], None]):
         self.lab = lab
@@ -78,7 +90,7 @@ class DockerRuntime:
                 # Volumes may expose only whole seconds; compare at their available precision.
                 if not created or datetime.fromisoformat(created.replace("Z", "+00:00")).replace(
                     microsecond=0
-                ) < datetime.fromisoformat(self.lab.created_at).replace(microsecond=0):
+                ) < ownership_start(self.lab).replace(microsecond=0):
                     raise RuntimeErrorBase(
                         "A labeled resource predates this lab; it was preserved."
                     )

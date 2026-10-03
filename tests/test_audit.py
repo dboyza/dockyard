@@ -76,6 +76,28 @@ def test_catalog_rejects_a_lesson_that_embeds_an_unknown_figure(tmp_path):
         Catalog(content)
 
 
+def test_audit_requires_request_checks_to_retry(catalog):
+    broken = copy.copy(catalog)
+    lesson = catalog.units["m01-processes"]
+    checks = [
+        check.model_copy(
+            update={
+                "command": check.command.model_copy(
+                    update={"args": ["curl", "--fail", "http://127.0.0.1:{{port}}/healthz"]}
+                )
+            }
+        )
+        if check.id == "application-response"
+        else check
+        for check in lesson.checks
+    ]
+    broken.units = {**catalog.units, lesson.id: lesson.model_copy(update={"checks": checks})}
+    assert (
+        "m01-processes/application-response: a request check must retry briefly."
+        in (curriculum(broken)["issues"])
+    )
+
+
 def test_audit_requires_a_figure_in_every_lesson(catalog):
     broken = copy.copy(catalog)
     lesson = catalog.units["m00-first-container"]

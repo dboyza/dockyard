@@ -212,6 +212,13 @@ class Service:
             return existing
         unit = self.catalog.get(unit_id)
         lab_id = uuid.uuid4().hex
+        endpoint = self._docker_endpoint()
+        # Ownership checks compare creation times with the engine's clock, not the host's.
+        engine_clock = run(
+            ["docker", "info", "--format", "{{.SystemTime}}"],
+            env={**os.environ, "DOCKER_HOST": endpoint},
+            timeout=30,
+        )
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
@@ -232,12 +239,14 @@ class Service:
             updated_at=timestamp(),
             resources={
                 "port": str(port),
-                "docker_endpoint": self._docker_endpoint(),
+                "docker_endpoint": endpoint,
                 "db_password": secrets.token_urlsafe(24),
                 "registry_port": str(registry_port),
                 "api_port": str(api_port),
             },
         )
+        if engine_clock.ok and engine_clock.stdout.strip():
+            lab.resources["docker_clock"] = engine_clock.stdout.strip()
         self.store.save_lab(lab)
         return lab
 
