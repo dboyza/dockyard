@@ -1,7 +1,8 @@
+import { releaseProfile } from './profiles';
 import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync } from 'node:fs';
 import path from 'node:path';
 import { once } from 'node:events';
 
@@ -30,11 +31,9 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  if (process.env.DOCKYARD_INTEGRATION === '1') {
-    execFileSync(binary, ['--data-dir', profile, 'lab', 'clean', '--all', '--yes']);
-  }
+  test.setTimeout(600000);
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
-  rmSync(profile, { recursive: true, force: true });
+  releaseProfile(profile);
 });
 
 test('installed workbench teaches, remembers observations, and handles real lab lifecycle', async ({ page }) => {

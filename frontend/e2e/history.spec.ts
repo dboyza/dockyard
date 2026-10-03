@@ -1,8 +1,9 @@
+import { releaseProfile } from './profiles';
 import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -26,7 +27,7 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => {
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
-  if (temporary) await rm(temporary, { recursive: true, force: true });
+  if (temporary) releaseProfile(temporary);
 });
 
 test('the browser Back and Forward buttons, reloads, and bookmarks keep the learner’s place', async ({ page }) => {
@@ -119,6 +120,6 @@ test('a bookmark opened before signing in opens once the launcher signs in', asy
   } finally {
     launch.kill('SIGINT');
     await once(launch, 'exit');
-    await rm(profile, { recursive: true, force: true });
+    releaseProfile(profile);
   }
 });

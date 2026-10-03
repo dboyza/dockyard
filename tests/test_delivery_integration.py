@@ -19,8 +19,8 @@ pytestmark = [
 ]
 
 
-def test_delivery_services_resume_with_the_same_commit_and_endpoints(tmp_path):
-    service = Service(tmp_path)
+def test_delivery_services_resume_with_the_same_commit_and_endpoints(lab_profile):
+    service = Service(lab_profile)
     unit = "m16-gitops"
     inventory = []
     lab = None

@@ -40,6 +40,7 @@
 - Check terminal behavior using real PTYs and terminal tools, never browser-rendered terminal previews.
 - Inspect screenshots with direct image-reading tools; browser automation is for the actual browser interface.
 - Use disposable test profiles and app-owned labs; never test against learner progress.
+- Release test profiles with `tests/release_profile.py`; never delete a profile that may still own lab resources.
 - Verify every reference solution passes, every broken starter fails for the intended reason, and validators accept legitimate alternatives.
 - Treat browser control as privileged local automation: authenticate sessions, validate origins, and expose only typed operations.
 - An external learner shell has ordinary user privileges; do not describe environment scoping as an OS security sandbox.

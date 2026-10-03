@@ -1,3 +1,4 @@
+import { releaseProfile } from './profiles';
 import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
@@ -23,6 +24,11 @@ test.beforeEach(async () => {
 });
 test.afterEach(async () => {
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
+});
+// Clean the exam environment even when a test fails partway, keeping the prepared profile.
+test.afterAll(() => {
+  test.setTimeout(600000);
+  if (process.env.DOCKYARD_EXAM_PROFILE) releaseProfile(process.env.DOCKYARD_EXAM_PROFILE, { keep: true });
 });
 test('installed timed practice persists flags and deadline and reports actual runtime evidence', async ({ page }) => {
   test.setTimeout(180000);

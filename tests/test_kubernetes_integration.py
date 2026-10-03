@@ -19,8 +19,8 @@ pytestmark = [
 ]
 
 
-def test_cluster_pause_resume_and_changed_credentials_are_guarded(tmp_path):
-    service = Service(tmp_path)
+def test_cluster_pause_resume_and_changed_credentials_are_guarded(lab_profile):
+    service = Service(lab_profile)
     unit_id = "m07-reconciliation"
     try:
         service.perform(unit_id, "prepare")

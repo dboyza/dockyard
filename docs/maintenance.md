@@ -70,13 +70,16 @@ DOCKYARD_PROJECT_INTEGRATION=1 npm --prefix frontend run test:e2e -- e2e/project
 npm --prefix frontend run test:e2e -- e2e/accessibility.spec.ts e2e/terminal-layout.spec.ts e2e/history.spec.ts
 ```
 
+Test suites release their disposable profiles with `tests/release_profile.py`, which cleans every lab through its ownership records and deletes the profile only once nothing remains.
+If it reports a kept profile, run the printed `lab clean --all` command; never delete such a profile by hand, because its records are the only safe way to find what is left.
+
 The exam browser suite needs a prepared disposable profile.
 The preparation script builds the CKAD release exam, applies its reference so a timed attempt scores 100, and records one earlier invalidated attempt for the history checks:
 
 ```sh
 .runtime/installed/bin/python frontend/e2e/prepare_exam_profile.py .runtime/exam-check
 DOCKYARD_EXAM_PROFILE=$PWD/.runtime/exam-check npm --prefix frontend run test:e2e -- e2e/exam.spec.ts
-rm -rf .runtime/exam-check
+.runtime/installed/bin/python tests/release_profile.py .runtime/exam-check
 ```
 
 It tests an actual scored submission, persisted flags and deadlines, and readable history after cleanup, and its second test cleans up the exam lab.

@@ -1,9 +1,10 @@
+import { releaseProfile } from './profiles';
 import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -27,7 +28,7 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => {
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
-  if (temporary) await rm(temporary, { recursive: true, force: true });
+  if (temporary) releaseProfile(temporary);
 });
 test('active exam terminal controls remain usable in both themes and narrow layouts', async ({ page }) => {
   // Presentation fixture only; actual lab shell execution is covered by journey.spec.ts.

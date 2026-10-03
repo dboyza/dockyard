@@ -1,8 +1,9 @@
+import { releaseProfile } from './profiles';
 import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -41,7 +42,7 @@ s.store.mark('m01-processes', 'viewed', 1)
 });
 test.afterAll(async () => {
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
-  if (temporary) await rm(temporary, { recursive: true, force: true });
+  if (temporary) releaseProfile(temporary);
 });
 test('installed CLI and browser exchange portable history through a reviewed merge', async ({ page }) => {
   const failures: string[] = [];

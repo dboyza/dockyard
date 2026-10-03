@@ -1,8 +1,9 @@
+import { releaseProfile } from './profiles';
 import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -47,15 +48,7 @@ s.perform(u,'clean')
 test.afterAll(async () => {
   test.setTimeout(120000);
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
-  if (temporary) {
-    execFileSync(python, ['-c', `from pathlib import Path
-import sys
-from dockyard.service import Service
-s=Service(Path(sys.argv[1]))
-for lab in s.store.labs():s.perform(lab.unit_id,'clean')
-`, temporary], { timeout: 100000 });
-    await rm(temporary, { recursive: true, force: true });
-  }
+  if (temporary) releaseProfile(temporary);
 });
 test('a real mission checkpoint continues into an intact later scaffold and exports both missions', async ({ page }) => {
   test.setTimeout(180000);

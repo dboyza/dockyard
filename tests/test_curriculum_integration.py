@@ -2,15 +2,12 @@
 
 import json
 import os
-import tempfile
 import time
 from pathlib import Path
 
 import pytest
 
-from dockyard import host
 from dockyard.catalog import Catalog
-from dockyard.models import Runtime
 from dockyard.process import run
 from dockyard.service import Service
 from dockyard.workspace import write_files
@@ -25,15 +22,8 @@ pytestmark = [
 
 
 @pytest.mark.parametrize("unit_id", UNITS, ids=UNITS)
-def test_authored_reference_repairs_its_actual_starter(tmp_path, unit_id):
-    if Catalog().get(unit_id).runtime == Runtime.LINUX:
-        # Native providers use Unix sockets whose paths must stay below the macOS limit.
-        with tempfile.TemporaryDirectory(
-            prefix="dy-course-", dir=host.temporary_root()
-        ) as temporary:
-            assert_reference(Path(temporary), unit_id)
-    else:
-        assert_reference(tmp_path, unit_id)
+def test_authored_reference_repairs_its_actual_starter(lab_profile, unit_id):
+    assert_reference(lab_profile, unit_id)
 
 
 def assert_reference(tmp_path, unit_id):
@@ -68,6 +58,15 @@ def assert_reference(tmp_path, unit_id):
             ["/bin/sh", "run.sh"], cwd=workspace, env=service.environment(lab), timeout=600
         )
         assert solution.ok, solution.stdout + solution.stderr
+        # A learner checks once, straight after the last command; record what they would see.
+        first = service.perform(unit_id, "check")
+        if log := os.environ.get("DOCKYARD_FIRST_CHECK_LOG"):
+            failed = [item["criterion"] for item in first["evidence"] if item["status"] != "pass"]
+            with open(log, "a") as handle:
+                handle.write(
+                    json.dumps({"unit": unit_id, "status": first["status"], "failed": failed})
+                    + "\n"
+                )
         deadline = time.monotonic() + 30
         while True:
             observed = service.perform(unit_id, "check")

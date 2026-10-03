@@ -1,8 +1,9 @@
+import { releaseProfile } from './profiles';
 import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -38,10 +39,7 @@ s.store.set_setting('theme', 'light')
 });
 test.afterAll(async () => {
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
-  if (temporary) {
-    execFileSync(cli, ['--data-dir', temporary, 'lab', 'clean', '--all', '--yes']);
-    await rm(temporary, { recursive: true, force: true });
-  }
+  if (temporary) releaseProfile(temporary);
 });
 test('start fresh cleans every lab, erases learning data, and keeps the theme', async ({ page }) => {
   const failures: string[] = [];

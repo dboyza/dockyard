@@ -105,9 +105,9 @@ def settled_check(service, unit_id, expect_pass):
 
 
 @pytest.mark.parametrize("case", CASES, ids=list(CASES))
-def test_foundations_check_contract(tmp_path, case):
+def test_foundations_check_contract(lab_profile, case):
     unit_id, script, failing = CASES[case]
-    service = Service(tmp_path)
+    service = Service(lab_profile)
     try:
         service.perform(unit_id, "prepare")
         lab = service.store.lab(unit_id)

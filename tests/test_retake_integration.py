@@ -18,8 +18,8 @@ pytestmark = [
 ]
 
 
-def test_guided_mission_can_be_independently_retaken(tmp_path):
-    service = Service(tmp_path)
+def test_guided_mission_can_be_independently_retaken(lab_profile):
+    service = Service(lab_profile)
     unit_id = "m01-mission"
     unit = service.catalog.get(unit_id)
 
