@@ -11,6 +11,7 @@ import shutil
 import socket
 import sys
 import threading
+import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -40,6 +41,9 @@ COMPATIBILITY = json.loads((CONTENT / "compatibility.json").read_text())
 ADDRESS_POOLS_EXHAUSTED = "all predefined address pools have been fully subnetted"
 RECLAIM_LIMIT = 8
 PYTHON_IMAGE: str = COMPATIBILITY["images"]["python"]
+# How long a check keeps observing a runtime that is still changing, such as old
+# Pods terminating after a rollout, before reporting the observation as stale.
+SETTLE_SECONDS = 30
 
 
 class LabError(RuntimeErrorBase):
@@ -590,12 +594,26 @@ class Service:
                 )
             )
         else:
-            runtime_before = runtime.fingerprint()
-            observations: dict[str, ProcessResult] = {}
-            for criterion in unit.checks:
-                evidence.append(self._criterion(criterion, lab, cancel, observations))
-            if all(item.status == CheckStatus.PASS for item in evidence):
-                runtime.discover()
+            # Just after a rollout, old Pods are still terminating and the runtime keeps
+            # changing for a few seconds. Observe again until it holds still, rather than
+            # reporting a stale check to a learner who did everything right.
+            settle_until = time.monotonic() + SETTLE_SECONDS
+            while True:
+                runtime_before = runtime.fingerprint()
+                observations: dict[str, ProcessResult] = {}
+                evidence = [
+                    self._criterion(criterion, lab, cancel, observations)
+                    for criterion in unit.checks
+                ]
+                if all(item.status == CheckStatus.PASS for item in evidence):
+                    runtime.discover()
+                if (
+                    cancel.is_set()
+                    or time.monotonic() >= settle_until
+                    or runtime.fingerprint() == runtime_before
+                ):
+                    break
+                time.sleep(2)
         current_digest, _ = snapshot(workspace)
         if cancel.is_set():
             raise LabError("The check was canceled; no assessment was recorded.")

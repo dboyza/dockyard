@@ -5,6 +5,7 @@ from __future__ import annotations
 import ipaddress
 import json
 import os
+import time
 import uuid
 from contextlib import suppress
 from typing import Any
@@ -30,13 +31,23 @@ def routing() -> dict[str, bool]:
     _, pods = owned_pods("dispatch")
     names = {pod["metadata"]["name"] for pod in pods}
 
-    def response(args: list[str], timeout: float = 10) -> bool:
+    def answered(args: list[str], timeout: float) -> bool:
         observed = run(args, timeout=timeout)
         if not observed.ok:
             return False
         with suppress(ValueError, KeyError, TypeError):
             body = json.loads(observed.stdout)
             return bool(body.get("service") == "dispatch" and body.get("hostname") in names)
+        return False
+
+    def response(args: list[str], timeout: float = 10) -> bool:
+        # Just after a rollout a request can still reach a terminating Pod or stale
+        # routing rules; a learner's check gets a few seconds for routes to settle.
+        for attempt in range(5):
+            if answered(args, timeout):
+                return True
+            if attempt < 4:
+                time.sleep(1)
         return False
 
     with suppress(RuntimeError, ValueError, KeyError):
