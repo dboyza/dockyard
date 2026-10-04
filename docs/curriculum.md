@@ -3,7 +3,7 @@
 Status: approved for autonomous implementation through the planning review, 2026-09-26.
 The module outcomes below are a scope contract, not claims of completed content.
 Each row specifies three teaching labs and an independent mission.
-Focused exercises added later give some modules a fourth lesson, for 104 course units across 25 modules.
+Focused exercises added later give some modules a fourth lesson, for 105 course units across 25 modules.
 Module 00 teaches container foundations with small throwaway programs before Dispatch is introduced.
 The sixth module's mission in each of the four main phases is the cumulative capstone.
 Those phases form one evolving Dispatch project, with self-contained checkpoints for later entry.
@@ -68,6 +68,7 @@ Each adds a fourth lesson to its module, and the mission stays last.
 
 | Unit | Module | Practice | Exam objectives |
 | --- | --- | --- | --- |
+| m06-secrets | 06 | BuildKit secret mounts instead of build arguments, and checking image history | CKAD container images |
 | m09-downward | 09 | Downward API environment variables, resource fields, and a labels volume | CKAD ephemeral volumes |
 | m13-priority | 13 | PriorityClass and preemption on a full node | CKA scheduling |
 | m15-debug | 15 | Ephemeral containers with `--target` and debugging copies with `--copy-to` | CKAD debugging and CLI monitoring |

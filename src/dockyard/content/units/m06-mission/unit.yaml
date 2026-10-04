@@ -1,7 +1,7 @@
 id: m06-mission
 revision: 1
 module: 6
-order: 4
+order: 5
 title: 'Capstone: fix, ship, and recover Dispatch'
 summary: Repair the workers, run a published release by digest, lock the app down, and prove a database
   restore.

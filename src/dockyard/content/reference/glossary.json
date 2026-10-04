@@ -68,6 +68,16 @@
     "primer": "terminal"
   },
   {
+    "id": "build-secret",
+    "term": "Build secret",
+    "definition": "A private value that BuildKit mounts into a single RUN step of a build, as a file or environment variable, without saving it in the image.",
+    "watch_for": "A build argument or ENV value is recorded in the image; and because secrets are not part of the cache key, changing only the secret may reuse an old cached step.",
+    "units": [
+      "m06-secrets"
+    ],
+    "primer": "terminal"
+  },
+  {
     "id": "multi-stage",
     "term": "Multi-stage build",
     "definition": "A Dockerfile with more than one FROM, so tools used for building can be left out of the final image.",

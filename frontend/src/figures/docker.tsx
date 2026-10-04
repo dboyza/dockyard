@@ -1893,4 +1893,126 @@ export const docker = {
       </Label>
     </Diagram>
   ),
+  "build-secret": ({ step = 0 }) => (
+    <Diagram height={262} step={step}>
+      <Reveal from={0} until={0}>
+        <Box
+          x={10}
+          y={50}
+          w={190}
+          h={64}
+          title="--build-arg"
+          sub="RELEASE_TOKEN=dyk_…"
+          tone="bad"
+        />
+        <Arrow
+          points={[
+            [204, 82],
+            [246, 82],
+          ]}
+        />
+        <Box
+          x={250}
+          y={50}
+          w={150}
+          h={64}
+          title="RUN step"
+          sub="signs the release"
+        />
+        <Arrow
+          points={[
+            [404, 82],
+            [426, 82],
+          ]}
+        />
+        <Region x={430} y={30} w={200} h={200} label="Image" />
+        <Box x={446} y={62} w={168} h={44} title="SIGNATURE layer" />
+        <Box
+          x={446}
+          y={124}
+          w={168}
+          h={84}
+          title="History"
+          sub="RELEASE_TOKEN=dyk_…"
+          tone="bad"
+        />
+        <Label x={225} y={160} anchor="middle" size="small" tone="bad">
+          The value is recorded with the step
+        </Label>
+        <Label x={225} y={182} anchor="middle" size="small" tone="muted">
+          and travels with the image
+        </Label>
+      </Reveal>
+      <Reveal from={1}>
+        <Box
+          x={10}
+          y={50}
+          w={190}
+          h={64}
+          title="--secret"
+          sub="id=release_token"
+          tone="focus"
+        />
+        <Box
+          x={250}
+          y={150}
+          w={150}
+          h={60}
+          title="/run/secrets/…"
+          sub="this step only"
+          tone="focus"
+          dashed
+        />
+        <Arrow
+          points={[
+            [105, 118],
+            [105, 180],
+            [246, 180],
+          ]}
+          tone="focus"
+          label="mounted"
+          labelAt={[170, 170]}
+        />
+        <Arrow
+          points={[
+            [325, 146],
+            [325, 118],
+          ]}
+          tone="focus"
+        />
+        <Box
+          x={250}
+          y={50}
+          w={150}
+          h={64}
+          title="RUN step"
+          sub="reads the file"
+        />
+        <Arrow
+          points={[
+            [404, 82],
+            [426, 82],
+          ]}
+        />
+        <Region x={430} y={30} w={200} h={200} label="Image" />
+        <Box
+          x={446}
+          y={62}
+          w={168}
+          h={44}
+          title="SIGNATURE layer"
+          tone="good"
+        />
+        <Box
+          x={446}
+          y={124}
+          w={168}
+          h={84}
+          title="History"
+          sub="RUN python sign.py"
+          tone="good"
+        />
+      </Reveal>
+    </Diagram>
+  ),
 } satisfies Drawings;

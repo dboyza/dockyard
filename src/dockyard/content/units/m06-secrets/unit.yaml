@@ -1,0 +1,158 @@
+id: m06-secrets
+revision: 1
+module: 6
+order: 3
+title: Use a secret during a build without keeping it
+summary: Sign a release with a token that the build needs, without the token appearing in the image's
+  history, configuration, or layers.
+kind: lesson
+runtime: docker
+minutes: 30
+outcomes:
+- Explain why a build argument's value is recorded in the image history.
+- Pass a secret to one build step with a BuildKit secret mount.
+- Check an image's history and layers for a value that should not be there.
+prerequisites:
+- m06-artifacts
+objectives:
+- docker.artifacts
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A Dockerfile reads a token with ARG RELEASE_TOKEN and uses it in a RUN step. Where can someone
+    with the image find the token?
+  options:
+  - In the image history, recorded with the RUN step that used it.
+  - Nowhere, because build arguments disappear after the build.
+  - Only inside a running container's environment.
+  correct: 0
+  explanation: Docker records a RUN step's build arguments with the step in the image history, which travels
+    with the image. Build secrets are mounted for one step and never recorded.
+hints:
+- Run docker image history --no-trunc --format '{{.CreatedBy}}' "$DOCKYARD_IMAGE" and look for the token.
+- A RUN step can mount a secret with --mount=type=secret,id=NAME, and docker build supplies it with --secret
+  id=NAME,src=FILE.
+- Remove ARG RELEASE_TOKEN, change the step to RUN --mount=type=secret,id=release_token,required=true
+  python sign.py < /run/secrets/release_token > SIGNATURE, pass --secret id=release_token,src=release-token.txt
+  in release.sh, rebuild, and replace the container.
+sources:
+- https://docs.docker.com/build/building/secrets/
+- https://docs.docker.com/reference/dockerfile/#run---mounttypesecret
+- https://docs.docker.com/reference/build-checks/secrets-used-in-arg-or-env/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - /bin/sh
+  - release.sh
+  timeout: 300
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8080
+  - '{{image}}'
+  timeout: 120
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: Dockyard can only test the application while its container is running.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - --retry
+    - '5'
+    - --retry-delay
+    - '1'
+    - --retry-all-errors
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
+- id: secret-signed
+  title: The running image carries a valid release signature
+  explanation: SIGNATURE inside the running image must match its VERSION signed with the token in release-token.txt,
+    so the build really used the token.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - build-secret
+    timeout: 90
+  expectation: json
+  json_path:
+  - signed
+  expected: 'true'
+  diagnostic: 'SIGNATURE is missing or does not match. The signing step must read the token from release-token.txt:
+    mount it with RUN --mount=type=secret,id=release_token and redirect /run/secrets/release_token into
+    sign.py, pass --secret id=release_token,src=release-token.txt to docker build, then replace the container.'
+- id: secret-unrecorded
+  title: The token appears nowhere in the image
+  explanation: The token must not appear in the image history, its configuration, or any file in the layers
+    this Dockerfile added.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - build-secret
+    timeout: 90
+  expectation: json
+  json_path:
+  - unrecorded
+  expected: 'true'
+  diagnostic: The running image still records the release token. A build argument is saved with each RUN
+    step that uses it, and ENV is saved in the configuration. Pass the token as a build secret instead,
+    rebuild, and replace the container.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-image-v1
+images:
+- python
+alternatives:
+- A secret mount that sets an environment variable for the step, with env=, is accepted when the signature
+  is valid and the token is recorded nowhere.
+- The secret may come from an environment variable with --secret id=release_token,env=VARIABLE instead
+  of the file.
+failure_modes:
+- A build argument or ENV value used in a step is recorded in the image.
+- Removing the argument without a secret leaves the release unsigned.
+- A cached step keeps an old result when only the secret changes.
+starter_failure_checks:
+- secret-unrecorded

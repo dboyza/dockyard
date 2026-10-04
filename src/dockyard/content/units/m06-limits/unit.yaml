@@ -1,7 +1,7 @@
 id: m06-limits
 revision: 1
 module: 6
-order: 3
+order: 4
 title: Limit what a container can do
 summary: Run the API with a read-only filesystem, no special powers, and limits on memory, CPU, and processes.
 kind: lesson

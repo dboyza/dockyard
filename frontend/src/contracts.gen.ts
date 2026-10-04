@@ -197,6 +197,7 @@ export type FigureId =
   | "bridge-network"
   | "build-cache"
   | "build-context"
+  | "build-secret"
   | "canary-split"
   | "capacity-sums"
   | "cert-renewal"

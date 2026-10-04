@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
 import re
@@ -37,6 +38,7 @@ OUTCOMES: dict[str, tuple[str, ...]] = {
     ),
     "registry": ("pinned", "served", "private", "owned"),
     "artifact": ("native", "excluded_secret"),
+    "build-secret": ("signed", "unrecorded"),
     "hardening": ("nonroot", "readonly", "caps", "no_escalation", "memory", "cpu", "pids"),
     "recovery": ("restored", "workers_hardened", "runbook_present"),
     "storage-bind": ("mount", "roundtrip", "durable"),
@@ -378,6 +380,64 @@ def artifact() -> dict[str, Any]:
     return {"native": native, "excluded_secret": clean, "architecture": image["Architecture"]}
 
 
+# Layers larger than this cannot hold a short token worth scanning for in practice images.
+SCAN_LIMIT = 16 * 1024 * 1024
+
+
+def build_secret() -> dict[str, Any]:
+    """Prove the running image was signed with the workspace token, which it never records."""
+    token = Path("release-token.txt").read_text().strip()
+    if len(token) < 12:
+        raise ValueError("release-token.txt must hold the practice release token.")
+    api = inspect("container", os.environ["DOCKYARD_CONTAINER"])
+    image = inspect("image", api["Image"])
+    files = {}
+    for name in ("SIGNATURE", "VERSION"):
+        result = run(["docker", "exec", api["Id"], "cat", f"/app/{name}"], timeout=10)
+        files[name] = result.stdout if result.ok else ""
+    expected = hmac.new(token.encode(), files["VERSION"].encode(), hashlib.sha256).hexdigest()
+    found: list[str] = []
+    history = run(
+        ["docker", "image", "history", "--no-trunc", "--format", "{{.CreatedBy}}", api["Image"]],
+        timeout=15,
+    )
+    if not history.ok:
+        raise ValueError(history.stderr.strip())
+    if token in history.stdout:
+        found.append("image history")
+    if token in json.dumps(image.get("Config", {})):
+        found.append("image configuration")
+    # Only layers this Dockerfile added need scanning; the base image's are unchanged.
+    base = inspect("image", os.environ["DOCKYARD_PYTHON_IMAGE"])["RootFS"]["Layers"]
+    layers = image["RootFS"]["Layers"]
+    skip = len(base) if layers[: len(base)] == base else 0
+    with tempfile.TemporaryDirectory(prefix="dockyard-image-observation-") as temporary:
+        archive = Path(temporary) / "image.tar"
+        saved = run(["docker", "image", "save", "--output", str(archive), api["Image"]], timeout=45)
+        if not saved.ok or archive.stat().st_size > 512 * 1024 * 1024:
+            raise ValueError("Image observation requires a valid archive under 512 MiB.")
+        with tarfile.open(archive) as outer:
+            manifest_stream = outer.extractfile("manifest.json")
+            if manifest_stream is None:
+                raise ValueError("The image archive did not contain a manifest.")
+            for layer_name in json.load(manifest_stream)[0]["Layers"][skip:]:
+                layer_stream = outer.extractfile(layer_name)
+                if layer_stream is None:
+                    raise ValueError("The image archive has a missing layer.")
+                with tarfile.open(fileobj=layer_stream, mode="r|*") as layer:
+                    for member in layer:
+                        if not member.isfile() or member.size > SCAN_LIMIT:
+                            continue
+                        content = layer.extractfile(member)
+                        if content is not None and token.encode() in content.read():
+                            found.append(f"file {member.name}")
+    return {
+        "signed": bool(files["VERSION"]) and files["SIGNATURE"].strip() == expected,
+        "unrecorded": not found,
+        "_details": {"token_found_in": found},
+    }
+
+
 def hardened_container(identity: str) -> dict[str, Any]:
     api = inspect("container", identity)
     config = api["HostConfig"]
@@ -488,6 +548,7 @@ def main() -> None:
         "compose": compose,
         "registry": registry,
         "artifact": artifact,
+        "build-secret": build_secret,
         "hardening": hardening,
         "recovery": recovery,
         "storage-bind": lambda: storage("bind"),

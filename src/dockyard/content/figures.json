@@ -2499,5 +2499,26 @@
         "text": "A new Pod copied from the crashing one, running sh instead, so you can look around; delete it when you are done."
       }
     ]
+  },
+  {
+    "id": "build-secret",
+    "title": "A build argument against a build secret",
+    "caption": "A build argument is recorded with the step that used it; a secret mount exists only while its step runs.",
+    "description": "A sequence in two steps. First, docker build passes RELEASE_TOKEN as a build argument into the RUN step that signs the release; the image ends up with a SIGNATURE layer and a history line, RUN |1 RELEASE_TOKEN=dyk_..., that records the token and travels with the image. Second, docker build passes the token with --secret id=release_token; it is mounted at /run/secrets/release_token for that RUN step only, the step reads the file, and the image holds the SIGNATURE layer and a history line showing only the command.",
+    "terms": [
+      "build-secret",
+      "layer",
+      "image"
+    ],
+    "steps": [
+      {
+        "label": "Build argument",
+        "text": "The token's value is saved in the image history with the RUN step that used it."
+      },
+      {
+        "label": "Secret mount",
+        "text": "The token is a file for one step; the image keeps the signature and the command, never the token."
+      }
+    ]
   }
 ]

@@ -511,12 +511,14 @@
       "explained_by": [
         "m02-dockerfile",
         "m02-cache",
-        "m02-multistage"
+        "m02-multistage",
+        "m06-secrets"
       ],
       "practiced_by": [
         "m02-dockerfile",
         "m02-cache",
-        "m02-multistage"
+        "m02-multistage",
+        "m06-secrets"
       ],
       "assessed_by": [
         "m02-mission",
