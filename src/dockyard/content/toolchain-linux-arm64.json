@@ -35,6 +35,26 @@
     "installed_sha256": "fed2c9ca7d27191ada34524b5eaf5216a845c6d6f3246143c3b475552ffe5358",
     "path": "bin/trivy"
   },
+  "cosign": {
+    "version": "3.1.3",
+    "url": "https://github.com/sigstore/cosign/releases/download/v3.1.3/cosign-linux-arm64",
+    "sha256": "c5d324e091826b0d7a78eb16fef316450b4eb9aaec045611c08ba06f5e73220a",
+    "path": "bin/cosign"
+  },
+  "kubesec": {
+    "version": "2.14.2",
+    "url": "https://github.com/controlplaneio/kubesec/releases/download/v2.14.2/kubesec_linux_arm64.tar.gz",
+    "sha256": "8f53db7a847bcf3a2fc332bfb72520b3a8735b52d82f7b09fa052f7e79cb4f3a",
+    "archive_member": "kubesec",
+    "installed_sha256": "3bdcff7720b13398f19a1201cece6a059eb7230a04b01b9d96ce62a2373b8d82",
+    "path": "bin/kubesec"
+  },
+  "kube-linter": {
+    "version": "0.8.3",
+    "url": "https://github.com/stackrox/kube-linter/releases/download/v0.8.3/kube-linter-linux_arm64",
+    "sha256": "9c39d35252e0dcafb16b26197b9e93ba578e44eb402c3c6660fc94e08f94094f",
+    "path": "bin/kube-linter"
+  },
   "limactl": {
     "version": "2.2.0",
     "url": "https://github.com/lima-vm/lima/releases/download/v2.2.0/lima-2.2.0-Linux-aarch64.tar.gz",

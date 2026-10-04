@@ -127,6 +127,8 @@ class Unit(Contract):
     # Whether a native cluster starts on the current Kubernetes version or the previous
     # one, which upgrade lessons begin from; dockyard.versions maps roles to versions.
     native_version: Literal["current", "previous"] = "current"
+    # Pinned security tools installed in every native guest; see guest-tools.json.
+    node_tools: list[Literal["falco", "gvisor", "kube-bench"]] = []
     alternatives: list[str] = Field(default_factory=list)
     failure_modes: list[str] = Field(default_factory=list)
     starter_failure_checks: list[Identifier] = Field(default_factory=list)

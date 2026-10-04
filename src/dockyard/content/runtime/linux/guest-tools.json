@@ -1,0 +1,70 @@
+{
+  "_note": "Guest security tools for the CKS track. The host downloads and verifies each archive, then copies only the mapped files into the guests.",
+  "kube-bench": {
+    "version": "0.16.0",
+    "map": {
+      "kube-bench": "usr/local/bin/kube-bench",
+      "cfg/": "etc/kube-bench/cfg/"
+    },
+    "archives": {
+      "arm64": {
+        "url": "https://github.com/aquasecurity/kube-bench/releases/download/v0.16.0/kube-bench_0.16.0_linux_arm64.tar.gz",
+        "sha256": "64500561f5fcaa3f86fe951ed26bbfc28f7bbf3d2eac13843abfd2924955d10b",
+        "size": 15009861,
+        "root": ""
+      },
+      "amd64": {
+        "url": "https://github.com/aquasecurity/kube-bench/releases/download/v0.16.0/kube-bench_0.16.0_linux_amd64.tar.gz",
+        "sha256": "82dbc7e598740dc9344d41f8ad0b8210d57c4c00bdb2c5f1d8a69a2b98baddcf",
+        "size": 16844101,
+        "root": ""
+      }
+    }
+  },
+  "falco": {
+    "version": "0.45.0",
+    "map": {
+      "usr/bin/falco": "usr/bin/falco",
+      "etc/falco/": "etc/falco/",
+      "usr/share/falco/": "usr/share/falco/"
+    },
+    "archives": {
+      "arm64": {
+        "url": "https://download.falco.org/packages/bin/aarch64/falco-0.45.0-aarch64.tar.gz",
+        "sha256": "7a3fae3fb6bdda62b14454fe6bb39f9bf42a30e38168c3e2ef8cf46aa763b1d6",
+        "size": 46484602,
+        "root": "falco-0.45.0-aarch64/"
+      },
+      "amd64": {
+        "url": "https://download.falco.org/packages/bin/x86_64/falco-0.45.0-x86_64.tar.gz",
+        "sha256": "6c8c591089db4ccf815c1761be28109b46f2c14d462a8414abcdd282249aeefe",
+        "size": 51654161,
+        "root": "falco-0.45.0-x86_64/"
+      }
+    }
+  },
+  "gvisor": {
+    "version": "release-20260928.0",
+    "map": {
+      "runsc": "usr/local/bin/runsc",
+      "containerd-shim-runsc-v1": "usr/local/bin/containerd-shim-runsc-v1",
+      "gvisor-bin/gvisor_sentry": "usr/local/bin/gvisor-bin/gvisor_sentry",
+      "gvisor-bin/gvisor-sentry-prewarmer": "usr/local/bin/gvisor-bin/gvisor-sentry-prewarmer",
+      "gvisor-bin/runsc-fd-parking": "usr/local/bin/gvisor-bin/runsc-fd-parking"
+    },
+    "archives": {
+      "arm64": {
+        "url": "https://github.com/google/gvisor/releases/download/release-20260928.0/gvisor-aarch64.tar.bz2",
+        "sha256": "b7e11d27cbd69370ed7addb6c0d1c33e70e57a153cee57b5fdc5344bf303c7eb",
+        "size": 153784863,
+        "root": ""
+      },
+      "amd64": {
+        "url": "https://github.com/google/gvisor/releases/download/release-20260928.0/gvisor-x86_64.tar.bz2",
+        "sha256": "f3ed9131bc252259df150e270154180188f9df56b73a2312940325e1f522a2d6",
+        "size": 166734474,
+        "root": ""
+      }
+    }
+  }
+}

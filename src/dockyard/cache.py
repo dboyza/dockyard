@@ -67,6 +67,10 @@ def dependencies(unit: Unit) -> dict[str, Any]:
             versions.add(KUBERNETES)
         for version in versions:
             packages.update(package_manifest(version)["packages"])
+        if unit.node_tools:
+            from dockyard.runtimes.guest_tools import archive_entries
+
+            packages.update(archive_entries(list(unit.node_tools)))
         if capabilities & {"native-cluster", "native-control-plane"}:
             limitations.append(
                 "Fresh kubeadm bootstrap and upgrades still require registry access "

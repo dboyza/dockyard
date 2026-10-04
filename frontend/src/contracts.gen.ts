@@ -176,6 +176,7 @@ export type Unit = {
   "images": Array<string>;
   "nodes": number;
   "native_version": "current" | "previous";
+  "node_tools": Array<"falco" | "gvisor" | "kube-bench">;
   "alternatives": Array<string>;
   "failure_modes": Array<string>;
   "starter_failure_checks": Array<string>;

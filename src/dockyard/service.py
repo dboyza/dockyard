@@ -465,6 +465,10 @@ class Service:
                         Toolchain(self.tools).ensure("helm", cancel, runtime.report)
                     runtime.prepare(unit.nodes, cancel)
                     runtime.install_node_packages(cancel, native(unit.native_version))
+                    if unit.node_tools:
+                        from dockyard.runtimes.guest_tools import install as install_tools
+
+                        install_tools(runtime, list(unit.node_tools), cancel)
                     if lab.resources.get("prepared_revision") != str(unit.revision):
                         if "native-cluster" in unit.capabilities:
                             from dockyard.runtimes.native_cluster import prepare
