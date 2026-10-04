@@ -15,6 +15,7 @@ from dockyard.catalog import CONTENT
 from dockyard.locking import operation_lock
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.toolchain import MANIFEST, Toolchain, digest
+from dockyard.versions import KUBERNETES, pinned
 from dockyard.workspace import atomic_write
 
 if TYPE_CHECKING:
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
 
 def manifest(version: str) -> dict[str, Any]:
-    if version not in {"1.35.8", "1.34.12"}:
+    if not pinned(version):
         raise RuntimeErrorBase("The requested Kubernetes prerequisite version is not pinned.")
     suffix = "-amd64" if host.architecture() == "amd64" else ""
     record = dict(
@@ -33,7 +34,7 @@ def manifest(version: str) -> dict[str, Any]:
     return record
 
 
-def bundle(runtime: LinuxRuntime, cancel: threading.Event, version: str = "1.35.8") -> Path:
+def bundle(runtime: LinuxRuntime, cancel: threading.Event, version: str = KUBERNETES) -> Path:
     record = manifest(version)
     packages = record["packages"]
     tools = Toolchain(runtime.tools, packages)
@@ -82,7 +83,7 @@ def bundle(runtime: LinuxRuntime, cancel: threading.Event, version: str = "1.35.
     return output
 
 
-def install(runtime: LinuxRuntime, cancel: threading.Event, version: str = "1.35.8") -> None:
+def install(runtime: LinuxRuntime, cancel: threading.Event, version: str = KUBERNETES) -> None:
     archive = bundle(runtime, cancel, version)
     prepared = json.loads(runtime.lab.resources.get("vm_packages", "{}"))
     if isinstance(prepared, list):

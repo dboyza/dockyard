@@ -6,9 +6,9 @@
     "path": "bin/kind"
   },
   "kubectl": {
-    "version": "1.35.8",
-    "url": "https://dl.k8s.io/release/v1.35.8/bin/linux/arm64/kubectl",
-    "sha256": "cc749967b62f4422260bc9c0aa7a7c55f45175ae38cb8d95767b5d2b7e04c1fd",
+    "version": "1.37.1",
+    "url": "https://dl.k8s.io/release/v1.37.1/bin/linux/arm64/kubectl",
+    "sha256": "ff749f4b78d9c4f1ec87307df9b50119ed819e2094aa9810cb9acffc3286c8c7",
     "path": "bin/kubectl"
   },
   "helm": {

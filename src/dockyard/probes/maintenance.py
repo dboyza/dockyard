@@ -19,6 +19,7 @@ from dockyard.probes.bootstrap import ERRORS
 from dockyard.probes.kubernetes import sql
 from dockyard.probes.native import workflow
 from dockyard.runtimes.linux import LinuxRuntime
+from dockyard.versions import KUBERNETES, KUBERNETES_PREVIOUS
 
 
 def observed(runtime: LinuxRuntime, args: list[str]) -> dict[str, Any]:
@@ -95,11 +96,11 @@ def maintenance(mode: str) -> dict[str, Any]:
                 for p in components
             }
             result["upgrade"] = bool(
-                baseline["version"] == "v1.34.12"
-                and actual == "v1.35.8"
+                baseline["version"] == "v" + KUBERNETES_PREVIOUS
+                and actual == "v" + KUBERNETES
                 and len(nodes) == len(baseline["nodes"])
                 and all(
-                    n["status"]["nodeInfo"]["kubeletVersion"] == "v1.35.8"
+                    n["status"]["nodeInfo"]["kubeletVersion"] == "v" + KUBERNETES
                     and not n.get("spec", {}).get("unschedulable", False)
                     and any(
                         c["type"] == "Ready" and c["status"] == "True"
@@ -107,7 +108,7 @@ def maintenance(mode: str) -> dict[str, Any]:
                     )
                     for n in nodes
                 )
-                and all(images.get(name, "").endswith(":v1.35.8") for name in required)
+                and all(images.get(name, "").endswith(":v" + KUBERNETES) for name in required)
             )
             details["upgrade"] = {
                 "api_version": actual,

@@ -6,16 +6,16 @@
     "path": "bin/kind"
   },
   "kubectl": {
-    "version": "1.35.8",
-    "url": "https://dl.k8s.io/release/v1.35.8/bin/darwin/arm64/kubectl",
-    "sha256": "b8be50ae0c6665b646fb009f904a52cad30806deee19ab3b4fe5af2d68bd82eb",
+    "version": "1.37.1",
+    "url": "https://dl.k8s.io/release/v1.37.1/bin/darwin/arm64/kubectl",
+    "sha256": "fd65982c97ddad3106754b69ffa196d0e543aa591930ae52aed1adfb92f8c77f",
     "path": "bin/kubectl"
   },
   "calico": {
-    "version": "3.32.2",
-    "url": "https://raw.githubusercontent.com/projectcalico/calico/v3.32.2/manifests/calico.yaml",
-    "sha256": "a8c828a06a87c629a282ebbc424895b77f3a030251993e41ea400a743675bb02",
-    "path": "downloads/calico-v3.32.2.yaml"
+    "version": "3.33.0",
+    "url": "https://raw.githubusercontent.com/projectcalico/calico/v3.33.0/manifests/calico.yaml",
+    "sha256": "2de8f47595fb9c41b3f47d7b767a1f8e72ecf84057af834738ff12689a234da5",
+    "path": "downloads/calico-v3.33.0.yaml"
   },
   "gateway": {
     "version": "1.6.2",

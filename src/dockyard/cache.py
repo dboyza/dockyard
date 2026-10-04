@@ -14,10 +14,12 @@ from dockyard import host
 from dockyard.locking import operation_lock
 from dockyard.models import Runtime, Unit
 from dockyard.process import run
+from dockyard.runtimes import calico
 from dockyard.runtimes.node_packages import manifest as package_manifest
 from dockyard.runtimes.scanner import ready as scanner_ready
 from dockyard.service import COMPATIBILITY, LabError
 from dockyard.toolchain import MANIFEST, Toolchain
+from dockyard.versions import KUBERNETES, native
 
 if TYPE_CHECKING:
     from dockyard.service import Service
@@ -56,12 +58,13 @@ def dependencies(unit: Unit) -> dict[str, Any]:
             images.add(name)
     if unit.runtime == Runtime.KUBERNETES:
         tools |= {"kind", "kubectl", "calico"}
-        images |= {"kind", "calico_node", "calico_cni", "calico_controllers"}
+        images |= {"kind", *calico.upstream_images()}
     if unit.runtime == Runtime.LINUX:
         tools |= {"limactl", "lima-guestagent", "ubuntu-node", "kubectl"}
-        versions = {unit.native_version}
-        if unit.native_version == "1.34.12":
-            versions.add("1.35.8")
+        versions = {native(unit.native_version)}
+        if unit.native_version == "previous":
+            # Upgrade lessons also stage the version they upgrade to.
+            versions.add(KUBERNETES)
         for version in versions:
             packages.update(package_manifest(version)["packages"])
         if capabilities & {"native-cluster", "native-control-plane"}:

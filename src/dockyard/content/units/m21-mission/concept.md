@@ -1,6 +1,6 @@
 ## Your own maintenance window
 
-The team has approved upgrading this cluster from 1.34.12 to 1.35.8, and it is your job from start to finish: plan it, carry it out, check it, and hand it over.
+The team has approved upgrading this cluster from 1.36.5 to 1.37.1, and it is your job from start to finish: plan it, carry it out, check it, and hand it over.
 Dispatch is running on it, and its data must survive.
 
 Before you start, decide what you will check after each step, and what would make you stop.

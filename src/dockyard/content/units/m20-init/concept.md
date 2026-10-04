@@ -88,7 +88,7 @@ If a node has more than one runtime, tell kubeadm which one to use with `--cri-s
 You will usually run kubeadm directly on the node with flags instead of a file:
 
 ```sh
-sudo kubeadm init --kubernetes-version=v1.35.8 --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=NODE_IP
+sudo kubeadm init --kubernetes-version=v1.37.1 --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=NODE_IP
 mkdir -p "$HOME/.kube"
 sudo cp /etc/kubernetes/admin.conf "$HOME/.kube/config"
 sudo chown "$(id -u):$(id -g)" "$HOME/.kube/config"

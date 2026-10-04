@@ -1,6 +1,6 @@
 ## Upgrade the cluster and hand it over
 
-Upgrade the cluster from 1.34.12 to 1.35.8 in place.
+Upgrade the cluster from 1.36.5 to 1.37.1 in place.
 Both nodes must end Ready and uncordoned, and a new job must complete.
 Keep the original namespace, nodes, marker object, and stored data.
 

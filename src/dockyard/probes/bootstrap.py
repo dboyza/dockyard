@@ -14,6 +14,7 @@ from dockyard.native import current
 from dockyard.probes.native import workflow
 from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.runtimes.native_cluster import POD_CIDR
+from dockyard.versions import KUBERNETES
 
 ERRORS = (RuntimeError, ValueError, KeyError, OSError, IndexError, StopIteration, TypeError)
 
@@ -70,7 +71,7 @@ def bootstrap() -> dict[str, Any]:
         actual_version = json.loads(client.stdout)["gitVersion"]
         result["initialized"] = bool(
             client.ok
-            and actual_version == "v1.35.8"
+            and actual_version == "v" + KUBERNETES
             and observed.ok
             and observed.stdout.strip() == "ok"
             and required <= running

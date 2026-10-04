@@ -18,9 +18,9 @@ import yaml
 from dockyard import host
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
-from dockyard.runtimes import kubeclient
+from dockyard.runtimes import calico, kubeclient
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase, ownership_start
-from dockyard.toolchain import Toolchain
+from dockyard.toolchain import MANIFEST, Toolchain
 from dockyard.workspace import atomic_write
 
 CLUSTER_LABEL = "io.x-k8s.kind.cluster"
@@ -314,14 +314,10 @@ class KubernetesRuntime:
                     )
                 )
         report("Installing the network policy capable CNI")
-        manifest = (self.tools / "downloads/calico-v3.32.2.yaml").read_text()
-        for name, upstream in (
-            ("calico_cni", "cni"),
-            ("calico_node", "node"),
-            ("calico_controllers", "kube-controllers"),
-        ):
-            local = self.load_image(name, cancel)
-            manifest = manifest.replace(f"quay.io/calico/{upstream}:v3.32.2", local)
+        manifest = (self.tools / MANIFEST["calico"]["path"]).read_text()
+        for name, upstream in calico.upstream_images().items():
+            manifest = manifest.replace(upstream, self.load_image(name, cancel))
+        calico.require_pinned(manifest)
         manifest = calico_pool(manifest, pod_subnet)
         self.docker.require(
             self.kubectl(

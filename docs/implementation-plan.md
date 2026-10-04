@@ -108,7 +108,9 @@ The detailed module map is in curriculum.md.
 
 Every published CKA and CKAD objective must map to explanation, hands-on work, and an independent assessment, with explicit environment requirements.
 Record the source URL, source revision, checked date, curriculum version, and validated runtime versions.
-The current CNCF repository lists CKA and CKAD v1.35 curricula; verify the actual documents and objective mapping before freezing the implementation manifest.
+The objective map was built from the CKA and CKAD v1.35 curricula; on 2026-10-03 the CKAD v1.37 curriculum was confirmed to list the same objectives.
+Practice environments follow the newest exam environment: Kubernetes 1.37, with upgrade lessons starting from 1.36, set in `compatibility.json` and read through `dockyard.versions`.
+Re-pin native packages with `scripts/pin_node_packages.py`, which verifies the signed pkgs.k8s.io repository before trusting any package.
 Do not assume the newest Kubernetes release is the exam environment.
 Use a tested supported version matrix, pin tool versions and image digests, and record an explicit adjacent-version upgrade pair for administration labs.
 Treat changes to objectives or lab behavior as versioned curriculum changes rather than silently changing completed requirements.

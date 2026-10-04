@@ -12,9 +12,11 @@ from typing import Any
 import yaml
 
 from dockyard.catalog import CONTENT
+from dockyard.runtimes import calico
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.toolchain import Toolchain
+from dockyard.versions import KUBERNETES, pinned
 from dockyard.workspace import atomic_write
 
 POD_CIDR = "10.244.0.0/16"
@@ -34,7 +36,7 @@ def address(runtime: LinuxRuntime, name: str, cancel: threading.Event) -> str:
 def initialization(
     runtime: LinuxRuntime, name: str, cancel: threading.Event, version: str
 ) -> list[dict[str, Any]]:
-    if version not in {"1.34.12", "1.35.8"}:
+    if not pinned(version):
         raise RuntimeErrorBase("The native cluster version is not in the verified matrix.")
     node_ip = address(runtime, name, cancel)
     return [
@@ -68,12 +70,8 @@ def network_manifest(runtime: LinuxRuntime, cancel: threading.Event) -> str:
             item["data"]["calico_backend"] = "vxlan"
         spec = item.get("spec", {}).get("template", {}).get("spec", {})
         for container in spec.get("initContainers", []) + spec.get("containers", []):
-            for key, upstream in (
-                ("calico_cni", "cni"),
-                ("calico_node", "node"),
-                ("calico_controllers", "kube-controllers"),
-            ):
-                if container.get("image") == "quay.io/calico/" + upstream + ":v3.32.2":
+            for key, upstream in calico.upstream_images().items():
+                if container.get("image") == upstream:
                     container["image"] = images[key]
             if container["name"] != "calico-node":
                 continue
@@ -90,10 +88,14 @@ def network_manifest(runtime: LinuxRuntime, cancel: threading.Event) -> str:
             for probe in ("readinessProbe", "livenessProbe"):
                 if probe in container:
                     command = container[probe]["exec"]["command"]
+                    # VXLAN mode runs no BIRD, so its checks are removed; releases have
+                    # spelled the flags -bird-ready and --bird-ready.
                     container[probe]["exec"]["command"] = [
-                        value for value in command if not value.startswith("-bird-")
+                        value for value in command if not value.lstrip("-").startswith("bird-")
                     ]
-    return yaml.safe_dump_all(objects)
+    text = yaml.safe_dump_all(objects)
+    calico.require_pinned(text)
+    return text
 
 
 def topology(runtime: LinuxRuntime) -> list[str]:
@@ -125,7 +127,7 @@ backend control_plane
     )
 
 
-def initialize(runtime: LinuxRuntime, cancel: threading.Event, version: str = "1.35.8") -> None:
+def initialize(runtime: LinuxRuntime, cancel: threading.Event, version: str = KUBERNETES) -> None:
     names = topology(runtime)
     primary, worker = names[0], names[-1]
     high_availability = len(names) == 4
@@ -324,7 +326,7 @@ def network(runtime: LinuxRuntime, cancel: threading.Event) -> None:
         runtime.require(runtime.kubectl(args, timeout=250, cancel=cancel))
 
 
-def prepare(runtime: LinuxRuntime, cancel: threading.Event, version: str = "1.35.8") -> None:
+def prepare(runtime: LinuxRuntime, cancel: threading.Event, version: str = KUBERNETES) -> None:
     initialize(runtime, cancel, version)
     join(runtime, cancel)
     network(runtime, cancel)

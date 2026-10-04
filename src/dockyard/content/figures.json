@@ -1896,7 +1896,7 @@
     "id": "upgrade-order",
     "title": "The order of a kubeadm upgrade",
     "caption": "Upgrade the control plane first, then each worker, moving one minor version at a time.",
-    "description": "The upgrade goes from 1.34.12 to 1.35.8, one minor version. On the control-plane node: upgrade the kubeadm package, run kubeadm upgrade plan, run kubeadm upgrade apply v1.35.8, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. On each worker, one at a time: upgrade the kubeadm package, run kubeadm upgrade node, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. A warning says never to run kubeadm upgrade apply on a worker.",
+    "description": "The upgrade goes from 1.36.5 to 1.37.1, one minor version. On the control-plane node: upgrade the kubeadm package, run kubeadm upgrade plan, run kubeadm upgrade apply v1.37.1, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. On each worker, one at a time: upgrade the kubeadm package, run kubeadm upgrade node, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. A warning says never to run kubeadm upgrade apply on a worker.",
     "terms": [
       "kubeadm",
       "kubelet",

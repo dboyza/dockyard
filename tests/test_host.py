@@ -15,6 +15,7 @@ from dockyard.process import ProcessResult
 from dockyard.service import Service
 from dockyard.store import timestamp
 from dockyard.toolchain import platform_manifest
+from dockyard.versions import KUBERNETES, KUBERNETES_PREVIOUS
 
 
 @pytest.mark.parametrize(
@@ -75,7 +76,7 @@ def test_tool_and_package_pins_cover_each_architecture(key):
         assert re.fullmatch("[a-f0-9]{64}", entry["sha256"]), name
         assert entry["url"].startswith("https://"), name
     arch = key.split("-")[1]
-    for version in ("1.34.12", "1.35.8"):
+    for version in (KUBERNETES_PREVIOUS, KUBERNETES):
         suffix = "-amd64" if arch == "amd64" else ""
         record = json.loads(
             (CONTENT / f"runtime/linux/packages-{version}{suffix}.json").read_text()

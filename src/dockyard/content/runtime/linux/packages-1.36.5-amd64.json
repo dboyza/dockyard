@@ -3,7 +3,7 @@
   "installed_versions": {
     "conntrack": "1:1.4.8-1ubuntu1",
     "containerd": "2.2.1-0ubuntu1~24.04.3",
-    "cri-tools": "1.35.0-1.1",
+    "cri-tools": "1.36.0-1.1",
     "curl": "8.5.0-2ubuntu10.15",
     "dirmngr": "2.4.4-2ubuntu17.6",
     "gnupg": "2.4.4-2ubuntu17.6",
@@ -17,17 +17,17 @@
     "gpgv": "2.4.4-2ubuntu17.6",
     "haproxy": "2.8.16-0ubuntu0.24.04.3",
     "keyboxd": "2.4.4-2ubuntu17.6",
-    "kubeadm": "1.35.8-1.1",
-    "kubectl": "1.35.8-1.1",
-    "kubelet": "1.35.8-1.1",
-    "kubernetes-cni": "1.8.0-1.1",
+    "kubeadm": "1.36.5-1.1",
+    "kubectl": "1.36.5-1.1",
+    "kubelet": "1.36.5-1.1",
+    "kubernetes-cni": "1.9.1-1.1",
     "libcurl3t64-gnutls": "8.5.0-2ubuntu10.15",
     "libcurl4t64": "8.5.0-2ubuntu10.15",
     "liblua5.4-0": "5.4.6-3build2",
     "runc": "1.3.4-0ubuntu1~24.04.1",
     "socat": "1.8.0.0-4ubuntu0.1"
   },
-  "kubernetes": "1.35.8",
+  "kubernetes": "1.36.5",
   "packages": {
     "conntrack_1%3a1.4.8-1ubuntu1_amd64.deb": {
       "path": "native/packages/conntrack_1%3a1.4.8-1ubuntu1_amd64.deb",
@@ -35,7 +35,7 @@
       "size": 37360,
       "upstream_checksum": "SHA512:45edc0b00186a842bd441e62d300907d15791dd64e5bbcbc21e0a4f00c71b0c97f932274a9b71e2d9279ebffe0bd1640cb6223c9d690df8eea7b3a8e072f6218",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/c/conntrack-tools/conntrack_1.4.8-1ubuntu1_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "containerd_2.2.1-0ubuntu1~24.04.3_amd64.deb": {
       "path": "native/packages/containerd_2.2.1-0ubuntu1~24.04.3_amd64.deb",
@@ -43,15 +43,15 @@
       "size": 25160084,
       "upstream_checksum": "SHA512:f867ba4c1fa0cbc07c4a678f8d8c96027b7915d9b5bf311716c143ff124019dd2310bcc46ac397d9b6ddbb5d2650027a152684ecca7ce368fa67c93f4c3cff8b",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/c/containerd-app/containerd_2.2.1-0ubuntu1%7e24.04.3_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
-    "cri-tools_1.35.0-1.1_amd64.deb": {
-      "path": "native/packages/cri-tools_1.35.0-1.1_amd64.deb",
-      "sha256": "325b0d3731cb1daf210da5026a1d9ea35f5d63cab156c8817c0e136e36a60788",
-      "size": 14526808,
-      "upstream_checksum": "SHA256:9aff6eea1a6c188d3e67ddf6a8600778f520fc4e1dd335d09ed206deb263b876",
-      "url": "https://pkgs.k8s.io/core:/stable:/v1.35/deb/amd64/cri-tools_1.35.0-1.1_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+    "cri-tools_1.36.0-1.1_amd64.deb": {
+      "path": "native/packages/cri-tools_1.36.0-1.1_amd64.deb",
+      "sha256": "8cff9279de7767239e11bf9c21016579a4246e04e7da0c500c7a3f8491db986a",
+      "size": 16327192,
+      "upstream_checksum": "SHA256:8cff9279de7767239e11bf9c21016579a4246e04e7da0c500c7a3f8491db986a",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.36/deb/amd64/cri-tools_1.36.0-1.1_amd64.deb",
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "curl_8.5.0-2ubuntu10.15_amd64.deb": {
       "path": "native/packages/curl_8.5.0-2ubuntu10.15_amd64.deb",
@@ -59,7 +59,7 @@
       "size": 221824,
       "upstream_checksum": "SHA512:72d45ec7ee1314e6b05d769eaabbc991e64d82eabd3dfa3d529e5eb83ed5f0d944266d7a04a428c9c7c193b3ef4c1a920f6e6dbc99562f6a16a5d0385f8e336c",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/c/curl/curl_8.5.0-2ubuntu10.15_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "dirmngr_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/dirmngr_2.4.4-2ubuntu17.6_amd64.deb",
@@ -67,7 +67,7 @@
       "size": 316344,
       "upstream_checksum": "SHA512:25942848bf5685d20200e7b845b0af42d0be23cb49e689249e68625392b524d4b962a15f89d2119e6c0132db34eab5ff7f3b539299d52876b04750b20396cdb5",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/dirmngr_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gnupg-l10n_2.4.4-2ubuntu17.6_all.deb": {
       "path": "native/packages/gnupg-l10n_2.4.4-2ubuntu17.6_all.deb",
@@ -75,7 +75,7 @@
       "size": 66534,
       "upstream_checksum": "SHA512:73c5322c4e1938a51ae9f8e999aa71cbc064a88e8e34062deba8130b6722a3332e79658f5787647b25c731ca889046fcd1f61c906f519e42f723f35d7e2cc833",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gnupg-l10n_2.4.4-2ubuntu17.6_all.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gnupg-utils_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/gnupg-utils_2.4.4-2ubuntu17.6_amd64.deb",
@@ -83,7 +83,7 @@
       "size": 106610,
       "upstream_checksum": "SHA512:253a6c0dc88c33e48df3d9eac6fe256359477ee6040f9841e2aed00bfc43a4e7d334328c4a92d9ecfa3c7f69a12237a907ff45faac6e1c02a0d042c3f8befd44",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gnupg-utils_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gnupg_2.4.4-2ubuntu17.6_all.deb": {
       "path": "native/packages/gnupg_2.4.4-2ubuntu17.6_all.deb",
@@ -91,7 +91,7 @@
       "size": 358890,
       "upstream_checksum": "SHA512:080b17e6d30862f9026b991bef98ef0b430d87d022dac79cdd5ef7ee0925952c08935db863d4b2fc0b0bb3447385c2690b9bd6a0d476d9db01fac944d08f6fdc",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gnupg_2.4.4-2ubuntu17.6_all.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gpg-agent_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/gpg-agent_2.4.4-2ubuntu17.6_amd64.deb",
@@ -99,7 +99,7 @@
       "size": 221426,
       "upstream_checksum": "SHA512:8a2c916cd0c3c9f6dd193e3d96e4fc721cb248494e85f66eb6ddcc8cf6d36b1d3c027ff24f81bcc894a0b9e5c57354c61b14aff3d1e5025c8f124dfb3715c3b9",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gpg-agent_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gpg-wks-client_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/gpg-wks-client_2.4.4-2ubuntu17.6_amd64.deb",
@@ -107,7 +107,7 @@
       "size": 69694,
       "upstream_checksum": "SHA512:9676b31a9403a634d86d5d45f54e0222640d697e8107328c1217b604f59317a17b85c1d06667b128c311e917879dcef14bcd24fd3554395d752da496520a3f4d",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gpg-wks-client_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gpg_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/gpg_2.4.4-2ubuntu17.6_amd64.deb",
@@ -115,7 +115,7 @@
       "size": 548874,
       "upstream_checksum": "SHA512:9a5c3ca37aa11b21b3fc77f7e4f881fb73a8ffa5f03084207c4086694d7ed298cbd6e0a1e017b126b281c9b9516d0449fae48dd00cfeac0d0aa5074484ec685e",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gpg_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gpgconf_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/gpgconf_2.4.4-2ubuntu17.6_amd64.deb",
@@ -123,7 +123,7 @@
       "size": 103292,
       "upstream_checksum": "SHA512:09a795d62763ae4cd0cfa45c20adcc1cb4852992734178bedc54281ba8ad43df2826ccfbe1b1eb92dfb7f23992a0db988be18152ff6b1d015fa8bfc4b63b0773",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gpgconf_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gpgsm_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/gpgsm_2.4.4-2ubuntu17.6_amd64.deb",
@@ -131,7 +131,7 @@
       "size": 224818,
       "upstream_checksum": "SHA512:f0f01740458f3324b4165ee1780a74f218051123e99dc97d97639a677e731cfbbb5dad767544bef80903e6bb6daa4ee05265db56c51c9ef9a84b47dedcff66ed",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gpgsm_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "gpgv_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/gpgv_2.4.4-2ubuntu17.6_amd64.deb",
@@ -139,7 +139,7 @@
       "size": 151008,
       "upstream_checksum": "SHA512:8ef1dd9826c80e9ef8e8834f086d6d053f17538093ee48755c11db5af5cf1d0041dff7643d9371f279804349356c06f7cad7903b6322bda8be54cc56160cff06",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/gpgv_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "haproxy_2.8.16-0ubuntu0.24.04.3_amd64.deb": {
       "path": "native/packages/haproxy_2.8.16-0ubuntu0.24.04.3_amd64.deb",
@@ -147,7 +147,7 @@
       "size": 2075440,
       "upstream_checksum": "SHA512:2c9dd6d7c9e2718b5c94c54b60989740ebffffb1a8cf8077ddf17e9990a7d317040947c8746ebe133fd9df6bb193e069a8289547d7d0e48c6b4ae3e202531075",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/h/haproxy/haproxy_2.8.16-0ubuntu0.24.04.3_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "keyboxd_2.4.4-2ubuntu17.6_amd64.deb": {
       "path": "native/packages/keyboxd_2.4.4-2ubuntu17.6_amd64.deb",
@@ -155,39 +155,39 @@
       "size": 75936,
       "upstream_checksum": "SHA512:b01c1278d83329674b4bebbf5866e27eaaa95388e9b1b50c12d01fba8885e0cf2e830ca3970fc45d26bfebcc7b7faa76406a79b3eed83716429cda701cdf792a",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnupg2/keyboxd_2.4.4-2ubuntu17.6_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
-    "kubeadm_1.35.8-1.1_amd64.deb": {
-      "path": "native/packages/kubeadm_1.35.8-1.1_amd64.deb",
-      "sha256": "cef80fb735da401dbde27e1a54d665ea754efb32ca5bcc713c7ec762ca5c948f",
-      "size": 10672936,
-      "upstream_checksum": "SHA256:912da6a869a8f5b7dc5e6d92f119b5daf7cc2978b95adfe444c5fca48b322ed4",
-      "url": "https://pkgs.k8s.io/core:/stable:/v1.35/deb/amd64/kubeadm_1.35.8-1.1_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+    "kubeadm_1.36.5-1.1_amd64.deb": {
+      "path": "native/packages/kubeadm_1.36.5-1.1_amd64.deb",
+      "sha256": "bbb6899335ca6890be4c007e10c66303f68281d342f2e7345db9c03cd5175da9",
+      "size": 12577900,
+      "upstream_checksum": "SHA256:bbb6899335ca6890be4c007e10c66303f68281d342f2e7345db9c03cd5175da9",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.36/deb/amd64/kubeadm_1.36.5-1.1_amd64.deb",
+      "version": "ubuntu24-kubernetes1.36.5"
     },
-    "kubectl_1.35.8-1.1_amd64.deb": {
-      "path": "native/packages/kubectl_1.35.8-1.1_amd64.deb",
-      "sha256": "59732f42b29ea6fa5d3fd1fbe2ec36dce825cec690dda19dc2490b7e2f70f34c",
-      "size": 9864864,
-      "upstream_checksum": "SHA256:4955fef060d78649ea2467240b82148418def1cf8cea22a59f78e9b1f1037d12",
-      "url": "https://pkgs.k8s.io/core:/stable:/v1.35/deb/amd64/kubectl_1.35.8-1.1_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+    "kubectl_1.36.5-1.1_amd64.deb": {
+      "path": "native/packages/kubectl_1.36.5-1.1_amd64.deb",
+      "sha256": "e633cdbcb535b0fdf8bd9aa643cfd0ad080889fddb6794d2af0bbaaf110e7956",
+      "size": 11781196,
+      "upstream_checksum": "SHA256:e633cdbcb535b0fdf8bd9aa643cfd0ad080889fddb6794d2af0bbaaf110e7956",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.36/deb/amd64/kubectl_1.36.5-1.1_amd64.deb",
+      "version": "ubuntu24-kubernetes1.36.5"
     },
-    "kubelet_1.35.8-1.1_amd64.deb": {
-      "path": "native/packages/kubelet_1.35.8-1.1_amd64.deb",
-      "sha256": "3db5853175b404313cf7f5e64ad3f7c5633828de87eb07364fd05e7f852a3e9b",
-      "size": 10970384,
-      "upstream_checksum": "SHA256:86fe08e9b54c2cf5f754f06c011920b0b063315ae3f13c83764003936ee4448b",
-      "url": "https://pkgs.k8s.io/core:/stable:/v1.35/deb/amd64/kubelet_1.35.8-1.1_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+    "kubelet_1.36.5-1.1_amd64.deb": {
+      "path": "native/packages/kubelet_1.36.5-1.1_amd64.deb",
+      "sha256": "dd46254567ee60672c0737a4b5392fae7f3419a876ab6885c48178501ac2fd64",
+      "size": 13407912,
+      "upstream_checksum": "SHA256:dd46254567ee60672c0737a4b5392fae7f3419a876ab6885c48178501ac2fd64",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.36/deb/amd64/kubelet_1.36.5-1.1_amd64.deb",
+      "version": "ubuntu24-kubernetes1.36.5"
     },
-    "kubernetes-cni_1.8.0-1.1_amd64.deb": {
-      "path": "native/packages/kubernetes-cni_1.8.0-1.1_amd64.deb",
-      "sha256": "39fbccec875ea73bda221cc6777b1344733bd81c875aa1faa5271854f9c7f9c5",
-      "size": 35968368,
-      "upstream_checksum": "SHA256:d94433cc9db66266438d48add855ae8c8dd1397e88e97f67b31384c6f4dd56de",
-      "url": "https://pkgs.k8s.io/core:/stable:/v1.35/deb/amd64/kubernetes-cni_1.8.0-1.1_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+    "kubernetes-cni_1.9.1-1.1_amd64.deb": {
+      "path": "native/packages/kubernetes-cni_1.9.1-1.1_amd64.deb",
+      "sha256": "4cd72d8cef4499d3dc410874287b40e8b4241e0772938c5820cbee37986c1d93",
+      "size": 38991216,
+      "upstream_checksum": "SHA256:4cd72d8cef4499d3dc410874287b40e8b4241e0772938c5820cbee37986c1d93",
+      "url": "https://pkgs.k8s.io/core:/stable:/v1.36/deb/amd64/kubernetes-cni_1.9.1-1.1_amd64.deb",
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "libcurl3t64-gnutls_8.5.0-2ubuntu10.15_amd64.deb": {
       "path": "native/packages/libcurl3t64-gnutls_8.5.0-2ubuntu10.15_amd64.deb",
@@ -195,7 +195,7 @@
       "size": 330014,
       "upstream_checksum": "SHA512:a0700b56e3bc498ed83afa3fdc57519ee5dfa8b1c100b18c9bb0ae11c9b4fcb073a9650aac147dde19c886dba5b1d3f62d008fb828ec00f550d62cbe2dd18098",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/c/curl/libcurl3t64-gnutls_8.5.0-2ubuntu10.15_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "libcurl4t64_8.5.0-2ubuntu10.15_amd64.deb": {
       "path": "native/packages/libcurl4t64_8.5.0-2ubuntu10.15_amd64.deb",
@@ -203,7 +203,7 @@
       "size": 336504,
       "upstream_checksum": "SHA512:6d2d94be0e3908dc6132fdf72001db6228bbf4260caddd9a43b039a46575409fe826efd194ca77bb600e2220ef630feab49e2e5c9a8909bde3e953a409ff7ca5",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/c/curl/libcurl4t64_8.5.0-2ubuntu10.15_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "liblua5.4-0_5.4.6-3build2_amd64.deb": {
       "path": "native/packages/liblua5.4-0_5.4.6-3build2_amd64.deb",
@@ -211,7 +211,7 @@
       "size": 157860,
       "upstream_checksum": "SHA512:1a6d200c14fc2da7b29f68954266ef83a03930510e8603c411eb62c46c02c6b51f529861b89bf8e6942fb27be7c1e772efb1d7af679c0679062b95314ffa9659",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/l/lua5.4/liblua5.4-0_5.4.6-3build2_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "runc_1.3.4-0ubuntu1~24.04.1_amd64.deb": {
       "path": "native/packages/runc_1.3.4-0ubuntu1~24.04.1_amd64.deb",
@@ -219,7 +219,7 @@
       "size": 8578418,
       "upstream_checksum": "SHA512:d234751cad58ed682c13eca1e1be28adc94390a7c407747858657642d719fea4f33476bd892a88f6fa942059d1202964699a622627bb59a8098e4b92087efa2b",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/r/runc-app/runc_1.3.4-0ubuntu1%7e24.04.1_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     },
     "socat_1.8.0.0-4ubuntu0.1_amd64.deb": {
       "path": "native/packages/socat_1.8.0.0-4ubuntu0.1_amd64.deb",
@@ -227,9 +227,7 @@
       "size": 372916,
       "upstream_checksum": "SHA512:b1db7e2560544498f3e5365ce077b46c160fac597130d33ea4c4d9a60ed58a5de519f707bc40f38739218a7d8e395a75475adb792e95144a1a66f046917aca03",
       "url": "https://archive.ubuntu.com/ubuntu/pool/main/s/socat/socat_1.8.0.0-4ubuntu0.1_amd64.deb",
-      "version": "ubuntu24-kubernetes1.35.8"
+      "version": "ubuntu24-kubernetes1.36.5"
     }
-  },
-  "architecture": "amd64",
-  "provenance": "Pinned official Ubuntu and Kubernetes HTTPS package artifacts, checked 2026-09-27."
+  }
 }

@@ -19,6 +19,7 @@ from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.service import Service
 from dockyard.store import timestamp
+from dockyard.versions import KUBERNETES, KUBERNETES_PREVIOUS
 
 pytestmark = [
     pytest.mark.integration,
@@ -174,7 +175,10 @@ while True:
     assert not any(runtime.home.glob("d*-worker"))
 
 
-@pytest.mark.parametrize("version,cri_version", [("1.35.8", "1.35.0"), ("1.34.12", "1.34.0")])
+@pytest.mark.parametrize(
+    "version,cri_version",
+    [(version, version.rsplit(".", 1)[0] + ".0") for version in (KUBERNETES, KUBERNETES_PREVIOUS)],
+)
 def test_native_prerequisites_install_with_unusable_package_proxies(
     lab_profile, version, cri_version
 ):

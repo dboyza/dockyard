@@ -5,11 +5,11 @@ Do task 3, the scheduler, first: draining and upgrading need a working scheduler
 Do task 7, the disruption budget, after the upgrade.
 Use the existing nodes; do not reset, rejoin, or rebuild them.
 
-## 1. Upgrade the cluster to 1.35.8 (25%)
+## 1. Upgrade the cluster to 1.37.1 (25%)
 
-Upgrade this kubeadm cluster from 1.34.12 to 1.35.8: kubeadm, the control plane, and the kubelet on both nodes.
+Upgrade this kubeadm cluster from 1.36.5 to 1.37.1: kubeadm, the control plane, and the kubelet on both nodes.
 
-- `python -m dockyard.native stage-upgrade` copies the 1.35.8 packages into each VM; it does not install them.
+- `python -m dockyard.native stage-upgrade` copies the 1.37.1 packages into each VM; it does not install them.
 - Drain each node before upgrading its kubelet, and uncordon it afterwards.
 - Keep the package holds on kubeadm, kubelet, and kubectl.
 - Both original nodes must end up Ready and schedulable.

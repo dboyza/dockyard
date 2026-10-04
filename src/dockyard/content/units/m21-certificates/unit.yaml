@@ -7,7 +7,7 @@ summary: Renew the API server’s serving certificate and make the running serve
 kind: lesson
 runtime: linux
 nodes: 2
-native_version: 1.35.8
+native_version: current
 minutes: 40
 outcomes:
 - Inspect certificate expiry, serial, and issuer.

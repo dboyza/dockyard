@@ -1,6 +1,6 @@
 # Maintenance handoff
 
-The original 1.34.12 cluster was upgraded in place to 1.35.8.
+The original 1.36.5 cluster was upgraded in place to 1.37.1.
 Kubeadm was installed first on each node; the primary used upgrade apply and the worker used upgrade node.
 Each kubelet was updated during a drain and returned to scheduling afterward.
 The single control plane incurred API downtime, and the worker-local database incurred application downtime during worker maintenance.

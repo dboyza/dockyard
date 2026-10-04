@@ -1,6 +1,6 @@
 ## Build a cluster and deploy Dispatch
 
-From the two prepared VMs, build a Kubernetes 1.35.8 cluster and deploy Dispatch:
+From the two prepared VMs, build a Kubernetes 1.37.1 cluster and deploy Dispatch:
 
 - Pod subnet `10.244.0.0/16`;
 - the worker joined with a CA-pinned configuration;

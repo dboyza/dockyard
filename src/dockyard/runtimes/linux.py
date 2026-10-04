@@ -22,6 +22,7 @@ from dockyard.process import ProcessResult, run
 from dockyard.runtimes import kubeclient
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.toolchain import MANIFEST, Toolchain, digest
+from dockyard.versions import KUBERNETES
 from dockyard.workspace import atomic_write
 
 
@@ -384,7 +385,7 @@ class LinuxRuntime:
             )
         )
 
-    def install_node_packages(self, cancel: threading.Event, version: str = "1.35.8") -> None:
+    def install_node_packages(self, cancel: threading.Event, version: str = KUBERNETES) -> None:
         from dockyard.runtimes.node_packages import install
 
         install(self, cancel, version)

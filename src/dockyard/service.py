@@ -34,6 +34,7 @@ from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.runtimes.kubernetes import KubernetesRuntime
 from dockyard.runtimes.linux import LinuxRuntime, vm_prefix
 from dockyard.store import BusyError, Store, timestamp
+from dockyard.versions import native
 from dockyard.workspace import atomic_write, reset, snapshot, write_files
 
 COMPATIBILITY = json.loads((CONTENT / "compatibility.json").read_text())
@@ -463,16 +464,16 @@ class Service:
 
                         Toolchain(self.tools).ensure("helm", cancel, runtime.report)
                     runtime.prepare(unit.nodes, cancel)
-                    runtime.install_node_packages(cancel, unit.native_version)
+                    runtime.install_node_packages(cancel, native(unit.native_version))
                     if lab.resources.get("prepared_revision") != str(unit.revision):
                         if "native-cluster" in unit.capabilities:
                             from dockyard.runtimes.native_cluster import prepare
 
-                            prepare(runtime, cancel, unit.native_version)
+                            prepare(runtime, cancel, native(unit.native_version))
                         elif "native-control-plane" in unit.capabilities:
                             from dockyard.runtimes.native_cluster import initialize
 
-                            initialize(runtime, cancel, unit.native_version)
+                            initialize(runtime, cancel, native(unit.native_version))
                         from dockyard.runtimes.native_images import load
 
                         for image_name in unit.images:

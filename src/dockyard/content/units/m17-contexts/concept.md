@@ -23,9 +23,9 @@ You choose a standard per namespace with labels:
 metadata:
   labels:
     pod-security.kubernetes.io/enforce: restricted
-    pod-security.kubernetes.io/enforce-version: v1.35
+    pod-security.kubernetes.io/enforce-version: v1.37
     pod-security.kubernetes.io/warn: restricted
-    pod-security.kubernetes.io/warn-version: v1.35
+    pod-security.kubernetes.io/warn-version: v1.37
 ```
 
 - `enforce` rejects Pods that break the standard.

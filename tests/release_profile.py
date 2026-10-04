@@ -29,7 +29,10 @@ def remaining(service: Service) -> list[str]:
         except Exception as error:  # noqa: BLE001 - any doubt keeps the records
             found.append(f"{lab.unit_id}: could not confirm removal ({error})")
             continue
-        found += [f"{lab.unit_id}: {entry.get('kind', 'node')} {entry['id']}" for entry in alive]
+        found += [
+            f"{lab.unit_id}: {entry.get('kind', 'node')} {entry.get('id') or entry.get('name')}"
+            for entry in alive
+        ]
     return found
 
 

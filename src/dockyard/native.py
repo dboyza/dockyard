@@ -14,6 +14,7 @@ from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.runtimes.native_images import load
 from dockyard.service import Service
+from dockyard.versions import KUBERNETES
 
 
 def current() -> LinuxRuntime:
@@ -35,7 +36,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     actions = parser.add_subparsers(dest="action", required=True)
     actions.add_parser(
-        "stage-upgrade", help="Stage verified 1.35.8 packages without installing them"
+        "stage-upgrade", help="Stage the verified upgrade packages without installing them"
     )
     waited = actions.add_parser(
         "wait-upgraded-node", help="Observe upgraded node and API readiness before the next node"
@@ -74,7 +75,7 @@ def main() -> None:
                 raise RuntimeErrorBase("The learner initialization helper expects two guests.")
             print(
                 yaml.safe_dump_all(
-                    native_cluster.initialization(runtime, names[0], cancel, "1.35.8")
+                    native_cluster.initialization(runtime, names[0], cancel, KUBERNETES)
                 )
             )
         elif args.action == "join-config":

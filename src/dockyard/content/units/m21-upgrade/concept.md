@@ -9,9 +9,9 @@ A cluster has several separately installed pieces, and each must be upgraded on 
 - **kubectl**, the client.
 
 Installing a newer `kubectl` does not upgrade the cluster, and upgrading kubeadm does not upgrade a running kubelet.
-You can only move **one minor version at a time**, for example from 1.34 to 1.35.
+You can only move **one minor version at a time**, for example from 1.36 to 1.37.
 
-This lab starts at Kubernetes 1.34.12 and the target is 1.35.8.
+This lab starts at Kubernetes 1.36.5 and the target is 1.37.1.
 
 ## Look first
 
@@ -32,7 +32,7 @@ Before a real upgrade, check your add-ons support the new version, look for APIs
 
 1. Upgrade the kubeadm package.
 2. `sudo kubeadm upgrade plan` shows what will change.
-3. `sudo kubeadm upgrade apply v1.35.8` upgrades the control-plane components.
+3. `sudo kubeadm upgrade apply v1.37.1` upgrades the control-plane components.
 4. Drain the node (from your lab terminal), upgrade the kubelet and kubectl packages, then `sudo systemctl daemon-reload` and `sudo systemctl restart kubelet`.
 5. Uncordon the node.
 
@@ -48,7 +48,7 @@ upgrade-order
 
 ## Packages in this lab
 
-Ubuntu’s package manager usually installs these with `apt-get install kubeadm=1.35.8-1.1`, and they are **held** (`apt-mark hold`) so a routine update never upgrades them by accident.
+Ubuntu’s package manager usually installs these with `apt-get install kubeadm=1.37.1-1.1`, and they are **held** (`apt-mark hold`) so a routine update never upgrades them by accident.
 This lab works offline, so `python -m dockyard.native stage-upgrade` copies the verified package files into each VM at `/tmp/dockyard-$DOCKYARD_LAB-upgrade`; it does not install anything.
 `$DOCKYARD_ARCH` holds `arm64` or `amd64` for the file names.
 
@@ -57,9 +57,9 @@ For example, on the control plane:
 ```sh
 packages="/tmp/dockyard-$DOCKYARD_LAB-upgrade"
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo apt-mark unhold kubeadm
-limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo dpkg -i "$packages/kubeadm_1.35.8-1.1_${DOCKYARD_ARCH}.deb"
+limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo dpkg -i "$packages/kubeadm_1.37.1-1.1_${DOCKYARD_ARCH}.deb"
 limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo apt-mark hold kubeadm
-limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo kubeadm upgrade plan v1.35.8
+limactl shell --workdir=/tmp "$DOCKYARD_CONTROL_PLANE" sudo kubeadm upgrade plan v1.37.1
 ```
 
 The kubelet and kubectl packages follow the same unhold, install, hold pattern.
@@ -84,4 +84,4 @@ That is planned downtime; the data is safe on the worker’s disk.
 
 When both nodes are Ready and uncordoned, run `python -m dockyard.native refresh-client` and `sh bootstrap.sh` to wait for Dispatch to recover.
 Then compare `kubectl get --raw=/version`, the nodes’ kubelet versions, and the control-plane images.
-Check work also confirms the cluster is the same one you started with, with the same nodes and data, not a freshly built 1.35 cluster.
+Check work also confirms the cluster is the same one you started with, with the same nodes and data, not a freshly built 1.37 cluster.

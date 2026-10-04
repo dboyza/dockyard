@@ -702,7 +702,7 @@ export const cluster = {
     const control = [
       "upgrade the kubeadm package",
       "kubeadm upgrade plan",
-      "kubeadm upgrade apply v1.35.8",
+      "kubeadm upgrade apply v1.37.1",
       "drain, then upgrade kubelet and kubectl",
       "daemon-reload, restart kubelet",
       "uncordon",
@@ -716,7 +716,7 @@ export const cluster = {
     ];
     return (
       <Diagram height={308}>
-        <Tag x={160} y={18} text="1.34.12" />
+        <Tag x={160} y={18} text="1.36.5" />
         <Arrow
           points={[
             [206, 18],
@@ -725,7 +725,7 @@ export const cluster = {
           label="one minor version"
           labelAt={[236, 36]}
         />
-        <Tag x={310} y={18} text="1.35.8" tone="good" />
+        <Tag x={310} y={18} text="1.37.1" tone="good" />
         <Region
           x={10}
           y={50}

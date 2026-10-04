@@ -46,10 +46,10 @@ After fixing the ConfigMap, run `kubectl rollout restart deployment/coredns -n k
 CoreDNS can be Running while answering for the wrong domain, so its status alone proves nothing.
 
 For kube-proxy, compare the DaemonSet’s image with what its Pods report in their events.
-The correct image is `registry.k8s.io/kube-proxy:v1.35.8`, already cached on the nodes:
+The correct image is `registry.k8s.io/kube-proxy:v1.37.1`, already cached on the nodes:
 
 ```sh
-kubectl set image daemonset/kube-proxy -n kube-system kube-proxy=registry.k8s.io/kube-proxy:v1.35.8
+kubectl set image daemonset/kube-proxy -n kube-system kube-proxy=registry.k8s.io/kube-proxy:v1.37.1
 kubectl rollout status daemonset/kube-proxy -n kube-system
 ```
 

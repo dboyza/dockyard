@@ -6,10 +6,11 @@ import threading
 
 from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.runtimes.node_packages import bundle
+from dockyard.versions import KUBERNETES
 
 
 def stage_upgrade(runtime: LinuxRuntime, cancel: threading.Event) -> str:
-    archive = bundle(runtime, cancel, "1.35.8")
+    archive = bundle(runtime, cancel, KUBERNETES)
     directory = "/tmp/dockyard-" + runtime.lab.id + "-upgrade"
     for entry in runtime.discover():
         name = entry["name"]
@@ -50,7 +51,7 @@ def wait_node(runtime: LinuxRuntime, name: str, cancel: threading.Event) -> None
             if (
                 ready.ok
                 and ready.stdout.strip() == "ok"
-                and status["nodeInfo"]["kubeletVersion"] == "v1.35.8"
+                and status["nodeInfo"]["kubeletVersion"] == "v" + KUBERNETES
                 and any(
                     c["type"] == "Ready" and c["status"] == "True" for c in status["conditions"]
                 )

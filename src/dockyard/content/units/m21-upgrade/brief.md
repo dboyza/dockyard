@@ -1,9 +1,9 @@
-## Upgrade the cluster from 1.34 to 1.35
+## Upgrade the cluster from 1.36 to 1.37
 
-Upgrade this cluster in place from 1.34.12 to 1.35.8, following the order in Understand: control plane first, then the worker.
+Upgrade this cluster in place from 1.36.5 to 1.37.1, following the order in Understand: control plane first, then the worker.
 
 - Stage the packages with `python -m dockyard.native stage-upgrade`.
-- Both kubelets and the control-plane components must reach 1.35.8.
+- Both kubelets and the control-plane components must reach 1.37.1.
 - Both nodes must end Ready and uncordoned.
 - Keep the original namespace, Node objects, marker, and stored data, and complete a new job afterwards.
 

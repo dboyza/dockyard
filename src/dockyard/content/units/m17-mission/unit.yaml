@@ -152,7 +152,7 @@ checks:
   - admission
   expected: 'true'
   diagnostic: 'Admission is not enforcing Restricted. Check kubectl get namespace dispatch --show-labels:
-    pod-security.kubernetes.io/enforce should be restricted, with enforce-version v1.35. Apply admission.yaml
+    pod-security.kubernetes.io/enforce should be restricted, with enforce-version v1.37. Apply admission.yaml
     through render.py.'
 - id: security-runtime
   title: The running API is restricted

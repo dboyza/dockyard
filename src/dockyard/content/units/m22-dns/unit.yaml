@@ -1,5 +1,5 @@
 id: m22-dns
-revision: 1
+revision: 2
 module: 22
 order: 2
 title: CoreDNS and kube-proxy
@@ -31,7 +31,7 @@ prediction:
     working.
 hints:
 - Inspect the CoreDNS zone and the desired/running kube-proxy images separately.
-- Compare the Corefile's domain with cluster.local, and note that the kube-proxy v1.35.8 image is already
+- Compare the Corefile's domain with cluster.local, and note that the kube-proxy v1.37.1 image is already
   on the nodes.
 - Restore the cluster.local zone, restart CoreDNS, restore the kube-proxy image, and wait for both rollouts
   before testing a new Service.

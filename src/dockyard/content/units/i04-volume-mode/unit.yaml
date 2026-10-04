@@ -325,7 +325,7 @@ checkpoint: dispatch-storage-v1
 images:
 - python
 nodes: 1
-native_version: 1.35.8
+native_version: current
 alternatives:
 - Equivalent scoped repairs are accepted when actual outcomes meet every constraint.
 failure_modes:

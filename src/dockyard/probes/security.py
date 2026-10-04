@@ -12,6 +12,7 @@ from typing import Any
 
 from dockyard.probes.kubernetes import available, get, kubectl, owned_pods, sql
 from dockyard.process import run
+from dockyard.versions import KUBERNETES_MINOR
 
 
 def execute(deployment: str, script: str, namespace: str = "dispatch") -> Any:
@@ -241,7 +242,7 @@ print(json.dumps(results))
         )
         result["admission"] = (
             labels.get("pod-security.kubernetes.io/enforce") == "restricted"
-            and labels.get("pod-security.kubernetes.io/enforce-version") == "v1.35"
+            and labels.get("pod-security.kubernetes.io/enforce-version") == KUBERNETES_MINOR
             and valid.ok
             and not rejected.ok
             and "violates PodSecurity" in rejected.stderr

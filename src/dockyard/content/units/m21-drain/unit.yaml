@@ -7,7 +7,7 @@ summary: Drain a worker safely by adjusting its disruption budget, without bypas
 kind: lesson
 runtime: linux
 nodes: 3
-native_version: 1.35.8
+native_version: current
 minutes: 40
 outcomes:
 - Explain cordon, drain, eviction, and rescheduling as separate steps.
