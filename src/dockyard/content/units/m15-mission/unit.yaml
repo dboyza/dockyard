@@ -1,7 +1,7 @@
 id: m15-mission
 revision: 1
 module: 15
-order: 4
+order: 5
 title: 'Mission: explain a latency regression'
 summary: Measure a slowdown, fix the service and its monitoring, and prove both with evidence.
 kind: mission

@@ -1880,4 +1880,292 @@ export const platform = {
       </Reveal>
     </Diagram>
   ),
+  "priority-preemption": ({ step = 0 }) => {
+    const slot = (index: number) => 170 + index * 112;
+    const pod = (
+      index: number,
+      title: string,
+      sub: string,
+      tone: "default" | "focus" | "bad" | "muted" = "default",
+    ) => (
+      <Box
+        x={slot(index)}
+        y={74}
+        w={100}
+        h={62}
+        title={title}
+        sub={sub}
+        tone={tone}
+      />
+    );
+    return (
+      <Diagram height={214} step={step}>
+        <Region x={150} y={40} w={474} h={124} label="Node: four slots" />
+        <Reveal from={0} until={0}>
+          {pod(0, "batch", "priority 1000")}
+          {pod(1, "batch", "priority 1000")}
+          {pod(2, "batch", "priority 1000")}
+          {pod(3, "API", "running", "focus")}
+          <Box
+            x={10}
+            y={74}
+            w={120}
+            h={62}
+            title="API"
+            sub="Pending"
+            tone="muted"
+            dashed
+          />
+          <Label x={70} y={156} anchor="middle" size="small" tone="muted">
+            no priority, no slot
+          </Label>
+        </Reveal>
+        <Reveal from={1} until={1}>
+          {pod(0, "batch", "priority 1000")}
+          {pod(1, "batch", "priority 1000")}
+          {pod(2, "batch", "preempted", "bad")}
+          {pod(3, "API", "running", "focus")}
+          <Box
+            x={10}
+            y={74}
+            w={120}
+            h={62}
+            title="API"
+            sub="priority 100000"
+            tone="focus"
+            dashed
+          />
+          <Arrow
+            points={[
+              [130, 105],
+              [140, 105],
+              [140, 186],
+              [slot(2) + 50, 186],
+              [slot(2) + 50, 140],
+            ]}
+            tone="focus"
+            label="takes the slot"
+            labelAt={[300, 180]}
+          />
+        </Reveal>
+        <Reveal from={2}>
+          {pod(0, "batch", "priority 1000")}
+          {pod(1, "batch", "priority 1000")}
+          {pod(2, "API", "priority 100000", "focus")}
+          {pod(3, "API", "running", "focus")}
+          <Box
+            x={10}
+            y={74}
+            w={120}
+            h={62}
+            title="batch"
+            sub="Pending"
+            tone="muted"
+            dashed
+          />
+          <Label x={70} y={156} anchor="middle" size="small" tone="muted">
+            recreated, waiting
+          </Label>
+        </Reveal>
+        <Label x={320} y={30} anchor="middle" size="small" tone="muted">
+          Each Pod requests one slot
+        </Label>
+      </Diagram>
+    );
+  },
+  "admission-policy": ({ step = 0 }) => {
+    const stages: [string, string, "default" | "focus"][] = [
+      ["Request", "kubectl apply", "default"],
+      ["Authenticate", "who are you?", "default"],
+      ["Authorize", "RBAC: may you?", "default"],
+      ["Admission", "is it allowed?", "focus"],
+      ["Store", "etcd", "default"],
+    ];
+    return (
+      <Diagram height={336} step={step}>
+        {stages.map(([title, sub, tone], index) => (
+          <g key={title}>
+            <Box
+              x={10 + index * 124}
+              y={30}
+              w={108}
+              h={56}
+              title={title}
+              sub={sub}
+              tone={tone}
+            />
+            {index > 0 && (
+              <Arrow
+                points={[
+                  [index * 124 - 4, 58],
+                  [index * 124 + 8, 58],
+                ]}
+              />
+            )}
+          </g>
+        ))}
+        <Tag x={436} y={112} text="Pod Security" tone="focus" />
+        <Tag x={436} y={140} text="ValidatingAdmissionPolicy" tone="focus" />
+        <Reveal from={1}>
+          <Box
+            x={10}
+            y={196}
+            w={210}
+            h={52}
+            title="Policy"
+            sub="the rule, as CEL"
+            tone="focus"
+          />
+          <Box
+            x={10}
+            y={264}
+            w={210}
+            h={52}
+            title="Binding"
+            sub="where: dispatch · how: Deny"
+            tone="focus"
+          />
+          <Arrow
+            points={[
+              [220, 222],
+              [300, 222],
+              [300, 156],
+              [340, 150],
+            ]}
+            tone="focus"
+          />
+          <Line
+            points={[
+              [220, 290],
+              [300, 290],
+              [300, 222],
+            ]}
+            tone="focus"
+          />
+          <Box
+            x={384}
+            y={196}
+            w={246}
+            h={52}
+            title="dispatch, no memory limit"
+            sub="✗ denied"
+            tone="bad"
+          />
+          <Box
+            x={384}
+            y={264}
+            w={246}
+            h={52}
+            title="sandbox, no memory limit"
+            sub="✓ allowed"
+            tone="good"
+          />
+        </Reveal>
+      </Diagram>
+    );
+  },
+  "ephemeral-debug": ({ step = 0 }) => (
+    <Diagram height={262} step={step}>
+      <Reveal from={0} until={0}>
+        <Region
+          x={10}
+          y={30}
+          w={620}
+          h={164}
+          label="Running API Pod: not restarted"
+        />
+        <Region
+          x={30}
+          y={64}
+          w={580}
+          h={110}
+          label="One process namespace, shared through --target=api"
+          tone="focus"
+        />
+        <Box
+          x={60}
+          y={96}
+          w={220}
+          h={60}
+          title="api"
+          sub="PID 1: python app.py"
+        />
+        <Box
+          x={360}
+          y={96}
+          w={220}
+          h={60}
+          title="ephemeral: busybox"
+          sub="ps lists python app.py"
+          tone="focus"
+          dashed
+        />
+        <Arrow
+          points={[
+            [356, 126],
+            [284, 126],
+          ]}
+          tone="focus"
+          label="sees"
+          labelAt={[320, 116]}
+        />
+        <Label x={320} y={226} anchor="middle" size="small" tone="muted">
+          kubectl debug API_POD --image=busybox --target=api -- ps
+        </Label>
+      </Reveal>
+      <Reveal from={1}>
+        <Region
+          x={10}
+          y={30}
+          w={250}
+          h={164}
+          label="worker Pod: owned by its Deployment"
+        />
+        <Box
+          x={35}
+          y={80}
+          w={200}
+          h={64}
+          title="worker"
+          sub="python jobs.py, exits"
+          tone="bad"
+        />
+        <Label x={135} y={170} anchor="middle" size="small" tone="muted">
+          CrashLoopBackOff
+        </Label>
+        <Arrow
+          points={[
+            [264, 112],
+            [372, 112],
+          ]}
+          tone="focus"
+          label="--copy-to"
+          labelAt={[318, 102]}
+        />
+        <Region
+          x={380}
+          y={30}
+          w={250}
+          h={164}
+          label="worker-debug: no owner"
+          tone="focus"
+        />
+        <Box
+          x={405}
+          y={80}
+          w={200}
+          h={64}
+          title="worker"
+          sub="sh instead, stays up"
+          tone="focus"
+        />
+        <Label x={505} y={170} anchor="middle" size="small" tone="muted">
+          same image, env, and mounts
+        </Label>
+        <Label x={320} y={226} anchor="middle" size="small" tone="muted">
+          kubectl delete pod worker-debug when you are done
+        </Label>
+      </Reveal>
+    </Diagram>
+  ),
 } satisfies Drawings;

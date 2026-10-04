@@ -242,12 +242,16 @@
       "explained_by": [
         "m13-resources",
         "m13-placement",
-        "m17-contexts"
+        "m17-contexts",
+        "m13-priority",
+        "m17-policies"
       ],
       "practiced_by": [
         "m13-resources",
         "m13-placement",
-        "m17-contexts"
+        "m17-contexts",
+        "m13-priority",
+        "m17-policies"
       ],
       "assessed_by": [
         "m13-mission",
@@ -561,11 +565,13 @@
       "objective": "Utilize persistent and ephemeral volumes",
       "explained_by": [
         "m08-patterns",
-        "m11-claims"
+        "m11-claims",
+        "m09-downward"
       ],
       "practiced_by": [
         "m08-patterns",
-        "m11-claims"
+        "m11-claims",
+        "m09-downward"
       ],
       "assessed_by": [
         "m08-mission",
@@ -678,10 +684,12 @@
       "weight": 15,
       "objective": "Use built-in CLI tools to monitor Kubernetes applications",
       "explained_by": [
-        "m15-observation"
+        "m15-observation",
+        "m15-debug"
       ],
       "practiced_by": [
-        "m15-observation"
+        "m15-observation",
+        "m15-debug"
       ],
       "assessed_by": [
         "m15-mission"
@@ -711,11 +719,13 @@
       "objective": "Debugging in Kubernetes",
       "explained_by": [
         "m07-inspection",
-        "m15-observation"
+        "m15-observation",
+        "m15-debug"
       ],
       "practiced_by": [
         "m07-inspection",
-        "m15-observation"
+        "m15-observation",
+        "m15-debug"
       ],
       "assessed_by": [
         "m15-mission"
@@ -746,12 +756,14 @@
       "explained_by": [
         "m09-identities",
         "m17-rbac",
-        "m17-contexts"
+        "m17-contexts",
+        "m17-policies"
       ],
       "practiced_by": [
         "m09-identities",
         "m17-rbac",
-        "m17-contexts"
+        "m17-contexts",
+        "m17-policies"
       ],
       "assessed_by": [
         "m09-mission",

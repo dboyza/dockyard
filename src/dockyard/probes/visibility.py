@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import time
 import urllib.parse
 from contextlib import suppress
@@ -15,7 +16,7 @@ from typing import Any
 
 import yaml
 
-from dockyard.probes.kubernetes import available, get, kubectl, owned_pods
+from dockyard.probes.kubernetes import available, get, job_roundtrip, kubectl, owned_pods
 
 
 def request(url: str) -> dict[str, Any]:
@@ -224,4 +225,63 @@ def visibility() -> dict[str, Any]:
             "after": {k: v for k, v in after.items() if k != "samples"},
             "current_request": current,
         }
+    return result
+
+
+# busybox ps prints "PID USER TIME COMMAND"; with --target the API process is PID 1.
+TARGET_PROCESS = re.compile(r"^\s*1\s+\S+\s+\S+\s+python app\.py\s*$", re.MULTILINE)
+
+
+def debugging() -> dict[str, Any]:
+    """Observe an ephemeral container on a live API Pod, running workers, and no stray copies."""
+    result: dict[str, Any] = dict.fromkeys(("processes", "worker", "cleanup"), False)
+    details: dict[str, Any] = {}
+    result["_details"] = details
+    with suppress(RuntimeError, ValueError, KeyError):
+        _, pods = owned_pods("dispatch")
+        targeted = [
+            pod["metadata"]["name"]
+            for pod in pods
+            if any(
+                container.get("targetContainerName") == "api"
+                for container in pod["spec"].get("ephemeralContainers", [])
+            )
+        ]
+        details["targeted_pods"] = targeted
+        evidence = Path("api-processes.txt")
+        details["evidence"] = evidence.exists()
+        result["processes"] = bool(targeted) and bool(
+            evidence.exists() and TARGET_PROCESS.search(evidence.read_text(errors="replace"))
+        )
+    with suppress(RuntimeError, ValueError, KeyError):
+        deployment, pods = owned_pods("worker")
+        details["worker_restarts"] = {
+            pod["metadata"]["name"]: [
+                status.get("restartCount", 0)
+                for status in pod["status"].get("containerStatuses", [])
+            ]
+            for pod in pods
+        }
+        result["worker"] = (
+            available(deployment, 2)
+            and len(pods) == 2
+            and all(
+                status.get("ready") and "running" in status.get("state", {})
+                for pod in pods
+                for status in pod["status"].get("containerStatuses", [])
+            )
+        )
+    with suppress(RuntimeError, ValueError, KeyError):
+        unowned = [
+            pod["metadata"]["name"]
+            for pod in get("pods")["items"]
+            if not pod["metadata"].get("ownerReferences")
+            and not pod["metadata"].get("deletionTimestamp")
+        ]
+        details["unowned_pods"] = unowned
+        result["cleanup"] = not unowned
+    try:
+        result["processing"] = job_roundtrip()
+    except (RuntimeError, ValueError, KeyError):
+        result["processing"] = False
     return result

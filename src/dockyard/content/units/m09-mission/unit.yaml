@@ -1,7 +1,7 @@
 id: m09-mission
 revision: 1
 module: 9
-order: 4
+order: 5
 title: 'Mission: two environments from one image'
 summary: Run learning and preview copies of Dispatch in separate namespaces, each with its own settings
   and password.

@@ -1,0 +1,143 @@
+id: m13-priority
+revision: 1
+module: 13
+order: 4
+title: Give the API priority over batch work
+summary: When the node is full, let the scheduler displace low-priority batch Pods so the Dispatch API can run.
+kind: lesson
+runtime: kubernetes
+minutes: 35
+outcomes:
+- Explain how a PriorityClass sets a Pod's priority and how the scheduler uses it.
+- Diagnose a Pod that is Pending because the node has no room left.
+- Let important work preempt lower-priority Pods without scaling anything down.
+prerequisites:
+- m13-placement
+objectives:
+- kubernetes.capacity
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: The node is full of batch Pods with priority 1000. A new API Pod with priority 100000 is Pending. What does the scheduler do?
+  options:
+  - It removes enough lower-priority Pods to make room, then places the API Pod.
+  - It waits until a batch Pod finishes on its own.
+  - It places the API Pod anyway and overcommits the node.
+  correct: 0
+  explanation: With the default preemption policy, a higher-priority Pod that cannot fit can preempt lower-priority Pods. Their controllers recreate them, and they wait as Pending until room returns.
+hints:
+- Run kubectl describe pod on the Pending API Pod and read its Events, then compare the PRIORITY column of kubectl get pods -o custom-columns=NAME:.metadata.name,PRIORITY:.spec.priority.
+- Create a PriorityClass with a value higher than batch-low's 1000, and set it as priorityClassName in the API Deployment's Pod template.
+- 'Create priority.yaml with a PriorityClass named dispatch-critical (value 100000, globalDefault false), add priorityClassName: dispatch-critical under the dispatch Deployment''s template spec, and run sh run.sh.'
+sources:
+- https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+- https://kubernetes.io/docs/tasks/administer-cluster/extended-resource-node/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 240
+checks:
+- id: priority-class
+  title: The API runs with a higher priority than the batch work
+  explanation: Every API Pod must carry the priority of a PriorityClass whose value is higher than batch-low's, and that class must not be the cluster's global default.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - priority
+    timeout: 150
+  expectation: json
+  json_path:
+  - class
+  expected: 'true'
+  diagnostic: The API Pods do not have a higher priority of their own. Create a PriorityClass with a value above 1000 and globalDefault false, set it as priorityClassName in the dispatch Deployment's Pod template, and run sh run.sh.
+- id: priority-available
+  title: Both API replicas are running on their slot
+  explanation: The dispatch Deployment must have both replicas available, each still requesting one dockyard.io/slots.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - priority
+    timeout: 150
+  expectation: json
+  json_path:
+  - available
+  expected: 'true'
+  diagnostic: Not every API replica is available, or an API container no longer requests one slot. Keep the requests unchanged; the fix is priority, not a smaller request. Run kubectl get pods -l app=dispatch and describe any Pending Pod.
+- id: priority-preempted
+  title: The batch work was displaced, not scaled down
+  explanation: report-batch must still ask for three replicas, with one of them waiting because the API took its slot.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - priority
+    timeout: 150
+  expectation: json
+  json_path:
+  - preempted
+  expected: 'true'
+  diagnostic: report-batch should still want three replicas with two running. Do not scale or delete the batch Deployment; let the scheduler preempt one of its Pods.
+- id: configuration-processing
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - priority
+    timeout: 150
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then kubectl logs deployment/worker for database or Redis errors.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- local-path-storage
+checkpoint: dispatch-capacity-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+nodes: 1
+alternatives:
+- Any PriorityClass name and value above the batch class are accepted, defined in any file, when both API replicas run by preempting batch work.
+failure_modes:
+- Scaling down or deleting the batch work frees room but does not show priority working.
+- A PriorityClass marked globalDefault raises the priority of every new Pod, not only the API.
+- Lowering the API's request avoids the shortage instead of handling it.
+starter_failure_checks:
+- priority-class
+- priority-available
+- priority-preempted

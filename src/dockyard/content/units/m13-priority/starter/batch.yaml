@@ -1,0 +1,39 @@
+# Overnight report rendering: useful, but it can wait when capacity is short.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: batch-low
+value: 1000
+globalDefault: false
+description: Work that can be displaced when something more important needs room.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: report-batch
+  namespace: dispatch
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: report-batch
+  template:
+    metadata:
+      labels:
+        app: report-batch
+    spec:
+      priorityClassName: batch-low
+      terminationGracePeriodSeconds: 5
+      containers:
+      - name: render
+        image: ${DOCKYARD_BUSYBOX_LOCAL_IMAGE}
+        imagePullPolicy: Never
+        command: ["sleep", "infinity"]
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+            dockyard.io/slots: "1"
+          limits:
+            memory: 32Mi
+            dockyard.io/slots: "1"

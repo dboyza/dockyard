@@ -8,7 +8,7 @@ from dockyard.versions import KUBERNETES, KUBERNETES_PREVIOUS
 
 def test_prefetch_scopes_cover_the_course_and_reject_ambiguous_input(tmp_path):
     service = Service(tmp_path)
-    assert len(select(service, "all")) == 116
+    assert len(select(service, "all")) == 120
     assert {unit.module for unit in select(service, "track:0")} == {0}
     assert {unit.module for unit in select(service, "module:2")} == {2}
     assert {unit.module for unit in select(service, "track:2")} == set(range(7, 13))

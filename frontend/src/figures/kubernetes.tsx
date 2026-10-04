@@ -2276,4 +2276,114 @@ export const kubernetes = {
       </Diagram>
     );
   },
+  "downward-api": () => {
+    const fact = (line: number) => 40 + 8 + 24 * (line + 0.5);
+    const env = (line: number) => 52 + 8 + 22 * (line + 0.5);
+    return (
+      <Diagram height={282}>
+        <Region
+          x={10}
+          y={10}
+          w={290}
+          h={240}
+          label="Pod object in the API server"
+        />
+        <Code
+          x={26}
+          y={40}
+          w={258}
+          spacing={24}
+          lines={[
+            { text: "spec:" },
+            { text: "  nodeName: worker2", tone: "focus" },
+            { text: "  limits.memory: 192Mi", tone: "good" },
+            { text: "metadata:" },
+            { text: "  name: dispatch-x2l", tone: "focus" },
+            { text: "  namespace: dispatch", tone: "focus" },
+            { text: "  labels: app=dispatch", tone: "warn" },
+          ]}
+        />
+        <Region
+          x={340}
+          y={10}
+          w={290}
+          h={240}
+          label="Container api"
+          tone="focus"
+        />
+        <Label x={356} y={46} size="small" tone="muted">
+          Environment: fixed when the container starts
+        </Label>
+        <Code
+          x={356}
+          y={52}
+          w={258}
+          spacing={22}
+          lines={[
+            { text: "DISPATCH_NODE_NAME=worker2", tone: "focus" },
+            { text: "DISPATCH_MEMORY_LIMIT=201326592", tone: "good" },
+            { text: "DISPATCH_POD_NAME=dispatch-x2l", tone: "focus" },
+            { text: "DISPATCH_POD_NAMESPACE=dispatch", tone: "focus" },
+          ]}
+        />
+        <Label x={356} y={180} size="small" tone="muted">
+          File: kept current while the Pod runs
+        </Label>
+        <Code
+          x={356}
+          y={186}
+          w={258}
+          spacing={20}
+          lines={[
+            { text: "/etc/podinfo/labels" },
+            { text: 'app="dispatch"', tone: "warn" },
+          ]}
+        />
+        <Arrow
+          points={[
+            [286, fact(1)],
+            [352, env(0)],
+          ]}
+          tone="focus"
+        />
+        <Arrow
+          points={[
+            [286, fact(2)],
+            [352, env(1)],
+          ]}
+          tone="good"
+        />
+        <Arrow
+          points={[
+            [286, fact(4)],
+            [352, env(2)],
+          ]}
+          tone="focus"
+        />
+        <Arrow
+          points={[
+            [286, fact(5)],
+            [352, env(3)],
+          ]}
+          tone="focus"
+        />
+        <Arrow
+          points={[
+            [286, fact(6)],
+            [352, 186 + 8 + 20 * 1.5],
+          ]}
+          tone="warn"
+        />
+        <Label x={10} y={274} size="small" tone="focus">
+          fieldRef
+        </Label>
+        <Label x={90} y={274} size="small" tone="good">
+          resourceFieldRef
+        </Label>
+        <Label x={220} y={274} size="small" tone="warn">
+          downwardAPI volume
+        </Label>
+      </Diagram>
+    );
+  },
 } satisfies Drawings;

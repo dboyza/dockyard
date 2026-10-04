@@ -16,13 +16,23 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
     units = catalog.units
     course = [unit for unit in units.values() if unit.kind in {UnitKind.LESSON, UnitKind.MISSION}]
     incidents = [unit for unit in units.values() if unit.kind == UnitKind.INCIDENT]
-    for module in range(0, 25):
-        members = [unit for unit in course if unit.module == module]
+    for module in sorted(item["id"] for item in catalog.modules):
+        members = sorted(
+            (unit for unit in course if unit.module == module), key=lambda unit: unit.order
+        )
         kinds = Counter(unit.kind for unit in members)
-        if kinds != {UnitKind.LESSON: 3, UnitKind.MISSION: 1}:
-            issues.append(f"Module {module}: requires three lessons and one independent mission.")
-        if members and sorted(unit.order for unit in members) != [1, 2, 3, 4]:
-            issues.append(f"Module {module}: course ordering must be unique positions 1 through 4.")
+        # Modules teach with three or more lessons; focused exercises close objective gaps.
+        if kinds[UnitKind.LESSON] < 3 or kinds[UnitKind.MISSION] != 1:
+            issues.append(
+                f"Module {module}: requires at least three lessons and one independent mission."
+            )
+        if members and (
+            [unit.order for unit in members] != list(range(1, len(members) + 1))
+            or members[-1].kind != UnitKind.MISSION
+        ):
+            issues.append(
+                f"Module {module}: units must take positions 1 onward, with the mission last."
+            )
     if len(incidents) != 12:
         issues.append(
             f"Incident inventory: {len(incidents)} authored; 12 distinct scenarios required."

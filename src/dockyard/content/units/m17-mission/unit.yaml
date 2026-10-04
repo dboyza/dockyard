@@ -1,7 +1,7 @@
 id: m17-mission
 revision: 1
 module: 17
-order: 4
+order: 5
 title: 'Mission: secure Dispatch without breaking it'
 summary: Tighten API permissions, network rules, admission, and process restrictions, and prove each one.
 kind: mission

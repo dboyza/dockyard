@@ -36,6 +36,12 @@ class Handler(BaseHTTPRequestHandler):
                               "environment": os.getenv("DISPATCH_ENV", "practice"), "uptime": round(time.monotonic() - STARTED, 1)})
             elif self.path == "/config":
                 self.respond({"environment": os.getenv("DISPATCH_ENV", "practice"), "banner": Path("/config/banner.txt").read_text().strip()})
+            elif self.path == "/whereami":
+                # Filled in by the Kubernetes Downward API when the Deployment provides it.
+                labels = Path("/etc/podinfo/labels")
+                self.respond({"pod": os.getenv("DISPATCH_POD_NAME"), "namespace": os.getenv("DISPATCH_POD_NAMESPACE"),
+                              "node": os.getenv("DISPATCH_NODE_NAME"), "memory_limit": os.getenv("DISPATCH_MEMORY_LIMIT"),
+                              "labels": labels.read_text() if labels.is_file() else None})
             elif self.path == "/readyz":
                 if time.monotonic() - STARTED < float(os.getenv("STARTUP_SECONDS", "0")):
                     self.respond({"ready": False, "reason": "Application is warming up"}, 503)

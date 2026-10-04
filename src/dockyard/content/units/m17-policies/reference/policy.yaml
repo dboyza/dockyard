@@ -1,0 +1,31 @@
+# Platform rule: every container in Dispatch's namespace declares a memory limit,
+# so one runaway process cannot take memory from everything else on its node.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: require-memory-limits
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+    - apiGroups: ["apps"]
+      apiVersions: ["v1"]
+      operations: ["CREATE", "UPDATE"]
+      resources: ["deployments"]
+  validations:
+  - expression: >-
+      object.spec.template.spec.containers.all(c,
+        has(c.resources) && has(c.resources.limits) && 'memory' in c.resources.limits)
+    message: Every container needs a memory limit.
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: require-memory-limits
+spec:
+  policyName: require-memory-limits
+  validationActions: [Deny]
+  matchResources:
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: dispatch

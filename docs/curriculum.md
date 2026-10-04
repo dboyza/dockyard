@@ -2,7 +2,8 @@
 
 Status: approved for autonomous implementation through the planning review, 2026-09-26.
 The module outcomes below are a scope contract, not claims of completed content.
-Each row specifies three teaching labs and an independent mission, giving 100 course units across 25 modules.
+Each row specifies three teaching labs and an independent mission.
+Focused exercises added later give some modules a fourth lesson, for 104 course units across 25 modules.
 Module 00 teaches container foundations with small throwaway programs before Dispatch is introduced.
 The sixth module's mission in each of the four main phases is the cumulative capstone.
 Those phases form one evolving Dispatch project, with self-contained checkpoints for later entry.
@@ -59,6 +60,18 @@ Added on 2026-10-01 after learner feedback that the first lesson introduced too 
 | 22 | Cluster networking and storage | CNI and packet flow; CoreDNS and service proxy diagnosis; CSI behavior, scheduling, and storage failures | Restore an application affected by infrastructure faults |
 | 23 | Control-plane recovery | etcd snapshots and verified restore; failed kubelet and static-pod recovery; unavailable API and control-plane diagnosis | Recover cluster state and prove application continuity |
 | 24 | Operational handoff | Multi-layer triage under time pressure; capacity, reliability, and security decisions; runbooks, evidence, and exam workflow | Capstone: build, operate, recover, and hand off Dispatch independently |
+
+## Focused exercises
+
+Added on 2026-10-03 to give exam topics that were only mentioned their own hands-on practice.
+Each adds a fourth lesson to its module, and the mission stays last.
+
+| Unit | Module | Practice | Exam objectives |
+| --- | --- | --- | --- |
+| m09-downward | 09 | Downward API environment variables, resource fields, and a labels volume | CKAD ephemeral volumes |
+| m13-priority | 13 | PriorityClass and preemption on a full node | CKA scheduling |
+| m15-debug | 15 | Ephemeral containers with `--target` and debugging copies with `--copy-to` | CKAD debugging and CLI monitoring |
+| m17-policies | 17 | ValidatingAdmissionPolicy with CEL, binding actions, and namespace scope | CKAD admission control, CKA Pod admission |
 
 ## Twelve incident scenarios
 

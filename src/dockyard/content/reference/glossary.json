@@ -732,6 +732,7 @@
     "definition": "A cluster-wide object giving Pods a priority number; when nodes are full, higher-priority Pods are scheduled first and can preempt lower ones.",
     "watch_for": "Pods only use a class that names it in priorityClassName; for a Deployment, set it in the Pod template.",
     "units": [
+      "m13-priority",
       "m13-placement"
     ],
     "primer": "yaml"
@@ -1224,7 +1225,8 @@
     "definition": "A built-in check that accepts or rejects new Pods in a namespace against a standard such as restricted, when they are created.",
     "watch_for": "It checks only at creation; Pods that are already running are not changed or removed.",
     "units": [
-      "m17-contexts"
+      "m17-contexts",
+      "m17-policies"
     ],
     "primer": "yaml"
   },
@@ -1248,5 +1250,46 @@
       "m24-triage"
     ],
     "primer": "exam"
+  },
+  {
+    "id": "downward-api",
+    "term": "Downward API",
+    "definition": "A way for a Pod to pass facts about itself, such as its name, namespace, node, labels, and resource limits, into its own containers as environment variables or files.",
+    "watch_for": "Environment variables are fixed when the container starts; only files from a downwardAPI volume follow changes such as new labels.",
+    "units": [
+      "m09-downward"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "preemption",
+    "term": "Preemption",
+    "definition": "When a higher-priority Pod cannot fit on any node, the scheduler removes enough lower-priority Pods from one node to make room for it.",
+    "watch_for": "Preempted Pods are recreated by their controllers and wait as Pending; preemption decides which work waits, it does not scale anything down.",
+    "units": [
+      "m13-priority"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "admission-policy",
+    "term": "ValidatingAdmissionPolicy",
+    "definition": "A rule written as a CEL expression that the API server checks when objects are created or updated; a binding puts it into effect for chosen resources and namespaces.",
+    "watch_for": "A policy without a binding refuses nothing, and a binding with Warn or Audit only reports; only Deny refuses the request.",
+    "units": [
+      "m17-policies"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "ephemeral-container",
+    "term": "Ephemeral container",
+    "definition": "A temporary container added to a Pod that is already running, usually to bring debugging tools the application's image leaves out.",
+    "watch_for": "It never restarts and cannot be removed; it disappears only when the Pod is replaced.",
+    "units": [
+      "m15-debug",
+      "m15-observation"
+    ],
+    "primer": "yaml"
   }
 ]

@@ -170,3 +170,50 @@ def configuration() -> dict[str, Any]:
         with suppress(RuntimeError, ValueError, KeyError):
             result["preview"] = all(preview.values()) and job_roundtrip("preview")
     return result
+
+
+WHEREAMI = (
+    "import urllib.request; "
+    "print(urllib.request.urlopen('http://127.0.0.1:8080/whereami', timeout=5).read().decode())"
+)
+
+
+def downward() -> dict[str, Any]:
+    """Compare what each API Pod reports about itself with its actual Pod object."""
+    from dockyard.probes.capacity import quantity
+
+    result: dict[str, Any] = dict.fromkeys(("identity", "resources", "labels"), False)
+    details: dict[str, Any] = {"pods": []}
+    result["_details"] = details
+    with suppress(RuntimeError, ValueError, KeyError):
+        deployment, pods = owned_pods("dispatch")
+        observed = []
+        for pod in pods:
+            name = pod["metadata"]["name"]
+            reply = json.loads(kubectl("exec", name, "-c", "api", "--", "python", "-c", WHEREAMI))
+            api = next(c for c in pod["spec"]["containers"] if c["name"] == "api")
+            limit = int(quantity(api["resources"]["limits"]["memory"]))
+            observed.append((pod, reply, limit))
+            details["pods"].append(
+                {"pod": name, "node": pod["spec"]["nodeName"], "reported": reply}
+            )
+        complete = available(deployment, 2) and len(observed) == 2
+        result["identity"] = complete and all(
+            reply["pod"] == pod["metadata"]["name"]
+            and reply["namespace"] == pod["metadata"]["namespace"]
+            and reply["node"] == pod["spec"]["nodeName"]
+            for pod, reply, _ in observed
+        )
+        # The default divisor reports bytes; a 1Mi divisor reports mebibytes.
+        result["resources"] = complete and all(
+            reply["memory_limit"] in {str(limit), str(limit // 1024**2)}
+            for _, reply, limit in observed
+        )
+        result["labels"] = complete and all(
+            'app="dispatch"' in (reply["labels"] or "") for _, reply, _ in observed
+        )
+    try:
+        result["processing"] = job_roundtrip()
+    except (RuntimeError, ValueError, KeyError):
+        result["processing"] = False
+    return result

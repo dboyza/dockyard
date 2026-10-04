@@ -1,7 +1,7 @@
 id: m13-mission
 revision: 1
 module: 13
-order: 4
+order: 5
 title: 'Mission: drain a worker without an outage'
 summary: Fix placement, autoscaling, and the disruption budget, then drain a worker under load.
 kind: mission

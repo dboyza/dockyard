@@ -1,0 +1,163 @@
+id: m15-debug
+revision: 1
+module: 15
+order: 4
+title: Debug Pods you cannot get into
+summary: Inspect a running container that has no tools of its own with an ephemeral container, and explore
+  a crashing worker through a debugging copy.
+kind: lesson
+runtime: kubernetes
+minutes: 35
+outcomes:
+- Attach an ephemeral container that shares a running container's processes with kubectl debug --target.
+- Explore a crashing container through a copy of its Pod with a different command, using kubectl debug
+  --copy-to.
+- Remove debugging copies when the investigation is over.
+prerequisites:
+- m15-observation
+objectives:
+- kubernetes.observability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A worker container exits one second after it starts, over and over. What happens if you run
+    kubectl exec on it to look around?
+  options:
+  - It usually fails, because there is no running container to start a command in.
+  - It works, and the container stays up while you are connected.
+  - It restarts the container with a shell instead of its command.
+  correct: 0
+  explanation: kubectl exec starts a command inside a container that is already running. A crashing container
+    is running for only a moment, so a copy of the Pod with a different command is the dependable way
+    in.
+hints:
+- kubectl logs deployment/worker shows which file Python could not open. A copy of a worker Pod that runs
+  sh instead lets you list the files in /app.
+- For the worker, use kubectl debug WORKER_POD -it --copy-to=worker-debug --container=worker -- sh. For
+  the API, use kubectl debug API_POD --image="$DOCKYARD_BUSYBOX_LOCAL_IMAGE" --target=api --profile=general
+  -- ps, then kubectl logs on the container it names.
+- Change the worker command in worker.yaml back to python worker.py and run sh run.sh, save the ephemeral
+  container's ps output from an API Pod as api-processes.txt, and delete the worker-debug Pod.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/
+- https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/
+- https://kubernetes.io/docs/reference/kubectl/generated/kubectl_debug/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 90
+checks:
+- id: debug-processes
+  title: The API's processes were seen from an ephemeral container
+  explanation: A running API Pod must list an ephemeral container that targets the api container, and
+    api-processes.txt must hold its ps output, where python app.py is process 1.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - debugging
+    timeout: 120
+  expectation: json
+  json_path:
+  - processes
+  expected: 'true'
+  diagnostic: No API Pod has an ephemeral container targeting api, or api-processes.txt does not show
+    python app.py as process 1. Run kubectl debug on an API Pod with --target=api, then save that container's
+    output with kubectl logs POD -c CONTAINER > api-processes.txt. Without --target, ps shows only the
+    debugging container's own processes.
+- id: debug-worker
+  title: Both workers run without restarting
+  explanation: The worker Deployment must have two available Pods whose containers are running and ready.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - debugging
+    timeout: 120
+  expectation: json
+  json_path:
+  - worker
+  expected: 'true'
+  diagnostic: The worker Pods are still not running. Read kubectl logs deployment/worker for the file
+    Python could not open, find the real file name in a debugging copy, correct the command in worker.yaml,
+    and run sh run.sh.
+- id: debug-cleanup
+  title: No debugging copies are left behind
+  explanation: Every Pod in the dispatch namespace must belong to a controller, so no debugging copy is
+    still running.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - debugging
+    timeout: 120
+  expectation: json
+  json_path:
+  - cleanup
+  expected: 'true'
+  diagnostic: A Pod that no controller owns is still in the dispatch namespace, usually a debugging copy.
+    List them with kubectl get pods and delete the copy with kubectl delete pod worker-debug.
+- id: visibility-processing
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - debugging
+    timeout: 120
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then
+    kubectl logs deployment/worker for errors.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-observability-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any way of finding the worker's real entry point is accepted, including listing /app in an API container,
+  which uses the same image.
+- The ephemeral container may use any image with ps and any name, as long as it targets the api container
+  of a running API Pod.
+failure_modes:
+- Without --target, an ephemeral container has its own process namespace and cannot see the application.
+- kubectl exec cannot enter a container that keeps exiting.
+- A debugging copy keeps running and holding resources until it is deleted.
+starter_failure_checks:
+- debug-processes
+- debug-worker
+- visibility-processing

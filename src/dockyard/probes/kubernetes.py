@@ -208,8 +208,18 @@ def api_request(
     )
 
 
-def job_roundtrip(namespace: str = "dispatch", database_workload: str = "deployment/db") -> bool:
+def find_database(namespace: str = "dispatch") -> str:
+    """Name the db workload: a Deployment early in the course, a StatefulSet once it is stateful."""
+    for kind in ("statefulset", "deployment"):
+        with suppress(RuntimeError):
+            kubectl("get", "-n", namespace, kind, "db", "-o", "name")
+            return f"{kind}/db"
+    raise RuntimeError("No db Deployment or StatefulSet was found.")
+
+
+def job_roundtrip(namespace: str = "dispatch", database_workload: str | None = None) -> bool:
     _, pods = owned_pods("worker", namespace)
+    database = database_workload or find_database(namespace)
     succeeded = False
     job_id = None
     try:
@@ -226,7 +236,7 @@ def job_roundtrip(namespace: str = "dispatch", database_workload: str = "deploym
                     sql(
                         f"SELECT row_to_json(j) FROM jobs j WHERE id='{job_id}'",
                         namespace,
-                        database_workload,
+                        database,
                     )
                 )
                 succeeded = (
@@ -247,7 +257,7 @@ def job_roundtrip(namespace: str = "dispatch", database_workload: str = "deploym
     finally:
         if job_id and len(job_id) == 32 and all(c in "0123456789abcdef" for c in job_id):
             with suppress(RuntimeError):
-                sql(f"DELETE FROM jobs WHERE id='{job_id}'", namespace, database_workload)
+                sql(f"DELETE FROM jobs WHERE id='{job_id}'", namespace, database)
     return bool(succeeded)
 
 
@@ -356,29 +366,33 @@ def workloads() -> dict[str, Any]:
 def main() -> None:
     if not os.environ.get("DOCKYARD_LAB") or not os.environ.get("KUBECONFIG"):
         raise SystemExit("Run this check inside a Dockyard practice environment.")
-    from dockyard.probes.capacity import capacity
-    from dockyard.probes.configuration import configuration
+    from dockyard.probes.capacity import capacity, priority
+    from dockyard.probes.configuration import configuration, downward
     from dockyard.probes.delivery import delivery
     from dockyard.probes.hardening import hardening
     from dockyard.probes.packaging import packaging
     from dockyard.probes.releases import releases
     from dockyard.probes.routing import routing
-    from dockyard.probes.security import security
+    from dockyard.probes.security import policies, security
     from dockyard.probes.storage import storage
-    from dockyard.probes.visibility import visibility
+    from dockyard.probes.visibility import debugging, visibility
 
     probes = {
         "foundation": foundation,
         "workloads": workloads,
         "configuration": configuration,
+        "downward": downward,
         "routing": routing,
         "storage": storage,
         "releases": releases,
         "capacity": capacity,
+        "priority": priority,
         "packaging": packaging,
         "visibility": visibility,
+        "debugging": debugging,
         "delivery": delivery,
         "security": security,
+        "policies": policies,
         "hardening": hardening,
     }
     try:

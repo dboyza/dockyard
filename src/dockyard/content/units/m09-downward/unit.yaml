@@ -1,0 +1,141 @@
+id: m09-downward
+revision: 1
+module: 9
+order: 4
+title: Tell Dispatch where it is running
+summary: Pass each Pod's name, node, memory limit, and labels into Dispatch with the Downward API, so every request can be traced to the Pod that served it.
+kind: lesson
+runtime: kubernetes
+minutes: 30
+outcomes:
+- Expose Pod fields to a container as environment variables with fieldRef.
+- Expose a container's resource limits with resourceFieldRef.
+- Project Pod labels into a file with a downwardAPI volume, and explain when it updates.
+prerequisites:
+- m09-identities
+objectives:
+- kubernetes.configuration
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Two Dispatch replicas both set DISPATCH_POD_NAME with value dispatch. What does each replica report as its Pod name?
+  options:
+  - Both report dispatch, so you cannot tell which Pod served a request.
+  - Each reports its own Pod name, because Kubernetes replaces the value.
+  - Neither starts, because a fixed value is not allowed.
+  correct: 0
+  explanation: A value is copied into every Pod made from the template unchanged. Only valueFrom.fieldRef asks Kubernetes to fill in each Pod's own name.
+hints:
+- Ask one Pod what it reports with kubectl exec, and compare it with kubectl get pod -o wide for the same Pod.
+- The Pod name, namespace, and node come from fieldRef paths, the memory limit from resourceFieldRef, and the labels from a downwardAPI volume item.
+- 'In the API container, use fieldRef metadata.name, metadata.namespace, and spec.nodeName, resourceFieldRef limits.memory for containerName api, and mount a downwardAPI volume with a labels item from metadata.labels at /etc/podinfo; then run sh run.sh.'
+sources:
+- https://kubernetes.io/docs/concepts/workloads/pods/downward-api/
+- https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/
+- https://kubernetes.io/docs/tasks/inject-data-application/downward-api-volume-expose-pod-information/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 90
+checks:
+- id: downward-identity
+  title: Each Pod reports its own name, namespace, and node
+  explanation: Dispatch's /whereami must report the Pod name, namespace, and node of the very Pod that answers, for both replicas.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - downward
+    timeout: 120
+  expectation: json
+  json_path:
+  - identity
+  expected: 'true'
+  diagnostic: At least one Pod reports a name, namespace, or node that is not its own. A fixed value is copied into every replica; use valueFrom.fieldRef with metadata.name, metadata.namespace, and spec.nodeName for DISPATCH_POD_NAME, DISPATCH_POD_NAMESPACE, and DISPATCH_NODE_NAME, then run sh run.sh.
+- id: downward-resources
+  title: Each Pod reports its own memory limit
+  explanation: DISPATCH_MEMORY_LIMIT must come from the API container's actual memory limit.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - downward
+    timeout: 120
+  expectation: json
+  json_path:
+  - resources
+  expected: 'true'
+  diagnostic: DISPATCH_MEMORY_LIMIT is missing or does not match the container's limit. Use valueFrom.resourceFieldRef with containerName api and resource limits.memory; the default divisor reports bytes.
+- id: downward-labels
+  title: Each Pod can read its own labels from a file
+  explanation: A downwardAPI volume must provide the Pod's labels as /etc/podinfo/labels.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - downward
+    timeout: 120
+  expectation: json
+  json_path:
+  - labels
+  expected: 'true'
+  diagnostic: /etc/podinfo/labels is missing or does not list app="dispatch". Add a downwardAPI volume with an item at path labels from fieldRef metadata.labels, and mount it read-only at /etc/podinfo in the API container.
+- id: configuration-processing
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - downward
+    timeout: 120
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then kubectl logs deployment/worker for database or Redis errors.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+checkpoint: dispatch-config-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any manifest is accepted when each running Pod reports its own identity, its actual memory limit in bytes or mebibytes, and its labels.
+failure_modes:
+- A fixed value copies the same name into every replica.
+- Environment variables are fixed when a container starts; a labels file can change while it runs.
+starter_failure_checks:
+- downward-identity
+- downward-resources
+- downward-labels

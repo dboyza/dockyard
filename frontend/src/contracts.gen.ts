@@ -185,6 +185,7 @@ export type UnitKind = "lesson" | "mission" | "incident" | "exam";
 
 // Every figure a lesson can embed; the browser registry must draw each one.
 export type FigureId =
+  | "admission-policy"
   | "admission-vs-context"
   | "alert-states"
   | "apiserver-etcd"
@@ -224,7 +225,9 @@ export type FigureId =
   | "dns-vs-proxy"
   | "docker-client-engine"
   | "dockerfile-layers"
+  | "downward-api"
   | "encrypted-restore"
+  | "ephemeral-debug"
   | "error-budget"
   | "etcd-restore"
   | "etcd-scope"
@@ -276,6 +279,7 @@ export type FigureId =
   | "port-mapping-mismatch"
   | "port-publishing"
   | "prestop-timeline"
+  | "priority-preemption"
   | "probe-roles"
   | "projected-volume"
   | "prometheus-scrape"

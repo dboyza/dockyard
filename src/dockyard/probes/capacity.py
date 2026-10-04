@@ -12,7 +12,14 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from dockyard.probes.kubernetes import api_request, available, get, kubectl, owned_pods
+from dockyard.probes.kubernetes import (
+    api_request,
+    available,
+    get,
+    job_roundtrip,
+    kubectl,
+    owned_pods,
+)
 from dockyard.process import run
 
 
@@ -261,4 +268,49 @@ def capacity() -> dict[str, Any]:
             and not node["spec"].get("unschedulable", False)
             and api_request("/readyz").get("ready") is True
         )
+    return result
+
+
+def priority() -> dict[str, Any]:
+    """Observe whether the API displaced lower-priority batch work to get its capacity."""
+    result: dict[str, Any] = dict.fromkeys(("class", "available", "preempted"), False)
+    details: dict[str, Any] = {}
+    result["_details"] = details
+    with suppress(RuntimeError, ValueError, KeyError):
+        deployment, pods = owned_pods("dispatch")
+        batch, batch_pods = owned_pods("report-batch")
+        classes = {item["metadata"]["name"]: item for item in get("priorityclass")["items"]}
+        name = deployment["spec"]["template"]["spec"].get("priorityClassName", "")
+        chosen = classes.get(name, {})
+        low = classes["batch-low"]["value"]
+        details["class"] = {
+            "api_class": name,
+            "api_value": chosen.get("value"),
+            "batch_value": low,
+            "global_default": chosen.get("globalDefault", False),
+        }
+        result["class"] = bool(
+            chosen
+            and chosen["value"] > low
+            and not chosen.get("globalDefault", False)
+            and all(pod["spec"].get("priority") == chosen["value"] for pod in pods)
+        )
+        slots = [
+            container["resources"].get("requests", {}).get("dockyard.io/slots")
+            for container in deployment["spec"]["template"]["spec"]["containers"]
+            if container["name"] == "api"
+        ]
+        result["available"] = available(deployment, 2) and slots == ["1"]
+        running = [pod for pod in batch_pods if pod["status"].get("phase") == "Running"]
+        details["preempted"] = {
+            "batch_replicas": batch["spec"]["replicas"],
+            "batch_running": len(running),
+            "api_slot_requests": slots,
+        }
+        # Still asking for three copies, but one gave up its slot: preemption, not a scale-down.
+        result["preempted"] = batch["spec"]["replicas"] == 3 and len(running) == 2
+    try:
+        result["processing"] = job_roundtrip()
+    except (RuntimeError, ValueError, KeyError):
+        result["processing"] = False
     return result

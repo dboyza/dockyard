@@ -55,6 +55,51 @@ print(json.dumps(results))
     return list(execute(deployment, script, namespace))
 
 
+def workflow() -> bool:
+    """Submit a job as the trusted frontend client and observe a worker complete it."""
+    succeeded = False
+    job_id = None
+    with suppress(RuntimeError, ValueError, KeyError, OSError):
+        try:
+            title = "restricted-" + uuid.uuid4().hex
+            job_id = request("/jobs", {"title": title}, "POST")["id"]
+            if (
+                not isinstance(job_id, str)
+                or len(job_id) != 32
+                or any(c not in "0123456789abcdef" for c in job_id)
+            ):
+                raise ValueError("Invalid observed job ID")
+            _, workers = owned_pods("worker")
+            deadline = time.monotonic() + 15
+            while time.monotonic() < deadline:
+                row = json.loads(
+                    sql(
+                        f"SELECT row_to_json(j) FROM jobs j WHERE id='{job_id}'",
+                        workload="statefulset/db",
+                    )
+                )
+                if row["status"] == "done":
+                    succeeded = (
+                        row["title"] == title
+                        and row["result"]
+                        == {
+                            "normalized": title.upper(),
+                            "sha256": hashlib.sha256(title.encode()).hexdigest(),
+                        }
+                        and row["worker"] in {p["metadata"]["name"] for p in workers}
+                    )
+                    break
+                time.sleep(0.3)
+        finally:
+            if (
+                isinstance(job_id, str)
+                and len(job_id) == 32
+                and all(c in "0123456789abcdef" for c in job_id)
+            ):
+                sql(f"DELETE FROM jobs WHERE id='{job_id}'", workload="statefulset/db")
+    return succeeded
+
+
 def security() -> dict[str, Any]:
     result: dict[str, Any] = dict.fromkeys(
         ("rbac", "tokens", "network", "dns", "admission", "runtime", "workflow"), False
@@ -293,43 +338,62 @@ print(
             and context.get("allowPrivilegeEscalation") is False
         )
         details["runtime"] = observed
-    job_id = None
-    with suppress(RuntimeError, ValueError, KeyError, OSError):
-        try:
-            title = "restricted-" + uuid.uuid4().hex
-            job_id = request("/jobs", {"title": title}, "POST")["id"]
-            if (
-                not isinstance(job_id, str)
-                or len(job_id) != 32
-                or any(c not in "0123456789abcdef" for c in job_id)
-            ):
-                raise ValueError("Invalid observed job ID")
-            _, workers = owned_pods("worker")
-            deadline = time.monotonic() + 15
-            while time.monotonic() < deadline:
-                row = json.loads(
-                    sql(
-                        f"SELECT row_to_json(j) FROM jobs j WHERE id='{job_id}'",
-                        workload="statefulset/db",
-                    )
-                )
-                if row["status"] == "done":
-                    result["workflow"] = (
-                        row["title"] == title
-                        and row["result"]
-                        == {
-                            "normalized": title.upper(),
-                            "sha256": hashlib.sha256(title.encode()).hexdigest(),
-                        }
-                        and row["worker"] in {p["metadata"]["name"] for p in workers}
-                    )
-                    break
-                time.sleep(0.3)
-        finally:
-            if (
-                isinstance(job_id, str)
-                and len(job_id) == 32
-                and all(c in "0123456789abcdef" for c in job_id)
-            ):
-                sql(f"DELETE FROM jobs WHERE id='{job_id}'", workload="statefulset/db")
+    result["workflow"] = workflow()
+    return result
+
+
+def candidate(namespace: str, memory_limit: bool) -> str:
+    """A Deployment for a server-side dry run, with or without a memory limit."""
+    limits = {"memory": "64Mi"} if memory_limit else {}
+    return json.dumps(
+        {
+            "apiVersion": "apps/v1",
+            "kind": "Deployment",
+            "metadata": {"name": "admission-candidate", "namespace": namespace},
+            "spec": {
+                "selector": {"matchLabels": {"app": "admission-candidate"}},
+                "template": {
+                    "metadata": {"labels": {"app": "admission-candidate"}},
+                    "spec": {
+                        "containers": [
+                            {
+                                "name": "candidate",
+                                "image": os.environ["DOCKYARD_BUSYBOX_LOCAL_IMAGE"],
+                                "command": ["sleep", "infinity"],
+                                "resources": {"requests": {"memory": "16Mi"}, "limits": limits},
+                            }
+                        ]
+                    },
+                },
+            },
+        }
+    )
+
+
+def policies() -> dict[str, Any]:
+    """Ask the API server, with dry runs, what the admission policy allows and denies."""
+    result: dict[str, Any] = dict.fromkeys(("deny", "allow", "scope"), False)
+    details: dict[str, Any] = {}
+    result["_details"] = details
+
+    def attempt(namespace: str, memory_limit: bool) -> tuple[bool, str]:
+        observed = run(
+            ["kubectl", "--request-timeout=10s", "create", "--dry-run=server", "-f", "-"],
+            input_text=candidate(namespace, memory_limit),
+            timeout=20,
+        )
+        return observed.ok, (observed.stdout + observed.stderr).strip()
+
+    denied_ok, denied = attempt("dispatch", False)
+    allowed_ok, allowed = attempt("dispatch", True)
+    elsewhere_ok, elsewhere = attempt("sandbox", False)
+    details["attempts"] = {
+        "dispatch_without_limit": denied[-400:],
+        "dispatch_with_limit": allowed[-400:],
+        "sandbox_without_limit": elsewhere[-400:],
+    }
+    result["deny"] = not denied_ok and "ValidatingAdmissionPolicy" in denied
+    result["allow"] = allowed_ok
+    result["scope"] = elsewhere_ok
+    result["processing"] = workflow()
     return result

@@ -2421,5 +2421,83 @@
       "namespace",
       "manifest"
     ]
+  },
+  {
+    "id": "downward-api",
+    "title": "Facts about the Pod, passed down to its container",
+    "caption": "Environment variables are fixed when the container starts; the labels file is kept current.",
+    "description": "On the left, the Pod object in the API server holds spec.nodeName worker2, a memory limit of 192Mi, and metadata with the name dispatch-x2l, the namespace dispatch, and the label app=dispatch. On the right, the api container receives DISPATCH_NODE_NAME=worker2, DISPATCH_MEMORY_LIMIT=201326592, DISPATCH_POD_NAME=dispatch-x2l, and DISPATCH_POD_NAMESPACE=dispatch through fieldRef and resourceFieldRef, and a file /etc/podinfo/labels containing app=\"dispatch\" through a downwardAPI volume. A note says the environment is fixed at start while the file is kept current.",
+    "terms": [
+      "downward-api",
+      "environment-variable",
+      "pod"
+    ]
+  },
+  {
+    "id": "priority-preemption",
+    "title": "A higher-priority Pod takes a slot",
+    "caption": "Preempted Pods are recreated and wait; nothing is scaled down.",
+    "description": "A sequence in three steps on a node with four slots. First, three batch Pods with priority 1000 and one API Pod fill the node, and a second API Pod waits outside as Pending. Second, the waiting API Pod has priority 100000, so the scheduler preempts one batch Pod. Third, the node holds two batch Pods and two API Pods, and the batch Deployment's replacement Pod waits as Pending.",
+    "terms": [
+      "priorityclass",
+      "preemption",
+      "request"
+    ],
+    "steps": [
+      {
+        "label": "The node is full",
+        "text": "Three batch Pods and one API Pod hold all four slots, so the second API Pod is Pending."
+      },
+      {
+        "label": "Priority decides",
+        "text": "The waiting API Pod has priority 100000, above the batch Pods' 1000, so the scheduler preempts one batch Pod."
+      },
+      {
+        "label": "Who waits now",
+        "text": "The API Pod takes the freed slot. The batch Deployment recreates its Pod, which waits as Pending until room returns."
+      }
+    ]
+  },
+  {
+    "id": "admission-policy",
+    "title": "Where an admission policy acts",
+    "caption": "A policy describes the rule; its binding decides where it applies and what a failure does.",
+    "description": "A sequence in two steps. First, a request passes through the API server in order: it is authenticated, authorized by RBAC, checked by admission controllers such as Pod Security Admission and ValidatingAdmissionPolicy, and only then stored in etcd. Second, a policy holding the CEL rule and a binding naming the dispatch namespace with the Deny action feed the admission stage: a Deployment without a memory limit is denied in dispatch and allowed in sandbox.",
+    "terms": [
+      "admission-policy",
+      "rbac",
+      "pod-security-admission"
+    ],
+    "steps": [
+      {
+        "label": "The request's path",
+        "text": "Each change is authenticated, authorized, checked by admission controllers, and only then stored."
+      },
+      {
+        "label": "Policy and binding",
+        "text": "The policy holds the rule; the binding applies it to dispatch with Deny, so only that namespace refuses limitless Deployments."
+      }
+    ]
+  },
+  {
+    "id": "ephemeral-debug",
+    "title": "Two ways in with kubectl debug",
+    "caption": "An ephemeral container joins a running Pod; a debugging copy is a separate Pod with a different command.",
+    "description": "A sequence in two steps. First, a running API Pod holds the api container, whose process 1 is python app.py; an ephemeral busybox container is added beside it with --target=api, shares its process namespace, and its ps lists python app.py. The Pod is not restarted. Second, a worker Pod whose container keeps crashing is copied into a new Pod called worker-debug, with the same image, environment, and mounts but running sh instead, so its files can be explored; the copy belongs to no Deployment and stays until it is deleted.",
+    "terms": [
+      "ephemeral-container",
+      "pod",
+      "linux-namespace"
+    ],
+    "steps": [
+      {
+        "label": "Ephemeral container",
+        "text": "Added to a running Pod with its own tools; --target shares the api container's processes, and nothing restarts."
+      },
+      {
+        "label": "Debugging copy",
+        "text": "A new Pod copied from the crashing one, running sh instead, so you can look around; delete it when you are done."
+      }
+    ]
   }
 ]
