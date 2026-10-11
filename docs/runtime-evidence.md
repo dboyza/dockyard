@@ -717,3 +717,12 @@ In two earlier batch runs, the audit lessons' Secret reader made no logged reque
 That cause was not reproduced, so the references now fail loudly when the reader never appears, the probe reports which identities read the Secret and with what result, and the reader logs the reason for each failure.
 Batch lists written with zsh once expanded to nothing and started the whole integration suite; it was interrupted, its test profiles were released, and the batch runner now refuses a list without test IDs.
 No test profiles, lab VMs, or Dockyard-labelled containers remained afterwards.
+
+## 2026-10-11: Kubernetes 1.37 regression
+
+The whole course was rerun on Kubernetes 1.37 from a snapshot of the final code: 60 of 60 kind units, 33 of 33 Docker units, and 28 of 28 native Linux units passed, with every starter failing its declared checks.
+Every first check passed except CKA practice exam B, whose reference renews certificates and restarts the API server after an upgrade has recreated the application Pods.
+Pods started while the API server is down pass NetworkPolicy only once Calico catches up, which took more than a minute, so the job, Service, and network checks failed when checked at once and passed shortly after.
+The reference now ends by testing that request path, as a careful candidate would, the job workflow waits up to 30 seconds, and the exam's workflow diagnostic explains the delay.
+With that change, exam B passed at the first check.
+No test profiles, lab VMs, or Dockyard-labelled containers remained afterwards.
