@@ -8,12 +8,16 @@ import json
 import re
 import tarfile
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.error import HTTPError
 from urllib.parse import urlencode, urljoin, urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from dockyard import host
+from dockyard.workspace import atomic_write
+
+if TYPE_CHECKING:
+    from dockyard.runtimes.kubernetes import KubernetesRuntime
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -23,7 +27,7 @@ class NoRedirect(HTTPRedirectHandler):
         raise ValueError("The local registry unexpectedly redirected an authenticated request.")
 
 
-def publish(archive: Path, registry: str, password: str) -> str:
+def publish(archive: Path, registry: str, password: str, tag: str = "incident") -> str:
     if not re.fullmatch(r"127\.0\.0\.1:[0-9]{1,5}", registry):
         raise ValueError("Practice image publishing requires the recorded loopback registry.")
     origin = "http://" + registry
@@ -114,9 +118,32 @@ def publish(archive: Path, registry: str, password: str) -> str:
                 if response.status != 201:
                     raise ValueError("The registry did not acknowledge its uploaded image content.")
         with request(
-            "/v2/dispatch/manifests/incident", "PUT", manifest_bytes, manifest["mediaType"]
+            "/v2/dispatch/manifests/" + tag, "PUT", manifest_bytes, manifest["mediaType"]
         ) as response:
             digest = str(response.headers["Docker-Content-Digest"])
         if digest != "sha256:" + hashlib.sha256(manifest_bytes).hexdigest():
             raise ValueError("The registry returned a different image manifest identity.")
         return digest
+
+
+def trust_on_nodes(runtime: KubernetesRuntime, registry: str, container: str) -> None:
+    """Let every owned node pull images named with the loopback registry address.
+
+    Nodes cannot reach the host's loopback port, so containerd is told to fetch that
+    registry's images from the registry container on the cluster's Docker network.
+    """
+    hosts = runtime.root / f"{container}-hosts.toml"
+    atomic_write(
+        hosts,
+        (f'[host."http://{container}:5000"]\n  capabilities = ["pull", "resolve"]\n').encode(),
+    )
+    for node in runtime.discover():
+        if runtime.verify(node) is None:
+            raise RuntimeError("A recorded owned node disappeared during registry configuration.")
+        directory = "/etc/containerd/certs.d/" + registry
+        runtime.docker.require(
+            runtime.docker.command(["exec", node["id"], "mkdir", "-p", directory])
+        )
+        runtime.docker.require(
+            runtime.docker.command(["cp", str(hosts), node["id"] + ":" + directory + "/hosts.toml"])
+        )

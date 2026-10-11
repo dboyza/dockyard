@@ -1,0 +1,171 @@
+id: m27-seccomp
+revision: 1
+module: 27
+order: 3
+title: Filter system calls with seccomp
+summary: Install a Localhost seccomp profile on every node, apply it to one container, and give another
+  the runtime's default filter.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 35
+outcomes:
+- Explain what a seccomp filter does and how Unconfined, RuntimeDefault, and Localhost profiles differ.
+- Read a seccomp profile's default action and rules, and install it where the kubelet finds it.
+- Apply seccomp profiles to containers and confirm them from inside.
+prerequisites:
+- m27-apparmor
+objectives:
+- kubernetes.security
+- cks.kernel-hardening
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A Pod's containers set no seccompProfile at all. Which seccomp filter do they run with?
+  options:
+  - None; Kubernetes runs them Unconfined unless told otherwise.
+  - The container runtime's default profile.
+  - The strictest profile the node has.
+  correct: 0
+  explanation: Without a seccompProfile, and without the kubelet's seccompDefault setting, containers
+    run Unconfined. RuntimeDefault must be asked for, and the Restricted Pod Security standard requires
+    it.
+hints:
+- 'kubectl exec into each Deployment and run grep Seccomp: /proc/1/status; 0 means no filter.'
+- Localhost profiles live under /var/lib/kubelet/seccomp on each node, and localhostProfile is a path
+  relative to that folder.
+- Copy profiles/no-chmod.json to /var/lib/kubelet/seccomp/profiles/no-chmod.json on both nodes, set the
+  processor's seccompProfile to Localhost with localhostProfile profiles/no-chmod.json and intake's to
+  RuntimeDefault, then apply processing.yaml through render.py.
+sources:
+- https://kubernetes.io/docs/tutorials/security/seccomp/
+- https://kubernetes.io/docs/concepts/security/pod-security-standards/
+- https://man7.org/linux/man-pages/man2/seccomp.2.html
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - seccomp
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - seccomp
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: seccomp-installed
+  title: The profile is installed on every node
+  explanation: A valid no-chmod.json must be in /var/lib/kubelet/seccomp/profiles on both nodes.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - seccomp
+    timeout: 300
+  expectation: json
+  json_path:
+  - installed
+  expected: 'true'
+  diagnostic: The profile file is missing or invalid on a node. Create /var/lib/kubelet/seccomp/profiles
+    with sudo mkdir -p and write the file there with sudo tee on both nodes.
+- id: seccomp-processor
+  title: The processor runs with the Localhost profile
+  explanation: The processor must use a Localhost seccomp profile, report Seccomp 2, be refused when changing
+    file permissions, and keep processing documents.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - seccomp
+    timeout: 300
+  expectation: json
+  json_path:
+  - processor
+  expected: 'true'
+  diagnostic: 'The processor is not filtered by your profile, or stopped working. Set its seccompProfile
+    to type Localhost with localhostProfile profiles/no-chmod.json, apply, and check grep Seccomp: /proc/1/status
+    inside it.'
+- id: seccomp-intake
+  title: intake runs with a seccomp filter
+  explanation: The intake container must report Seccomp 2 and be available.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - seccomp
+    timeout: 300
+  expectation: json
+  json_path:
+  - intake
+  expected: 'true'
+  diagnostic: intake still runs without a filter. Give its container a seccompProfile of type RuntimeDefault
+    and apply.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - seccomp
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Setting seccompProfile at the Pod level instead of the container level is accepted.
+- A Localhost profile for intake is accepted as long as intake keeps running with a filter.
+failure_modes:
+- A Pod without seccompProfile runs Unconfined.
+- localhostProfile is relative to the kubelet's seccomp folder, not an absolute path.
+- A profile that only refuses listed calls stops nothing else.
+starter_failure_checks:
+- seccomp-processor
+- seccomp-intake
+- seccomp-installed

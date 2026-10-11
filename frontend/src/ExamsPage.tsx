@@ -116,8 +116,9 @@ export function ExamsPage({ model }: { model: Workbench }) {
           <div className="eyebrow">Timed practice exams</div>
           <h1>Work against a clear deadline.</h1>
           <p className="intro">
-            Two CKAD-style and two CKA-style exams, each with eight hands-on
-            tasks on a real cluster. Your results show which lessons to revisit.
+            Two CKAD-style, two CKA-style, and two CKS-style exams, each with
+            eight hands-on tasks on a real cluster. Your results show which
+            lessons to revisit.
           </p>
         </div>
         <section className="panel exam-rules">
@@ -157,9 +158,13 @@ export function ExamsPage({ model }: { model: Workbench }) {
                 <h2>{item.title}</h2>
                 <p className="muted">
                   {item.minutes} minutes ·{" "}
-                  {item.track === "CKA"
-                    ? "Native Linux administration"
-                    : "Kubernetes application practice"}
+                  {
+                    {
+                      CKA: "Native Linux administration",
+                      CKAD: "Kubernetes application practice",
+                      CKS: "Cluster and workload security",
+                    }[item.track]
+                  }
                 </p>
                 {latest && (
                   <p className="small">

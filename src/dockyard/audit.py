@@ -78,7 +78,7 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
         issues.append("Objective identifiers are not unique.")
     for unit in units.values():
         for objective in {
-            item for item in unit.objectives if item.startswith(("cka.", "ckad."))
+            item for item in unit.objectives if item.startswith(("cka.", "ckad.", "cks."))
         } - known:
             issues.append(f"{unit.id}: unknown objective {objective}.")
     for objective in objectives:
@@ -94,8 +94,8 @@ def curriculum(catalog: Catalog) -> dict[str, Any]:
                         f"{objective['id']}: {identity} is guided rather than independent."
                     )
     exams = list(catalog.exams.values())
-    if Counter(exam.track for exam in exams) != {"CKA": 2, "CKAD": 2}:
-        issues.append("Exam inventory: two original CKA and two original CKAD exams are required.")
+    if Counter(exam.track for exam in exams) != {"CKA": 2, "CKAD": 2, "CKS": 2}:
+        issues.append("Exam inventory: each of CKA, CKAD, and CKS needs two original exams.")
     if len({exam.id for exam in exams}) != len(exams):
         issues.append("Exam identifiers are not unique.")
     for exam in exams:

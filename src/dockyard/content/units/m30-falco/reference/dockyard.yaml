@@ -1,0 +1,12 @@
+# Application containers in these namespaces never need an interactive or scripted shell.
+- rule: Shell in application container
+  desc: A shell process started inside a container in an application namespace.
+  condition: >
+    spawned_process and container
+    and proc.name in (sh, bash, dash, ash)
+    and k8s.ns.name in (billing, dispatch, frontend)
+  output: >
+    Shell in application container
+    (namespace=%k8s.ns.name pod=%k8s.pod.name command=%proc.cmdline parent=%proc.pname)
+  priority: WARNING
+  tags: [dockyard, shell]

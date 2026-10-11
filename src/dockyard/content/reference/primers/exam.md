@@ -1,6 +1,6 @@
-# Exam technique for the CKA and CKAD
+# Exam technique for the CKA, CKAD, and CKS
 
-The CKA and CKAD are hands-on exams.
+The CKA, CKAD, and CKS are hands-on exams.
 You get a real terminal, a set of clusters, and about two hours to complete a series of tasks.
 Knowing Kubernetes is necessary but not enough: you also need to work quickly, carefully, and in the right place.
 This guide collects the habits that make the difference.
@@ -11,7 +11,7 @@ exam-task-loop
 ```
 
 Exam rules and the exam environment change over time.
-Before booking, read the current Linux Foundation candidate handbook and the CKA/CKAD instructions, including which documentation sites you may use.
+Before booking, read the current Linux Foundation candidate handbook and the instructions for your exam, including which documentation sites you may use.
 
 ## Before every task: context and namespace
 
@@ -111,6 +111,26 @@ set expandtab tabstop=2 shiftwidth=2
 When an object has no file, `kubectl edit deployment NAME` opens the live object in your editor.
 Some fields cannot be changed on a running Pod; kubectl then saves your edited copy to a temporary file, and `kubectl replace --force -f THAT_FILE` deletes and recreates the Pod with your changes.
 
+## Work safely on a node
+
+Some tasks, most of them in the CKA and CKS, change a node rather than an object in the API: the kubelet's configuration, a static Pod manifest, or a file that only exists on that machine.
+In the exam you reach the node with `ssh`; in Dockyard you use `limactl shell` with the node named in the lesson.
+A mistake on a node can stop the kubelet or the API server, so follow the same steps every time.
+
+```figure
+node-change-loop
+```
+
+1. Copy the file before you change it, to a folder outside `/etc/kubernetes/manifests`: `sudo cp /etc/kubernetes/manifests/kube-apiserver.yaml /root/kube-apiserver.yaml.bak`. The kubelet runs every file in the manifests folder as a static Pod, so a backup left there can start a second copy.
+2. Make the smallest change that completes the task, keeping the YAML indentation exactly as it was.
+3. Make the change take effect: restart the kubelet with `sudo systemctl restart kubelet` after editing its configuration, or wait for it to restart a static Pod whose manifest changed.
+4. Wait for the component to return before moving on: `kubectl get --raw=/readyz` prints `ok` once the API server answers again.
+5. If it does not return within two minutes, read why: `sudo journalctl -u kubelet -n 30` for the kubelet, and `sudo crictl ps -a --name kube-apiserver` then `sudo crictl logs CONTAINER_ID` for the API server.
+   Fix the mistake, or copy the backup back if you cannot find it quickly.
+
+Restarting the API server takes a minute or more.
+When a task needs several API server flags, add them all in one edit so you wait once.
+
 ## Check every task before moving on
 
 A task is only done when the result works, not when a command succeeded.
@@ -141,6 +161,6 @@ kubectl get pods --sort-by=.metadata.creationTimestamp
 ## Practising in Dockyard
 
 Every lesson in this course practises these commands on a real cluster.
-The four timed practice exams give you the same pressure: two hours, many tasks, and a score at the end.
+The six timed practice exams, two for each certification, give you the same pressure: two hours, many tasks, and a score at the end.
 They are original practice, not copies of the real exams, and a score here is not a prediction of your result.
 When a practice exam shows a weak area, the results link back to the lessons that teach it.

@@ -1,0 +1,158 @@
+id: m29-analysis
+revision: 1
+module: 29
+order: 2
+title: Pass a static analysis gate
+summary: Use KubeLinter and kubesec on a rendered manifest, fix every real finding, and deploy a workload
+  that still does its job.
+kind: lesson
+runtime: kubernetes
+minutes: 35
+outcomes:
+- Run KubeLinter and kubesec on the manifest that is actually deployed.
+- Interpret lint findings and a kubesec risk score, including advice that is out of date.
+- Harden a workload's privileges, host access, identity, and resources without breaking it.
+prerequisites:
+- m29-minimal
+objectives:
+- kubernetes.security
+- cks.static-analysis
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You run KubeLinter on a workspace manifest whose image is written as ${DOCKYARD_IMAGE}. What
+    does its latest-tag check report?
+  options:
+  - A problem with the image name, because the placeholder has no tag; analyse the rendered manifest instead.
+  - Nothing, because KubeLinter fills in placeholders itself.
+  - That the image is pinned, because placeholders count as digests.
+  correct: 0
+  explanation: Analysers see the text they are given. A template placeholder is not a valid image reference,
+    so analyse the rendered manifest that the cluster actually receives.
+hints:
+- Run python render.py resizer.yaml | kube-linter lint - and python render.py resizer.yaml | kubesec scan
+  -, and list every finding.
+- Remove privileged and the hostPath volume; add runAsNonRoot and runAsUser 10001, readOnlyRootFilesystem,
+  allowPrivilegeEscalation false, dropped capabilities, resource requests and limits, and a ServiceAccount
+  without an automounted token.
+- Compare your manifest with the findings until KubeLinter reports no errors and kubesec scores the Deployment
+  10 or more, then run sh run.sh and check kubectl logs -n media deploy/resizer.
+sources:
+- https://docs.kubelinter.io/
+- https://kubesec.io/
+- https://kubernetes.io/docs/concepts/security/pod-security-standards/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 120
+checks:
+- id: analysis-lint
+  title: KubeLinter finds no problems
+  explanation: KubeLinter must report no errors for the rendered resizer.yaml.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - analysis
+    timeout: 180
+  expectation: json
+  json_path:
+  - lint
+  expected: 'true'
+  diagnostic: KubeLinter still reports problems. Run python render.py resizer.yaml | kube-linter lint
+    - and fix each finding it names.
+- id: analysis-score
+  title: kubesec scores the Deployment at least 10
+  explanation: kubesec must give the resizer Deployment a score of 10 or more with no critical findings.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - analysis
+    timeout: 180
+  expectation: json
+  json_path:
+  - score
+  expected: 'true'
+  diagnostic: kubesec scores the Deployment below 10 or reports a critical finding. Run python render.py
+    resizer.yaml | kubesec scan - and read its critical and advise lists.
+- id: analysis-deployed
+  title: The hardened resizer is deployed and working
+  explanation: The running resizer must not be privileged or mount host paths, must run as non-root with
+    a read-only root filesystem, and must keep making thumbnails.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - analysis
+    timeout: 180
+  expectation: json
+  json_path:
+  - deployed
+  expected: 'true'
+  diagnostic: The running resizer does not match a hardened manifest, or stopped making thumbnails. Deploy
+    your changes with sh run.sh, then read kubectl logs -n media deploy/resizer.
+- id: configuration-processing
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - analysis
+    timeout: 180
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then
+    kubectl logs deployment/worker.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- kubesec
+- kube-linter
+checkpoint: dispatch-config-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any manifest is accepted when both analysers pass and the deployed resizer is hardened and working.
+- Ignoring kubesec's SeccompAny advice is accepted when the Pod sets a seccomp profile.
+failure_modes:
+- Analysing a template instead of the rendered manifest reports problems that are not real.
+- A clean report on a file does not prove the cluster runs that file.
+- Analysers encode opinions and can lag behind Kubernetes.
+starter_failure_checks:
+- analysis-lint
+- analysis-score
+- analysis-deployed

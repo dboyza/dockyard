@@ -3,7 +3,7 @@
 Status: approved for autonomous implementation through the planning review, 2026-09-26.
 The module outcomes below are a scope contract, not claims of completed content.
 Each row specifies three teaching labs and an independent mission.
-Focused exercises added later give some modules a fourth lesson, for 105 course units across 25 modules.
+Focused exercises added later give some modules a fourth lesson, and a fifth phase adds CKS preparation, for 129 course units across 31 modules.
 Module 00 teaches container foundations with small throwaway programs before Dispatch is introduced.
 The sixth module's mission in each of the four main phases is the cumulative capstone.
 Those phases form one evolving Dispatch project, with self-contained checkpoints for later entry.
@@ -61,6 +61,20 @@ Added on 2026-10-01 after learner feedback that the first lesson introduced too 
 | 23 | Control-plane recovery | etcd snapshots and verified restore; failed kubelet and static-pod recovery; unavailable API and control-plane diagnosis | Recover cluster state and prove application continuity |
 | 24 | Operational handoff | Multi-layer triage under time pressure; capacity, reliability, and security decisions; runbooks, evidence, and exam workflow | Capstone: build, operate, recover, and hand off Dispatch independently |
 
+## Phase 5: Security specialist
+
+Added on 2026-10-05 as an approved scope change for CKS preparation; the design and competency map are in [the CKS track](cks-track.md).
+Each module follows one CKS domain.
+
+| ID | Module | Three teaching labs | Independent mission |
+| --- | --- | --- | --- |
+| 25 | Cluster setup | CIS benchmark checks with kube-bench; node metadata and endpoints behind NetworkPolicy; verified platform binaries | Bring a cluster to an agreed security baseline |
+| 26 | Cluster hardening | Anonymous access limited to health checks; ServiceAccount token hygiene; finding and trimming over-broad RBAC | Close the access paths found in a security review |
+| 27 | System hardening | Host footprint: services, ports, and accounts; AppArmor profiles; seccomp profiles | Confine a workload that must keep working |
+| 28 | Microservice isolation | Secret encryption at rest; sandboxed containers with gVisor and RuntimeClass; Pod-to-Pod encryption with Calico WireGuard | Isolate an untrusted workload on a shared cluster |
+| 29 | Supply chain security | Minimal base images; static analysis with kubesec and KubeLinter; signing images and admitting only verified releases | Ship a signed, minimal, policy-compliant release |
+| 30 | Runtime security | Kubernetes audit logs; behavioral detection with Falco; immutable containers at runtime | Investigate an intrusion and contain it with evidence |
+
 ## Focused exercises
 
 Added on 2026-10-03 to give exam topics that were only mentioned their own hands-on practice.
@@ -92,17 +106,20 @@ Do not reuse the learner's main project environment for an incident.
 11. A node becomes NotReady after a kubelet configuration fault.
 12. A control-plane incident requires a validated snapshot restore and a post-recovery check.
 
-## Four original practice exams
+## Six original practice exams
 
 - CKAD A: application build/configuration, deployment, service access, and diagnosis.
 - CKAD B: a distinct task set emphasizing maintenance, workload patterns, security, and routing.
 - CKA A: architecture/install, workloads, networking, storage, and troubleshooting.
 - CKA B: a distinct task set emphasizing maintenance, recovery, and compound failures.
+- CKS A: cluster and system hardening: benchmark findings, API access, RBAC, AppArmor, encryption at rest, node endpoints, binaries, and audit logging.
+- CKS B: workload and runtime security: seccomp, gVisor, Falco detection, intrusion containment, immutability, ServiceAccount tokens, host footprint, and WireGuard.
 
 Each exam uses a 120-minute default, weighted performance tasks, independent fixtures, persistent attempt state, and a remediation report.
 Blueprint weights should follow the dated official domain distribution, and every objective must appear somewhere in the full course assessment map.
 The current CKA domain weights are 25% architecture/install/configuration, 15% workloads/scheduling, 20% services/networking, 10% storage, and 30% troubleshooting.
 The current CKAD domain weights are 20% design/build, 20% deployment, 15% observability/maintenance, 25% environment/configuration/security, and 20% services/networking.
+The current CKS domain weights are 15% cluster setup, 15% cluster hardening, 10% system hardening, 20% minimize microservice vulnerabilities, 20% supply chain security, and 20% monitoring, logging, and runtime security, checked 2026-10-03.
 Sources: [CKA domains](https://github.com/cncf/curriculum/blob/master/cka/README.md) and [CKAD domains](https://github.com/cncf/curriculum/blob/master/ckad/README.md), checked 2026-09-26.
 
 ## Required curriculum evidence

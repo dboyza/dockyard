@@ -298,5 +298,77 @@
       "runbooks, evidence, and exam workflow"
     ],
     "mission": "Capstone: build, operate, recover, and hand off Dispatch independently"
+  },
+  {
+    "id": 25,
+    "title": "Cluster setup",
+    "phase": 5,
+    "phase_title": "Security specialist",
+    "topics": [
+      "CIS benchmark checks with kube-bench",
+      "node metadata and endpoints behind NetworkPolicy",
+      "verified platform binaries"
+    ],
+    "mission": "Bring a cluster to an agreed security baseline"
+  },
+  {
+    "id": 26,
+    "title": "Cluster hardening",
+    "phase": 5,
+    "phase_title": "Security specialist",
+    "topics": [
+      "anonymous access limited to health checks",
+      "ServiceAccount token hygiene",
+      "finding and trimming over-broad RBAC"
+    ],
+    "mission": "Close the access paths found in a security review"
+  },
+  {
+    "id": 27,
+    "title": "System hardening",
+    "phase": 5,
+    "phase_title": "Security specialist",
+    "topics": [
+      "host footprint: services, ports, and accounts",
+      "AppArmor profiles",
+      "seccomp profiles"
+    ],
+    "mission": "Confine a workload that must keep working"
+  },
+  {
+    "id": 28,
+    "title": "Microservice isolation",
+    "phase": 5,
+    "phase_title": "Security specialist",
+    "topics": [
+      "Secret encryption at rest",
+      "sandboxed containers with gVisor and RuntimeClass",
+      "Pod-to-Pod encryption with Calico WireGuard"
+    ],
+    "mission": "Isolate an untrusted workload on a shared cluster"
+  },
+  {
+    "id": 29,
+    "title": "Supply chain security",
+    "phase": 5,
+    "phase_title": "Security specialist",
+    "topics": [
+      "minimal base images",
+      "static analysis with kubesec and KubeLinter",
+      "signing images and admitting only verified releases"
+    ],
+    "mission": "Ship a signed, minimal, policy-compliant release"
+  },
+  {
+    "id": 30,
+    "title": "Runtime security",
+    "phase": 5,
+    "phase_title": "Security specialist",
+    "topics": [
+      "Kubernetes audit logs",
+      "behavioral detection with Falco",
+      "immutable containers at runtime"
+    ],
+    "mission": "Investigate an intrusion and contain it with evidence"
   }
 ]

@@ -1,0 +1,158 @@
+id: m25-endpoints
+revision: 1
+module: 25
+order: 2
+title: Keep Pods away from node endpoints
+summary: Stop Pods reaching the node metadata service and the kubelet API with an egress allowlist, without
+  breaking the traffic they need.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 35
+outcomes:
+- Explain why the instance metadata service and kubelet port are targets for a compromised Pod.
+- Write an egress NetworkPolicy that allows only the destinations a namespace needs.
+- Combine namespace and Pod selectors in one rule, and verify allowed and blocked traffic.
+prerequisites:
+- m25-benchmark
+objectives:
+- kubernetes.networkpolicy
+- kubernetes.security
+- cks.network-access
+- cks.network-policies
+- cks.node-endpoints
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A NetworkPolicy selects every Pod in a namespace with policyTypes Egress and one rule, - {}.
+    What can those Pods reach?
+  options:
+  - Everything, because an empty rule matches all traffic.
+  - Nothing, because the policy turns on egress isolation.
+  - Only other Pods in the same namespace.
+  correct: 0
+  explanation: Selecting a Pod for egress means it may send only what some rule allows, and an empty rule
+    allows every destination. The policy exists but protects nothing.
+hints:
+- 'Run the metadata request from untrusted-client, then read frontend-egress.yaml: what does the rule
+  - {} allow?'
+- 'Replace the rule list with one rule for CoreDNS (kube-system, k8s-app: kube-dns, port 53 UDP and TCP)
+  and one for the Dispatch API (dispatch namespace, app: dispatch, port 8080).'
+- Put namespaceSelector and podSelector in the same list item under to for each rule, apply the file with
+  kubectl apply -f frontend-egress.yaml, and repeat the requests from both clients.
+sources:
+- https://kubernetes.io/docs/concepts/services-networking/network-policies/
+- https://kubernetes.io/docs/tasks/administer-cluster/securing-a-cluster/
+- https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - endpoints
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - endpoints
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: endpoints-metadata
+  title: Frontend Pods cannot reach the metadata service
+  explanation: Neither frontend client may connect to 169.254.169.254, while the practice metadata service
+    is still running on both nodes.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - endpoints
+    timeout: 300
+  expectation: json
+  json_path:
+  - metadata
+  expected: 'true'
+  diagnostic: 'A frontend client still reaches 169.254.169.254, or the practice service stopped. Make
+    sure frontend-egress.yaml selects every Pod with podSelector: {} and has no rule that allows all destinations,
+    then apply it.'
+- id: endpoints-kubelet
+  title: Frontend Pods cannot reach the kubelets
+  explanation: Neither frontend client may connect to port 10250 on either node's internal address.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - endpoints
+    timeout: 300
+  expectation: json
+  json_path:
+  - kubelet
+  expected: 'true'
+  diagnostic: A frontend client can still open port 10250 on a node. Allow only CoreDNS and the Dispatch
+    API in frontend-egress.yaml, then apply it.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - endpoints
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any set of egress policies is accepted when both clients reach DNS and the Dispatch API and neither
+  reaches the metadata address or a kubelet.
+- An ipBlock rule with except entries is accepted if it also excludes both nodes' addresses.
+failure_modes:
+- A policy whose only rule is empty allows all traffic.
+- Separate namespaceSelector and podSelector items widen a rule instead of narrowing it.
+- Blocking one bad address leaves every other unexpected destination open.
+starter_failure_checks:
+- endpoints-metadata
+- endpoints-kubelet

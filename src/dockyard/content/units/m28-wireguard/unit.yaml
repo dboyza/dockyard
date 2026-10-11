@@ -1,0 +1,170 @@
+id: m28-wireguard
+revision: 1
+module: 28
+order: 3
+title: Encrypt Pod traffic between nodes
+summary: Turn on Calico's WireGuard encryption and prove that real cross-node traffic now passes through
+  the encrypted tunnel.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 30
+outcomes:
+- Explain why encapsulated Pod traffic between nodes is readable, and compare node-to-node encryption
+  with service mesh mutual TLS.
+- Enable WireGuard in Calico's FelixConfiguration.
+- Verify node keys, tunnel interfaces, and encrypted cross-node traffic.
+prerequisites:
+- m28-sandbox
+objectives:
+- kubernetes.security
+- kubernetes.services
+- cks.pod-encryption
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: Calico carries Pod traffic between nodes in VXLAN packets. Can a machine watching the network
+    between the nodes read the requests?
+  options:
+  - Yes; VXLAN wraps packets but does not encrypt them.
+  - No; VXLAN encrypts traffic between nodes.
+  - Only if it also has a node's private key.
+  correct: 0
+  explanation: 'VXLAN is encapsulation: the original packet travels unchanged inside a UDP packet. Encryption
+    needs something like WireGuard or mutual TLS.'
+hints:
+- Calico's settings live in the FelixConfiguration named default; list interfaces on the worker with limactl
+  shell "$DOCKYARD_WORKER" ip link.
+- Set spec.wireguardEnabled to true in the default FelixConfiguration with kubectl patch.
+- Run kubectl patch felixconfigurations.crd.projectcalico.org default --type=merge -p '{"spec":{"wireguardEnabled":true}}',
+  then check the node annotations and ip -s link show wireguard.cali on each node.
+sources:
+- https://docs.tigera.io/calico/latest/network-policy/encrypt-cluster-pod-traffic
+- https://www.wireguard.com/
+- https://istio.io/latest/docs/concepts/security/#mutual-tls-authentication
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - wireguard
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - wireguard
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: wireguard-enabled
+  title: WireGuard is enabled in Calico
+  explanation: The default FelixConfiguration must have wireguardEnabled set to true.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - wireguard
+    timeout: 300
+  expectation: json
+  json_path:
+  - enabled
+  expected: 'true'
+  diagnostic: 'WireGuard is not enabled. Patch the default FelixConfiguration with spec.wireguardEnabled:
+    true.'
+- id: wireguard-nodes
+  title: Both nodes have a WireGuard key and tunnel
+  explanation: Both Node objects must carry a WireGuard public key annotation, and both nodes must have
+    a wireguard.cali interface.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - wireguard
+    timeout: 300
+  expectation: json
+  json_path:
+  - nodes
+  expected: 'true'
+  diagnostic: A node has no WireGuard key or interface yet. Give Calico a few seconds after enabling it,
+    then check kubectl logs -n kube-system -l k8s-app=calico-node for WireGuard errors.
+- id: wireguard-traffic
+  title: Cross-node traffic passes through the tunnel
+  explanation: A job submitted from the frontend on the control plane to Dispatch on the worker must complete,
+    and the worker's wireguard.cali byte counters must grow while it does.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - wireguard
+    timeout: 300
+  expectation: json
+  json_path:
+  - traffic
+  expected: 'true'
+  diagnostic: Cross-node traffic is not using the tunnel, or jobs stopped completing. Confirm both nodes
+    have wireguard.cali, then check kubectl get pods -n dispatch and the calico-node logs.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, crossing the nodes
+    through the encrypted tunnel.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - wireguard
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Enabling WireGuard through calicoctl or by editing the FelixConfiguration is accepted.
+failure_modes:
+- VXLAN encapsulation is not encryption.
+- Traffic between Pods on the same node never passes through the tunnel.
+- Node-to-node encryption does not authenticate individual workloads the way mutual TLS does.
+starter_failure_checks:
+- wireguard-enabled
+- wireguard-nodes

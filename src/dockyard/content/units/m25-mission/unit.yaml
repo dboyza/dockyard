@@ -1,0 +1,183 @@
+id: m25-mission
+revision: 1
+module: 25
+order: 4
+title: 'Mission: meet the security baseline'
+summary: Find and fix benchmark failures, close node endpoints to Pods, and remove an altered staged binary,
+  with evidence for each.
+kind: mission
+runtime: linux
+nodes: 2
+native_version: current
+node_tools:
+- kube-bench
+minutes: 60
+outcomes:
+- Fix kube-bench findings on a node and a control-plane component on your own.
+- Replace an exception-based egress policy with an allowlist.
+- Verify staged binaries and report the evidence for every change.
+prerequisites:
+- m25-binaries
+objectives:
+- kubernetes.security
+- kubernetes.networkpolicy
+- cks.binaries
+- cks.cis-benchmark
+- cks.network-policies
+- cks.node-endpoints
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A frontend egress policy allows 0.0.0.0/0 except 169.254.169.254/32. Can frontend Pods reach
+    a kubelet on port 10250?
+  options:
+  - Yes; only the metadata address is excluded, so the node addresses are still allowed.
+  - No; any policy with an except list blocks node traffic.
+  - No; kubelets only accept traffic from the API server.
+  correct: 0
+  explanation: An ipBlock allows every address in its CIDR except those listed. The nodes' addresses are
+    inside 0.0.0.0/0 and not excluded, so their kubelet ports stay reachable.
+hints:
+- Run kube-bench with --benchmark cis-1.12 on each node and read the FAIL lines for 4.2.4 and 1.3.2; read
+  the existing frontend-egress policy; check each staged binary with sha512sum -c.
+- 4.2.4 is the kubelet's readOnlyPort in /var/lib/kubelet/config.yaml; 1.3.2 is a flag in the controller
+  manager's static Pod manifest; an egress allowlist needs rules only for CoreDNS and the Dispatch API.
+- 'Set readOnlyPort: 0 and restart the worker kubelet, add - --profiling=false to kube-controller-manager.yaml,
+  apply an allowlist policy like the one from m25-endpoints, and delete the staged binary that fails its
+  checksum.'
+sources:
+- https://github.com/aquasecurity/kube-bench
+- https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/
+- https://kubernetes.io/docs/concepts/services-networking/network-policies/
+- https://kubernetes.io/releases/download/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - mission
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: baseline-benchmark
+  title: Checks 4.2.4 and 1.3.2 pass on the running cluster
+  explanation: kube-bench must pass 4.2.4 on the worker and 1.3.2 on the control plane; the running kubelet
+    must report readOnlyPort 0, and the controller manager must run ready with --profiling=false.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - benchmark
+  expected: 'true'
+  diagnostic: A benchmark check still fails, or the running component has not adopted the change. Restart
+    the worker kubelet after editing its configuration, and wait for the controller manager Pod to be
+    ready after editing its manifest.
+- id: baseline-endpoints
+  title: Frontend Pods cannot reach node endpoints
+  explanation: Neither frontend client may reach 169.254.169.254, or ports 10250 and 10255 on either node,
+    while the metadata service still runs.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - endpoints
+  expected: 'true'
+  diagnostic: A frontend client still reaches the metadata address or a kubelet port. An exception for
+    one address leaves every other destination open; allow only the destinations frontend Pods need.
+- id: baseline-binaries
+  title: Only genuine binaries remain staged
+  explanation: Every file in /opt/dockyard/staged must match its official SHA-512 checksum, the genuine
+    binaries must still be staged, and the installed ones must be unchanged.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - binaries
+  expected: 'true'
+  diagnostic: A staged binary fails its checksum, or a genuine one was removed. Check each against release-checksums
+    with sha512sum -c, delete only those that fail, and restore any deleted genuine binary from /usr/bin.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any combination of policies is accepted when frontend Pods reach only what they need and the trusted
+  client still submits jobs.
+- Additional benchmark fixes are accepted as long as the cluster keeps working.
+- The report is self-reviewed against the rubric and not graded.
+failure_modes:
+- An exception-based egress rule leaves unconsidered destinations open.
+- A changed configuration file does not prove the running process adopted it.
+- Deleting all staged binaries removes genuine ones the maintenance window needs.
+starter_failure_checks:
+- baseline-benchmark
+- baseline-endpoints
+- baseline-binaries

@@ -1,0 +1,17 @@
+#include <tunables/global>
+
+# Confines the document processor: it may read and run what is in its image,
+# but write only to its work area and temporary files.
+profile dockyard-processor flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  # Read and run anything in the image.
+  /** rix,
+  # Write only where the processor keeps its work.
+  /data/** rw,
+  /tmp/** rw,
+  # Never write configuration, even as root.
+  deny /etc/** w,
+  network inet stream,
+  network inet6 stream,
+}

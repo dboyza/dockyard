@@ -1,0 +1,191 @@
+id: m27-mission
+revision: 1
+module: 27
+order: 4
+title: 'Mission: confine a workload that must keep working'
+summary: Remove leftovers from the control plane, then confine a root renderer with AppArmor and seccomp
+  while it keeps producing pages.
+kind: mission
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 55
+outcomes:
+- Reduce a node's attack surface on your own.
+- Combine AppArmor and seccomp to confine a root workload.
+- Prove each control from inside the running workload, and report what risk remains.
+prerequisites:
+- m27-seccomp
+objectives:
+- kubernetes.security
+- cks.host-footprint
+- cks.kernel-hardening
+- cks.network-access
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A container runs as root with an AppArmor profile that allows writes only to /output and /tmp.
+    Is a seccomp filter still worth adding?
+  options:
+  - Yes; seccomp limits which kernel operations it can request, which AppArmor's file rules do not cover.
+  - No; AppArmor already blocks everything dangerous.
+  - No; seccomp cannot be combined with AppArmor.
+  correct: 0
+  explanation: 'AppArmor and seccomp work at different layers: AppArmor mediates access to files and resources,
+    seccomp filters system calls. Using both narrows what a compromised process can attempt.'
+hints:
+- On the control plane, sudo ss -ltnp and systemctl list-units --type=service --state=running show the
+  leftover service; /etc/sudoers.d shows the account.
+- Load dockyard-renderer on both nodes as in m27-apparmor, and add both appArmorProfile and seccompProfile
+  to the renderer's securityContext.
+- Disable and mask debug-share, remove /etc/sudoers.d/contractor and give contractor the nologin shell,
+  install the profile on both nodes, and apply rendering.yaml with appArmorProfile Localhost dockyard-renderer
+  and seccompProfile RuntimeDefault.
+sources:
+- https://kubernetes.io/docs/tutorials/security/apparmor/
+- https://kubernetes.io/docs/tutorials/security/seccomp/
+- https://kubernetes.io/docs/concepts/security/security-checklist/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - confine
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - confine
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: confine-footprint
+  title: The control plane carries no leftovers
+  explanation: The debug-share service must not run or start at boot, nothing may listen on port 2222,
+    and the contractor account must not be able to use sudo or log in.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - confine
+    timeout: 300
+  expectation: json
+  json_path:
+  - footprint
+  expected: 'true'
+  diagnostic: A leftover service or account remains on the control plane. Survey it with sudo ss -ltnp
+    and /etc/sudoers.d, then disable and mask the service and retire the account.
+- id: confine-apparmor
+  title: The renderer runs under its AppArmor profile
+  explanation: dockyard-renderer must be loaded and installed on both nodes, the renderer must report
+    it in enforce mode, and its root user must be unable to write to /etc.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - confine
+    timeout: 300
+  expectation: json
+  json_path:
+  - apparmor
+  expected: 'true'
+  diagnostic: The renderer is not confined by dockyard-renderer, or the profile is missing on a node.
+    Load and install it on both nodes and name it in the renderer's securityContext.
+- id: confine-seccomp
+  title: The renderer runs with a seccomp filter
+  explanation: The renderer's main process must report Seccomp 2.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - confine
+    timeout: 300
+  expectation: json
+  json_path:
+  - seccomp
+  expected: 'true'
+  diagnostic: The renderer has no seccomp filter. Add a seccompProfile, such as RuntimeDefault, to its
+    securityContext.
+- id: confine-working
+  title: The renderer keeps producing pages
+  explanation: The renderer must be available and keep adding pages to /output.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - confine
+    timeout: 300
+  expectation: json
+  json_path:
+  - working
+  expected: 'true'
+  diagnostic: The renderer stopped producing pages. If its Pod is blocked, load the profile on its node;
+    if it runs but stalls, look for apparmor="DENIED" in sudo journalctl -k on that node.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - confine
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- A Localhost seccomp profile is accepted instead of RuntimeDefault as long as the renderer keeps working.
+- Deleting the service or the account entirely is accepted.
+- The report is self-reviewed against the rubric and not graded.
+failure_modes:
+- A profile loaded on only one node lets the Pod run unconfined elsewhere or not at all.
+- disable without stop leaves a service running until reboot.
+- Running as root inside a container is still dangerous without confinement.
+starter_failure_checks:
+- confine-footprint
+- confine-apparmor
+- confine-seccomp

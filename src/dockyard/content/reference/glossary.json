@@ -95,7 +95,8 @@
     "units": [
       "m06-artifacts",
       "m16-promotion",
-      "m18-images"
+      "m18-images",
+      "m29-signing"
     ],
     "primer": "terminal"
   },
@@ -378,7 +379,8 @@
     "watch_for": "Having an identity does not grant permissions; RBAC decides what it may do.",
     "units": [
       "m09-identities",
-      "m17-rbac"
+      "m17-rbac",
+      "m26-tokens"
     ],
     "primer": "http"
   },
@@ -388,7 +390,10 @@
     "definition": "Role-based access control: Roles list allowed actions, and RoleBindings give those roles to users or service accounts.",
     "watch_for": "A RoleBinding only grants access inside its own namespace; use a ClusterRoleBinding for the whole cluster.",
     "units": [
-      "m17-rbac"
+      "m17-rbac",
+      "m26-anonymous",
+      "m26-tokens",
+      "m26-rbac"
     ],
     "primer": "http"
   },
@@ -399,7 +404,8 @@
     "watch_for": "It is only enforced if the cluster’s network plugin supports it; test allowed and blocked traffic.",
     "units": [
       "m17-network",
-      "m17-mission"
+      "m17-mission",
+      "m25-endpoints"
     ],
     "primer": "dns"
   },
@@ -409,7 +415,9 @@
     "definition": "Pod or container settings that control its user, special permissions, and filesystem access.",
     "watch_for": "A read-only filesystem may still need a small writable folder, such as /tmp, for the app to work.",
     "units": [
-      "m17-contexts"
+      "m17-contexts",
+      "m27-apparmor",
+      "m27-seccomp"
     ],
     "primer": "linux"
   },
@@ -1287,7 +1295,8 @@
     "definition": "A rule written as a CEL expression that the API server checks when objects are created or updated; a binding puts it into effect for chosen resources and namespaces.",
     "watch_for": "A policy without a binding refuses nothing, and a binding with Warn or Audit only reports; only Deny refuses the request.",
     "units": [
-      "m17-policies"
+      "m17-policies",
+      "m29-signing"
     ],
     "primer": "yaml"
   },
@@ -1301,5 +1310,207 @@
       "m15-observation"
     ],
     "primer": "yaml"
+  },
+  {
+    "id": "cis-benchmark",
+    "term": "CIS Kubernetes Benchmark",
+    "definition": "A published checklist of recommended Kubernetes security settings, each numbered, explained, and paired with how to check and fix it; kube-bench automates the checks.",
+    "watch_for": "A benchmark is written for particular Kubernetes versions; on a newer cluster, review what changed instead of trusting every result.",
+    "units": [
+      "m25-benchmark"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "egress",
+    "term": "Egress",
+    "definition": "Network traffic leaving a Pod. A NetworkPolicy with policyTypes Egress limits where the Pods it selects may send traffic.",
+    "watch_for": "Once a Pod is selected for egress, DNS must be allowed explicitly too, or Service names stop resolving.",
+    "units": [
+      "m25-endpoints"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "checksum",
+    "term": "Checksum",
+    "definition": "A value calculated from every byte of a file by a function such as SHA-512. Any change to the file gives a different checksum, so matching a published checksum shows the file is unchanged.",
+    "watch_for": "A checksum only helps if it comes from a source the attacker could not also change, such as the official release site.",
+    "units": [
+      "m25-binaries",
+      "m30-immutable"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "authentication",
+    "term": "Authentication",
+    "definition": "The API server's first step for every request: deciding who is asking, from a client certificate, a token, or, when neither is given and anonymous access is allowed, as the user system:anonymous.",
+    "watch_for": "401 Unauthorized means authentication failed; 403 Forbidden means the caller was identified and authorization refused.",
+    "units": [
+      "m26-anonymous"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "impersonation",
+    "term": "Impersonation",
+    "definition": "Making a Kubernetes request as another user, group, or ServiceAccount with --as and --as-group, which needs the impersonate permission. kubectl auth can-i uses it to check what a subject may do.",
+    "watch_for": "The impersonate verb is itself powerful: anyone who holds it can act as the identities it covers.",
+    "units": [
+      "m26-rbac"
+    ],
+    "primer": "terminal"
+  },
+  {
+    "id": "attack-surface",
+    "term": "Attack surface",
+    "definition": "Everything an attacker could try to use to get in: running services, open ports, user accounts, installed software, and permissions. Removing what is not needed shrinks it.",
+    "watch_for": "A service bound to 0.0.0.0 is reachable from the network, not just from the machine it runs on.",
+    "units": [
+      "m27-footprint",
+      "m29-minimal"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "systemd-unit",
+    "term": "systemd unit",
+    "definition": "A service, or other resource, that systemd starts and supervises on a Linux host, described by a unit file and controlled with systemctl.",
+    "watch_for": "stop ends a service now, disable keeps it from starting at boot, and mask prevents it from starting at all.",
+    "units": [
+      "m27-footprint"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "apparmor",
+    "term": "AppArmor",
+    "definition": "A Linux kernel security module that limits what a program may do, such as which files it may read or write, according to a named profile loaded on the node.",
+    "watch_for": "Profiles live in each node's kernel; a Pod that names a Localhost profile cannot start on a node where it is not loaded.",
+    "units": [
+      "m27-apparmor"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "system-call",
+    "term": "System call",
+    "definition": "A request from a program to the kernel, such as opening a file, starting a process, or changing permissions. Every program works through them.",
+    "watch_for": "Most programs use only a small fraction of the kernel's system calls, which is what makes filtering the rest worthwhile.",
+    "units": [
+      "m27-seccomp"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "encryption-at-rest",
+    "term": "Encryption at rest",
+    "definition": "Encrypting data before it is written to storage. For Kubernetes Secrets, the API server encrypts them before storing them in etcd, using providers listed in an EncryptionConfiguration.",
+    "watch_for": "Only writes after it is enabled are encrypted; existing Secrets must be rewritten, and the identity provider must stay last until they are.",
+    "units": [
+      "m28-encryption"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "wireguard",
+    "term": "WireGuard",
+    "definition": "A fast encrypted network tunnel built into the Linux kernel. Calico and Cilium can use it to encrypt Pod traffic between nodes, with one key pair per node.",
+    "watch_for": "It encrypts traffic between nodes, not between Pods on the same node, and it does not prove which workload sent a request.",
+    "units": [
+      "m28-wireguard"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "pod-to-pod-encryption",
+    "term": "Pod-to-Pod encryption",
+    "definition": "Encrypting traffic between Pods, either between nodes by the network plugin, for example with WireGuard, or per connection by a service mesh using mutual TLS.",
+    "watch_for": "Mutual TLS also authenticates both ends of each connection; node-level encryption protects the network path only.",
+    "units": [
+      "m28-wireguard"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "sandboxed-runtime",
+    "term": "Sandboxed runtime",
+    "definition": "A container runtime that puts an extra kernel or a virtual machine between containers and the node's kernel, such as gVisor's runsc or Kata Containers, to contain untrusted code.",
+    "watch_for": "Stronger isolation costs performance and some compatibility, so it suits specific risky workloads.",
+    "units": [
+      "m28-sandbox"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "runtimeclass",
+    "term": "RuntimeClass",
+    "definition": "A Kubernetes object that gives a container runtime handler a name Pods can request with runtimeClassName, optionally with scheduling rules for the nodes that have it.",
+    "watch_for": "The handler must match a name in the container runtime's configuration on the node, or the Pod cannot start.",
+    "units": [
+      "m28-sandbox"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "audit-log",
+    "term": "Audit log",
+    "definition": "The API server's record of the requests it handles, one JSON line each, written according to an audit policy that sets a level per kind of request.",
+    "watch_for": "Rules are matched in order, and logging Secrets above Metadata level copies their contents into the log.",
+    "units": [
+      "m30-audit"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "immutable-container",
+    "term": "Immutable container",
+    "definition": "A container that cannot change its own files while it runs, usually through a read-only root filesystem, with writable volumes only where the application must write.",
+    "watch_for": "Making a workload immutable does not clean Pods that were already changed; replace them.",
+    "units": [
+      "m30-immutable"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "falco",
+    "term": "Falco",
+    "definition": "A runtime security tool that watches system calls on a node, adds container and Kubernetes context, and raises alerts when events match its rules.",
+    "watch_for": "Falco detects and reports; it does not block what it sees.",
+    "units": [
+      "m30-falco"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "static-analysis",
+    "term": "Static analysis",
+    "definition": "Checking files such as manifests or Dockerfiles for risky settings without running them, with tools like KubeLinter and kubesec.",
+    "watch_for": "Analyse what is actually deployed, and treat findings as input: tools lag behind and encode opinions.",
+    "units": [
+      "m29-analysis"
+    ],
+    "primer": "yaml"
+  },
+  {
+    "id": "setuid",
+    "term": "setuid",
+    "definition": "A file permission that makes a program run with its owner's privileges, often root, whoever starts it. Programs such as su and passwd use it.",
+    "watch_for": "Setuid programs inside images are a common way to raise privileges; clear the bit or remove them when the application does not need them.",
+    "units": [
+      "m29-minimal"
+    ],
+    "primer": "linux"
+  },
+  {
+    "id": "image-signature",
+    "term": "Image signature",
+    "definition": "A cryptographic signature over an image's digest, made with a private key, for example by cosign, so anyone with the public key can confirm the image is unchanged and who released it.",
+    "watch_for": "A signature belongs to a digest, not a tag; deploy by digest to run what was verified.",
+    "units": [
+      "m29-signing"
+    ],
+    "primer": "terminal"
   }
 ]

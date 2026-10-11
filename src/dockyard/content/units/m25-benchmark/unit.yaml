@@ -1,0 +1,158 @@
+id: m25-benchmark
+revision: 1
+module: 25
+order: 1
+title: Check a cluster against the CIS benchmark
+summary: Run kube-bench on each node, then fix the kubelet and API server settings it reports as failing.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+node_tools:
+- kube-bench
+minutes: 45
+outcomes:
+- Run kube-bench against chosen CIS checks on a node and read its findings.
+- Close the kubelet API to anonymous and unauthorized requests.
+- Change an API server flag through its static Pod manifest and confirm the running server adopted it.
+prerequisites:
+- m24-mission
+objectives:
+- kubernetes.security
+- cks.cis-benchmark
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A worker's kubelet allows anonymous requests and uses AlwaysAllow authorization. Who can run
+    a command inside a Pod on that node?
+  options:
+  - Anything that can reach port 10250 on the node, including other Pods.
+  - Only cluster administrators, because kubectl exec needs RBAC permission.
+  - Nobody, because the kubelet API only accepts the API server's certificate.
+  correct: 0
+  explanation: RBAC protects the API server, not a kubelet that skips authentication and approves everything.
+    Any client that reaches port 10250 can use the kubelet's exec and logs endpoints directly.
+hints:
+- Run sudo kube-bench run --targets node --benchmark cis-1.12 --check 4.2.1,4.2.2 on the worker through
+  limactl shell, and read each remediation.
+- The kubelet settings live in /var/lib/kubelet/config.yaml under authentication.anonymous and authorization;
+  the API server flags live in /etc/kubernetes/manifests/kube-apiserver.yaml.
+- Set anonymous.enabled to false and authorization.mode to Webhook, then sudo systemctl restart kubelet
+  on the worker; add - --profiling=false to the kube-apiserver command and wait for kubectl get --raw=/readyz.
+sources:
+- https://www.cisecurity.org/benchmark/kubernetes
+- https://github.com/aquasecurity/kube-bench
+- https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/
+- https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - benchmark
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - benchmark
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: benchmark-kubelet
+  title: The worker kubelet passes checks 4.2.1 and 4.2.2
+  explanation: kube-bench must pass both checks on the worker, and the running kubelet must report anonymous
+    access off and Webhook authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - benchmark
+    timeout: 300
+  expectation: json
+  json_path:
+  - kubelet
+  expected: 'true'
+  diagnostic: The worker kubelet still allows anonymous requests or AlwaysAllow authorization, or it was
+    not restarted. Edit /var/lib/kubelet/config.yaml on the worker, run sudo systemctl restart kubelet,
+    and compare kubectl get --raw /api/v1/nodes/lima-$DOCKYARD_WORKER/proxy/configz.
+- id: benchmark-apiserver
+  title: The API server runs with profiling off
+  explanation: kube-bench must pass check 1.2.15, the running API server must have --profiling=false,
+    and /debug/pprof must no longer be served.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - benchmark
+    timeout: 300
+  expectation: json
+  json_path:
+  - apiserver
+  expected: 'true'
+  diagnostic: The API server still serves profiling data. Add - --profiling=false to the command in /etc/kubernetes/manifests/kube-apiserver.yaml
+    on the control plane, then wait until kubectl get --raw=/readyz prints ok.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - benchmark
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any editor or edit method is accepted; the running kubelet and API server settings are assessed, not
+  shell history.
+- Further hardening beyond the three findings is accepted as long as Dispatch keeps processing jobs.
+failure_modes:
+- A changed file does not prove the running process adopted it.
+- A benchmark for an older version can miss settings that newer releases added.
+- Anonymous access with AlwaysAllow bypasses RBAC entirely.
+starter_failure_checks:
+- benchmark-kubelet
+- benchmark-apiserver

@@ -1,0 +1,5 @@
+# A first draft from a colleague: "log everything in full, just in case".
+apiVersion: audit.k8s.io/v1
+kind: Policy
+rules:
+- level: RequestResponse

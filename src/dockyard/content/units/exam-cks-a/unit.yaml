@@ -1,0 +1,260 @@
+id: exam-cks-a
+revision: 1
+module: 30
+order: 100
+title: Cluster and system hardening assessment
+summary: 'A timed CKS-style practice exam: eight hardening tasks on a real two-node kubeadm cluster.'
+kind: exam
+runtime: linux
+nodes: 2
+native_version: current
+node_tools:
+- kube-bench
+minutes: 120
+outcomes:
+- The worker kubelet passes 4.2.1 and 4.2.2
+- Anonymous access is limited to health checks
+- The CI deployer has exactly the agreed access
+- The processor runs under AppArmor
+- Secrets are encrypted at rest
+- Frontend Pods cannot reach node endpoints
+- Only genuine binaries remain staged
+- Auditing is on and the reader is identified
+prerequisites:
+- m30-mission
+objectives:
+- kubernetes.security
+- cks.api-access
+- cks.audit-logs
+- cks.binaries
+- cks.cis-benchmark
+- cks.kernel-hardening
+- cks.least-privilege
+- cks.network-policies
+- cks.node-endpoints
+- cks.rbac
+- cks.secrets
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: What does a practice exam score tell you?
+  options:
+  - How many of these tasks worked when time was up.
+  - Whether you will pass the real exam.
+  - How many commands you typed.
+  correct: 0
+  explanation: The score comes from checking the final state of each task. It shows where to practise
+    next; it cannot predict a real exam result.
+hints:
+- Hints are not available during the exam. Afterwards, open each task's results to see what was checked.
+- For each task you missed, compare the live state with the task text, and use the lesson linked from
+  the task.
+- Work through the linked lessons, then try a fresh attempt without help.
+sources:
+- https://kubernetes.io/docs/concepts/security/
+- https://docs.linuxfoundation.org/tc-docs/certification/important-instructions-cks
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - exam-a
+  timeout: 600
+checks:
+- id: cksa-kubelet
+  title: The worker kubelet passes 4.2.1 and 4.2.2
+  explanation: kube-bench must pass both checks on the worker, and the running kubelet must report anonymous
+    access off and Webhook authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - kubelet
+  expected: 'true'
+  diagnostic: Review the kubelet's authentication and authorization settings and restart it.
+- id: cksa-anonymous
+  title: Anonymous access is limited to health checks
+  explanation: No custom binding may grant anything to anonymous callers, unauthenticated API requests
+    must get 401, and health endpoints must still answer.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - anonymous
+  expected: 'true'
+  diagnostic: Review anonymous bindings and the authentication configuration's anonymous conditions.
+- id: cksa-rbac
+  title: The CI deployer has exactly the agreed access
+  explanation: The deployer must update Deployments in dispatch and be refused Secrets, other namespaces,
+    cluster-wide bindings, and nodes.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - rbac
+  expected: 'true'
+  diagnostic: Review Roles, RoleBindings, and kubectl auth can-i --as.
+- id: cksa-apparmor
+  title: The processor runs under AppArmor
+  explanation: dockyard-processor must be loaded and installed on both nodes, and the processor must run
+    confined, still as root, and keep working.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - apparmor
+  expected: 'true'
+  diagnostic: Review loading profiles on every node and appArmorProfile in the securityContext.
+- id: cksa-encryption
+  title: Secrets are encrypted at rest
+  explanation: The API server must encrypt Secrets with a real provider first, and every Secret in dispatch
+    and frontend must be stored encrypted.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - encryption
+  expected: 'true'
+  diagnostic: Review the EncryptionConfiguration, its mount, and rewriting existing Secrets.
+- id: cksa-egress
+  title: Frontend Pods cannot reach node endpoints
+  explanation: Neither frontend client may reach the metadata address or a kubelet, while the metadata
+    service still runs.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - egress
+  expected: 'true'
+  diagnostic: Review egress allowlists, including DNS.
+- id: cksa-binaries
+  title: Only genuine binaries remain staged
+  explanation: Every staged file must match its official checksum, the genuine ones must remain, and installed
+    binaries must be unchanged.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - binaries
+  expected: 'true'
+  diagnostic: Review sha512sum -c against the official checksums.
+- id: cksa-audit
+  title: Auditing is on and the reader is identified
+  explanation: The API server must write a rotated audit log, Secret access must be logged at Metadata
+    only, and finding.txt must name the reader.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - audit
+  expected: 'true'
+  diagnostic: Review audit policy order, the audit flags and mounts, and filtering the log.
+- id: cksa-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the stored job must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before the exam is missing or was replaced. Change the existing cluster rather
+    than rebuilding it.
+- id: cksa-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-a
+    timeout: 600
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Review the tasks that touch networking and the API server first.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any method that produces the requested final state is accepted.
+- Only the final state of the cluster is checked, not your commands.
+failure_modes:
+- A changed file does not prove a running process adopted it.
+- Recreating an object gives it a new identity, which does not count as keeping the original.
+starter_failure_checks:
+- cksa-kubelet
+- cksa-anonymous
+- cksa-rbac
+- cksa-apparmor
+- cksa-encryption
+- cksa-egress
+- cksa-binaries
+- cksa-audit

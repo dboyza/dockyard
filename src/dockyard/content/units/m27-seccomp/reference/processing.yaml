@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: processing
+---
+# Turns uploaded documents into results.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: processor
+  namespace: processing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: processor
+  template:
+    metadata:
+      labels:
+        app: processor
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: processor
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        securityContext:
+          # Our own profile: everything the runtime default allows except changing permissions.
+          seccompProfile:
+            type: Localhost
+            localhostProfile: profiles/no-chmod.json
+        command: ["python", "-c"]
+        args:
+        - |
+          import pathlib, time
+          results = pathlib.Path("/data/results")
+          results.mkdir(parents=True, exist_ok=True)
+          count = 0
+          while True:
+              count += 1
+              (results / f"{count}.txt").write_text(f"document {count} processed\n")
+              print(f"processed document {count}", flush=True)
+              time.sleep(5)
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 96Mi}
+      volumes:
+      - name: data
+        emptyDir: {}
+---
+# Receives uploads and queues them for the processor.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intake
+  namespace: processing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: intake
+  template:
+    metadata:
+      labels:
+        app: intake
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: intake
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        securityContext:
+          seccompProfile:
+            type: RuntimeDefault
+        command: ["python", "-m", "http.server", "8000", "--directory", "/tmp"]
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 96Mi}

@@ -1,0 +1,153 @@
+id: m25-binaries
+revision: 1
+module: 25
+order: 3
+title: Verify platform binaries before installing them
+summary: Check staged Kubernetes binaries against the official SHA-512 checksums and remove the one that
+  was altered.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 25
+outcomes:
+- Explain what a checksum proves about a file, and why it must come from an independent source.
+- Verify files with sha512sum -c against published checksums.
+- Remove binaries that fail verification while keeping those that pass.
+prerequisites:
+- m25-endpoints
+objectives:
+- kubernetes.security
+- cks.binaries
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A staged kubelet binary runs and prints v1.37.1. What does that tell you about whether it
+    is the official release?
+  options:
+  - Nothing reliable; only its checksum compared with the published one can show that.
+  - It is the official release, because the version string is built in.
+  - It is official if the file size looks normal.
+  correct: 0
+  explanation: An altered binary can behave and report exactly like the original. A matching SHA-512 checksum
+    from the official release is the evidence that every byte is the same.
+hints:
+- Look at release-checksums in your workspace and ls -l /opt/dockyard/staged on the control-plane node.
+- sha512sum -c - reads a line of the form CHECKSUM, two spaces, then FILE from standard input and reports
+  OK or FAILED.
+- For each binary, run echo "$(cat release-checksums/NAME.sha512)  /opt/dockyard/staged/NAME" | limactl
+  shell "$DOCKYARD_CONTROL_PLANE" sha512sum -c -, and sudo rm the staged file if it fails.
+sources:
+- https://kubernetes.io/releases/download/
+- https://kubernetes.io/docs/tasks/administer-cluster/verify-signed-artifacts/
+- https://www.gnu.org/software/coreutils/manual/html_node/sha2-utilities.html
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - binaries
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - binaries
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: binaries-clean
+  title: No staged binary differs from the official release
+  explanation: Every file left in /opt/dockyard/staged must match its official SHA-512 checksum.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - binaries
+    timeout: 300
+  expectation: json
+  json_path:
+  - clean
+  expected: 'true'
+  diagnostic: A staged binary still does not match its official checksum. Check each one with sha512sum
+    -c against release-checksums, and delete those that fail.
+- id: binaries-kept
+  title: The genuine binaries are still staged and installed
+  explanation: The staged kubeadm and kubelet must still be present and match, and the installed binaries
+    in /usr/bin on both nodes must be unchanged.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - binaries
+    timeout: 300
+  expectation: json
+  json_path:
+  - kept
+  expected: 'true'
+  diagnostic: A genuine binary is missing or an installed one changed. Restore a deleted genuine binary
+    with sudo cp /usr/bin/NAME /opt/dockyard/staged/NAME on the control-plane node, and leave /usr/bin
+    alone.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - binaries
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Replacing the altered binary with a verified genuine copy is accepted, as long as every staged file
+  matches the official checksums.
+- Any way of computing and comparing SHA-512 checksums is accepted.
+failure_modes:
+- An altered binary can run and report the expected version.
+- A checksum stored beside the binary can be altered along with it.
+- Deleting everything removes the genuine binaries the maintenance window needs.
+starter_failure_checks:
+- binaries-clean

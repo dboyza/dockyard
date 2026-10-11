@@ -1,0 +1,10 @@
+apiVersion: node.k8s.io/v1
+kind: RuntimeClass
+metadata:
+  name: gvisor
+# The containerd runtime handler, as named in containerd's configuration.
+handler: runsc
+scheduling:
+  # Only nodes that have runsc configured carry this label.
+  nodeSelector:
+    sandbox.dockyard.io/gvisor: "true"

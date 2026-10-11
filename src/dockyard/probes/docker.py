@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import os
+import posixpath
 import re
 import sqlite3
 import sys
@@ -39,6 +40,7 @@ OUTCOMES: dict[str, tuple[str, ...]] = {
     "registry": ("pinned", "served", "private", "owned"),
     "artifact": ("native", "excluded_secret"),
     "build-secret": ("signed", "unrecorded"),
+    "minimal": ("nonroot", "no_shell", "no_installers", "no_setuid"),
     "hardening": ("nonroot", "readonly", "caps", "no_escalation", "memory", "cpu", "pids"),
     "recovery": ("restored", "workers_hardened", "runbook_present"),
     "storage-bind": ("mount", "roundtrip", "durable"),
@@ -438,6 +440,80 @@ def build_secret() -> dict[str, Any]:
     }
 
 
+# Programs a minimal runtime image should not contain. On Alpine, sh and ash are links to
+# BusyBox, which provides about 300 commands, so BusyBox itself counts as a shell.
+SHELLS = {
+    f"{folder}/{name}"
+    for folder in ("bin", "usr/bin")
+    for name in ("sh", "ash", "bash", "dash", "busybox")
+}
+INSTALLERS = ("sbin/apk", "usr/bin/apk", "usr/bin/apt", "usr/bin/dpkg", "usr/local/bin/pip")
+
+
+def runnable(members: dict[str, tarfile.TarInfo], name: str) -> bool:
+    """Whether a path leads to a regular file in the exported filesystem, following links."""
+    for _ in range(16):
+        member = members.get(name)
+        if member is None:
+            return False
+        if member.issym():
+            target = member.linkname
+            name = posixpath.normpath(
+                target.lstrip("/")
+                if target.startswith("/")
+                else posixpath.join(posixpath.dirname(name), target)
+            )
+        elif member.islnk():
+            name = member.linkname.lstrip("./")
+        else:
+            return member.isfile()
+    return False
+
+
+def filesystem_findings(container: str) -> dict[str, list[str]]:
+    """Shells, installers, and setuid files in a container's exported filesystem.
+
+    A link whose target was deleted cannot run, so only paths that lead to a file count.
+    """
+    setuid: list[str] = []
+    members: dict[str, tarfile.TarInfo] = {}
+    with tempfile.TemporaryDirectory(prefix="dockyard-image-observation-") as temporary:
+        archive = Path(temporary) / "filesystem.tar"
+        exported = run(["docker", "export", "--output", str(archive), container], timeout=90)
+        if not exported.ok or archive.stat().st_size > 1024 * 1024 * 1024:
+            raise ValueError("Filesystem observation requires an export under 1 GiB.")
+        with tarfile.open(archive) as layer:
+            for member in layer:
+                name = member.name.lstrip("./")
+                members[name] = member
+                if member.isfile() and member.mode & 0o6000:
+                    setuid.append(name)
+    present = [name for name in members if runnable(members, name)]
+    return {
+        "shells": sorted(name for name in present if name in SHELLS),
+        "installers": sorted(name for name in present if name.startswith(INSTALLERS)),
+        "setuid": sorted(setuid),
+    }
+
+
+def nonroot(user: str) -> bool:
+    return user not in {"", "0", "root"} and not user.startswith(("0:", "root:"))
+
+
+def minimal() -> dict[str, Any]:
+    """Inspect the running container's filesystem for shells, installers, and setuid files."""
+    api = inspect("container", os.environ["DOCKYARD_CONTAINER"])
+    user = str(api["Config"].get("User") or "")
+    found = filesystem_findings(api["Id"])
+    return {
+        "nonroot": nonroot(user),
+        "no_shell": not found["shells"],
+        "no_installers": not found["installers"],
+        "no_setuid": not found["setuid"],
+        "_details": {"user": user, **{key: value[:10] for key, value in found.items()}},
+    }
+
+
 def hardened_container(identity: str) -> dict[str, Any]:
     api = inspect("container", identity)
     config = api["HostConfig"]
@@ -549,6 +625,7 @@ def main() -> None:
         "registry": registry,
         "artifact": artifact,
         "build-secret": build_secret,
+        "minimal": minimal,
         "hardening": hardening,
         "recovery": recovery,
         "storage-bind": lambda: storage("bind"),

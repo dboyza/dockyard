@@ -1624,4 +1624,65 @@ export const reference = {
       </Diagram>
     );
   },
+  "node-change-loop": () => {
+    const steps: [string, string][] = [
+      ["1. Back up", "copy outside manifests"],
+      ["2. Edit", "smallest change"],
+      ["3. Apply", "restart kubelet, or wait"],
+      ["4. Wait", "/readyz prints ok"],
+    ];
+    return (
+      <Diagram height={226}>
+        {steps.map(([title, sub], index) => (
+          <Box
+            key={title}
+            x={10 + index * 160}
+            y={20}
+            w={140}
+            h={60}
+            title={title}
+            sub={sub}
+            tone={index === 3 ? "good" : index === 1 ? "focus" : "default"}
+          />
+        ))}
+        {[0, 1, 2].map((index) => (
+          <Arrow
+            key={index}
+            points={[
+              [150 + index * 160, 50],
+              [166 + index * 160, 50],
+            ]}
+          />
+        ))}
+        <Box
+          x={420}
+          y={150}
+          w={210}
+          h={60}
+          title="Read why"
+          sub="journalctl -u kubelet, crictl logs"
+          tone="warn"
+        />
+        <Arrow
+          points={[
+            [560, 80],
+            [560, 146],
+          ]}
+        />
+        <Label x={550} y={118} anchor="end" size="small" tone="warn">
+          not back after two minutes?
+        </Label>
+        <Arrow
+          points={[
+            [420, 180],
+            [240, 180],
+            [240, 84],
+          ]}
+        />
+        <Label x={330} y={170} anchor="middle" size="small" tone="muted">
+          fix it, or copy the backup back
+        </Label>
+      </Diagram>
+    );
+  },
 } satisfies Drawings;

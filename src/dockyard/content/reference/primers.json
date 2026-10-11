@@ -32,7 +32,7 @@
   {
     "id": "exam",
     "title": "Exam technique",
-    "minutes": 12,
-    "summary": "Contexts, generating YAML, quick lookups, vim basics, checking your work, and managing the clock in the CKA and CKAD."
+    "minutes": 14,
+    "summary": "Contexts, generating YAML, quick lookups, vim basics, checking your work, working safely on nodes, and managing the clock in the CKA, CKAD, and CKS."
   }
 ]

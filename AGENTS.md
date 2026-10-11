@@ -6,8 +6,8 @@
 - Use browser lessons beside the real external terminal of the learner's choice.
 - Teach beginners through advanced practice; offer an intermediate placement path.
 - Follow [the implementation plan](docs/implementation-plan.md) and [the curriculum](docs/curriculum.md).
-- Include Docker, practical platform engineering, CKA and CKAD preparation, and advanced security labs.
-- Full CKS preparation is outside the agreed first-release scope.
+- Include Docker, practical platform engineering, and CKA, CKAD, and CKS preparation.
+- CKS preparation was added at the user's request on 2026-10-03; [the CKS track](docs/cks-track.md) is its design contract.
 - Keep all teaching, hints, assessment, and progress deterministic and local; include no AI, accounts, telemetry, or cloud service dependency.
 - Use a calm professional visual design with accessible dark and light themes.
 

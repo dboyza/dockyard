@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rendering
+---
+# Renders report pages from templates uploaded by customers. Its vendor image runs as root.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: renderer
+  namespace: rendering
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: renderer
+  template:
+    metadata:
+      labels:
+        app: renderer
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: renderer
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        securityContext:
+          runAsUser: 0
+        command: ["python", "-c"]
+        args:
+        - |
+          import pathlib, time
+          output = pathlib.Path("/output")
+          count = 0
+          while True:
+              count += 1
+              (output / f"page-{count}.html").write_text(f"<h1>Report page {count}</h1>\n")
+              print(f"rendered page {count}", flush=True)
+              time.sleep(5)
+        volumeMounts:
+        - name: output
+          mountPath: /output
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 96Mi}
+      volumes:
+      - name: output
+        emptyDir: {}

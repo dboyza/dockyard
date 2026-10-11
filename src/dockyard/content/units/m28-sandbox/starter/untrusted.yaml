@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: untrusted
+---
+# Renders previews of templates that customers upload, so it effectively runs code
+# that nobody here wrote or reviewed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: template-preview
+  namespace: untrusted
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: template-preview
+  template:
+    metadata:
+      labels:
+        app: template-preview
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: preview
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command: ["python", "-m", "http.server", "8000", "--directory", "/tmp"]
+        resources:
+          requests: {cpu: 10m, memory: 64Mi}
+          limits: {cpu: 200m, memory: 192Mi}

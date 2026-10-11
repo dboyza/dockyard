@@ -1,0 +1,179 @@
+id: m26-mission
+revision: 1
+module: 26
+order: 4
+title: 'Mission: close an access review'
+summary: Remove anonymous access, revoke long-lived tokens, and narrow a group's cluster-wide rights to
+  the namespaces it reviews, with evidence.
+kind: mission
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 60
+outcomes:
+- Restrict anonymous API access to health endpoints on your own.
+- Find and revoke long-lived ServiceAccount tokens across namespaces.
+- Replace a cluster-wide grant with namespaced read-only access and prove the result.
+prerequisites:
+- m26-rbac
+objectives:
+- kubernetes.rbac
+- kubernetes.security
+- cks.api-access
+- cks.least-privilege
+- cks.rbac
+- cks.service-accounts
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A RoleBinding grants view in dispatch to the user system:anonymous. You delete it, but anonymous
+    access stays enabled. What does an unauthenticated request for Pods in dispatch now return?
+  options:
+  - '403 Forbidden: the caller is still identified as anonymous, and RBAC refuses it.'
+  - '401 Unauthorized: deleting the binding turns anonymous access off.'
+  - '200 OK: view is granted to everyone by default.'
+  correct: 0
+  explanation: Deleting the binding removes the permission, not the anonymous identity. Only restricting
+    anonymous authentication makes such requests fail with 401 before RBAC runs.
+hints:
+- kubectl get rolebindings,clusterrolebindings -A -o wide shows bindings to system:anonymous and to auditors;
+  kubectl get secrets -A --field-selector type=kubernetes.io/service-account-token finds long-lived tokens.
+- The anonymous fix has two parts, as in m26-anonymous; the auditors need the view ClusterRole through
+  RoleBindings in two namespaces.
+- Delete rolebinding legacy-dashboard in dispatch, add the authentication configuration and mount to the
+  API server, delete secret deployer-token in ci, bind view to the auditors group in dispatch and frontend,
+  and delete clusterrolebinding auditors-admin.
+sources:
+- https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-authenticator-configuration
+- https://kubernetes.io/docs/concepts/security/service-accounts/
+- https://kubernetes.io/docs/concepts/security/rbac-good-practices/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - access
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - access
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: access-anonymous
+  title: Anonymous callers can reach only the health endpoints
+  explanation: No custom binding may grant anything to anonymous callers, unauthenticated requests for
+    Pods and /version must get 401, and /readyz must still answer.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - access
+    timeout: 300
+  expectation: json
+  json_path:
+  - anonymous
+  expected: 'true'
+  diagnostic: Anonymous callers still have a binding, or requests without credentials are still accepted
+    outside the health endpoints. Remove the binding and restrict anonymous authentication to /livez,
+    /readyz, and /healthz.
+- id: access-tokens
+  title: No long-lived ServiceAccount tokens remain
+  explanation: No Secret of type kubernetes.io/service-account-token may exist outside kube-system.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - access
+    timeout: 300
+  expectation: json
+  json_path:
+  - tokens
+  expected: 'true'
+  diagnostic: A long-lived token Secret still exists. Find it with kubectl get secrets -A --field-selector
+    type=kubernetes.io/service-account-token and delete it.
+- id: access-auditors
+  title: Auditors can read dispatch and frontend only
+  explanation: The auditors group must be able to list Pods and Deployments and read logs in dispatch
+    and frontend, and must be refused Secrets, changes, other namespaces, and nodes.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - access
+    timeout: 300
+  expectation: json
+  json_path:
+  - auditors
+  expected: 'true'
+  diagnostic: The auditors' access does not match the requirement. Check it with kubectl auth can-i --list
+    --as=sam --as-group=auditors -n dispatch, replace the cluster-wide binding with namespaced view bindings,
+    and remove the old one.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - access
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any combination of roles and bindings is accepted when the auditors' effective access matches the requirement.
+- A different authentication configuration path is accepted when the flag, mount, and file agree.
+- The report is self-reviewed against the rubric and not graded.
+failure_modes:
+- Deleting an anonymous binding leaves anonymous requests reaching RBAC.
+- A deleted RoleBinding does not revoke a token already copied; deleting the token Secret does.
+- The admin ClusterRole includes Secrets and write access.
+starter_failure_checks:
+- access-anonymous
+- access-tokens
+- access-auditors

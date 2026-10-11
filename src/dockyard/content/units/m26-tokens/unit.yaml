@@ -1,0 +1,180 @@
+id: m26-tokens
+revision: 1
+module: 26
+order: 2
+title: Tidy up ServiceAccounts and their tokens
+summary: 'Stop a namespace handing broad tokens to every Pod: disable default token mounts, revoke a legacy
+  token, and give one workload a least-privilege identity.'
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 40
+outcomes:
+- Explain how Pods get ServiceAccount tokens, and how bound tokens differ from legacy token Secrets.
+- Turn off automatic token mounts for Pods that do not call the API.
+- Give a workload its own ServiceAccount limited to the objects it reads, and verify it with kubectl auth
+  can-i.
+prerequisites:
+- m26-anonymous
+objectives:
+- kubernetes.rbac
+- kubernetes.security
+- cks.least-privilege
+- cks.service-accounts
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You remove a line from a manifest and run kubectl apply again. What happens to the object
+    that line described?
+  options:
+  - Nothing; apply never deletes objects that are missing from the file.
+  - It is deleted, because apply makes the cluster match the file.
+  - It is marked for deletion after a grace period.
+  correct: 0
+  explanation: Plain kubectl apply creates and updates the objects in the file. Objects removed from the
+    file stay in the cluster until you delete them yourself.
+hints:
+- kubectl auth can-i --list -n reports --as=system:serviceaccount:reports:default shows the default identity's
+  permissions; kubectl get secrets -n reports --field-selector type=kubernetes.io/service-account-token
+  finds legacy tokens.
+- Delete the RoleBinding and the token Secret with kubectl delete as well as removing them from reports.yaml;
+  add ServiceAccounts, a Role with resourceNames, and a RoleBinding.
+- 'Set automountServiceAccountToken: false on the default ServiceAccount, create report-builder with a
+  Role that can get configmap report-settings, set serviceAccountName in the builder Deployment, apply,
+  and restart report-viewer.'
+sources:
+- https://kubernetes.io/docs/concepts/security/service-accounts/
+- https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+- https://kubernetes.io/docs/reference/access-authn-authz/service-accounts-admin/
+- https://kubernetes.io/docs/reference/access-authn-authz/rbac/#referring-to-resources
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - tokens
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - tokens
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: tokens-default
+  title: The default ServiceAccount has no token and no permissions
+  explanation: The default ServiceAccount in reports must have automountServiceAccountToken false and
+    no bindings, and the viewer Pods must run without a mounted token.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - tokens
+    timeout: 300
+  expectation: json
+  json_path:
+  - default
+  expected: 'true'
+  diagnostic: 'The default ServiceAccount still mounts tokens or still has a binding, or the viewer was
+    not recreated. Set automountServiceAccountToken: false, delete the reports-default-edit RoleBinding,
+    and run kubectl rollout restart deployment/report-viewer -n reports.'
+- id: tokens-legacy
+  title: No legacy token Secrets remain
+  explanation: The reports namespace must hold no Secret of type kubernetes.io/service-account-token.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - tokens
+    timeout: 300
+  expectation: json
+  json_path:
+  - legacy
+  expected: 'true'
+  diagnostic: A long-lived token Secret is still in reports. Delete it with kubectl delete secret, and
+    remove it from reports.yaml so a later apply does not bring it back.
+- id: tokens-builder
+  title: The builder has its own minimal identity
+  explanation: report-builder must run as the report-builder ServiceAccount, read the report-settings
+    ConfigMap, and be unable to read other ConfigMaps, list Secrets, create Pods, or change its settings.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - tokens
+    timeout: 300
+  expectation: json
+  json_path:
+  - builder
+  expected: 'true'
+  diagnostic: The builder is not running as its own ServiceAccount, cannot read its settings, or can do
+    more than it needs. Bind a Role that can only get configmap report-settings to the report-builder
+    ServiceAccount and set serviceAccountName in the Deployment.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - tokens
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- 'Setting automountServiceAccountToken: false in the viewer''s Pod spec as well is accepted.'
+- The Role may also allow watch on the named ConfigMap, as long as it cannot read other ConfigMaps.
+failure_modes:
+- kubectl apply does not delete objects removed from a file.
+- Legacy token Secrets never expire until they are deleted.
+- Token mount settings apply only to Pods created after the change.
+- A Role without resourceNames lets the builder read every ConfigMap in the namespace.
+starter_failure_checks:
+- tokens-default
+- tokens-legacy
+- tokens-builder

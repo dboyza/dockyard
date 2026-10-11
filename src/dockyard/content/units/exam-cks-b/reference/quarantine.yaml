@@ -1,0 +1,13 @@
+# Cut the compromised workload off without deleting it, so it can still be examined.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: quarantine-catalog
+  namespace: storefront
+spec:
+  podSelector:
+    matchLabels:
+      app: catalog
+  policyTypes:
+  - Ingress
+  - Egress

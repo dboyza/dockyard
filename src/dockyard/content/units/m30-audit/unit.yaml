@@ -1,0 +1,175 @@
+id: m30-audit
+revision: 1
+module: 30
+order: 1
+title: Investigate with Kubernetes audit logs
+summary: Turn on audit logging with a policy that records Secret access without contents, then use the
+  log to find an identity reading a database password.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 45
+outcomes:
+- Choose audit levels for different resources, and explain why Secrets belong at Metadata.
+- Write an ordered audit policy and enable it in the API server with log rotation.
+- Answer an investigation question from audit log entries.
+prerequisites:
+- m29-mission
+objectives:
+- kubernetes.security
+- kubernetes.observability
+- cks.attack-investigation
+- cks.audit-logs
+- cks.threat-detection
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: An audit policy's first rule logs everything at RequestResponse, and its second logs Secrets
+    at Metadata. At which level is a Secret read recorded?
+  options:
+  - RequestResponse, because the first matching rule wins.
+  - Metadata, because the more specific rule wins.
+  - Both levels, as two entries.
+  correct: 0
+  explanation: The API server applies the first rule that matches a request. A catch-all rule placed first
+    matches everything, so the Secrets rule never applies and Secret contents reach the log.
+hints:
+- The draft policy logs everything in full; list the rules you need from most specific to most general.
+- The API server needs --audit-policy-file and --audit-log-path, plus rotation flags, and both paths mounted
+  into its static Pod; each audit line is JSON with user.username and objectRef.
+- Put None for events, Metadata for secrets, RequestResponse for workload writes, and Metadata last; install
+  the policy, add the flags and mounts, wait for /readyz, then grep the log for dispatch-database and
+  write the username into finding.txt.
+sources:
+- https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/
+- https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/
+- https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - audit
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - audit
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: audit-configured
+  title: The API server writes a rotated audit log
+  explanation: The running API server must have an audit policy, a log path, and maximum age and backup
+    settings, and be ready.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - audit
+    timeout: 300
+  expectation: json
+  json_path:
+  - configured
+  expected: 'true'
+  diagnostic: Auditing is not configured completely. Add --audit-policy-file, --audit-log-path, --audit-log-maxage,
+    and --audit-log-maxbackup to the API server, mount the policy and the log folder, and wait for /readyz.
+- id: audit-secrets
+  title: Secret access is logged without contents
+  explanation: Reads of dispatch-database must appear in the audit log, and every Secret entry must be
+    at Metadata level with no request or response body.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - audit
+    timeout: 300
+  expectation: json
+  json_path:
+  - secrets
+  expected: 'true'
+  diagnostic: Secret access is missing from the log, or logged with bodies. Put a Metadata rule for secrets
+    before any rule that could match them at a higher level, and check the log is being written. The reader
+    runs every 20 seconds, so wait a minute after the API server returns before checking again.
+- id: audit-finding
+  title: The Secret reader is identified
+  explanation: finding.txt must name the identity that reads dispatch-database, as its full username.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - audit
+    timeout: 300
+  expectation: json
+  json_path:
+  - finding
+  expected: 'true'
+  diagnostic: finding.txt is missing or names a different identity. Filter the audit log for entries whose
+    objectRef names dispatch-database, and copy user.username exactly.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - audit
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any rule order and set of levels is accepted when Secret access is recorded at Metadata only.
+- Different log and policy paths are accepted when the flags and mounts agree.
+failure_modes:
+- The first matching rule decides the level, so a catch-all first overrides everything.
+- RequestResponse for Secrets copies their contents into the log.
+- Without rotation, the audit log can fill the control plane's disk.
+starter_failure_checks:
+- audit-configured
+- audit-secrets
+- audit-finding

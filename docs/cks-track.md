@@ -1,6 +1,6 @@
 # CKS preparation track
 
-Status: approved scope change on 2026-10-03; design agreed, implementation in progress.
+Status: approved scope change on 2026-10-03; all six modules and both practice exams are written and passed real-runtime verification on 2026-10-10 (see [runtime evidence](runtime-evidence.md)).
 The user asked for a CKS preparation track after the first release scope had excluded it.
 This document is the design contract for that track; a module is complete only when its units pass real-runtime verification.
 
@@ -92,4 +92,8 @@ Checked on 2026-10-03 in a scratch Lima VZ guest built from the pinned Ubuntu 24
 - gVisor `runsc` runs a sandbox on the systrap platform; `uname` inside reports `4.19.0-gvisor`. Its sidecar binaries must sit in a `gvisor-bin` directory next to `runsc`.
 - Falco's modern eBPF probe loads, its bundled container plugin works, and the default rules detected reads of `/etc/shadow` on the host and inside a container.
 - kube-bench 0.16.0 maps Kubernetes versions only up to 1.34, so lessons pass `--benchmark cis-1.12` explicitly and explain why.
+- An AppArmor profile allowing reads everywhere and writes only to `/data` and `/tmp` ran a Python container in enforce mode, refused writes to `/etc`, and left Python working.
+- A seccomp profile with `defaultAction: SCMP_ACT_ALLOW` and an errno rule for the `chmod` family put the container in filter mode 2 and refused `os.chmod` with EPERM.
+- Through `ctr`, a gVisor sandbox booted and ran its command, but output and exit status did not reach `ctr`.
+  Kubernetes uses the CRI path instead, and the m28-sandbox lesson verified a `runsc` RuntimeClass workload end to end in a real cluster.
 - x86-64 guests were not exercised; the platform validation document records that boundary.

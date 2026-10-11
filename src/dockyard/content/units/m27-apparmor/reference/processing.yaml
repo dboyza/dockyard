@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: processing
+---
+# Turns uploaded documents into results. It parses untrusted files, and its
+# vendor image must run as root, so a bug in it could be serious.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: processor
+  namespace: processing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: processor
+  template:
+    metadata:
+      labels:
+        app: processor
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: processor
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        securityContext:
+          runAsUser: 0
+          # Load the profile on every node first; a Pod naming a missing profile cannot start.
+          appArmorProfile:
+            type: Localhost
+            localhostProfile: dockyard-processor
+        command: ["python", "-c"]
+        args:
+        - |
+          import pathlib, time
+          results = pathlib.Path("/data/results")
+          results.mkdir(parents=True, exist_ok=True)
+          count = 0
+          while True:
+              count += 1
+              (results / f"{count}.txt").write_text(f"document {count} processed\n")
+              print(f"processed document {count}", flush=True)
+              time.sleep(5)
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 96Mi}
+      volumes:
+      - name: data
+        emptyDir: {}

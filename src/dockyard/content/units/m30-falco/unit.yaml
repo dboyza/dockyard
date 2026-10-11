@@ -1,0 +1,194 @@
+id: m30-falco
+revision: 1
+module: 30
+order: 2
+title: Detect suspicious behavior with Falco
+summary: Run Falco on a node, write a rule that flags shells in application containers, and use its alerts
+  to find the workload responsible.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+node_tools:
+- falco
+minutes: 40
+outcomes:
+- Explain behavioral detection and how Falco turns system calls into alerts.
+- Write and validate a Falco rule with a condition, an output, and a priority.
+- Use Falco alerts to identify the Pod behind suspicious activity.
+prerequisites:
+- m30-audit
+objectives:
+- kubernetes.security
+- kubernetes.observability
+- cks.behavioral-analytics
+- cks.threat-detection
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A Falco rule's condition is spawned_process and container and proc.name = sh. Which event
+    matches?
+  options:
+  - A container's Python program starting sh to run a command.
+  - An administrator opening sh on the node itself.
+  - A container reading a file with cat.
+  correct: 0
+  explanation: spawned_process matches a new program starting, container restricts it to processes inside
+    containers, and proc.name = sh to the shell. A shell on the node is not in a container, and cat is
+    not sh.
+hints:
+- Falco's default rules are in /etc/falco/falco_rules.yaml and define macros such as spawned_process and
+  container; extra rules go in /etc/falco/rules.d.
+- Combine spawned_process, container, a proc.name list of shells, and k8s.ns.name in a condition; include
+  %k8s.ns.name and %k8s.pod.name in the output; validate with falco -V before starting.
+- Write the rule to /etc/falco/rules.d/dockyard.yaml on the worker, validate it with sudo falco -V /etc/falco/falco_rules.yaml
+  -V /etc/falco/rules.d/dockyard.yaml, run sudo systemctl enable --now falco, and follow sudo journalctl
+  -u falco -f for the namespace and Pod.
+sources:
+- https://falco.org/docs/concepts/rules/basic-elements/
+- https://falco.org/docs/reference/rules/supported-fields/
+- https://falco.org/docs/concepts/event-sources/kernel/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - falco
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - falco
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: falco-running
+  title: Falco runs as a service on the worker
+  explanation: The falco service on the worker must be active and enabled at boot.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - falco
+    timeout: 300
+  expectation: json
+  json_path:
+  - running
+  expected: 'true'
+  diagnostic: Falco is not running, or will not start at boot. Run sudo systemctl enable --now falco on
+    the worker, and read sudo journalctl -u falco -n 30 if it exits.
+- id: falco-rule
+  title: The custom rule file is valid
+  explanation: /etc/falco/rules.d/dockyard.yaml on the worker must load together with Falco's default
+    rules.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - falco
+    timeout: 300
+  expectation: json
+  json_path:
+  - rule
+  expected: 'true'
+  diagnostic: The rule file is missing or does not load. Validate it with sudo falco -V /etc/falco/falco_rules.yaml
+    -V /etc/falco/rules.d/dockyard.yaml and fix the reported line.
+- id: falco-alert
+  title: Falco alerts name the shell-starting Pod
+  explanation: Recent Falco alerts must name the billing namespace and the report-sync Pod.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - falco
+    timeout: 300
+  expectation: json
+  json_path:
+  - alert
+  expected: 'true'
+  diagnostic: No recent alert names the billing Pod. Make sure your condition covers the billing namespace
+    and your output includes %k8s.ns.name and %k8s.pod.name, then restart Falco.
+- id: falco-finding
+  title: The responsible workload is identified
+  explanation: finding.txt must name the namespace and the Deployment or Pod that keeps starting shells,
+    as NAMESPACE/NAME.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - falco
+    timeout: 300
+  expectation: json
+  json_path:
+  - finding
+  expected: 'true'
+  diagnostic: finding.txt is missing or names another workload. Read the namespace and Pod from a Falco
+    alert and write them as NAMESPACE/NAME.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - falco
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any rule name, priority, and wording is accepted when alerts name the billing namespace and the report-sync
+  Pod.
+- Naming the Pod instead of the Deployment in finding.txt is accepted.
+failure_modes:
+- A rule using default macros fails validation if loaded without the default rules.
+- An output without Pod fields makes alerts hard to act on.
+- Detection notices activity; it does not stop it.
+starter_failure_checks:
+- falco-running
+- falco-rule
+- falco-finding

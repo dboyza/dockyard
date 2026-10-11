@@ -1,0 +1,156 @@
+id: m28-encryption
+revision: 1
+module: 28
+order: 1
+title: Encrypt Secrets at rest
+summary: Make the API server encrypt Secrets before storing them in etcd, then rewrite existing Secrets
+  so none stay in plain form.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 40
+outcomes:
+- Show how Secrets are stored in etcd, and why base64 is not protection.
+- Write an EncryptionConfiguration with an ordered provider list and wire it into the API server.
+- Re-encrypt existing Secrets and verify the stored form without revealing their values.
+prerequisites:
+- m27-mission
+objectives:
+- kubernetes.security
+- cks.secrets
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You turn on encryption at rest for Secrets and restart the API server. How is a Secret created
+    last week now stored in etcd?
+  options:
+  - Still plain, until something writes that Secret again.
+  - Encrypted, because the API server re-encrypts everything on startup.
+  - Deleted, because it cannot be read with the new key.
+  correct: 0
+  explanation: Encryption applies when an object is written. Existing Secrets stay as they were until
+    they are rewritten, for example with kubectl replace.
+hints:
+- Read the start of /registry/secrets/dispatch/dispatch-database with etcdctl inside the etcd container;
+  plain values start with k8s and a zero byte.
+- 'An EncryptionConfiguration lists providers in order: put aescbc with a new key first and identity last,
+  then pass the file with --encryption-provider-config and mount its folder into the API server.'
+- Create /etc/kubernetes/enc/encryption-config.yaml on the control plane with a key from head -c 32 /dev/urandom
+  | base64, add the flag and a hostPath mount to kube-apiserver.yaml, wait for /readyz, then run kubectl
+  get secrets -A -o json | kubectl replace -f -.
+sources:
+- https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
+- https://kubernetes.io/docs/concepts/configuration/secret/#information-security-for-secrets
+- https://kubernetes.io/docs/tasks/administer-cluster/kms-provider/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - encryption
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - encryption
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: encryption-configured
+  title: The API server encrypts new Secrets
+  explanation: The running API server must have --encryption-provider-config, its first provider for Secrets
+    must not be identity, and it must be ready.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - encryption
+    timeout: 300
+  expectation: json
+  json_path:
+  - configured
+  expected: 'true'
+  diagnostic: Encryption is not in effect. Pass the configuration with --encryption-provider-config, mount
+    its folder into the API server's static Pod, put a real provider before identity, and wait for kubectl
+    get --raw=/readyz.
+- id: encryption-stored
+  title: Every Secret is stored encrypted
+  explanation: 'Every Secret in dispatch and frontend must be stored in etcd with a k8s:enc: prefix from
+    a real provider. Only the prefix is examined.'
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - encryption
+    timeout: 300
+  expectation: json
+  json_path:
+  - encrypted
+  expected: 'true'
+  diagnostic: At least one Secret is still stored in plain form. Rewrite them with kubectl get secrets
+    -A -o json | kubectl replace -f - after the API server restarts with encryption.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - encryption
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- aesgcm or secretbox are accepted instead of aescbc.
+- Any file path is accepted when the flag, mount, and file agree.
+failure_modes:
+- base64 is an encoding, not encryption.
+- identity listed first turns encryption off.
+- Existing Secrets stay plain until they are rewritten.
+starter_failure_checks:
+- encryption-configured
+- encryption-stored

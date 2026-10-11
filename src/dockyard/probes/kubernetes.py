@@ -375,6 +375,7 @@ def main() -> None:
     from dockyard.probes.routing import routing
     from dockyard.probes.security import policies, security
     from dockyard.probes.storage import storage
+    from dockyard.probes.supply import analysis, release_mission, signing
     from dockyard.probes.visibility import debugging, visibility
 
     probes = {
@@ -394,6 +395,9 @@ def main() -> None:
         "security": security,
         "policies": policies,
         "hardening": hardening,
+        "analysis": analysis,
+        "signing": signing,
+        "release-mission": release_mission,
     }
     try:
         result = probes[sys.argv[1]]()

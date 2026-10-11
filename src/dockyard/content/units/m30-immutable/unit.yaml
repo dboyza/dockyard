@@ -1,0 +1,172 @@
+id: m30-immutable
+revision: 1
+module: 30
+order: 3
+title: Keep containers immutable at runtime
+summary: Find a replica whose files were changed while it ran, then give the workload a read-only root
+  filesystem with writable volumes only where it needs them.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 35
+outcomes:
+- Detect a changed container by comparing replicas started from the same image.
+- Make a container's root filesystem read-only and block privilege escalation.
+- Give an application writable emptyDir volumes only for the paths it needs.
+prerequisites:
+- m30-falco
+objectives:
+- kubernetes.security
+- cks.attack-investigation
+- cks.immutability
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: 'A container runs as root with readOnlyRootFilesystem: true and an emptyDir mounted at /tmp.
+    Where can it write?'
+  options:
+  - Only in /tmp, and anything written there disappears with the Pod.
+  - Anywhere, because root ignores read-only mounts.
+  - Nowhere, because the whole container is read-only.
+  correct: 0
+  explanation: The image's filesystem is mounted read-only for every user, root included. Volumes such
+    as an emptyDir stay writable, and an emptyDir is deleted with its Pod.
+hints:
+- 'Replicas from one image should hold identical files: compare a checksum of each replica''s /usr, /etc,
+  /bin, and /sbin.'
+- readOnlyRootFilesystem and allowPrivilegeEscalation go in the container's securityContext; each path
+  the uploader writes needs its own emptyDir volume and volumeMount.
+- 'Fingerprint each Pod with find /usr /etc /bin /sbin -xdev -type f -exec md5sum {} + | sort | md5sum,
+  write the odd one''s name into tampered-pod.txt, then add readOnlyRootFilesystem: true, allowPrivilegeEscalation:
+  false, and emptyDir mounts at /tmp and /var/cache/uploads, and apply.'
+sources:
+- https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+- https://kubernetes.io/docs/concepts/storage/volumes/#emptydir
+- https://kubernetes.io/docs/concepts/security/security-checklist/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - immutable
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - immutable
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: immutable-finding
+  title: The changed replica is identified
+  explanation: tampered-pod.txt must name the replica whose files were changed while it ran.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - immutable
+    timeout: 300
+  expectation: json
+  json_path:
+  - finding
+  expected: 'true'
+  diagnostic: tampered-pod.txt is missing or names another Pod. Fingerprint each replica's program and
+    configuration folders before rolling out, and record the one that differs.
+- id: immutable-pods
+  title: Every uploader is immutable
+  explanation: Three uploader Pods must run with a read-only root filesystem and no privilege escalation,
+    root inside them must be unable to change the image's files, and the tampered Pod must be gone.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - immutable
+    timeout: 300
+  expectation: json
+  json_path:
+  - immutable
+  expected: 'true'
+  diagnostic: 'An uploader Pod can still change its own files, or the tampered Pod is still running. Set
+    readOnlyRootFilesystem: true and allowPrivilegeEscalation: false, add emptyDir volumes for the paths
+    it writes, and roll it out.'
+- id: immutable-working
+  title: Uploads are still cached
+  explanation: The uploader must keep adding files to /var/cache/uploads.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - immutable
+    timeout: 300
+  expectation: json
+  json_path:
+  - working
+  expected: 'true'
+  diagnostic: The uploader stopped caching uploads. Read kubectl logs -n uploads deploy/uploader for a
+    read-only error, and add an emptyDir for that path.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - immutable
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any method of finding the changed replica is accepted when tampered-pod.txt names it correctly.
+- Setting the security settings at the Pod level where possible is accepted.
+failure_modes:
+- A read-only root filesystem without volumes for needed paths makes the application crash.
+- Configuration changes do not undo files already planted in running Pods; replacing the Pods does.
+- Folders that change constantly make every fingerprint differ.
+starter_failure_checks:
+- immutable-finding
+- immutable-pods

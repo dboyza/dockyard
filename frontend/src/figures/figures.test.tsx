@@ -5,7 +5,15 @@ import terms from "../../../src/dockyard/content/reference/glossary.json";
 import type { Figure } from "../contracts.gen";
 import { Markdown } from "../teaching";
 import { FigureLinks, type FigureLinkOptions, FigureText } from "./Figure";
+import { cluster } from "./cluster";
+import { dispatch } from "./dispatch";
+import { docker } from "./docker";
+import { foundations } from "./foundations";
+import { kubernetes } from "./kubernetes";
+import { platform } from "./platform";
+import { reference } from "./reference";
 import { drawings } from "./registry";
+import { security } from "./security";
 
 const all: Figure[] = figures.map((item) => ({
   steps: [],
@@ -26,6 +34,25 @@ function lesson(markdown: string, links: FigureLinkOptions = { glossary }) {
     </FigureText.Provider>,
   );
 }
+
+test("each figure is drawn in exactly one module", () => {
+  // The registry spreads these modules together, so a repeated name would silently
+  // replace an earlier drawing instead of failing.
+  const modules = [
+    foundations,
+    dispatch,
+    docker,
+    kubernetes,
+    platform,
+    cluster,
+    reference,
+    security,
+  ];
+  const names = modules.flatMap((module) => Object.keys(module));
+  expect(names.filter((name, index) => names.indexOf(name) !== index)).toEqual(
+    [],
+  );
+});
 
 test("every drawing has teaching text and every figure has a drawing", () => {
   expect(Object.keys(drawings).sort()).toEqual(

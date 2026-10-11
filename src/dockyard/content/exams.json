@@ -372,5 +372,189 @@
       }
     ],
     "reference_policy": "Work on your own. Dockyard's hints and reference solutions are not available during the exam.\nYou may use command help (`--help`, `kubectl explain`, man pages), the Kubernetes documentation and blog, the Helm documentation, the Gateway API documentation, and any official documentation linked from a task.\nUse the lab terminal, which is already connected to this exam's own cluster.\nThe two-hour timer starts once the environment is ready, and closing the browser does not pause it.\nKeep the Dockyard launcher running so it can record the final state when time is up.\nIf the environment breaks or changes underneath you, the attempt is marked invalid rather than scored.\n\nThese are original practice tasks on a small local environment, without proctoring.\nYour score shows how you did on these tasks today; it is not a certification result or a prediction of one.\nThe official rules change from time to time: before booking, read the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and the [CKA and CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad).\nThese links were checked on 2026-09-27."
+  },
+  {
+    "id": "cks-hardening",
+    "unit_id": "exam-cks-a",
+    "title": "Cluster and system hardening assessment",
+    "track": "CKS",
+    "minutes": 120,
+    "tasks": [
+      {
+        "id": "kubelet",
+        "weight": 15,
+        "criteria": [
+          "cksa-kubelet"
+        ],
+        "remediation": [
+          "m25-benchmark"
+        ]
+      },
+      {
+        "id": "anonymous",
+        "weight": 10,
+        "criteria": [
+          "cksa-anonymous"
+        ],
+        "remediation": [
+          "m26-anonymous"
+        ]
+      },
+      {
+        "id": "rbac",
+        "weight": 10,
+        "criteria": [
+          "cksa-rbac"
+        ],
+        "remediation": [
+          "m26-rbac"
+        ]
+      },
+      {
+        "id": "apparmor",
+        "weight": 15,
+        "criteria": [
+          "cksa-apparmor"
+        ],
+        "remediation": [
+          "m27-apparmor"
+        ]
+      },
+      {
+        "id": "encryption",
+        "weight": 15,
+        "criteria": [
+          "cksa-encryption",
+          "cksa-preserved"
+        ],
+        "remediation": [
+          "m28-encryption"
+        ]
+      },
+      {
+        "id": "egress",
+        "weight": 10,
+        "criteria": [
+          "cksa-egress",
+          "cksa-workflow"
+        ],
+        "remediation": [
+          "m25-endpoints"
+        ]
+      },
+      {
+        "id": "binaries",
+        "weight": 10,
+        "criteria": [
+          "cksa-binaries"
+        ],
+        "remediation": [
+          "m25-binaries"
+        ]
+      },
+      {
+        "id": "audit",
+        "weight": 15,
+        "criteria": [
+          "cksa-audit"
+        ],
+        "remediation": [
+          "m30-audit"
+        ]
+      }
+    ],
+    "reference_policy": "Work on your own. Dockyard's hints and reference solutions are not available during the exam.\nYou may use command help (`--help`, `kubectl explain`, man pages), the Kubernetes documentation and blog, the documentation of the security tools installed for the exam, and any official documentation linked from a task.\nUse the lab terminal, which is already connected to this exam's own cluster.\nThe two-hour timer starts once the environment is ready, and closing the browser does not pause it.\nKeep the Dockyard launcher running so it can record the final state when time is up.\nIf the environment breaks or changes underneath you, the attempt is marked invalid rather than scored.\n\nThese are original practice tasks on a small local environment, without proctoring.\nYour score shows how you did on these tasks today; it is not a certification result or a prediction of one.\nThe official rules change from time to time: before booking, read the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and the [CKA and CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad).\nThese links were checked on 2026-09-27."
+  },
+  {
+    "id": "cks-runtime",
+    "unit_id": "exam-cks-b",
+    "title": "Workload and runtime security assessment",
+    "track": "CKS",
+    "minutes": 120,
+    "tasks": [
+      {
+        "id": "seccomp",
+        "weight": 10,
+        "criteria": [
+          "cksb-seccomp"
+        ],
+        "remediation": [
+          "m27-seccomp"
+        ]
+      },
+      {
+        "id": "sandbox",
+        "weight": 15,
+        "criteria": [
+          "cksb-sandbox"
+        ],
+        "remediation": [
+          "m28-sandbox"
+        ]
+      },
+      {
+        "id": "detect",
+        "weight": 15,
+        "criteria": [
+          "cksb-detect"
+        ],
+        "remediation": [
+          "m30-falco"
+        ]
+      },
+      {
+        "id": "contain",
+        "weight": 15,
+        "criteria": [
+          "cksb-contain"
+        ],
+        "remediation": [
+          "m30-mission"
+        ]
+      },
+      {
+        "id": "immutable",
+        "weight": 15,
+        "criteria": [
+          "cksb-immutable",
+          "cksb-preserved"
+        ],
+        "remediation": [
+          "m30-immutable"
+        ]
+      },
+      {
+        "id": "tokens",
+        "weight": 10,
+        "criteria": [
+          "cksb-tokens",
+          "cksb-workflow"
+        ],
+        "remediation": [
+          "m26-tokens"
+        ]
+      },
+      {
+        "id": "footprint",
+        "weight": 10,
+        "criteria": [
+          "cksb-footprint"
+        ],
+        "remediation": [
+          "m27-footprint"
+        ]
+      },
+      {
+        "id": "wireguard",
+        "weight": 10,
+        "criteria": [
+          "cksb-wireguard"
+        ],
+        "remediation": [
+          "m28-wireguard"
+        ]
+      }
+    ],
+    "reference_policy": "Work on your own. Dockyard's hints and reference solutions are not available during the exam.\nYou may use command help (`--help`, `kubectl explain`, man pages), the Kubernetes documentation and blog, the documentation of the security tools installed for the exam, and any official documentation linked from a task.\nUse the lab terminal, which is already connected to this exam's own cluster.\nThe two-hour timer starts once the environment is ready, and closing the browser does not pause it.\nKeep the Dockyard launcher running so it can record the final state when time is up.\nIf the environment breaks or changes underneath you, the attempt is marked invalid rather than scored.\n\nThese are original practice tasks on a small local environment, without proctoring.\nYour score shows how you did on these tasks today; it is not a certification result or a prediction of one.\nThe official rules change from time to time: before booking, read the [Linux Foundation allowed resources](https://docs.linuxfoundation.org/tc-docs/certification/certification-resources-allowed) and the [CKA and CKAD instructions](https://docs.linuxfoundation.org/tc-docs/certification/tips-cka-and-ckad).\nThese links were checked on 2026-09-27."
   }
 ]

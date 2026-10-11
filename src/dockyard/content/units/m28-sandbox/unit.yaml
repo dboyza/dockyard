@@ -1,0 +1,175 @@
+id: m28-sandbox
+revision: 1
+module: 28
+order: 2
+title: Sandbox untrusted code with gVisor
+summary: Register gVisor as a containerd runtime, describe it with a RuntimeClass that schedules only
+  where it exists, and run an untrusted workload inside it.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+node_tools:
+- gvisor
+minutes: 45
+outcomes:
+- Explain how a sandboxed runtime such as gVisor protects the node's kernel, and what it costs.
+- Register a runtime handler in containerd and describe it with a RuntimeClass.
+- Schedule sandboxed Pods only onto nodes that support them, and confirm the sandbox from inside.
+prerequisites:
+- m28-encryption
+objectives:
+- kubernetes.security
+- kubernetes.scheduling
+- cks.isolation
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A RuntimeClass has a scheduling.nodeSelector. What happens to Pods that use it?
+  options:
+  - They are scheduled only onto nodes whose labels match the selector.
+  - They run on any node, and the selector is only documentation.
+  - They replace the node's default runtime for every Pod on matching nodes.
+  correct: 0
+  explanation: Kubernetes adds the RuntimeClass's node selector to each Pod that uses it, so the scheduler
+    only considers nodes that carry those labels, typically the ones with the runtime installed.
+hints:
+- Inside the preview container, dmesg shows whose kernel is answering; on the worker, sudo crictl info
+  lists containerd's runtime handlers.
+- Add a runtimes.runsc section with runtime_type io.containerd.runsc.v1 under the io.containerd.cri.v1.runtime
+  plugin in /etc/containerd/config.toml, restart containerd, label the node, and create a RuntimeClass
+  with handler runsc.
+- 'Append the runsc section to the worker''s containerd config and restart containerd, run kubectl label
+  node lima-$DOCKYARD_WORKER sandbox.dockyard.io/gvisor=true, create RuntimeClass gvisor with that nodeSelector,
+  and set runtimeClassName: gvisor in untrusted.yaml.'
+sources:
+- https://kubernetes.io/docs/concepts/containers/runtime-class/
+- https://gvisor.dev/docs/user_guide/containerd/quick_start/
+- https://gvisor.dev/docs/architecture_guide/security/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - sandbox
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - sandbox
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: sandbox-runtimeclass
+  title: A gvisor RuntimeClass schedules onto prepared nodes
+  explanation: A RuntimeClass named gvisor must use the runsc handler and have a scheduling node selector.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - sandbox
+    timeout: 300
+  expectation: json
+  json_path:
+  - runtimeclass
+  expected: 'true'
+  diagnostic: The gvisor RuntimeClass is missing, uses a different handler, or has no node selector. Create
+    it with handler runsc and scheduling.nodeSelector matching the label you give the worker.
+- id: sandbox-node
+  title: The worker can run sandboxed Pods
+  explanation: containerd on the worker must know the runsc handler, and the worker's labels must match
+    the RuntimeClass's node selector.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - sandbox
+    timeout: 300
+  expectation: json
+  json_path:
+  - node
+  expected: 'true'
+  diagnostic: The worker cannot run the sandbox yet. Add the runsc runtime section to /etc/containerd/config.toml
+    on the worker, restart containerd, and label the node to match the RuntimeClass.
+- id: sandbox-running
+  title: The preview runs inside gVisor
+  explanation: template-preview must use the gvisor RuntimeClass, be available, show gVisor's kernel messages
+    from inside, and still serve requests.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - sandbox
+    timeout: 300
+  expectation: json
+  json_path:
+  - sandboxed
+  expected: 'true'
+  diagnostic: 'template-preview is not running in the sandbox, or stopped serving. Set runtimeClassName:
+    gvisor in its Pod template and apply untrusted.yaml; if the Pod is Pending, check the node selector.'
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - sandbox
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any node label is accepted when the RuntimeClass's node selector and the worker's labels match.
+- Registering runsc on both nodes is accepted.
+failure_modes:
+- A RuntimeClass handler must match a handler name in containerd's configuration.
+- Without a node selector, sandboxed Pods may land on nodes that cannot run them.
+- gVisor adds latency and does not support every system call.
+starter_failure_checks:
+- sandbox-runtimeclass
+- sandbox-node
+- sandbox-running

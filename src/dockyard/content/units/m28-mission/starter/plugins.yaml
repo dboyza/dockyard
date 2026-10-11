@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: plugins
+---
+# Credentials the plugin runner uses to call a partner's API. A practice value.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: plugin-credentials
+  namespace: plugins
+type: Opaque
+stringData:
+  api-token: practice-token-not-real
+---
+# Runs plugins that partners upload: code from outside the company.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plugin-runner
+  namespace: plugins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plugin-runner
+  template:
+    metadata:
+      labels:
+        app: plugin-runner
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: runner
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        command: ["python", "-m", "http.server", "8000", "--directory", "/tmp"]
+        env:
+        - name: PARTNER_API_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: plugin-credentials
+              key: api-token
+        resources:
+          requests: {cpu: 10m, memory: 64Mi}
+          limits: {cpu: 200m, memory: 192Mi}

@@ -1,6 +1,6 @@
 {
   "curriculum_version": 1,
-  "checked_at": "2026-09-26",
+  "checked_at": "2026-10-05",
   "attribution": "Cloud Native Computing Foundation (CNCF)",
   "license": "CC-BY-4.0+",
   "license_url": "https://creativecommons.org/licenses/by/4.0/",
@@ -19,6 +19,13 @@
       "revision": "f6c7667265fef850daaf93b4e19e919552c67d8c",
       "url": "https://github.com/cncf/curriculum/blob/f6c7667265fef850daaf93b4e19e919552c67d8c/CKAD_Curriculum_v1.35.pdf",
       "sha256": "7736d2f0291239d62e9fc618304413ee9b6e53fc4580aac70bf4328203c1c210"
+    },
+    {
+      "track": "CKS",
+      "version": "1.34",
+      "revision": "94f35b01ae65763117de7fd5fcd5d57feacae68c",
+      "url": "https://github.com/cncf/curriculum/blob/94f35b01ae65763117de7fd5fcd5d57feacae68c/CKS_Curriculum%20v1.34.pdf",
+      "sha256": "a755a5680bec6978de4a3074d7f0c7fe978bd7a9ad5e4f1681597aedda6f6637"
     }
   ],
   "objectives": [
@@ -916,6 +923,467 @@
       ],
       "assessed_by": [
         "m10-mission"
+      ]
+    },
+    {
+      "id": "cks.network-policies",
+      "track": "CKS",
+      "domain": "cluster-setup",
+      "weight": 15,
+      "objective": "Use Network security policies to restrict cluster level access",
+      "explained_by": [
+        "m17-network",
+        "m25-endpoints"
+      ],
+      "practiced_by": [
+        "m17-network",
+        "m25-endpoints"
+      ],
+      "assessed_by": [
+        "m25-mission",
+        "exam-cks-a"
+      ]
+    },
+    {
+      "id": "cks.cis-benchmark",
+      "track": "CKS",
+      "domain": "cluster-setup",
+      "weight": 15,
+      "objective": "Use CIS benchmark to review the security configuration of Kubernetes components (etcd, kubelet, kubedns, kubeapi)",
+      "explained_by": [
+        "m25-benchmark"
+      ],
+      "practiced_by": [
+        "m25-benchmark"
+      ],
+      "assessed_by": [
+        "m25-mission",
+        "exam-cks-a"
+      ]
+    },
+    {
+      "id": "cks.ingress-tls",
+      "track": "CKS",
+      "domain": "cluster-setup",
+      "weight": 15,
+      "objective": "Properly set up Ingress objects with TLS",
+      "explained_by": [
+        "m10-ingress"
+      ],
+      "practiced_by": [
+        "m10-ingress"
+      ],
+      "assessed_by": [
+        "m10-mission"
+      ]
+    },
+    {
+      "id": "cks.node-endpoints",
+      "track": "CKS",
+      "domain": "cluster-setup",
+      "weight": 15,
+      "objective": "Protect node metadata and endpoints",
+      "explained_by": [
+        "m25-endpoints"
+      ],
+      "practiced_by": [
+        "m25-endpoints"
+      ],
+      "assessed_by": [
+        "m25-mission",
+        "exam-cks-a"
+      ]
+    },
+    {
+      "id": "cks.binaries",
+      "track": "CKS",
+      "domain": "cluster-setup",
+      "weight": 15,
+      "objective": "Verify platform binaries before deploying",
+      "explained_by": [
+        "m25-binaries"
+      ],
+      "practiced_by": [
+        "m25-binaries"
+      ],
+      "assessed_by": [
+        "m25-mission",
+        "exam-cks-a"
+      ]
+    },
+    {
+      "id": "cks.rbac",
+      "track": "CKS",
+      "domain": "cluster-hardening",
+      "weight": 15,
+      "objective": "Use Role Based Access Controls to minimize exposure",
+      "explained_by": [
+        "m17-rbac",
+        "m26-rbac"
+      ],
+      "practiced_by": [
+        "m17-rbac",
+        "m26-rbac"
+      ],
+      "assessed_by": [
+        "m26-mission",
+        "exam-cks-a"
+      ]
+    },
+    {
+      "id": "cks.service-accounts",
+      "track": "CKS",
+      "domain": "cluster-hardening",
+      "weight": 15,
+      "objective": "Exercise caution in using service accounts e.g. disable defaults, minimize permissions on newly created ones",
+      "explained_by": [
+        "m09-identities",
+        "m26-tokens"
+      ],
+      "practiced_by": [
+        "m09-identities",
+        "m26-tokens"
+      ],
+      "assessed_by": [
+        "m26-mission",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.api-access",
+      "track": "CKS",
+      "domain": "cluster-hardening",
+      "weight": 15,
+      "objective": "Restrict access to Kubernetes API",
+      "explained_by": [
+        "m26-anonymous"
+      ],
+      "practiced_by": [
+        "m26-anonymous"
+      ],
+      "assessed_by": [
+        "m26-mission",
+        "exam-cks-a"
+      ]
+    },
+    {
+      "id": "cks.upgrades",
+      "track": "CKS",
+      "domain": "cluster-hardening",
+      "weight": 15,
+      "objective": "Upgrade Kubernetes to avoid vulnerabilities",
+      "explained_by": [
+        "m21-upgrade"
+      ],
+      "practiced_by": [
+        "m21-upgrade"
+      ],
+      "assessed_by": [
+        "m21-mission"
+      ]
+    },
+    {
+      "id": "cks.host-footprint",
+      "track": "CKS",
+      "domain": "system-hardening",
+      "weight": 10,
+      "objective": "Minimize host OS footprint (reduce attack surface)",
+      "explained_by": [
+        "m27-footprint"
+      ],
+      "practiced_by": [
+        "m27-footprint"
+      ],
+      "assessed_by": [
+        "m27-mission",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.least-privilege",
+      "track": "CKS",
+      "domain": "system-hardening",
+      "weight": 10,
+      "objective": "Using least-privilege identity and access management",
+      "explained_by": [
+        "m17-rbac",
+        "m26-rbac",
+        "m26-tokens"
+      ],
+      "practiced_by": [
+        "m17-rbac",
+        "m26-rbac",
+        "m26-tokens"
+      ],
+      "assessed_by": [
+        "m26-mission",
+        "exam-cks-a"
+      ]
+    },
+    {
+      "id": "cks.network-access",
+      "track": "CKS",
+      "domain": "system-hardening",
+      "weight": 10,
+      "objective": "Minimize external access to the network",
+      "explained_by": [
+        "m25-endpoints",
+        "m27-footprint"
+      ],
+      "practiced_by": [
+        "m25-endpoints",
+        "m27-footprint"
+      ],
+      "assessed_by": [
+        "m27-mission",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.kernel-hardening",
+      "track": "CKS",
+      "domain": "system-hardening",
+      "weight": 10,
+      "objective": "Appropriately use kernel hardening tools such as AppArmor, seccomp",
+      "explained_by": [
+        "m27-apparmor",
+        "m27-seccomp"
+      ],
+      "practiced_by": [
+        "m27-apparmor",
+        "m27-seccomp"
+      ],
+      "assessed_by": [
+        "m27-mission",
+        "exam-cks-a",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.pod-security",
+      "track": "CKS",
+      "domain": "microservice-vulnerabilities",
+      "weight": 20,
+      "objective": "Use appropriate pod security standards",
+      "explained_by": [
+        "m17-contexts"
+      ],
+      "practiced_by": [
+        "m17-contexts"
+      ],
+      "assessed_by": [
+        "m17-mission"
+      ]
+    },
+    {
+      "id": "cks.secrets",
+      "track": "CKS",
+      "domain": "microservice-vulnerabilities",
+      "weight": 20,
+      "objective": "Manage Kubernetes secrets",
+      "explained_by": [
+        "m09-secrets",
+        "m18-rotation",
+        "m28-encryption"
+      ],
+      "practiced_by": [
+        "m09-secrets",
+        "m18-rotation",
+        "m28-encryption"
+      ],
+      "assessed_by": [
+        "m28-mission",
+        "exam-cks-a"
+      ]
+    },
+    {
+      "id": "cks.isolation",
+      "track": "CKS",
+      "domain": "microservice-vulnerabilities",
+      "weight": 20,
+      "objective": "Understand and implement isolation techniques (multi-tenancy, sandboxed containers, etc.)",
+      "explained_by": [
+        "m28-sandbox"
+      ],
+      "practiced_by": [
+        "m28-sandbox"
+      ],
+      "assessed_by": [
+        "m28-mission",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.pod-encryption",
+      "track": "CKS",
+      "domain": "microservice-vulnerabilities",
+      "weight": 20,
+      "objective": "Implement Pod-to-Pod encryption (Cilium, Istio)",
+      "explained_by": [
+        "m28-wireguard"
+      ],
+      "practiced_by": [
+        "m28-wireguard"
+      ],
+      "assessed_by": [
+        "m28-mission",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.base-image",
+      "track": "CKS",
+      "domain": "supply-chain",
+      "weight": 20,
+      "objective": "Minimize base image footprint",
+      "explained_by": [
+        "m29-minimal"
+      ],
+      "practiced_by": [
+        "m29-minimal"
+      ],
+      "assessed_by": [
+        "m29-mission"
+      ]
+    },
+    {
+      "id": "cks.supply-chain",
+      "track": "CKS",
+      "domain": "supply-chain",
+      "weight": 20,
+      "objective": "Understand your supply chain (e.g. SBOM, CI/CD, artifact repositories)",
+      "explained_by": [
+        "m16-pipeline",
+        "m18-images"
+      ],
+      "practiced_by": [
+        "m16-pipeline",
+        "m18-images"
+      ],
+      "assessed_by": [
+        "m16-mission",
+        "m18-mission"
+      ]
+    },
+    {
+      "id": "cks.secure-supply-chain",
+      "track": "CKS",
+      "domain": "supply-chain",
+      "weight": 20,
+      "objective": "Secure your supply chain (permitted registries, sign and validate artifacts, etc.)",
+      "explained_by": [
+        "m29-signing"
+      ],
+      "practiced_by": [
+        "m29-signing"
+      ],
+      "assessed_by": [
+        "m29-mission"
+      ]
+    },
+    {
+      "id": "cks.static-analysis",
+      "track": "CKS",
+      "domain": "supply-chain",
+      "weight": 20,
+      "objective": "Perform static analysis of user workloads and container images (e.g. Kubesec, KubeLinter)",
+      "explained_by": [
+        "m18-images",
+        "m29-analysis"
+      ],
+      "practiced_by": [
+        "m18-images",
+        "m29-analysis"
+      ],
+      "assessed_by": [
+        "m29-mission"
+      ]
+    },
+    {
+      "id": "cks.behavioral-analytics",
+      "track": "CKS",
+      "domain": "runtime-security",
+      "weight": 20,
+      "objective": "Perform behavioral analytics to detect malicious activities",
+      "explained_by": [
+        "m30-falco"
+      ],
+      "practiced_by": [
+        "m30-falco"
+      ],
+      "assessed_by": [
+        "m30-mission",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.threat-detection",
+      "track": "CKS",
+      "domain": "runtime-security",
+      "weight": 20,
+      "objective": "Detect threats within physical infrastructure, apps, networks, data, users and workloads",
+      "explained_by": [
+        "m30-falco",
+        "m30-audit"
+      ],
+      "practiced_by": [
+        "m30-falco",
+        "m30-audit"
+      ],
+      "assessed_by": [
+        "m30-mission",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.attack-investigation",
+      "track": "CKS",
+      "domain": "runtime-security",
+      "weight": 20,
+      "objective": "Investigate and identify phases of attack and bad actors within the environment",
+      "explained_by": [
+        "m30-audit",
+        "m30-immutable"
+      ],
+      "practiced_by": [
+        "m30-audit",
+        "m30-immutable"
+      ],
+      "assessed_by": [
+        "m30-mission"
+      ]
+    },
+    {
+      "id": "cks.immutability",
+      "track": "CKS",
+      "domain": "runtime-security",
+      "weight": 20,
+      "objective": "Ensure immutability of containers at runtime",
+      "explained_by": [
+        "m30-immutable"
+      ],
+      "practiced_by": [
+        "m30-immutable"
+      ],
+      "assessed_by": [
+        "m30-mission",
+        "exam-cks-b"
+      ]
+    },
+    {
+      "id": "cks.audit-logs",
+      "track": "CKS",
+      "domain": "runtime-security",
+      "weight": 20,
+      "objective": "Use Kubernetes audit logs to monitor access",
+      "explained_by": [
+        "m30-audit"
+      ],
+      "practiced_by": [
+        "m30-audit"
+      ],
+      "assessed_by": [
+        "exam-cks-a"
       ]
     }
   ]

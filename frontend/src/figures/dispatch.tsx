@@ -51,7 +51,7 @@ const stages = [
   },
   {
     x: 490,
-    heading: "Modules 13–24",
+    heading: "Modules 13–30",
     sub: "run like a real service",
     region: "Your cluster",
   },

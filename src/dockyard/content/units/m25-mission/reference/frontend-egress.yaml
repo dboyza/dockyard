@@ -1,0 +1,34 @@
+# Egress policy for every Pod in the frontend namespace.
+# The clients need DNS and the Dispatch API; nothing else, so node endpoints stay out of reach.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-egress
+  namespace: frontend
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: dispatch
+      podSelector:
+        matchLabels:
+          app: dispatch
+    ports:
+    - protocol: TCP
+      port: 8080

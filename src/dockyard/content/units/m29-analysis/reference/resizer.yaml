@@ -1,0 +1,66 @@
+# Makes thumbnails of uploaded images, with only what it needs.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: resizer
+  namespace: media
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resizer
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resizer
+  template:
+    metadata:
+      labels:
+        app: resizer
+    spec:
+      serviceAccountName: resizer
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: resizer
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop: ["ALL"]
+        command: ["python", "-c"]
+        args:
+        - |
+          import pathlib, time
+          work = pathlib.Path("/work/thumbnails")
+          work.mkdir(parents=True, exist_ok=True)
+          count = 0
+          while True:
+              count += 1
+              (work / f"thumb-{count}.txt").write_text(f"thumbnail {count}\n")
+              print(f"made thumbnail {count}", flush=True)
+              time.sleep(5)
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 96Mi}
+        volumeMounts:
+        - name: work
+          mountPath: /work
+      volumes:
+      - name: work
+        emptyDir: {}

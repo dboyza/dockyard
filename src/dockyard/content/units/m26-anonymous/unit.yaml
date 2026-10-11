@@ -1,0 +1,174 @@
+id: m26-anonymous
+revision: 1
+module: 26
+order: 1
+title: Limit anonymous access to the API server
+summary: Remove a binding that exposes data to unauthenticated callers, then accept anonymous requests
+  only for health checks.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 45
+outcomes:
+- Explain how the API server treats requests without credentials, and tell 401 from 403.
+- Find RoleBindings and ClusterRoleBindings that grant permissions to anonymous callers.
+- Restrict anonymous access to health endpoints with an authentication configuration mounted into the
+  API server's static Pod.
+prerequisites:
+- m25-mission
+objectives:
+- kubernetes.security
+- kubernetes.rbac
+- cks.api-access
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A request reaches the API server with no certificate and no token. What happens by default?
+  options:
+  - It is treated as system:anonymous and RBAC decides whether it is allowed.
+  - It is always rejected with 401 Unauthorized.
+  - It is allowed, because unauthenticated requests skip authorization.
+  correct: 0
+  explanation: 'By default, anonymous access is on: the caller becomes system:anonymous in the group system:unauthenticated,
+    and RBAC then applies. Any binding to that user or group grants its permissions to everyone.'
+hints:
+- curl -sk https://127.0.0.1:$DOCKYARD_API_PORT/api/v1/namespaces/dispatch/configmaps works without credentials;
+  kubectl get clusterrolebindings -o wide shows which binding names system:unauthenticated.
+- An AuthenticationConfiguration file with an anonymous section and conditions for /livez, /readyz, and
+  /healthz, passed with --authentication-config, keeps anonymous access only for those paths.
+- Delete clusterrolebinding public-status and clusterrole status-reader; write /etc/kubernetes/auth-config.yaml
+  on the control plane; add the flag, a volumeMount, and a hostPath volume of type File to kube-apiserver.yaml;
+  wait for /readyz.
+sources:
+- https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-requests
+- https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-authenticator-configuration
+- https://kubernetes.io/docs/reference/access-authn-authz/rbac/#default-roles-and-role-bindings
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - anonymous
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - anonymous
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: anonymous-grants
+  title: No custom binding grants anything to anonymous callers
+  explanation: 'Apart from the built-in system: and kubeadm: defaults, no RoleBinding or ClusterRoleBinding
+    may name system:anonymous or system:unauthenticated.'
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - anonymous
+    timeout: 300
+  expectation: json
+  json_path:
+  - grants
+  expected: 'true'
+  diagnostic: A binding still grants permissions to system:anonymous or system:unauthenticated. Find it
+    with kubectl get clusterrolebindings -o wide and kubectl get rolebindings -A -o wide, and delete it.
+- id: anonymous-restricted
+  title: Requests without credentials are rejected
+  explanation: Unauthenticated requests for ConfigMaps and for /version must receive 401 Unauthorized,
+    so they are refused before authorization.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - anonymous
+    timeout: 300
+  expectation: json
+  json_path:
+  - restricted
+  expected: 'true'
+  diagnostic: Requests without credentials are still accepted as the anonymous user. Pass an authentication
+    configuration whose anonymous section lists only health paths with --authentication-config, mount
+    the file into the API server's static Pod, and wait for it to restart.
+- id: anonymous-health
+  title: Health checks still work without credentials
+  explanation: Unauthenticated requests to /readyz and /livez must still succeed, so load balancers and
+    monitoring keep working.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - anonymous
+    timeout: 300
+  expectation: json
+  json_path:
+  - health
+  expected: 'true'
+  diagnostic: The health endpoints no longer answer anonymous requests. Keep anonymous enabled in the
+    authentication configuration with conditions for /livez, /readyz, and /healthz, and do not set --anonymous-auth=false.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - anonymous
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any editor or method is accepted for changing the manifest; the running API server's behavior is assessed.
+- A different file path is accepted when the flag, the mount, and the hostPath all agree.
+failure_modes:
+- Removing a binding alone leaves anonymous requests reaching RBAC.
+- --anonymous-auth=false also breaks health checks that run without credentials.
+- A config file on the node is invisible to a static Pod until the manifest mounts it.
+starter_failure_checks:
+- anonymous-grants
+- anonymous-restricted

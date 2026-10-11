@@ -42,7 +42,7 @@ def select(service: Service, scope: str) -> list[Unit]:
         units = [u for u in ordered if u.module in modules]
         if units:
             return units
-    raise ValueError("Choose a unit, module:0 through module:24, track:0 through track:4, or all.")
+    raise ValueError("Choose a unit, module:0 through module:30, track:0 through track:5, or all.")
 
 
 def dependencies(unit: Unit) -> dict[str, Any]:

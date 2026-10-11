@@ -2,6 +2,7 @@
 
 import json
 import sys
+import tarfile
 
 import pytest
 
@@ -40,3 +41,30 @@ def test_other_docker_errors_still_fail_the_observation(monkeypatch, capsys):
     with pytest.raises(SystemExit):
         docker.main()
     assert "observation_error" in json.loads(capsys.readouterr().out)
+
+
+def filesystem(*entries):
+    """Tar members for an exported filesystem: (name, target) links, or plain file names."""
+    members = {}
+    for entry in entries:
+        name, target = entry if isinstance(entry, tuple) else (entry, None)
+        member = tarfile.TarInfo(name)
+        if target is not None:
+            member.type, member.linkname = tarfile.SYMTYPE, target
+        members[name] = member
+    return members
+
+
+def test_a_shell_counts_only_while_its_link_leads_to_a_program():
+    alpine = filesystem("bin/busybox", ("bin/sh", "/bin/busybox"), ("bin/ash", "busybox"))
+    assert docker.runnable(alpine, "bin/sh") and docker.runnable(alpine, "bin/ash")
+    # Deleting BusyBox leaves its links pointing at nothing, which cannot run.
+    del alpine["bin/busybox"]
+    assert not docker.runnable(alpine, "bin/sh") and not docker.runnable(alpine, "bin/ash")
+
+
+def test_link_resolution_follows_relative_chains_and_stops_on_loops():
+    chain = filesystem("usr/bin/dash", ("bin/dash", "../usr/bin/dash"), ("bin/sh", "dash"))
+    assert docker.runnable(chain, "bin/sh")
+    loop = filesystem(("bin/sh", "ash"), ("bin/ash", "sh"))
+    assert not docker.runnable(loop, "bin/sh")

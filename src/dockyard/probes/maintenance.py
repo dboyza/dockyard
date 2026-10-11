@@ -52,14 +52,9 @@ def served_serial(runtime: LinuxRuntime) -> int:
     return x509.load_der_x509_certificate(peer).serial_number
 
 
-def maintenance(mode: str) -> dict[str, Any]:
-    result: dict[str, Any] = dict.fromkeys(
-        ("preserved", "upgrade", "drained", "renewed", "workflow"), False
-    )
-    details: dict[str, Any] = {}
-    result["_details"] = details
-    runtime = current()
-    baseline = json.loads((runtime.root / "data/maintenance-baseline.json").read_text())
+def preserved(runtime: LinuxRuntime, baseline: dict[str, Any], details: dict[str, Any]) -> bool:
+    """Whether the namespace, nodes, marker, and stored row recorded at preparation remain."""
+    unchanged = False
     with suppress(*ERRORS):
         namespace = observed(runtime, ["get", "namespace", "dispatch"])
         nodes = observed(runtime, ["get", "nodes"])["items"]
@@ -69,7 +64,7 @@ def maintenance(mode: str) -> dict[str, Any]:
         if len(job_id) != 32 or any(c not in "0123456789abcdef" for c in job_id):
             raise ValueError("The maintenance sentinel has an invalid identity.")
         row = sql(f"SELECT title FROM jobs WHERE id='{job_id}'", workload="statefulset/db").strip()
-        result["preserved"] = bool(
+        unchanged = bool(
             namespace["metadata"]["uid"] == baseline["namespace_uid"]
             and identities == baseline["nodes"]
             and marker["metadata"]["uid"] == baseline["marker_uid"]
@@ -81,6 +76,18 @@ def maintenance(mode: str) -> dict[str, Any]:
             and namespace["metadata"]["uid"] == baseline["namespace_uid"],
             "persisted_sentinel": row == "maintenance-preserved",
         }
+    return unchanged
+
+
+def maintenance(mode: str) -> dict[str, Any]:
+    result: dict[str, Any] = dict.fromkeys(
+        ("preserved", "upgrade", "drained", "renewed", "workflow"), False
+    )
+    details: dict[str, Any] = {}
+    result["_details"] = details
+    runtime = current()
+    baseline = json.loads((runtime.root / "data/maintenance-baseline.json").read_text())
+    result["preserved"] = preserved(runtime, baseline, details)
     if mode == "upgrade":
         with suppress(*ERRORS):
             nodes = observed(runtime, ["get", "nodes"])["items"]

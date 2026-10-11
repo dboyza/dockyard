@@ -8,12 +8,13 @@ from dockyard.versions import KUBERNETES, KUBERNETES_PREVIOUS
 
 def test_prefetch_scopes_cover_the_course_and_reject_ambiguous_input(tmp_path):
     service = Service(tmp_path)
-    assert len(select(service, "all")) == 121
+    assert len(select(service, "all")) == 147
     assert {unit.module for unit in select(service, "track:0")} == {0}
     assert {unit.module for unit in select(service, "module:2")} == {2}
     assert {unit.module for unit in select(service, "track:2")} == set(range(7, 13))
+    assert {unit.module for unit in select(service, "track:5")} == set(range(25, 31))
     assert [unit.id for unit in select(service, "unit:exam-cka-a")] == ["exam-cka-a"]
-    for invalid in ["module:25", "track:5", "module:-1", "../tools", "unit:no-unit"]:
+    for invalid in ["module:31", "track:6", "module:-1", "../tools", "unit:no-unit"]:
         with pytest.raises(ValueError):
             select(service, invalid)
 

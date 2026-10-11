@@ -1,0 +1,27 @@
+# The first rule that matches a request decides its level, so order matters.
+apiVersion: audit.k8s.io/v1
+kind: Policy
+# Record each request once, when its response starts, not also when it arrives.
+omitStages:
+- RequestReceived
+rules:
+# High-volume noise that nobody investigates.
+- level: None
+  resources:
+  - group: ""
+    resources: ["events"]
+- level: None
+  nonResourceURLs: ["/healthz*", "/readyz*", "/livez*"]
+# Who touched a Secret, but never its contents.
+- level: Metadata
+  resources:
+  - group: ""
+    resources: ["secrets"]
+# Full detail for changes to workloads.
+- level: RequestResponse
+  verbs: ["create", "update", "patch", "delete"]
+  resources:
+  - group: "apps"
+    resources: ["deployments", "daemonsets", "statefulsets"]
+# Everything else: who did what, when.
+- level: Metadata

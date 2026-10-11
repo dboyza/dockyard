@@ -1,0 +1,177 @@
+id: m28-mission
+revision: 1
+module: 28
+order: 4
+title: 'Mission: isolate an untrusted workload'
+summary: Run partner code in a gVisor sandbox, encrypt its credentials at rest, and encrypt traffic between
+  nodes, with evidence for each layer.
+kind: mission
+runtime: linux
+nodes: 2
+native_version: current
+node_tools:
+- gvisor
+minutes: 70
+outcomes:
+- Combine a sandboxed runtime, encryption at rest, and node-to-node encryption on your own.
+- Order changes that restart cluster components safely, checking each before the next.
+- Explain which threats each isolation layer addresses.
+prerequisites:
+- m28-wireguard
+objectives:
+- kubernetes.security
+- cks.isolation
+- cks.pod-encryption
+- cks.secrets
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: An attacker copies an etcd backup from this cluster after you finish. Which of your three
+    layers protects the partner token in it?
+  options:
+  - Encryption at rest; the backup holds only ciphertext.
+  - The gVisor sandbox.
+  - WireGuard between the nodes.
+  correct: 0
+  explanation: The backup is a copy of etcd's data, so only encrypting Secrets before storage protects
+    it. The sandbox protects the node's kernel, and WireGuard protects traffic in transit.
+hints:
+- 'Check each layer''s starting state: the stored prefix of plugin-credentials with etcdctl, dmesg inside
+  plugin-runner, and ip link on the worker.'
+- 'Reuse the patterns from the three lessons: an EncryptionConfiguration wired into the API server, a
+  runsc handler with a labelled node and a RuntimeClass, and wireguardEnabled in the default FelixConfiguration.'
+- 'Enable encryption and rewrite all Secrets, register runsc on the worker and label it, create RuntimeClass
+  sandboxed with handler runsc, set runtimeClassName: sandboxed in plugins.yaml, and patch the FelixConfiguration.'
+sources:
+- https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/
+- https://kubernetes.io/docs/concepts/containers/runtime-class/
+- https://docs.tigera.io/calico/latest/network-policy/encrypt-cluster-pod-traffic
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - isolate
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - isolate
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: isolate-sandbox
+  title: The plugin runner runs inside gVisor
+  explanation: A RuntimeClass named sandboxed must use the runsc handler, and plugin-runner must use it,
+    be available, and show gVisor's kernel messages from inside.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - isolate
+    timeout: 300
+  expectation: json
+  json_path:
+  - sandbox
+  expected: 'true'
+  diagnostic: 'plugin-runner is not running in gVisor. Register runsc in containerd on a node, label that
+    node, create RuntimeClass sandboxed with handler runsc and a matching node selector, and set runtimeClassName:
+    sandboxed.'
+- id: isolate-encryption
+  title: Secrets are encrypted at rest
+  explanation: The API server must encrypt Secrets with a real provider first, and plugin-credentials
+    and dispatch-database must be stored encrypted. Only the stored prefix is examined.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - isolate
+    timeout: 300
+  expectation: json
+  json_path:
+  - encryption
+  expected: 'true'
+  diagnostic: Secrets are not encrypted at rest yet. Wire an EncryptionConfiguration into the API server
+    with a real provider before identity, wait for it to return, and rewrite all Secrets.
+- id: isolate-wireguard
+  title: Traffic between nodes is encrypted
+  explanation: WireGuard must be enabled in Calico, and the worker's wireguard.cali counters must grow
+    while a job crosses the nodes.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - isolate
+    timeout: 300
+  expectation: json
+  json_path:
+  - wireguard
+  expected: 'true'
+  diagnostic: Cross-node traffic is not passing through WireGuard. Enable it in the default FelixConfiguration
+    and wait for wireguard.cali on both nodes.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - isolate
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any real encryption provider is accepted, and runsc may be registered on both nodes.
+- The report is self-reviewed against the rubric and not graded.
+failure_modes:
+- Encryption applies only to Secrets written after it is enabled.
+- A RuntimeClass whose handler containerd does not know leaves Pods unable to start.
+- Restarting the API server and containerd at once makes problems hard to tell apart.
+starter_failure_checks:
+- isolate-sandbox
+- isolate-encryption
+- isolate-wireguard

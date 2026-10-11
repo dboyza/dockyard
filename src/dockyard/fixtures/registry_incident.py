@@ -132,18 +132,9 @@ def install(*, broken: bool = True) -> None:
     finally:
         archive.unlink(missing_ok=True)
     image = registry + "/dispatch:incident"
-    hosts = r.root / "incident-registry-hosts.toml"
-    atomic_write(
-        hosts, (f'[host."http://{name}:5000"]\n  capabilities = ["pull", "resolve"]\n').encode()
-    )
-    for node in r.discover():
-        if r.verify(node) is None:
-            raise RuntimeError("A recorded owned node disappeared during registry configuration.")
-        directory = "/etc/containerd/certs.d/" + registry
-        r.docker.require(r.docker.command(["exec", node["id"], "mkdir", "-p", directory]))
-        r.docker.require(
-            r.docker.command(["cp", str(hosts), node["id"] + ":" + directory + "/hosts.toml"])
-        )
+    from dockyard.runtimes.registry_publish import trust_on_nodes
+
+    trust_on_nodes(r, registry, name)
     r.docker.require(
         r.kubectl(
             ["apply", "-f", "-"],

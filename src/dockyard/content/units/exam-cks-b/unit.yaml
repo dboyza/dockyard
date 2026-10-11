@@ -1,0 +1,260 @@
+id: exam-cks-b
+revision: 1
+module: 30
+order: 101
+title: Workload and runtime security assessment
+summary: 'A timed CKS-style practice exam: eight workload and runtime security tasks on a real two-node
+  kubeadm cluster.'
+kind: exam
+runtime: linux
+nodes: 2
+native_version: current
+node_tools:
+- falco
+- gvisor
+minutes: 120
+outcomes:
+- Both processing containers run with seccomp
+- The preview runs inside gVisor
+- Falco detects the shell-starting workload
+- The compromised workload is contained
+- The uploader is immutable and the changed replica found
+- The reports namespace's identities are tidy
+- The worker carries no leftovers
+- Traffic between nodes is encrypted
+prerequisites:
+- exam-cks-a
+objectives:
+- kubernetes.security
+- cks.behavioral-analytics
+- cks.host-footprint
+- cks.immutability
+- cks.isolation
+- cks.kernel-hardening
+- cks.network-access
+- cks.pod-encryption
+- cks.service-accounts
+- cks.threat-detection
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: What does a practice exam score tell you?
+  options:
+  - How many of these tasks worked when time was up.
+  - Whether you will pass the real exam.
+  - How many commands you typed.
+  correct: 0
+  explanation: The score comes from checking the final state of each task. It shows where to practise
+    next; it cannot predict a real exam result.
+hints:
+- Hints are not available during the exam. Afterwards, open each task's results to see what was checked.
+- For each task you missed, compare the live state with the task text, and use the lesson linked from
+  the task.
+- Work through the linked lessons, then try a fresh attempt without help.
+sources:
+- https://kubernetes.io/docs/concepts/security/
+- https://docs.linuxfoundation.org/tc-docs/certification/important-instructions-cks
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - exam-b
+  timeout: 600
+checks:
+- id: cksb-seccomp
+  title: Both processing containers run with seccomp
+  explanation: no-chmod.json must be installed on both nodes, the processor must use it and be refused
+    chmod, and intake must run with a filter.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - seccomp
+  expected: 'true'
+  diagnostic: Review seccomp profile types and the kubelet's seccomp folder.
+- id: cksb-sandbox
+  title: The preview runs inside gVisor
+  explanation: A gvisor RuntimeClass with the runsc handler and a node selector must exist, the worker
+    must support it, and template-preview must run sandboxed.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - sandbox
+  expected: 'true'
+  diagnostic: Review containerd runtime handlers, RuntimeClass, and its scheduling.
+- id: cksb-detect
+  title: Falco detects the shell-starting workload
+  explanation: Falco must run as a service on the worker with a valid custom rule, and alerts must name
+    the storefront catalog Pod.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - detect
+  expected: 'true'
+  diagnostic: Review running Falco, writing rules, and the fields an output can name.
+- id: cksb-contain
+  title: The compromised workload is contained
+  explanation: finding.txt must name it, its identity must lose Secret access, its Pod must be isolated,
+    and the original Pod must keep running.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - contain
+  expected: 'true'
+  diagnostic: Review revoking access and isolating a Pod with a NetworkPolicy.
+- id: cksb-immutable
+  title: The uploader is immutable and the changed replica found
+  explanation: tampered-pod.txt must name the changed replica, every uploader must have a read-only root
+    filesystem and no escalation, and uploads must keep flowing.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - immutable
+  expected: 'true'
+  diagnostic: Review fingerprinting replicas and readOnlyRootFilesystem with emptyDir volumes.
+- id: cksb-tokens
+  title: The reports namespace's identities are tidy
+  explanation: The default ServiceAccount must mount no token and hold no permissions, no legacy token
+    may remain, and the builder must have its own minimal identity.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - tokens
+  expected: 'true'
+  diagnostic: Review automountServiceAccountToken, legacy token Secrets, and resourceNames.
+- id: cksb-footprint
+  title: The worker carries no leftovers
+  explanation: The report share must be off and stay off, and the backup account must be retired.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - footprint
+  expected: 'true'
+  diagnostic: Review surveying services, ports, and sudo rules.
+- id: cksb-wireguard
+  title: Traffic between nodes is encrypted
+  explanation: WireGuard must be enabled, both nodes must have keys and tunnels, and cross-node traffic
+    must use them.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - wireguard
+  expected: 'true'
+  diagnostic: Review Calico's FelixConfiguration.
+- id: cksb-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the stored job must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before the exam is missing or was replaced. Change the existing cluster rather
+    than rebuilding it.
+- id: cksb-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - exam-b
+    timeout: 600
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Review the tasks that touch networking and the API server first.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any method that produces the requested final state is accepted.
+- Only the final state of the cluster is checked, not your commands.
+failure_modes:
+- A changed file does not prove a running process adopted it.
+- Recreating an object gives it a new identity, which does not count as keeping the original.
+starter_failure_checks:
+- cksb-seccomp
+- cksb-sandbox
+- cksb-detect
+- cksb-contain
+- cksb-immutable
+- cksb-tokens
+- cksb-footprint
+- cksb-wireguard

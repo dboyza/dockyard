@@ -16,4 +16,6 @@ Your order may differ, but the load balancer usually comes first, because nothin
 ## Beyond this lab
 
 You have now built, broken, and repaired a real Kubernetes cluster from the node up.
-The course's practice exams are the next step: timed tasks in the style of the CKA and CKAD.
+Two paths follow from here.
+The practice exams test you with timed tasks in the style of the CKA and CKAD.
+Phase 5 hardens a cluster like this one against attack, and prepares you for the CKS.

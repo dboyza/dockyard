@@ -1,0 +1,174 @@
+id: m27-apparmor
+revision: 1
+module: 27
+order: 2
+title: Confine a container with AppArmor
+summary: Load an AppArmor profile on every node and apply it to a root container, so it can write only
+  to its work area.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 40
+outcomes:
+- Read an AppArmor profile's file and network rules, and explain enforce and complain modes.
+- Install and load a profile on each node so it survives reboots.
+- Apply a Localhost AppArmor profile to a container and confirm the confinement from inside it.
+prerequisites:
+- m27-footprint
+objectives:
+- kubernetes.security
+- cks.kernel-hardening
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A container runs as root under an AppArmor profile that allows writes only to /data and /tmp.
+    What happens when it writes to /etc/passwd?
+  options:
+  - The kernel refuses it; AppArmor applies to root as well.
+  - It succeeds, because root bypasses file permissions.
+  - The container is killed immediately.
+  correct: 0
+  explanation: AppArmor is enforced by the kernel for the confined process whatever its user. The write
+    fails with Permission denied, and the container keeps running.
+hints:
+- kubectl exec into the processor and try writing to /etc; on each node, sudo aa-status shows which profiles
+  are loaded.
+- Copy the profile into /etc/apparmor.d on each node with sudo tee, load it with sudo apparmor_parser
+  --replace, and name it in the container securityContext with appArmorProfile type Localhost.
+- 'Run the tee and apparmor_parser commands for both $DOCKYARD_CONTROL_PLANE and $DOCKYARD_WORKER, add
+  appArmorProfile: {type: Localhost, localhostProfile: dockyard-processor} under the processor''s securityContext,
+  and apply processing.yaml through render.py.'
+sources:
+- https://kubernetes.io/docs/tutorials/security/apparmor/
+- https://gitlab.com/apparmor/apparmor/-/wikis/QuickProfileLanguage
+- https://manpages.ubuntu.com/manpages/noble/man8/apparmor_parser.8.html
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - apparmor
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - apparmor
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: apparmor-loaded
+  title: The profile is loaded and installed on every node
+  explanation: dockyard-processor must be loaded in enforce mode on both nodes, and installed in /etc/apparmor.d
+    so it loads again after a reboot.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - apparmor
+    timeout: 300
+  expectation: json
+  json_path:
+  - loaded
+  expected: 'true'
+  diagnostic: The profile is missing, in complain mode, or not installed for boot on a node. On each node,
+    write it to /etc/apparmor.d/dockyard-processor with sudo tee and load it with sudo apparmor_parser
+    --replace.
+- id: apparmor-confined
+  title: The processor runs confined
+  explanation: The processor's main process must report dockyard-processor (enforce), and writing to /etc
+    must fail even though it runs as root.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - apparmor
+    timeout: 300
+  expectation: json
+  json_path:
+  - confined
+  expected: 'true'
+  diagnostic: The processor is not running under the profile. Add appArmorProfile with type Localhost
+    and localhostProfile dockyard-processor to its container securityContext, apply processing.yaml, and
+    wait for the rollout.
+- id: apparmor-working
+  title: The processor still processes documents
+  explanation: The processor must be available and keep adding result files under /data/results.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - apparmor
+    timeout: 300
+  expectation: json
+  json_path:
+  - working
+  expected: 'true'
+  diagnostic: The processor is not producing results. If its Pod is blocked, load the profile on the node
+    it was scheduled to and delete the Pod; if it runs but stalls, look for apparmor="DENIED" lines with
+    sudo journalctl -k on that node.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - apparmor
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Setting appArmorProfile in the Pod's securityContext instead of the container's is accepted.
+- Copying the profile to the nodes with limactl copy instead of tee is accepted.
+failure_modes:
+- A profile loaded only with apparmor_parser and not installed in /etc/apparmor.d disappears at reboot.
+- A Pod naming a profile that is not loaded on its node cannot start.
+- Complain mode only logs; it refuses nothing.
+starter_failure_checks:
+- apparmor-loaded
+- apparmor-confined

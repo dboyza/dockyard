@@ -100,7 +100,7 @@ class Criterion(Contract):
 class Unit(Contract):
     id: Identifier
     revision: int = Field(default=1, ge=1)
-    module: int = Field(ge=0, le=24)
+    module: int = Field(ge=0, le=30)
     order: int = Field(ge=1)
     title: str
     summary: str
@@ -197,7 +197,7 @@ class Exam(Contract):
     id: Identifier
     unit_id: Identifier
     title: str
-    track: Literal["CKA", "CKAD"]
+    track: Literal["CKA", "CKAD", "CKS"]
     minutes: int = 120
     tasks: list[ExamTask] = Field(min_length=1)
     reference_policy: str

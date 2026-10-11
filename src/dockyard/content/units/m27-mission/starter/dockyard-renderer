@@ -1,0 +1,17 @@
+#include <tunables/global>
+
+# Confines the renderer: it may read and run what is in its image,
+# but write only to its work area and temporary files.
+profile dockyard-renderer flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  # Read and run anything in the image.
+  /** rix,
+  # Write only its output and temporary files.
+  /output/** rw,
+  /tmp/** rw,
+  # Never write configuration, even as root.
+  deny /etc/** w,
+  network inet stream,
+  network inet6 stream,
+}

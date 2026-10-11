@@ -1,0 +1,205 @@
+id: m29-mission
+revision: 1
+module: 29
+order: 4
+title: 'Mission: ship a signed, minimal, policy-compliant release'
+summary: Build a minimal image, publish and sign it, deploy it by digest from an analysed manifest, and
+  admit only release images in production.
+kind: mission
+runtime: kubernetes
+minutes: 70
+outcomes:
+- Combine image minimization, static analysis, signing, and admission control on your own.
+- Publish an image to a registry and deploy exactly the digest you verified.
+- Report the evidence for each supply chain control and what it does not cover.
+prerequisites:
+- m29-signing
+objectives:
+- kubernetes.security
+- docker.artifacts
+- cks.base-image
+- cks.secure-supply-chain
+- cks.static-analysis
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You push dispatch:2.0, sign the digest it got, and deploy production by that digest. Later
+    someone pushes a different image as dispatch:2.0. What does production run after its Pods restart?
+  options:
+  - The signed image, because the Deployment names its digest.
+  - The new image, because the tag moved.
+  - Nothing, because the tag and digest no longer match.
+  correct: 0
+  explanation: A Deployment that names a digest always pulls that exact content. Moving the tag affects
+    only references that use the tag.
+hints:
+- The checkpoint Dockerfile already runs as user 10001 with an exec-form command; production.yaml still
+  needs hardening, a release image, and a policy for its namespace.
+- docker build -t REGISTRY/dispatch:2.0 ., docker push it, read its digest with docker inspect --format
+  '{{index .RepoDigests 0}}', then sign and verify that reference with cosign.
+- Add the minimal-image RUN step before USER in the Dockerfile, publish and sign the image, write the
+  release policy for production, set production.yaml's image to the digest reference with the hardened
+  settings from m29-analysis, and run sh run.sh.
+sources:
+- https://docs.sigstore.dev/cosign/signing/signing_with_containers/
+- https://docs.kubelinter.io/
+- https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 120
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.supply
+  - registry
+  timeout: 240
+checks:
+- id: release-minimal
+  title: Production's image is minimal
+  explanation: A container from production's image must have no shell, package manager, or setuid file,
+    and a non-root user.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - release-mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - minimal
+  expected: 'true'
+  diagnostic: Production's image still contains a shell, an installer, or a setuid file, or runs as root.
+    Strip them in the Dockerfile's runtime stage, rebuild, push, and redeploy by the new digest.
+- id: release-signed
+  title: Production's image is signed
+  explanation: cosign must verify production's image digest with cosign.pub from your workspace.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - release-mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - signed
+  expected: 'true'
+  diagnostic: Production's image does not verify with cosign.pub. Sign the exact digest production runs
+    with the matching cosign.key.
+- id: release-analysis
+  title: The production manifest passes analysis
+  explanation: KubeLinter must report no errors for the rendered production.yaml, and kubesec must score
+    its Deployment at least 10 with no critical findings.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - release-mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - analysis
+  expected: 'true'
+  diagnostic: production.yaml does not pass analysis. Run python render.py production.yaml through kube-linter
+    lint - and kubesec scan -, and fix each finding.
+- id: release-admission
+  title: Production admits only release images
+  explanation: Server-side dry runs in production must refuse an image from another registry and a release
+    by tag, and admit production's image by digest.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - release-mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - admission
+  expected: 'true'
+  diagnostic: The production admission rule is missing or too loose. Bind a ValidatingAdmissionPolicy
+    with Deny to production requiring the release registry and @sha256:.
+- id: release-deployed
+  title: Production runs the release by digest
+  explanation: production/dispatch must run one image from the release registry referenced by digest,
+    and be available.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - release-mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - deployed
+  expected: 'true'
+  diagnostic: Production does not run a release-registry image by digest. Set production.yaml's image
+    to REGISTRY/dispatch@sha256:... and run sh run.sh.
+- id: configuration-processing
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - release-mission
+    timeout: 300
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then
+    kubectl logs deployment/worker.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- cosign
+- kubesec
+- kube-linter
+checkpoint: dispatch-config-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- registry
+alternatives:
+- Any image build is accepted when the deployed digest meets every requirement.
+- Any policy expression is accepted when the dry runs give the required answers.
+- The report is self-reviewed against the rubric and not graded.
+failure_modes:
+- Deploying by tag can run content nobody signed.
+- A clean analysis of one file does not cover other manifests in the namespace.
+- An image allowlist does not verify signatures by itself.
+starter_failure_checks:
+- release-minimal
+- release-signed
+- release-admission

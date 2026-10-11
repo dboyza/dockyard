@@ -6,6 +6,9 @@ It pins CNCF curriculum repository revision `f6c7667265fef850daaf93b4e19e919552c
 The complete objective pages were extracted and visually inspected against the source PDFs.
 Whitespace and line wrapping are normalized; the CKAD source's wording "API depreciations" is interpreted as API deprecations.
 
+The CKS objectives were added on 2026-10-05 from revision `94f35b01ae65763117de7fd5fcd5d57feacae68c`, the CKS v1.34 PDF, which was the newest CKS curriculum published on that date.
+Their 26 records carry the `cks.` prefix and follow the same mapping contract; [the CKS track](../cks-track.md) explains how each competency is practised.
+
 Each objective maps to explaining units, hands-on units, and independent missions.
 These mappings are implementation contracts, not evidence that an unimplemented unit is complete.
 A coverage report must resolve all referenced IDs against the authored catalog and real-runtime validation evidence before claiming full coverage.

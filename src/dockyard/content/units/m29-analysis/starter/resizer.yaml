@@ -1,0 +1,51 @@
+# Makes thumbnails of uploaded images. Written in a hurry: it works, but nobody reviewed it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resizer
+  namespace: media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resizer
+  template:
+    metadata:
+      labels:
+        app: resizer
+    spec:
+      containers:
+      - name: resizer
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        securityContext:
+          privileged: true
+        command: ["python", "-c"]
+        args:
+        - |
+          import pathlib, time
+          work = pathlib.Path("/work/thumbnails")
+          work.mkdir(parents=True, exist_ok=True)
+          count = 0
+          while True:
+              count += 1
+              (work / f"thumb-{count}.txt").write_text(f"thumbnail {count}\n")
+              print(f"made thumbnail {count}", flush=True)
+              time.sleep(5)
+        volumeMounts:
+        - name: host
+          mountPath: /host
+        - name: work
+          mountPath: /work
+      volumes:
+      # "In case we need files from the node."
+      - name: host
+        hostPath:
+          path: /
+      - name: work
+        emptyDir: {}

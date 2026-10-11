@@ -1,0 +1,154 @@
+id: m27-footprint
+revision: 1
+module: 27
+order: 1
+title: Reduce a node's attack surface
+summary: Survey a worker's services, ports, and accounts, then turn off a service that exposes files and
+  retire an account with passwordless sudo.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 30
+outcomes:
+- List a node's running services and listening ports, and tell local from network-wide listeners.
+- Stop, disable, and mask a systemd service, and explain the difference.
+- Retire a user account by removing its sudo rule and login shell.
+prerequisites:
+- m26-mission
+objectives:
+- kubernetes.security
+- cks.host-footprint
+- cks.network-access
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You run sudo systemctl disable report-share on a running service. What happens right away?
+  options:
+  - Nothing visible; it keeps running until it is stopped or the node reboots.
+  - It stops immediately and never starts again.
+  - It is deleted from the node.
+  correct: 0
+  explanation: disable only removes the service from the boot sequence. stop ends it now, disable --now
+    does both, and mask stops anything from starting it.
+hints:
+- On the worker, systemctl list-units --type=service --state=running and sudo ss -ltnp show what runs
+  and listens; look for a listener on 0.0.0.0 that a node does not need.
+- systemctl disable --now stops a service and keeps it from starting at boot; mask prevents it starting
+  at all. Accounts with sudo rights are listed in /etc/sudoers.d.
+- Run sudo systemctl disable --now report-share and sudo systemctl mask report-share, then sudo rm /etc/sudoers.d/backup
+  and sudo usermod --shell /usr/sbin/nologin --lock backup.
+sources:
+- https://kubernetes.io/docs/concepts/security/security-checklist/
+- https://www.freedesktop.org/software/systemd/man/latest/systemctl.html
+- https://man7.org/linux/man-pages/man8/ss.8.html
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - footprint
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - footprint
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: footprint-service
+  title: The report share is off and stays off
+  explanation: The report-share service must not be running or enabled at boot, and nothing may listen
+    on port 8081 on the worker.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - footprint
+    timeout: 300
+  expectation: json
+  json_path:
+  - service
+  expected: 'true'
+  diagnostic: The report-share service is still running, enabled, or listening. Run sudo systemctl disable
+    --now report-share on the worker, mask it, and check sudo ss -ltnp.
+- id: footprint-account
+  title: The backup account is retired
+  explanation: The backup account must not be able to use sudo, and must either be removed or have a shell
+    that refuses logins.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - footprint
+    timeout: 300
+  expectation: json
+  json_path:
+  - account
+  expected: 'true'
+  diagnostic: The backup account can still use sudo or log in. Remove /etc/sudoers.d/backup and set its
+    shell to /usr/sbin/nologin.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - footprint
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Deleting the service's unit file, or removing the account entirely with userdel, is accepted.
+- Any method of closing the port is accepted when the service no longer runs and cannot start at boot.
+failure_modes:
+- disable alone leaves a service running until the next boot.
+- stop alone lets a service return at the next boot.
+- Stopping the kubelet or containerd takes the node out of the cluster.
+starter_failure_checks:
+- footprint-service
+- footprint-account

@@ -1,0 +1,160 @@
+id: m26-rbac
+revision: 1
+module: 26
+order: 3
+title: Find and trim over-broad RBAC
+summary: Audit cluster-wide bindings, measure what subjects can really do with impersonation, and replace
+  broad grants with namespaced least-privilege ones.
+kind: lesson
+runtime: linux
+nodes: 2
+native_version: current
+minutes: 40
+outcomes:
+- Find which subjects hold cluster-wide roles, and spot dangerous permissions.
+- Measure a subject's effective access with kubectl auth can-i and impersonation.
+- Replace broad grants with Roles and RoleBindings scoped to one namespace, including built-in ClusterRoles.
+prerequisites:
+- m26-tokens
+objectives:
+- kubernetes.rbac
+- kubernetes.security
+- cks.least-privilege
+- cks.rbac
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A RoleBinding in the dispatch namespace refers to the ClusterRole view. Where do its permissions
+    apply?
+  options:
+  - Only inside dispatch, because a RoleBinding is namespaced.
+  - In every namespace, because view is a ClusterRole.
+  - Nowhere, because a RoleBinding can only refer to a Role.
+  correct: 0
+  explanation: A RoleBinding grants a role's permissions only in its own namespace, even when the role
+    is a ClusterRole. That is how one built-in ClusterRole can be reused safely per namespace.
+hints:
+- kubectl get clusterrolebindings -o wide shows the non-default grants; kubectl auth can-i --list --as=system:serviceaccount:ci:deployer
+  shows how wide one is.
+- Write a Role for Deployments in the apps group in dispatch and bind it to the deployer; bind the built-in
+  view ClusterRole to the dispatch-operators group with a RoleBinding in dispatch.
+- Apply rbac.yaml, then kubectl delete clusterrolebinding ci-deployer-admin dispatch-operators-all and
+  kubectl delete clusterrole dispatch-ops, and recheck with kubectl auth can-i.
+sources:
+- https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+- https://kubernetes.io/docs/concepts/security/rbac-good-practices/
+- https://kubernetes.io/docs/reference/access-authn-authz/authentication/#user-impersonation
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - rbac
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - rbac
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: rbac-deployer
+  title: The CI deployer can do exactly what was agreed
+  explanation: The deployer must be able to list, patch, and update Deployments in dispatch, and must
+    be refused Secrets, deleting Pods, other namespaces, cluster-wide bindings, and nodes.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - rbac
+    timeout: 300
+  expectation: json
+  json_path:
+  - deployer
+  expected: 'true'
+  diagnostic: The deployer's access does not match the requirements. Check it with kubectl auth can-i
+    --list --as=system:serviceaccount:ci:deployer; remove the cluster-admin binding and bind a Role for
+    Deployments in the apps group in dispatch.
+- id: rbac-operators
+  title: The operators can read dispatch and nothing more
+  explanation: The dispatch-operators group must be able to list Pods and Deployments and read Pod logs
+    in dispatch, and must be refused Secrets, changes, exec, other namespaces, and nodes.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - rbac
+    timeout: 300
+  expectation: json
+  json_path:
+  - operators
+  expected: 'true'
+  diagnostic: The operators' access does not match the requirements. Check it with kubectl auth can-i
+    --list --as=alex --as-group=dispatch-operators; remove the wildcard binding and bind the view ClusterRole
+    with a RoleBinding in dispatch.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - rbac
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any Roles, ClusterRoles, and bindings are accepted when the effective access of both subjects matches
+  the requirements.
+- A custom read-only Role instead of the built-in view role is accepted if it includes Pod logs and excludes
+  Secrets.
+failure_modes:
+- Permissions add up across bindings, so removing one grant may not remove the access.
+- A ClusterRoleBinding grants a role in every namespace.
+- Deployments live in the apps API group, not the core group.
+starter_failure_checks:
+- rbac-deployer
+- rbac-operators

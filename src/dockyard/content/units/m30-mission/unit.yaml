@@ -1,0 +1,194 @@
+id: m30-mission
+revision: 1
+module: 30
+order: 4
+title: 'Mission: investigate and contain an intrusion'
+summary: Find a compromised workload from its behavior, revoke its access, and isolate it while preserving
+  it as evidence.
+kind: mission
+runtime: linux
+nodes: 2
+native_version: current
+node_tools:
+- falco
+minutes: 60
+outcomes:
+- Detect and identify a compromised workload from runtime behavior on your own.
+- Trace and revoke the access that let it read Secrets.
+- Contain a workload with a NetworkPolicy while preserving it for investigation.
+prerequisites:
+- m30-immutable
+objectives:
+- kubernetes.security
+- kubernetes.networkpolicy
+- cks.attack-investigation
+- cks.behavioral-analytics
+- cks.immutability
+- cks.threat-detection
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: A NetworkPolicy selects the compromised Pods, lists Ingress and Egress in policyTypes, and
+    has no rules. What can those Pods reach?
+  options:
+  - Nothing, and nothing can reach them.
+  - Everything, because there are no rules.
+  - Only other Pods in their namespace.
+  correct: 0
+  explanation: Once a policy selects a Pod for a direction, only traffic some rule allows is permitted.
+    With no rules, everything in both directions is denied.
+hints:
+- Start Falco on the worker with a rule for shells in containers, and follow its alerts; kubectl auth
+  can-i --list --as the workload's ServiceAccount shows its access.
+- Find the RoleBinding that grants the ServiceAccount Secrets in dispatch; a NetworkPolicy selecting the
+  Pods with both policyTypes and no rules isolates them.
+- 'Write storefront/catalog into finding.txt, delete rolebinding catalog-support in dispatch, and apply
+  a NetworkPolicy in storefront that selects app: catalog with Ingress and Egress and no rules.'
+sources:
+- https://falco.org/docs/concepts/rules/basic-elements/
+- https://kubernetes.io/docs/concepts/services-networking/network-policies/#default-deny-all-ingress-and-all-egress-traffic
+- https://kubernetes.io/docs/concepts/security/security-checklist/
+starter: {}
+reference: {}
+prepare:
+- args:
+  - python
+  - build.py
+  timeout: 600
+- args:
+  - /bin/sh
+  - bootstrap.sh
+  timeout: 420
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.cks
+  - intrusion
+  timeout: 240
+checks:
+- id: hardening-preserved
+  title: The original cluster and its data are still there
+  explanation: The namespace, Node objects, marker ConfigMap, and the database row stored before hardening
+    must all be the originals.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - intrusion
+    timeout: 300
+  expectation: json
+  json_path:
+  - preserved
+  expected: 'true'
+  diagnostic: Something from before hardening is missing or was replaced, or the database is not running.
+    Harden the existing cluster rather than rebuilding it; if objects were deleted, reset the lab and
+    try again.
+- id: intrusion-finding
+  title: The compromised workload is identified
+  explanation: finding.txt must name the compromised workload as NAMESPACE/NAME, by Deployment or Pod.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - intrusion
+    timeout: 300
+  expectation: json
+  json_path:
+  - finding
+  expected: 'true'
+  diagnostic: finding.txt is missing or names another workload. Use Falco alerts or the workload's behavior
+    to identify it, and write NAMESPACE/NAME.
+- id: intrusion-revoked
+  title: Its access to Secrets is revoked
+  explanation: The compromised workload's ServiceAccount must be unable to get or list Secrets in dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - intrusion
+    timeout: 300
+  expectation: json
+  json_path:
+  - revoked
+  expected: 'true'
+  diagnostic: The workload's identity can still read Secrets in dispatch. Find the binding with kubectl
+    get rolebindings -n dispatch -o wide and delete it.
+- id: intrusion-isolated
+  title: Its Pod is cut off from the cluster
+  explanation: From the compromised Pod, connections to the Kubernetes API, the metadata address, and
+    DNS must all fail.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - intrusion
+    timeout: 300
+  expectation: json
+  json_path:
+  - isolated
+  expected: 'true'
+  diagnostic: The compromised Pod can still reach the network. Apply a NetworkPolicy that selects it with
+    both Ingress and Egress policy types and no rules.
+- id: intrusion-evidence
+  title: The original Pod is preserved
+  explanation: The compromised Pod that was running at the start must still be running, so it can be examined.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - intrusion
+    timeout: 300
+  expectation: json
+  json_path:
+  - evidence
+  expected: 'true'
+  diagnostic: The original Pod was deleted or replaced. Containment should isolate it, not remove it;
+    this attempt cannot recover it, so reset the lab to practice again.
+- id: hardening-workflow
+  title: A job from the frontend still completes
+  explanation: A real job submitted from the frontend must be processed and saved, so the hardening did
+    not break Dispatch.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.cks
+    - intrusion
+    timeout: 300
+  expectation: json
+  json_path:
+  - workflow
+  expected: 'true'
+  diagnostic: A job did not complete. Check every node is Ready with kubectl get nodes, then read kubectl
+    logs deployment/worker -n dispatch.
+capabilities:
+- docker
+- limactl
+- kubectl
+- calico
+- native-cluster
+checkpoint: dispatch-operations-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+alternatives:
+- Any containment is accepted that revokes the access, blocks the listed connections, and keeps the original
+  Pod running.
+- Identifying the workload without Falco, for example from its logs or audit entries, is accepted.
+- The report is self-reviewed against the rubric and not graded.
+failure_modes:
+- Deleting a compromised Pod destroys evidence and may let its controller start a fresh copy.
+- Isolation without revoking access leaves its credentials usable from elsewhere.
+- A policy with only Ingress still lets the Pod send traffic out.
+starter_failure_checks:
+- intrusion-finding
+- intrusion-revoked
+- intrusion-isolated

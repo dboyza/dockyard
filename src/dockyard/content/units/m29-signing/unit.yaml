@@ -1,0 +1,167 @@
+id: m29-signing
+revision: 1
+module: 29
+order: 3
+title: Sign images and admit only verified releases
+summary: Sign a release by digest with cosign, deploy exactly that digest, and admit only digest-pinned
+  images from the release registry.
+kind: lesson
+runtime: kubernetes
+minutes: 45
+outcomes:
+- Sign and verify a container image by digest with a cosign key pair.
+- Deploy by digest so the cluster runs exactly the verified content.
+- Restrict a namespace to images from an approved registry, pinned by digest, with an admission policy.
+prerequisites:
+- m29-analysis
+objectives:
+- kubernetes.security
+- kubernetes.extensions
+- cks.secure-supply-chain
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: You sign registry/dispatch:1.0 by its digest today. Tomorrow someone moves the 1.0 tag to
+    a new image. What does a Deployment that names registry/dispatch:1.0 run?
+  options:
+  - The new, unsigned image the tag now points to.
+  - The signed image, because the signature follows the tag.
+  - Nothing, because moving a signed tag is refused.
+  correct: 0
+  explanation: A signature belongs to a digest, not to a tag. Deploying by tag runs whatever the tag points
+    to when the image is pulled; deploying by the signed digest runs exactly what was verified.
+hints:
+- registry.txt holds the registry address; a HEAD request for /v2/dispatch/manifests/1.0 returns the release's
+  digest in the Docker-Content-Digest header.
+- cosign generate-key-pair, then cosign sign --key cosign.key --use-signing-config=false --tlog-upload=false
+  --yes REGISTRY/dispatch@DIGEST and cosign verify --key cosign.pub --insecure-ignore-tlog=true with the
+  same reference.
+- Write a ValidatingAdmissionPolicy whose expression requires every container image to start with REGISTRY/
+  and contain @sha256:, bind it with Deny to the production namespace, set production.yaml's image to
+  REGISTRY/dispatch@DIGEST, and run sh run.sh.
+sources:
+- https://docs.sigstore.dev/cosign/signing/signing_with_containers/
+- https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/
+- https://kubernetes.io/docs/concepts/containers/images/#image-names
+starter: {}
+reference: {}
+prepare:
+- args:
+  - docker
+  - build
+  - --build-arg
+  - BASE_IMAGE={{python_image}}
+  - -t
+  - '{{image}}'
+  - .
+  timeout: 300
+- args:
+  - kind
+  - load
+  - docker-image
+  - '{{image}}'
+  - --name
+  - '{{cluster}}'
+  timeout: 180
+- args:
+  - /bin/sh
+  - run.sh
+  timeout: 120
+- args:
+  - python
+  - -m
+  - dockyard.fixtures.supply
+  - registry
+  timeout: 240
+checks:
+- id: signing-signed
+  title: The release is signed and verifies
+  explanation: cosign must verify the release's digest in the lab registry with cosign.pub from your workspace.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - signing
+    timeout: 180
+  expectation: json
+  json_path:
+  - signed
+  expected: 'true'
+  diagnostic: The release does not verify with cosign.pub. Sign REGISTRY/dispatch@DIGEST with the matching
+    cosign.key, and keep cosign.pub in your workspace.
+- id: signing-admission
+  title: Production admits only release images by digest
+  explanation: Server-side dry runs in production must refuse an image from another registry and the release
+    by tag, and admit the release by digest.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - signing
+    timeout: 180
+  expectation: json
+  json_path:
+  - admission
+  expected: 'true'
+  diagnostic: The production admission rule is missing or too loose. Bind a ValidatingAdmissionPolicy
+    with Deny to production that requires every image to start with the release registry and contain @sha256:.
+- id: signing-deployed
+  title: Production runs the verified digest
+  explanation: production/dispatch must run exactly REGISTRY/dispatch@DIGEST, the signed release, and
+    be available.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - signing
+    timeout: 180
+  expectation: json
+  json_path:
+  - deployed
+  expected: 'true'
+  diagnostic: Production does not run the signed digest yet. Set the image in production.yaml to the release
+    by digest and run sh run.sh.
+- id: configuration-processing
+  title: A new job is completed
+  explanation: Dockyard submits a real job and waits for a worker to finish it.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - signing
+    timeout: 180
+  expectation: json
+  json_path:
+  - processing
+  expected: 'true'
+  diagnostic: A new job was not completed. Check kubectl get pods for workers that are not ready, then
+    kubectl logs deployment/worker.
+capabilities:
+- docker
+- kind
+- kubectl
+- calico
+- cosign
+checkpoint: dispatch-config-v1
+images:
+- python
+- postgres
+- redis
+- busybox
+- registry
+alternatives:
+- Any CEL expression is accepted when the three dry runs give the required answers.
+- Signing by tag is accepted when cosign resolves and signs the release's digest.
+failure_modes:
+- A signature belongs to a digest; deploying by tag can run unsigned content.
+- An image allowlist does not verify signatures by itself.
+- Skipping the transparency log is only acceptable offline.
+starter_failure_checks:
+- signing-signed
+- signing-admission
+- signing-deployed

@@ -696,3 +696,24 @@ Docker Desktop's VM clock then lagged the host by about fifteen minutes, so a la
 Test profiles are released through `tests/release_profile.py`, which kept that profile rather than orphan its network; it was then released normally.
 No Dockyard-labelled containers, networks, or volumes remained afterwards.
 
+## 2026-10-10: CKS track on real runtimes
+
+Modules 25 to 30 and both CKS practice exams were run through the curriculum suite on native Lima clusters and kind, from a snapshot of the working tree.
+Each starter failed its declared checks, and each reference passed; first checks were recorded as a learner checking promptly would see them.
+The runs found these problems, each fixed and rerun:
+
+- Guest tool bundles dropped empty folders, so Falco's `rules.d` was missing; mapped folders are now carried, and a bundle format version replaces stale cached bundles.
+- The replica fingerprint included `/etc/hosts`, `/etc/hostname`, and `/etc/resolv.conf`, which Kubernetes writes differently into every Pod, so identical replicas looked changed.
+- The uploader renamed files from `/tmp` into `/var/cache/uploads`, which fails with EXDEV once both are separate emptyDir volumes; it now moves them.
+- The workload growth check could compare file counts from two different replicas, or from a Pod leaving a rollout; it now counts twice inside one ready Pod.
+- The audit references slept a fixed 45 seconds before looking for the Secret reader; they now poll for it and fail loudly if it never appears.
+- Capabilities that name a pinned tool, such as cosign, kubesec, and kube-linter, were never installed; preparation now installs every such tool.
+- The pinned Python image is Alpine, not Debian slim, so the minimal-image lesson removed tools that were not there and left BusyBox; the lesson, references, figure, and image probe now match the real image, and the probe counts only shells whose links lead to a program.
+- The operator check read the WorkerPool's Ready status before waiting for its workers; it now re-reads the pool while they settle.
+- Leftover services moved to `/usr/lib/systemd/system` so `systemctl mask` works, and the token lesson waits for the default ServiceAccount before creating a legacy token Secret.
+
+The final run, from a snapshot of the fixed tree, passed all nine units it covered at the first check: module 29, m14-operators, m30-audit, m30-immutable, and both exams; earlier runs from the same work had passed modules 25 to 28 and the rest of module 30.
+In two earlier batch runs, the audit lessons' Secret reader made no logged request for over five minutes after the API server restarted, while four later runs recovered within 40 seconds.
+That cause was not reproduced, so the references now fail loudly when the reader never appears, the probe reports which identities read the Secret and with what result, and the reader logs the reason for each failure.
+Batch lists written with zsh once expanded to nothing and started the whole integration suite; it was interrupted, its test profiles were released, and the batch runner now refuses a list without test IDs.
+No test profiles, lab VMs, or Dockyard-labelled containers remained afterwards.

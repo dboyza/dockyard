@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: uploads
+---
+# Accepts customer uploads and caches them. Its vendor image runs as root.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uploader
+  namespace: uploads
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: uploader
+  template:
+    metadata:
+      labels:
+        app: uploader
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - name: uploader
+        image: ${DOCKYARD_IMAGE}
+        imagePullPolicy: Never
+        securityContext:
+          runAsUser: 0
+        command: ["python", "-c"]
+        args:
+        - |
+          import pathlib, shutil, tempfile, time
+          cache = pathlib.Path("/var/cache/uploads")
+          cache.mkdir(parents=True, exist_ok=True)
+          count = 0
+          while True:
+              count += 1
+              with tempfile.NamedTemporaryFile(dir="/tmp", delete=False) as scratch:
+                  scratch.write(b"upload in progress")
+              shutil.move(scratch.name, cache / f"upload-{count}.bin")
+              print(f"cached upload {count}", flush=True)
+              time.sleep(5)
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits: {cpu: 100m, memory: 96Mi}

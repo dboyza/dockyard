@@ -1,0 +1,191 @@
+id: m29-minimal
+revision: 1
+module: 29
+order: 1
+title: Minimize an image's footprint
+summary: Remove the shell and package managers from the Dispatch image, check it for setuid programs, run
+  it as non-root, and start it without a shell.
+kind: lesson
+runtime: docker
+minutes: 30
+outcomes:
+- Explain why shells, package managers, and setuid programs in an image help an attacker.
+- Strip unneeded tools and privileges from an image and run it as a non-root user.
+- Use the exec form so a container starts without a shell.
+prerequisites:
+- m28-mission
+objectives:
+- docker.artifacts
+- kubernetes.security
+- cks.base-image
+concept: concept.md
+brief: brief.md
+debrief: debrief.md
+prediction:
+  question: An image has no /bin/sh and its Dockerfile ends with CMD python app.py. What happens when
+    you start a container from it?
+  options:
+  - It fails to start, because the shell form runs the command through /bin/sh.
+  - It starts normally, because Docker runs Python directly.
+  - Docker adds a shell automatically.
+  correct: 0
+  explanation: The shell form wraps the command in /bin/sh -c. Without a shell it cannot run; the exec
+    form, CMD ["python", "app.py"], starts the program directly.
+hints:
+- docker exec "$DOCKYARD_CONTAINER" id shows the user; find / -xdev -type f -perm /6000 inside it lists
+  setuid and setgid files.
+- A final RUN step can clear setuid bits with chmod a-s, remove apk and pip, and delete /bin/busybox, which
+  every shell in this Alpine image links to; then set USER 10001:10001 and switch CMD to the exec form.
+- Add RUN find / -xdev -type f -perm /6000 -exec chmod a-s {} + && rm -rf /sbin/apk /etc/apk /lib/apk
+  /usr/local/bin/pip* && rm /bin/busybox, then USER 10001:10001 and CMD ["python", "app.py"], copy the
+  files with --chown=10001:10001, rebuild, and replace the container.
+sources:
+- https://docs.docker.com/build/building/best-practices/
+- https://docs.docker.com/reference/dockerfile/#shell-and-exec-form
+- https://github.com/GoogleContainerTools/distroless
+starter: {}
+reference: {}
+prepare:
+- args:
+  - /bin/sh
+  - release.sh
+  timeout: 300
+- args:
+  - docker
+  - run
+  - -d
+  - --name
+  - '{{container}}'
+  - --label
+  - io.dockyard.lab={{lab_id}}
+  - -p
+  - 127.0.0.1:{{port}}:8080
+  - '{{image}}'
+  timeout: 120
+checks:
+- id: process-running
+  title: Dispatch's container is running
+  explanation: Dockyard can only test the application while its container is running.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - State
+  - Running
+  expected: 'true'
+  diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
+    "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
+    crashes, so the last lines of the log usually explain it.
+- id: application-response
+  title: A request reaches the real API
+  explanation: A running container is not enough; Dispatch must answer a real HTTP request sent to your
+    assigned port.
+  command:
+    args:
+    - curl
+    - --fail
+    - --silent
+    - --show-error
+    - --max-time
+    - '3'
+    - --retry
+    - '5'
+    - --retry-delay
+    - '1'
+    - --retry-all-errors
+    - http://127.0.0.1:{{port}}/healthz
+  expectation: json
+  json_path:
+  - service
+  expected: dispatch
+  diagnostic: No valid Dispatch response came back from http://127.0.0.1:$DOCKYARD_PORT/healthz. Run that
+    curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
+    docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
+    logs are empty, the app may still be starting.
+- id: minimal-nonroot
+  title: Dispatch runs as a non-root user
+  explanation: The running container's configured user must not be root.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - minimal
+    timeout: 120
+  expectation: json
+  json_path:
+  - nonroot
+  expected: 'true'
+  diagnostic: The container still runs as root. Add USER 10001:10001 to the Dockerfile, rebuild, and replace
+    the container.
+- id: minimal-shell
+  title: The image contains no shell
+  explanation: No shell may remain runnable in the container, including BusyBox, which sh and ash link
+    to on Alpine.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - minimal
+    timeout: 120
+  expectation: json
+  json_path:
+  - no_shell
+  expected: 'true'
+  diagnostic: A shell can still run in the image. On Alpine, /bin/sh and /bin/ash are links to /bin/busybox,
+    so delete /bin/busybox in the final RUN step, and start with the exec form of CMD.
+- id: minimal-installers
+  title: The image contains no package managers
+  explanation: apk, pip, and Debian's apt and dpkg must not be in the running container's filesystem.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - minimal
+    timeout: 120
+  expectation: json
+  json_path:
+  - no_installers
+  expected: 'true'
+  diagnostic: A package manager is still in the image. Remove /sbin/apk and /usr/local/bin/pip* in the
+    final RUN step.
+- id: minimal-setuid
+  title: No file carries setuid or setgid
+  explanation: No regular file in the running container may have the setuid or setgid bit.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.docker
+    - minimal
+    timeout: 120
+  expectation: json
+  json_path:
+  - no_setuid
+  expected: 'true'
+  diagnostic: A setuid or setgid file remains. Clear the bits with find / -xdev -type f -perm /6000 -exec
+    chmod a-s {} + in the final RUN step.
+capabilities:
+- docker
+- python-image
+checkpoint: dispatch-image-v1
+images:
+- python
+alternatives:
+- A different base image or a multi-stage build is accepted when the running image meets every check.
+- Deleting setuid programs instead of clearing their bits is accepted.
+- Deleting /bin/busybox without its links is accepted; a link to a deleted program cannot run.
+failure_modes:
+- The shell form of CMD needs a shell inside the image.
+- Deleting files in a later layer hides them but does not shrink earlier layers.
+- Files owned by root may be unreadable to the non-root user.
+starter_failure_checks:
+- minimal-nonroot
+- minimal-shell
+- minimal-installers

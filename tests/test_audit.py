@@ -26,7 +26,7 @@ def catalog():
 def test_shipped_curriculum_passes(catalog):
     report = curriculum(catalog)
     assert report["status"] == "pass", report["issues"]
-    assert (report["course_units"], report["incidents"], report["exams"]) == (105, 12, 4)
+    assert (report["course_units"], report["incidents"], report["exams"]) == (129, 12, 6)
 
 
 def test_audit_reports_a_missing_mission_and_an_unknown_remediation(catalog):
