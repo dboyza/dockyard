@@ -107,6 +107,7 @@ The drawings live in `frontend/src/figures`, built from the shared SVG kit so th
 After changing `figures.json`, regenerate the contracts; TypeScript then requires a drawing for every figure.
 Review drawings with `npm --prefix frontend run dev` and `/gallery.html`, which shows every step; add `?theme=light` or `?figure=ID` as needed.
 `./scripts/check.sh` compares every drawing and step in both themes with the reviewed images in `frontend/e2e/figures.spec.ts-snapshots`, which hide the surrounding text so only drawings are compared.
+Each figure is shown alone while it is captured, so adding or removing a figure does not shift the pixel alignment of the others.
 A failure leaves the expected, actual, and difference images under `.artifacts/playwright`; inspect them before deciding.
 After an intended drawing change, run `npm --prefix frontend run test:figures -- --update-snapshots`, inspect the changed images, and commit them with the change.
 Reference images are per platform because the interface uses system fonts; a platform without them is skipped with the command that creates them.

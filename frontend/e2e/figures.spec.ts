@@ -47,6 +47,11 @@ for (const theme of ['light', 'dark']) {
     // The drawings are what this suite protects; their text is covered by unit tests.
     await page.addStyleTag({ content: 'main > section > h2, .lesson-figure header, .lesson-figure > strong, .figure-steps, figcaption, .figure-terms { visibility: hidden; }' });
     for (const figure of figures) {
+      // Scaled drawings have fractional heights, so show one figure at a time to keep
+      // its pixel alignment independent of every figure above it in the gallery.
+      await page.evaluate(id => {
+        for (const section of document.querySelectorAll<HTMLElement>('main > section')) section.style.display = section.id === id ? '' : 'none';
+      }, figure.id);
       await expect.soft(page.locator(`section#${figure.id}`)).toHaveScreenshot([theme, `${figure.id}.png`], { animations: 'disabled' });
     }
   });
