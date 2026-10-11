@@ -1,5 +1,7 @@
 # Dockyard agent guide
 
+This is a living document: keep it accurate, concise, durable, and deduplicated as the project evolves, with implementation details in docs.
+
 ## Product contract
 
 - Build a personal, local-first Docker and Kubernetes learning workbench for Apple Silicon macOS, ARM64/x86-64 Linux, and Windows through WSL 2.
@@ -47,7 +49,6 @@
 - Do not treat Node Ready as networking proof; verify CNI/DNS readiness and actual cross-node traffic and policy enforcement.
 - Keep node and Pod networks disjoint, and verify that native TCP/UDP forwarding exposes only the declared loopback ports.
 - Keep runtime observations read-only and project explicit safe fields; never expose raw workload environment or Secret bodies.
-- Keep AGENTS.md concise and durable; implementation details belong in docs.
 - Use one complete sentence per physical line in long Markdown.
 - Never use em dashes, add agent co-authors, or manually modify generated files or changelogs.
 - Do not add hosted CI such as GitHub Actions; keep verification local.
