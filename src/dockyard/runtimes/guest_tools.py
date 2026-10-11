@@ -27,6 +27,8 @@ MANIFEST: dict[str, Any] = {
 }
 # Bound each extracted file so a corrupt archive cannot fill the cache.
 MEMBER_LIMIT = 512 * 1024**2
+# Part of each bundle's identity, so a change to how bundles are assembled replaces cached ones.
+BUNDLE_FORMAT = 2
 
 
 def archive_entries(names: list[str]) -> dict[str, dict[str, Any]]:
@@ -71,7 +73,9 @@ def bundle(runtime: LinuxRuntime, names: list[str], cancel: threading.Event) -> 
         )
         for name in names
     }
-    identity = hashlib.sha256(json.dumps(entries, sort_keys=True).encode()).hexdigest()
+    identity = hashlib.sha256(
+        json.dumps({"format": BUNDLE_FORMAT, "entries": entries}, sort_keys=True).encode()
+    ).hexdigest()
     directory = runtime.tools / "native"
     output = directory / f"guest-tools-{identity[:16]}.tar"
     metadata = output.with_suffix(".json")
@@ -95,10 +99,21 @@ def bundle(runtime: LinuxRuntime, names: list[str], cancel: threading.Event) -> 
                 root = tool["archives"][host.architecture()]["root"]
                 with tarfile.open(archives[name], "r:*") as source:
                     for member in source:
-                        if not member.isfile() or not member.name.startswith(root):
+                        if not (member.isfile() or member.isdir()):
+                            continue
+                        if not member.name.startswith(root):
                             continue
                         target = destination(tool, member.name[len(root) :])
                         if target is None:
+                            continue
+                        if member.isdir():
+                            # Keep empty folders the tool reads, such as Falco's rules.d.
+                            folder = tarfile.TarInfo(target)
+                            folder.type = tarfile.DIRTYPE
+                            folder.mode = 0o755
+                            folder.uid = folder.gid = 0
+                            folder.mtime = 0
+                            bundled.addfile(folder)
                             continue
                         if not 0 <= member.size <= MEMBER_LIMIT:
                             raise RuntimeErrorBase("A pinned tool file exceeds its size limit.")
