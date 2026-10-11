@@ -34,6 +34,8 @@ from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase
 from dockyard.runtimes.kubernetes import KubernetesRuntime
 from dockyard.runtimes.linux import LinuxRuntime, vm_prefix
 from dockyard.store import BusyError, Store, timestamp
+from dockyard.toolchain import MANIFEST as TOOLCHAIN
+from dockyard.toolchain import Toolchain
 from dockyard.versions import native
 from dockyard.workspace import atomic_write, reset, snapshot, write_files
 
@@ -435,6 +437,17 @@ class Service:
             self._require(
                 run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=15, cancel=cancel)
             )
+        # A capability that names a pinned tool, such as cosign, puts that tool on the lab's PATH.
+        named_tools = sorted(set(unit.capabilities) & TOOLCHAIN.keys())
+        if named_tools:
+
+            def report(message: str) -> None:
+                lab.resources["stage"] = message
+                self._save(lab)
+
+            toolchain = Toolchain(self.tools)
+            for tool in named_tools:
+                toolchain.ensure(tool, cancel, report)
         images = list(
             dict.fromkeys(unit.images + (["kind"] if unit.runtime == Runtime.KUBERNETES else []))
         )
@@ -459,10 +472,6 @@ class Service:
             with operation_lock(self.directory / "locks", "cluster-capacity"):
                 self._make_cluster_room(lab, cancel)
                 if isinstance(runtime, LinuxRuntime):
-                    if "helm" in unit.capabilities:
-                        from dockyard.toolchain import Toolchain
-
-                        Toolchain(self.tools).ensure("helm", cancel, runtime.report)
                     runtime.prepare(unit.nodes, cancel)
                     runtime.install_node_packages(cancel, native(unit.native_version))
                     if unit.node_tools:
