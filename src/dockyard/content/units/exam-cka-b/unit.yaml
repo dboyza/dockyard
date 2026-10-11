@@ -200,7 +200,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: Review the Service, NetworkPolicy, and node readiness tasks; the job needs all of them.
+  diagnostic: Review the Service, NetworkPolicy, and node readiness tasks; the job needs all of them. Pods
+    created while the API server was restarting cannot pass NetworkPolicy until the network plugin catches
+    up, so if the worker logs dependency_retry, wait a minute and check again.
 capabilities:
 - docker
 - limactl

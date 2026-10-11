@@ -70,7 +70,8 @@ def workflow() -> bool:
             ):
                 raise ValueError("Invalid observed job ID")
             _, workers = owned_pods("worker")
-            deadline = time.monotonic() + 15
+            # New Pods may wait for the network plugin to apply policy after an API restart.
+            deadline = time.monotonic() + 30
             while time.monotonic() < deadline:
                 row = json.loads(
                     sql(
