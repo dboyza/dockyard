@@ -15,12 +15,25 @@ import yaml
 from dockyard.probes.kubernetes import api_request, available, get, kubectl, owned_pods
 from dockyard.process import run
 
+# How long a restored WorkerPool's Deployment may take to become available again.
+WORKERS_SETTLE_SECONDS = 45
+
 
 def helm(*args: str) -> Any:
     result = run(["helm", *args, "-n", "staging", "-o", "json"], timeout=30)
     if not result.ok:
         raise RuntimeError(result.stderr)
     return json.loads(result.stdout)
+
+
+def pool_ready(pool: dict[str, Any]) -> bool:
+    """Whether the controller has observed the pool's current spec and reports it Ready."""
+    generation = pool["metadata"]["generation"]
+    status = pool.get("status", {})
+    return status.get("observedGeneration") == generation and any(
+        c["type"] == "Ready" and c["status"] == "True" and c.get("observedGeneration") == generation
+        for c in status.get("conditions", [])
+    )
 
 
 def packaging() -> dict[str, Any]:
@@ -89,11 +102,20 @@ def packaging() -> dict[str, Any]:
         schema = version["schema"]["openAPIV3Schema"]["properties"]["spec"]["properties"][
             "replicas"
         ]
-        pool = get("workerpool", "dispatch")
         controller, _ = owned_pods("workerpool-controller")
-        managed, pods = owned_pods("dispatch-workers")
+        # After a learner's own scale-down test, the controller restores the replicas at
+        # once, but the new Pods need a few seconds to become available, and the pool
+        # reports Ready only once they are; observe both again until they settle.
+        settle_until = time.monotonic() + WORKERS_SETTLE_SECONDS
+        while True:
+            pool = get("workerpool", "dispatch")
+            managed, pods = owned_pods("dispatch-workers")
+            if (
+                available(managed, 2) and len(pods) == 2 and pool_ready(pool)
+            ) or time.monotonic() >= settle_until:
+                break
+            time.sleep(1)
         uid = pool["metadata"]["uid"]
-        status = pool.get("status", {})
         result["extension"] = (
             crd["spec"]["scope"] == "Namespaced"
             and version["served"]
@@ -103,13 +125,7 @@ def packaging() -> dict[str, Any]:
             and schema["minimum"] == 0
             and schema["maximum"] == 4
             and pool["spec"]["replicas"] == 2
-            and status.get("observedGeneration") == pool["metadata"]["generation"]
-            and any(
-                c["type"] == "Ready"
-                and c["status"] == "True"
-                and c.get("observedGeneration") == pool["metadata"]["generation"]
-                for c in status.get("conditions", [])
-            )
+            and pool_ready(pool)
             and any(
                 o["uid"] == uid and o.get("controller")
                 for o in managed["metadata"].get("ownerReferences", [])
