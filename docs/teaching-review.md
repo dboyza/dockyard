@@ -121,6 +121,14 @@ Each now names the observation and the repair.
 A missing JSON field is reported by its path instead of the full inspection document.
 The published-port check now reads the configured binding, so a stopped container is no longer described as unpublished; whether it runs is the process check's job.
 
+Verification on 2026-10-18, on a Linux x86-64 cloud container with cgroup v1:
+
+- `./scripts/check.sh` passed, including new unit tests for case selection, absent fields, and the replacement rule.
+- The curriculum integration gate passed for 27 of the 34 Docker activities, including m01-lifecycle, m01-mission, and m02-dockerfile.
+- The other seven failed for host reasons: six Compose images could not download Python packages through the host's TLS-intercepting proxy, and m06-limits failed the same way on the unchanged base because cgroup v1 limits are not observed there.
+- Real m02-dockerfile attempts confirmed the advice for each failure mode listed above.
+- m07-reconciliation could not be run, because kind cannot start a control plane on this host; its integration gate must be rerun on a supported host before a release.
+
 ## What remains to establish
 
 These were expert walkthroughs, not sessions with beginner participants.
