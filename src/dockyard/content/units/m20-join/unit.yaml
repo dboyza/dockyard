@@ -47,7 +47,7 @@ prepare:
   timeout: 600
 checks:
 - id: bootstrap-initialized
-  title: The control plane is initialised
+  title: The control plane is initialized
   explanation: The API server must answer through kubeadm’s administrator client, and the API server,
     controller manager, scheduler, and etcd static Pods must all run on the control-plane VM.
   command:
@@ -60,7 +60,7 @@ checks:
   json_path:
   - initialized
   expected: 'true'
-  diagnostic: The control plane is not initialised yet. Inside the control-plane VM, check sudo crictl
+  diagnostic: The control plane is not initialized yet. Inside the control-plane VM, check sudo crictl
     ps for the four components and sudo journalctl -u kubelet -n 30 for errors. If kubeadm init failed
     partway, read its output; you may need sudo kubeadm reset -f before trying again.
 - id: bootstrap-network

@@ -57,5 +57,7 @@ Then wait for the API and workers to become ready.
 
 ## Proving the data survived
 
-Check work confirms the claim and PV are the originals, with the same driver and volume handle, that the volume is attached and mounted on the worker, that the known row is still there, and that a new job completes.
+Check work confirms the claim and PV are the originals, with the same driver and volume handle.
+It confirms the volume is attached and mounted on the worker.
+It also confirms the known row is still there and a new job completes.
 An empty new database could answer a connection, but it would fail those checks.

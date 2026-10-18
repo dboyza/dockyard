@@ -70,7 +70,8 @@ kubectl describe pvc dispatch-data
 ```
 
 This lab’s `standard` class uses `volumeBindingMode: WaitForFirstConsumer`.
-That means no PV is created until a Pod that uses the claim is scheduled, so the storage can be made on the node where the Pod will run.
+That means no PV is created until a Pod that uses the claim is scheduled.
+This way, the storage can be made on the node where the Pod will run.
 Until then, `describe pvc` shows an event such as “waiting for first consumer to be created before binding”.
 Pending is normal here; read the events before assuming something is broken.
 

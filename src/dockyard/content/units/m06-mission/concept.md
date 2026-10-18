@@ -1,7 +1,8 @@
 ## The Docker capstone
 
 This mission brings together everything from the first six modules.
-You will be handed a running but broken Dispatch project and asked to fix it, ship it properly, lock it down, prove you can recover its data, and write instructions for the next person.
+You will be handed a running but broken Dispatch project.
+Your job is to fix it, ship it properly, lock it down, prove you can recover its data, and write instructions for the next person.
 
 Here is the situation:
 
@@ -24,7 +25,9 @@ Take it in stages and check each one before moving on.
 ## Writing the runbook
 
 Write `RUNBOOK.md` for a colleague who did not watch you work.
-Cover how to start the project, how to check it is healthy, what was broken and how you fixed it, how to back up and restore, and how to stop and resume without losing data.
+Your runbook should explain how to start the project and check that it is healthy.
+It should say what was broken and how you fixed it.
+It should also cover backup and restore, and how to stop and resume without losing data.
 Check work only confirms that the file exists and is not almost empty; how clear and complete it is is for you to judge.
 
 ## Working on your own

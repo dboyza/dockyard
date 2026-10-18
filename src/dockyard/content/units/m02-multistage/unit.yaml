@@ -218,7 +218,7 @@ checks:
   expected: 'True'
   json_path: []
   diagnostic: The /source directory is still present in the running image. Only the last FROM stage becomes
-    the final image, so make sure that stage copies just the runtime files with COPY --from=<stage-name>
+    the final image. Make sure that stage copies just the runtime files with COPY --from=<stage-name>,
     and never copies or works in /source.
 capabilities:
 - docker

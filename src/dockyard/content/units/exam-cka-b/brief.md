@@ -56,7 +56,9 @@ Service `dispatch` has an extra selector, `release: retired`, that no Pod matche
 The API can no longer reach its Redis queue, Service `queue` on TCP port 6379, because of a NetworkPolicy change.
 
 - Restore that connection.
-- Keep everything else the policies allow and deny: the trusted frontend allowed, the untrusted frontend and other namespaces denied, other API egress denied, and database, worker, and DNS (TCP and UDP) traffic allowed.
+- Keep every other rule working as it does now.
+  The trusted frontend stays allowed, and the untrusted frontend and other namespaces stay denied.
+  Other API egress stays denied, and database, worker, and DNS (TCP and UDP) traffic stays allowed.
 - Do not remove the policies or replace them with an allow-all rule.
 
 ## 7. Protect the API during maintenance (10%)
@@ -64,7 +66,9 @@ The API can no longer reach its Redis queue, Service `queue` on TCP port 6379, b
 Create PodDisruptionBudget `dispatch-maintenance` in namespace `dispatch` that selects both stable API Pods.
 With two healthy replicas, it must allow exactly one voluntary disruption.
 Keep both API replicas running and available at the end.
-Create it after the task 1 upgrade: on this cluster both API Pods run on the one worker, so while it is drained they have nowhere else to go, and the budget would stop the drain from finishing.
+Create it after the task 1 upgrade.
+Both API Pods run on the one worker in this cluster.
+While that worker is drained, they have nowhere else to go, so the budget would stop the drain from finishing.
 
 ## 8. Keep the application working (10%)
 

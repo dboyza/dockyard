@@ -2,7 +2,7 @@
 
 ## Findings and fixes
 
-- `plugin-runner` ran partner code directly on the node's kernel. It now runs under the `sandboxed` RuntimeClass, backed by gVisor on the labelled worker.
+- `plugin-runner` ran partner code directly on the node's kernel. It now runs under the `sandboxed` RuntimeClass, backed by gVisor on the labeled worker.
 - `plugin-credentials`, like every Secret, was stored in etcd in plain form. The API server now encrypts Secrets with `aescbc`, and all existing Secrets were rewritten.
 - Pod traffic between the nodes travelled unencrypted in VXLAN. Calico now encrypts it with WireGuard.
 

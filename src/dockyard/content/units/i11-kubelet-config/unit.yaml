@@ -77,8 +77,8 @@ checks:
     rejoining it; if that already happened, reset the lab.
 - id: recovery-components
   title: The kubelet and all four control-plane components are running
-  explanation: On the control-plane node the kubelet service must be active, containers for etcd, the
-    API server, the controller manager, and the scheduler must be running, and the API must report ready.
+  explanation: On the control-plane node, the kubelet service must be active. Containers for etcd, the
+    API server, the controller manager, and the scheduler must be running. The API must report ready.
   command:
     args:
     - python
@@ -90,8 +90,8 @@ checks:
   json_path:
   - components
   expected: 'true'
-  diagnostic: Part of the control plane is not running. Inside the control-plane VM check systemctl status
-    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a; read sudo crictl
+  diagnostic: Part of the control plane is not running. Inside the control-plane VM, check systemctl status
+    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a. Read sudo crictl
     logs for any component that keeps exiting.
 - id: recovery-scheduled
   title: A brand-new Pod is scheduled onto a node
@@ -109,7 +109,7 @@ checks:
   - scheduled
   expected: 'true'
   diagnostic: A new Pod was not given a node. Check the scheduler is running with sudo crictl ps --name
-    kube-scheduler on the control-plane node and that its manifest is in /etc/kubernetes/manifests; if
+    kube-scheduler on the control-plane node, and that its manifest is in /etc/kubernetes/manifests. If
     it has just restarted, run python wait-control-plane.py and check again.
 - id: recovery-workflow
   title: A new job from the frontend completes
@@ -143,7 +143,7 @@ checks:
   - incident
   expected: 'true'
   diagnostic: The worker is not Ready yet. Inside the worker VM, read sudo journalctl -u kubelet -n 30
-    for the setting it cannot parse, fix that value in /var/lib/kubelet/config.yaml, then sudo systemctl
+    for the setting it cannot parse. Fix that value in /var/lib/kubelet/config.yaml. Then run sudo systemctl
     restart kubelet and watch kubectl get nodes.
 capabilities:
 - docker

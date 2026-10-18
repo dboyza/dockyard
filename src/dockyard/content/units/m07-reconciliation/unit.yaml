@@ -170,7 +170,8 @@ checks:
   diagnostic: Dockyard found no Pod that was removed and then replaced. Once both copies are ready, delete
     one with kubectl delete pod POD_NAME, then run kubectl get pods --watch until a new Pod is Running.
     Changing replicas does not count, because scaling down is the ReplicaSet deleting Pods itself. Kubernetes
-    keeps the record of the replacement for about an hour, so repeat the deletion if you did it longer ago.
+    keeps the record of the replacement for about an hour, so repeat the deletion if you did it longer
+    ago.
 capabilities:
 - docker
 - kind

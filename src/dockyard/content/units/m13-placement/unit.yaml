@@ -66,8 +66,9 @@ prepare:
 checks:
 - id: capacity-resources
   title: The API has sensible requests and limits in force
-  explanation: Each API container must request 25m-100m CPU and 32-128Mi memory, have limits no higher
-    than 1 CPU and 512Mi, be Burstable, and have those limits really applied inside the container.
+  explanation: Each API container must request 25m-100m CPU and 32-128Mi memory. Its limits must be no
+    higher than 1 CPU and 512Mi. It must be Burstable, and those limits must really be applied inside
+    the container.
   command:
     args:
     - python

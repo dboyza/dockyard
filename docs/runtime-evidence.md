@@ -694,7 +694,7 @@ Repeat runs after each fix passed every affected first check: Docker 32 of 32, K
 The computer slept twice during the run.
 Docker Desktop's VM clock then lagged the host by about fifteen minutes, so a lab saw its own new network as older than itself and refused to adopt or clean it; labs now record the engine clock and compare creation times on it.
 Test profiles are released through `tests/release_profile.py`, which kept that profile rather than orphan its network; it was then released normally.
-No Dockyard-labelled containers, networks, or volumes remained afterwards.
+No Dockyard-labeled containers, networks, or volumes remained afterwards.
 
 ## 2026-10-10: CKS track on real runtimes
 
@@ -716,7 +716,7 @@ The final run, from a snapshot of the fixed tree, passed all nine units it cover
 In two earlier batch runs, the audit lessons' Secret reader made no logged request for over five minutes after the API server restarted, while four later runs recovered within 40 seconds.
 That cause was not reproduced, so the references now fail loudly when the reader never appears, the probe reports which identities read the Secret and with what result, and the reader logs the reason for each failure.
 Batch lists written with zsh once expanded to nothing and started the whole integration suite; it was interrupted, its test profiles were released, and the batch runner now refuses a list without test IDs.
-No test profiles, lab VMs, or Dockyard-labelled containers remained afterwards.
+No test profiles, lab VMs, or Dockyard-labeled containers remained afterwards.
 
 ## 2026-10-11: Kubernetes 1.37 regression
 
@@ -725,4 +725,4 @@ Every first check passed except CKA practice exam B, whose reference renews cert
 Pods started while the API server is down pass NetworkPolicy only once Calico catches up, which took more than a minute, so the job, Service, and network checks failed when checked at once and passed shortly after.
 The reference now ends by testing that request path, as a careful candidate would, the job workflow waits up to 30 seconds, and the exam's workflow diagnostic explains the delay.
 With that change, exam B passed at the first check.
-No test profiles, lab VMs, or Dockyard-labelled containers remained afterwards.
+No test profiles, lab VMs, or Dockyard-labeled containers remained afterwards.

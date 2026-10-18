@@ -104,7 +104,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
         <p className="muted">
           You’ll run small, throwaway programs so you can focus on how
           containers work. After that, you’ll put the same skills to work on a
-          real application and grow it, module by module, until it runs on a
+          real application. You’ll grow it, module by module, until it runs on a
           Kubernetes cluster you build yourself.
         </p>
       </div>

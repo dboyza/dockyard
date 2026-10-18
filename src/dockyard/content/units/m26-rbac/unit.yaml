@@ -37,7 +37,7 @@ prediction:
 hints:
 - kubectl get clusterrolebindings -o wide shows the non-default grants; kubectl auth can-i --list --as=system:serviceaccount:ci:deployer
   shows how wide one is.
-- Write a Role for Deployments in the apps group in dispatch and bind it to the deployer; bind the built-in
+- Write a Role for Deployments in the apps group in dispatch, and bind it to the deployer. Bind the built-in
   view ClusterRole to the dispatch-operators group with a RoleBinding in dispatch.
 - Apply rbac.yaml, then kubectl delete clusterrolebinding ci-deployer-admin dispatch-operators-all and
   kubectl delete clusterrole dispatch-ops, and recheck with kubectl auth can-i.

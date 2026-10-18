@@ -8,5 +8,6 @@ What would happen to the request if you had published `-p "127.0.0.1:$DOCKYARD_P
 If a classmate on the same Wi-Fi tried to open your page, why would it fail?
 What would the server share if you left out `-w /site`?
 
-You now know every part of a typical `docker run` command: a name and label, a published port, a mounted folder, a working directory, an image, and a main process.
+You now know every part of a typical `docker run` command.
+It has a name and label, a published port, a mounted folder, a working directory, an image, and a main process.
 The module’s mission asks you to use them on your own.

@@ -1,7 +1,8 @@
 ## Recover the whole chain
 
 This mission combines the three lessons: several layers of the native cluster are broken at once.
-The application, the container runtime tools, the kubelet, and the separate operator client can each fail on their own, and each can look fine while its neighbour is broken.
+The application, the container runtime tools, the kubelet, and the separate operator client can each fail on their own.
+Each can look fine while its neighbor is broken.
 
 There are no step-by-step commands.
 Decide your own order, collect evidence before each change, and leave working layers alone.

@@ -1,7 +1,9 @@
 ## Rules the API server enforces
 
 RBAC decides *who* may change an object.
-It cannot say anything about *what* the object contains: an allowed user can still create a Deployment with no memory limit, which lets one runaway process take memory from everything else on its node.
+It cannot say anything about *what* the object contains.
+An allowed user can still create a Deployment with no memory limit.
+Then one runaway process can take memory from everything else on its node.
 Rules about content belong to **admission control**.
 
 Every request that creates or changes an object passes through several stages in the API server.

@@ -32,4 +32,5 @@ limactl shell --workdir=/tmp "$DOCKYARD_WORKER" systemctl status kubelet
 limactl shell --workdir=/tmp "$DOCKYARD_WORKER" sudo journalctl -u kubelet -n 30 --no-pager
 ```
 
-Deleting the Node, resetting it with kubeadm, or rejoining it would throw away the node's identity and everything scheduled there, and the bad setting would still be waiting in the file.
+Deleting the Node, resetting it with kubeadm, or rejoining it would throw away the node's identity and everything scheduled there.
+The bad setting would still be waiting in the file.

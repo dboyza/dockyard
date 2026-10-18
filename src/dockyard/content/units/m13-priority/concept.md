@@ -26,7 +26,9 @@ description: Work that can be displaced when something more important needs room
 
 Priority affects scheduling in two ways.
 Pending Pods are considered in priority order, so important Pods are placed first.
-And if a high-priority Pod still cannot fit anywhere, the scheduler can **preempt**: it removes enough lower-priority Pods from one node to make room, then places the important Pod there.
+If a high-priority Pod still cannot fit anywhere, the scheduler can **preempt**.
+That means it removes enough lower-priority Pods from one node to make room.
+Then it places the important Pod there.
 
 Step through the figure to follow one preemption.
 

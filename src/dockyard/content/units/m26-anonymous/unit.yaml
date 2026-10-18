@@ -38,9 +38,9 @@ hints:
   kubectl get clusterrolebindings -o wide shows which binding names system:unauthenticated.
 - An AuthenticationConfiguration file with an anonymous section and conditions for /livez, /readyz, and
   /healthz, passed with --authentication-config, keeps anonymous access only for those paths.
-- Delete clusterrolebinding public-status and clusterrole status-reader; write /etc/kubernetes/auth-config.yaml
-  on the control plane; add the flag, a volumeMount, and a hostPath volume of type File to kube-apiserver.yaml;
-  wait for /readyz.
+- Delete clusterrolebinding public-status and clusterrole status-reader. Write /etc/kubernetes/auth-config.yaml
+  on the control plane. Add the flag, a volumeMount, and a hostPath volume of type File to kube-apiserver.yaml.
+  Then wait for /readyz.
 sources:
 - https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-requests
 - https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-authenticator-configuration

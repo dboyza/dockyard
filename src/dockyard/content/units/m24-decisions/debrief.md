@@ -1,6 +1,8 @@
 ## What you did
 
-You scaled the API back to a number of copies you had checked against the budget, added a disruption budget that lets maintenance evict one copy at a time, and narrowed the inventory account back to reading Pods.
+You scaled the API back to a number of copies that you had checked against the budget.
+You added a disruption budget that lets maintenance evict one copy at a time.
+You also narrowed the inventory account back to reading Pods.
 The new job showed these limits still leave room for useful work.
 
 Full access would have kept the inventory tool working, but anyone who got hold of its token could then have read Secrets or changed workloads.

@@ -15,7 +15,8 @@ The practice repository is the `delivery` folder in your workspace, with its own
 ## Two Flux objects
 
 - A **GitRepository** tells Flux where to fetch from and how often.
-- A Flux **Kustomization** tells Flux which folder of that repository to build and apply, how often, and whether to **prune**, which means deleting objects that were removed from Git.
+- A Flux **Kustomization** tells Flux which folder of that repository to build and apply, and how often.
+  It also says whether to **prune**, which means deleting objects that were removed from Git.
 
 The Flux Kustomization is a cluster object; the `kustomization.yaml` file inside the repository is an ordinary Kustomize build file.
 The names are similar, but they are different things.

@@ -168,10 +168,10 @@ checks:
     "$DOCKYARD_CONTAINER". Copy the python -c program from there into finding.txt.
   cases:
   - observed: No such file or directory
-    diagnostic: There is no finding.txt in the workspace yet. Before you replace the broken container, run
-      docker inspect --format '{{json .Config.Cmd}}' "$DOCKYARD_CONTAINER" and save the command it shows
-      in finding.txt. If you have already removed that container, Reset restores it; record the command
-      first this time.
+    diagnostic: There is no finding.txt in the workspace yet. Before you replace the broken container,
+      run docker inspect --format '{{json .Config.Cmd}}' "$DOCKYARD_CONTAINER" and save the command it
+      shows in finding.txt. If you have already removed that container, Reset restores it; record the
+      command first this time.
 capabilities:
 - docker
 - python-image

@@ -138,13 +138,13 @@ checks:
   - endpoint
   expected: 'true'
   diagnostic: Requests through the cluster’s API address still fail. Check /etc/haproxy/haproxy.cfg on
-    the worker lists the control-plane nodes that are running, regenerate it with python -m dockyard.native
-    lb-config if needed, validate with sudo haproxy -c -f /etc/haproxy/haproxy.cfg, and reload HAProxy.
+    the worker lists the control-plane nodes that are running. Regenerate it with python -m dockyard.native
+    lb-config if needed. Validate it with sudo haproxy -c -f /etc/haproxy/haproxy.cfg, and reload HAProxy.
 - id: handoff-capacity
   title: The API fits the agreed replica, resource, and disruption budget
-  explanation: The API must run 2 to 4 available copies with total requests within 1 CPU and 512 MiB,
-    total memory limits within 1 GiB, limits at least their requests, and a dispatch-operations PDB for
-    app=dispatch,track=stable that keeps one available.
+  explanation: The API must run 2 to 4 available copies. Total requests must be within 1 CPU and 512 MiB,
+    and total memory limits within 1 GiB. Limits must be at least their requests. A dispatch-operations
+    PDB for app=dispatch,track=stable must keep one available.
   command:
     args:
     - python
@@ -157,8 +157,8 @@ checks:
   - capacity
   expected: 'true'
   diagnostic: 'The API is outside the budget. Check kubectl get deployment dispatch for 2 to 4 available
-    copies, multiply its per-container requests and limits by the replica count, and check kubectl get
-    pdb dispatch-operations -o yaml selects app: dispatch and track: stable with minAvailable 1, minAvailable
+    copies. Multiply its per-container requests and limits by the replica count. Then check kubectl get
+    pdb dispatch-operations -o yaml selects app: dispatch and track: stable, with minAvailable 1, minAvailable
     50%, or maxUnavailable 1.'
 - id: handoff-identity
   title: The inventory account can read Pods and nothing more
@@ -183,7 +183,7 @@ checks:
   title: A new job from the browser and the frontend completes
   explanation: Real jobs submitted through the lab’s Dispatch port and from the trusted frontend on another
     node must be processed and saved in the database.
-  command: &id001
+  command:
     args:
     - python
     - -m
@@ -194,14 +194,20 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: 'A job did not complete. Follow the request step by step: check kubectl get endpointslices
-    -l kubernetes.io/service-name=dispatch lists API Pods, then submit a job and, if it stays queued,
-    check kubectl get deployment worker and kubectl logs deployment/worker.'
+  diagnostic: A job did not complete. Follow the request step by step. Check kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch lists API Pods. Then submit a job. If it stays queued, check
+    kubectl get deployment worker and kubectl logs deployment/worker.
 - id: handoff-release
   title: Every API and worker Pod runs the dispatch-handoff-v1 build
   explanation: Dockyard asks each running API and worker Pod which version it contains, and the rollout
     must have finished.
-  command: *id001
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.handoff
+    - mission
+    timeout: 300
   expectation: json
   json_path:
   - release

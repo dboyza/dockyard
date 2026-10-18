@@ -85,7 +85,7 @@ checks:
   - workflow
   expected: 'true'
   diagnostic: A job from the frontend did not complete. Check the database Pod is running and selected
-    by the db Service, that the API and worker have the current password, and that the frontend network
+    by the db Service. Check the API and worker have the current password. Check the frontend network
     policy names the current client label.
 capabilities:
 - docker

@@ -1,6 +1,7 @@
 ## Decisions come with limits
 
-Operating a system means making choices within limits: how much CPU and memory you may use, how much disruption users can tolerate, and who is allowed to do what.
+Operating a system means making choices within limits.
+These limits include how much CPU and memory you may use, how much disruption users can tolerate, and who is allowed to do what.
 This lesson turns three such limits into Kubernetes settings you can check.
 
 Someone has "helped" by scaling the API down to one copy and giving the inventory tool full access to everything in the namespace.
@@ -15,8 +16,9 @@ The team has set these limits for the Dispatch API, across all its copies togeth
 - total memory **limits** of at most 1 GiB;
 - every container's limit at least as large as its request.
 
-Remember the difference:
-the **request** is what the scheduler reserves on a node for the container, and the **limit** is the most it may use before it is throttled (CPU) or killed (memory).
+Remember the difference.
+The **request** is what the scheduler reserves on a node for the container.
+The **limit** is the most it may use before it is throttled (CPU) or killed (memory).
 
 ### Worked example: do the sums before scaling
 

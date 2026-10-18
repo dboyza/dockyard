@@ -52,5 +52,7 @@ psql -v ON_ERROR_STOP=1 restored_audit < audit.sql
 
 ## Recording what you did
 
-A recovery runbook should cover: the symptom, who may authorise the restore, where the backup and its key are, where you restored to, how you checked it, how traffic was switched, and when you would switch back.
+A recovery runbook should name the symptom and who may authorize the restore.
+It should say where the backup and its key are, and where you restored to.
+It should also say how you checked the restore, how traffic was switched, and when you would switch back.
 Measure how much data could be lost and how long recovery took, rather than assuming.

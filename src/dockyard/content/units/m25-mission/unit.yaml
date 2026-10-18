@@ -39,12 +39,12 @@ prediction:
   explanation: An ipBlock allows every address in its CIDR except those listed. The nodes' addresses are
     inside 0.0.0.0/0 and not excluded, so their kubelet ports stay reachable.
 hints:
-- Run kube-bench with --benchmark cis-1.12 on each node and read the FAIL lines for 4.2.4 and 1.3.2; read
-  the existing frontend-egress policy; check each staged binary with sha512sum -c.
-- 4.2.4 is the kubelet's readOnlyPort in /var/lib/kubelet/config.yaml; 1.3.2 is a flag in the controller
-  manager's static Pod manifest; an egress allowlist needs rules only for CoreDNS and the Dispatch API.
-- 'Set readOnlyPort: 0 and restart the worker kubelet, add - --profiling=false to kube-controller-manager.yaml,
-  apply an allowlist policy like the one from m25-endpoints, and delete the staged binary that fails its
+- Run kube-bench with --benchmark cis-1.12 on each node and read the FAIL lines for 4.2.4 and 1.3.2. Read
+  the existing frontend-egress policy. Check each staged binary with sha512sum -c.
+- 4.2.4 is the kubelet's readOnlyPort in /var/lib/kubelet/config.yaml. 1.3.2 is a flag in the controller
+  manager's static Pod manifest. An egress allowlist needs rules only for CoreDNS and the Dispatch API.
+- 'Set readOnlyPort: 0 and restart the worker kubelet. Add - --profiling=false to kube-controller-manager.yaml.
+  Apply an allowlist policy like the one from m25-endpoints, and delete the staged binary that fails its
   checksum.'
 sources:
 - https://github.com/aquasecurity/kube-bench
@@ -89,8 +89,8 @@ checks:
     try again.
 - id: baseline-benchmark
   title: Checks 4.2.4 and 1.3.2 pass on the running cluster
-  explanation: kube-bench must pass 4.2.4 on the worker and 1.3.2 on the control plane; the running kubelet
-    must report readOnlyPort 0, and the controller manager must run ready with --profiling=false.
+  explanation: kube-bench must pass 4.2.4 on the worker and 1.3.2 on the control plane. The running kubelet
+    must report readOnlyPort 0. The controller manager must run ready with --profiling=false.
   command:
     args:
     - python

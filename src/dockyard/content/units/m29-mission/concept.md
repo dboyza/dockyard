@@ -1,6 +1,8 @@
 ## Ship a release you can vouch for
 
-Dispatch 2.0 is ready to go to production, and this time the security team wants evidence at every step: what is in the image, what the manifest allows, who released it, and what the cluster will accept.
+Dispatch 2.0 is ready to go to production.
+This time the security team wants evidence at every step.
+They want to know what is in the image, what the manifest allows, who released it, and what the cluster will accept.
 Building that release is your job.
 
 Use what this module taught: a minimal image, static analysis of the manifest that is actually deployed, signing by digest, and an admission rule for production.

@@ -36,7 +36,9 @@ Checks examine files, resource identity, and running behavior rather than comman
 Hints and reference solutions stay separate from independent demonstrations.
 
 The course contains 129 teaching labs and missions across 31 modules, 12 incident scenarios, and six original timed practice exams oriented to the CKA, CKAD, and CKS.
-It begins with illustrated container foundations, then introduces Dispatch, which grows from one process into a distributed application, with Compose, Kubernetes, delivery automation, security, native kubeadm administration, and cluster and workload hardening.
+It begins with illustrated container foundations.
+Then it introduces Dispatch, which grows from one process into a distributed application.
+Along the way you learn Compose, Kubernetes, delivery automation, security, native kubeadm administration, and cluster and workload hardening.
 The [objective map](docs/sources/objective-map.md) connects the published objectives to explanations, practice, and assessment.
 
 Successful missions create immutable source checkpoints.

@@ -112,7 +112,8 @@ Use priority sparingly: if everything is high priority, nothing is.
 
 The cluster has a control-plane node and two worker nodes.
 The workers carry the label `dockyard.pool=apps` and the taint `dockyard.pool=apps:NoSchedule`.
-The database stays on the control-plane node here, so that draining a worker in a later lesson does not strand its storage; that is a practice compromise, not a production recommendation.
+The database stays on the control-plane node here, so that draining a worker in a later lesson does not strand its storage.
+That is a practice compromise, not a production recommendation.
 
 ```sh
 kubectl get nodes --show-labels

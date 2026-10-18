@@ -111,23 +111,52 @@ Three activities could pass while skipping the step they exist to teach.
 | m07-reconciliation | Scaling to two replicas passed before any Pod was deleted. | A new check reads the ReplicaSet's creation and deletion events and requires a Pod that was removed by someone other than the ReplicaSet and then replaced. Scaling down and up does not count. |
 | m01-lifecycle | Recreating the container with `docker run` passed, although the lesson is about starting the existing one. | The prepared container carries a label that a recreated one lacks, and a check requires it. |
 
-Remaining self-review steps were left as they are because they leave no observable trace, such as the deliberately failing test copy in m16-pipeline, or because a later activity checks them directly, such as the PostgreSQL restore in m05-scaling.
+Remaining self-review steps were left as they are for one of two reasons.
+Some leave no observable trace, such as the deliberately failing test copy in m16-pipeline.
+Others are checked directly by a later activity, such as the PostgreSQL restore in m05-scaling.
 
-Failure advice was also reworked so that each recognisable failure gets its own diagnostic.
+Failure advice was also reworked so that each recognizable failure gets its own diagnostic.
 A criterion can now list cases, each a pattern matched against what the check observed, ahead of its general advice; [the maintenance guide](maintenance.md#authoring-and-version-changes) describes the format.
 Shared Docker cases distinguish a missing lab container, a port that was never published, nothing listening, a connection that returned no HTTP answer, and an HTTP error.
 Real m02-dockerfile attempts reproduced the earlier confusion: a missing `VERSION` file, a missing `WORKDIR`, and a container without `-p` each produced advice that pointed elsewhere.
 Each now names the observation and the repair.
 A missing JSON field is reported by its path instead of the full inspection document.
-The published-port check now reads the configured binding, so a stopped container is no longer described as unpublished; whether it runs is the process check's job.
+The published-port check now reads the configured binding.
+So a stopped container is no longer described as unpublished.
+Whether the container runs is the process check's job.
 
 Verification on 2026-10-18, on a Linux x86-64 cloud container with cgroup v1:
 
 - `./scripts/check.sh` passed, including new unit tests for case selection, absent fields, and the replacement rule.
 - The curriculum integration gate passed for 27 of the 34 Docker activities, including m01-lifecycle, m01-mission, and m02-dockerfile.
-- The other seven failed for host reasons: six Compose images could not download Python packages through the host's TLS-intercepting proxy, and m06-limits failed the same way on the unchanged base because cgroup v1 limits are not observed there.
+- The other seven failed for reasons that look specific to this host.
+  Six failed while building a Compose image, in the step that downloads Python packages.
+  Five of them showed a TLS certificate error from the host's proxy.
+  m06-limits failed four of its limit checks, and it fails the same way on the code from before this change.
+  The cause was not confirmed, and this host's cgroup v1 setup is the likely one.
 - Real m02-dockerfile attempts confirmed the advice for each failure mode listed above.
-- m07-reconciliation could not be run, because kind cannot start a control plane on this host; its integration gate must be rerun on a supported host before a release.
+- m07-reconciliation could not be run, because kind could not start a control plane on this host.
+  Its integration gate must be rerun on a supported host before a release.
+
+## Plain-language pass (2026-10-18)
+
+Every lesson, hint, check message, figure description, glossary entry, exam policy, and learner document was measured for sentence length.
+The vocabulary was already plain, with no filler words and no em dashes.
+The problem was long sentences that packed several ideas together.
+More than 300 sentences ran past 28 words, mostly in lessons about cluster internals and security, in hints that chained five commands, and in check messages.
+Each was split into short sentences, one idea per sentence, with the commands and values unchanged.
+
+Spelling was also mixed, with both "behavior" and "behaviour" in use.
+It now follows American spelling throughout, except for one label drawn inside a figure.
+That label is part of a reference screenshot, so it should change when the macOS images are next regenerated.
+
+A new test, `tests/test_plain_language.py`, keeps this from slipping back.
+It limits sentences to 30 words and rejects filler words, Latin abbreviations, British spellings, and em dashes.
+The exam objectives are exempt because they quote the official wording.
+The maintainer evidence logs, such as the runtime evidence and the coverage ledger, were left as written because they record exact observations for maintainers.
+
+This pass measured sentence length and word choice.
+It did not test whether a beginner finds the lessons easier to follow, which still needs a session with real beginners.
 
 ## What remains to establish
 

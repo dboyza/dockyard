@@ -7,7 +7,8 @@ A request may carry no credentials at all: no client certificate and no token.
 By default, the API server does not reject it.
 It treats the caller as the user `system:anonymous` in the group `system:unauthenticated`, and passes the request on to RBAC.
 This exists so that health checks and a little discovery information work without credentials.
-Kubernetes grants anonymous callers very little by default, but any RoleBinding or ClusterRoleBinding that names that user or group hands its permissions to everyone who can reach the API server.
+Kubernetes grants anonymous callers very little by default.
+But any RoleBinding or ClusterRoleBinding that names that user or group hands its permissions to everyone who can reach the API server.
 
 ```figure
 anonymous-requests
@@ -97,6 +98,8 @@ Keep every existing flag, mount, and volume, and add these alongside them.
 
 ## If something goes wrong
 
-- **kubectl stops answering for more than a couple of minutes**: the API server is not starting. On the control plane, `sudo crictl ps -a --name kube-apiserver` and `sudo crictl logs` on the newest container show why; a YAML mistake or a file path that does not match the mount is the usual cause.
+- **kubectl stops answering for more than a couple of minutes**: the API server is not starting.
+  On the control plane, `sudo crictl ps -a --name kube-apiserver` and `sudo crictl logs` on the newest container show why.
+  The usual cause is a YAML mistake or a file path that does not match the mount.
 - **The ConfigMaps request returns 403 instead of 401**: the binding is gone, but anonymous requests are still accepted. The authentication configuration is not in effect yet.
 - **`/readyz` returns 401 too**: the `conditions` list is missing the health paths, or the old `--anonymous-auth=false` flag is set.

@@ -37,7 +37,8 @@ You can set these with `kubectl label namespace NAME pod-security.kubernetes.io/
 
 Admission only checks Pods when they are created.
 Tightening a namespace does not evict Pods already running, so you also have to fix the workload and roll it out.
-When you apply the stricter label, kubectl warns you, for example “existing pods in namespace "dispatch" violate the new PodSecurity enforce level”, but those Pods keep running until they are replaced.
+When you apply the stricter label, kubectl warns you, for example “existing pods in namespace "dispatch" violate the new PodSecurity enforce level”.
+Those Pods keep running until they are replaced.
 
 ## Security contexts
 
@@ -78,4 +79,6 @@ kubectl apply --dry-run=server -f some-pod.yaml
 ```
 
 Check work uses this to confirm a compliant Pod is accepted and one that allows privilege escalation is rejected.
-It also reads the running API process’s real restrictions from `/proc` (its user ID, capabilities, no-new-privileges and seccomp status, and whether the root filesystem is read-only), then submits a real job to make sure nothing broke.
+It also reads the running API process’s real restrictions from `/proc`.
+These are its user ID, its capabilities, its no-new-privileges and seccomp status, and whether the root filesystem is read-only.
+Then it submits a real job to make sure nothing broke.

@@ -71,7 +71,7 @@
     "id": "build-secret",
     "term": "Build secret",
     "definition": "A private value that BuildKit mounts into a single RUN step of a build, as a file or environment variable, without saving it in the image.",
-    "watch_for": "A build argument or ENV value is recorded in the image; and because secrets are not part of the cache key, changing only the secret may reuse an old cached step.",
+    "watch_for": "A build argument or ENV value is recorded in the image. Secrets are not part of the cache key, so changing only the secret may reuse an old cached step.",
     "units": [
       "m06-secrets"
     ],
@@ -893,7 +893,7 @@
     "id": "localhost",
     "term": "Localhost",
     "definition": "The name for 127.0.0.1, which always means the machine or container making the request.",
-    "watch_for": "Inside a container, localhost is that container, not your computer or a neighbouring container.",
+    "watch_for": "Inside a container, localhost is that container, not your computer or a neighboring container.",
     "units": [
       "m00-web-server",
       "m03-ports",
@@ -1272,7 +1272,7 @@
   {
     "id": "downward-api",
     "term": "Downward API",
-    "definition": "A way for a Pod to pass facts about itself, such as its name, namespace, node, labels, and resource limits, into its own containers as environment variables or files.",
+    "definition": "A way for a Pod to pass facts about itself into its own containers, as environment variables or files. The facts include its name, namespace, node, labels, and resource limits.",
     "watch_for": "Environment variables are fixed when the container starts; only files from a downwardAPI volume follow changes such as new labels.",
     "units": [
       "m09-downward"
@@ -1292,7 +1292,7 @@
   {
     "id": "admission-policy",
     "term": "ValidatingAdmissionPolicy",
-    "definition": "A rule written as a CEL expression that the API server checks when objects are created or updated; a binding puts it into effect for chosen resources and namespaces.",
+    "definition": "A rule written as a CEL expression that the API server checks when objects are created or updated. A binding puts it into effect for chosen resources and namespaces.",
     "watch_for": "A policy without a binding refuses nothing, and a binding with Warn or Audit only reports; only Deny refuses the request.",
     "units": [
       "m17-policies",
@@ -1345,7 +1345,7 @@
   {
     "id": "authentication",
     "term": "Authentication",
-    "definition": "The API server's first step for every request: deciding who is asking, from a client certificate, a token, or, when neither is given and anonymous access is allowed, as the user system:anonymous.",
+    "definition": "The API server's first step for every request: deciding who is asking. It uses a client certificate or a token. When neither is given and anonymous access is allowed, the caller is the user system:anonymous.",
     "watch_for": "401 Unauthorized means authentication failed; 403 Forbidden means the caller was identified and authorization refused.",
     "units": [
       "m26-anonymous"
@@ -1386,7 +1386,7 @@
   {
     "id": "apparmor",
     "term": "AppArmor",
-    "definition": "A Linux kernel security module that limits what a program may do, such as which files it may read or write, according to a named profile loaded on the node.",
+    "definition": "A Linux kernel security module that limits what a program may do, such as which files it may read or write. The limits come from a named profile loaded on the node.",
     "watch_for": "Profiles live in each node's kernel; a Pod that names a Localhost profile cannot start on a node where it is not loaded.",
     "units": [
       "m27-apparmor"
@@ -1436,7 +1436,7 @@
   {
     "id": "sandboxed-runtime",
     "term": "Sandboxed runtime",
-    "definition": "A container runtime that puts an extra kernel or a virtual machine between containers and the node's kernel, such as gVisor's runsc or Kata Containers, to contain untrusted code.",
+    "definition": "A container runtime that puts an extra kernel or a virtual machine between containers and the node's kernel. Examples are gVisor's runsc and Kata Containers. It is used to contain untrusted code.",
     "watch_for": "Stronger isolation costs performance and some compatibility, so it suits specific risky workloads.",
     "units": [
       "m28-sandbox"
@@ -1506,7 +1506,7 @@
   {
     "id": "image-signature",
     "term": "Image signature",
-    "definition": "A cryptographic signature over an image's digest, made with a private key, for example by cosign, so anyone with the public key can confirm the image is unchanged and who released it.",
+    "definition": "A cryptographic signature over an image's digest, made with a private key, for example by cosign. Anyone with the public key can use it to confirm the image is unchanged and who released it.",
     "watch_for": "A signature belongs to a digest, not a tag; deploy by digest to run what was verified.",
     "units": [
       "m29-signing"

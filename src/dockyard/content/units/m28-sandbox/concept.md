@@ -1,11 +1,15 @@
 ## When a container is not enough
 
 Every container on a node shares the node's Linux kernel.
-AppArmor and seccomp limit what a container may ask of that kernel, but a bug in the kernel itself, reachable through a permitted system call, can still let a process escape its container.
+AppArmor and seccomp limit what a container may ask of that kernel.
+But a bug in the kernel itself, reachable through a permitted system call, can still let a process escape its container.
 For code you do not trust at all, such as customer-supplied templates or plugins, a stronger boundary helps.
 
 A **sandboxed runtime** puts a second kernel between the container and the node.
-**gVisor** is one: its `runsc` runtime starts each Pod inside a sandbox where a user-space kernel, called the Sentry, handles the container's system calls itself, and asks the real kernel for only a small, fixed set of operations.
+**gVisor** is one.
+Its `runsc` runtime starts each Pod inside a sandbox.
+In that sandbox, a user-space kernel called the Sentry handles the container's system calls itself.
+It asks the real kernel for only a small, fixed set of operations.
 Another approach, Kata Containers, runs each Pod in a lightweight virtual machine.
 
 ```figure

@@ -32,8 +32,8 @@ hints:
   then read launch.sh in the workspace.'
 - In launch.sh, the & after python app.py sends the server to the background, and the script then finishes.
   The container stops when the script does.
-- Change the line to exec python app.py (without &), rebuild the image with the BASE_IMAGE argument, remove
-  the stopped container, and run a new one with the same name, label, and port.
+- Change the line to exec python app.py (without &) and rebuild the image with the BASE_IMAGE argument.
+  Then remove the stopped container, and run a new one with the same name, label, and port.
 sources:
 - https://docs.docker.com/engine/containers/run/
 starter: {}

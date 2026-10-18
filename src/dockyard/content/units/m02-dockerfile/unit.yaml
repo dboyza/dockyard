@@ -60,10 +60,10 @@ checks:
     crashes, so the last lines of the log usually explain it.
   cases:
   - observed: ^false$
-    diagnostic: 'The container exists but its program has stopped. Run docker logs "$DOCKYARD_CONTAINER".
-      "can''t open file ''/app/app.py''" means the image has no app.py where CMD looks: check that WORKDIR
+    diagnostic: The container exists but its program has stopped. Run docker logs "$DOCKYARD_CONTAINER".
+      "can't open file '/app/app.py'" means the image has no app.py where CMD looks. Check that WORKDIR
       is /app and that COPY brings app.py into it, then rebuild and replace the container. An empty log
-      usually means CMD is missing, so the base image''s default command ran and finished.'
+      usually means CMD is missing, so the base image's default command ran and finished.
 - id: lab-identity
   title: The container belongs to this lab
   explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect

@@ -131,7 +131,7 @@ checks:
   - working
   expected: 'true'
   diagnostic: The processor is not producing results. If its Pod is blocked, load the profile on the node
-    it was scheduled to and delete the Pod; if it runs but stalls, look for apparmor="DENIED" lines with
+    it was scheduled to and delete the Pod. If it runs but stalls, look for apparmor="DENIED" lines with
     sudo journalctl -k on that node.
 - id: hardening-workflow
   title: A job from the frontend still completes

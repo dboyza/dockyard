@@ -31,7 +31,8 @@ The image the container was made from is not affected either way.
 Every container gets a long, unique **ID** when it is created.
 A **name** is a friendlier label that points at one container.
 Starting and stopping the same container keeps its ID.
-If you remove a container and run a new one with the same name, you get a new ID: it is a different container that happens to reuse the name.
+If you remove a container and run a new one with the same name, you get a new ID.
+It is a different container that happens to reuse the name.
 That difference matters later, when you wonder why old logs or files have disappeared.
 
 ```figure

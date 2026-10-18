@@ -18,7 +18,9 @@ service-account-tokens
 
 ## Mounted tokens
 
-The token Kubernetes mounts today is a **bound token**: it expires after about an hour, the kubelet replaces it before then, and it becomes invalid when its Pod is deleted.
+The token Kubernetes mounts today is a **bound token**.
+It expires after about an hour, and the kubelet replaces it before then.
+It becomes invalid when its Pod is deleted.
 It arrives through a projected volume that Kubernetes adds to the Pod automatically.
 
 Setting `automountServiceAccountToken: false` stops that volume being added.

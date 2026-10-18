@@ -138,10 +138,10 @@ checks:
   json_path:
   - tls
   expected: 'true'
-  diagnostic: 'The HTTPS request failed. Run the curl command from the lesson and read its error: a certificate
-    error points at the Ingress’s tls secretName, which should be dispatch-tls; a 404 or 502 points at
+  diagnostic: The HTTPS request failed. Run the curl command from the lesson and read its error. A certificate
+    error points at the Ingress’s tls secretName, which should be dispatch-tls. A 404 or 502 points at
     the rule’s backend, which should be Service dispatch port 8080. kubectl describe ingress dispatch
-    shows both.'
+    shows both.
 - id: routing-gateway
   title: The HTTPRoute is attached and carries traffic
   explanation: The route must be Accepted with ResolvedRefs on dispatch-gateway, the Gateway must be Programmed,
@@ -157,9 +157,9 @@ checks:
   json_path:
   - gateway
   expected: 'true'
-  diagnostic: 'The Gateway path does not work yet. Run kubectl describe httproute dispatch and read the
-    conditions under Status > Parents: a missing parent means parentRefs should name dispatch-gateway;
-    ResolvedRefs False means the backendRefs Service or port is wrong (Service dispatch, port 8080).'
+  diagnostic: The Gateway path does not work yet. Run kubectl describe httproute dispatch and read the
+    conditions under Status > Parents. A missing parent means parentRefs should name dispatch-gateway.
+    ResolvedRefs False means the backendRefs Service or port is wrong (Service dispatch, port 8080).
 - id: routing-host-boundary
   title: An unmatched hostname gets a 404
   explanation: A request for unmatched.dispatch.test must not reach Dispatch, showing the route matches

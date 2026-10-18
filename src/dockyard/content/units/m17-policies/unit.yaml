@@ -3,7 +3,8 @@ revision: 1
 module: 17
 order: 4
 title: Enforce a platform rule with an admission policy
-summary: Bind a ValidatingAdmissionPolicy so the API server refuses Deployments without memory limits in Dispatch's namespace, and nowhere else.
+summary: Bind a ValidatingAdmissionPolicy so the API server refuses Deployments without memory limits
+  in Dispatch's namespace, and nowhere else.
 kind: lesson
 runtime: kubernetes
 nodes: 2
@@ -20,17 +21,22 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: A ValidatingAdmissionPolicy exists, but its binding uses validationActions [Warn]. You create a Deployment that breaks the rule. What happens?
+  question: A ValidatingAdmissionPolicy exists, but its binding uses validationActions [Warn]. You create
+    a Deployment that breaks the rule. What happens?
   options:
   - It is created, and kubectl prints a warning.
   - It is refused with the policy's message.
   - Nothing happens until you restart the API server.
   correct: 0
-  explanation: The binding decides what a failed check does. Warn lets the request through with a warning; only Deny refuses it.
+  explanation: The binding decides what a failed check does. Warn lets the request through with a warning;
+    only Deny refuses it.
 hints:
-- Try kubectl create --dry-run=server -f with a Deployment that has no memory limit, in dispatch and in sandbox, and read what comes back.
-- The policy itself is fine. Look at the binding's validationActions and at which namespaces it applies to.
-- 'In policy.yaml, set the binding''s validationActions to [Deny] and add matchResources.namespaceSelector.matchLabels with kubernetes.io/metadata.name: dispatch, then run sh run.sh.'
+- Try kubectl create --dry-run=server -f with a Deployment that has no memory limit, in dispatch and in
+  sandbox, and read what comes back.
+- The policy itself is fine. Look at the binding's validationActions and at which namespaces it applies
+  to.
+- 'In policy.yaml, set the binding''s validationActions to [Deny] and add matchResources.namespaceSelector.matchLabels
+  with kubernetes.io/metadata.name: dispatch, then run sh run.sh.'
 sources:
 - https://kubernetes.io/docs/reference/access-authn-authz/validating-admission-policy/
 - https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/
@@ -62,7 +68,8 @@ prepare:
 checks:
 - id: policy-deny
   title: A Deployment without a memory limit is refused in dispatch
-  explanation: A server-side dry run of a Deployment whose container has no memory limit must be refused in the dispatch namespace by a ValidatingAdmissionPolicy.
+  explanation: A server-side dry run of a Deployment whose container has no memory limit must be refused
+    in the dispatch namespace by a ValidatingAdmissionPolicy.
   command:
     args:
     - python
@@ -74,10 +81,13 @@ checks:
   json_path:
   - deny
   expected: 'true'
-  diagnostic: The API server accepted a Deployment without a memory limit in dispatch. A binding with validationActions [Warn] or [Audit] only reports; use [Deny]. Check with kubectl create --dry-run=server -f and a Deployment that has no memory limit.
+  diagnostic: The API server accepted a Deployment without a memory limit in dispatch. A binding with
+    validationActions [Warn] or [Audit] only reports; use [Deny]. Check with kubectl create --dry-run=server
+    -f and a Deployment that has no memory limit.
 - id: policy-allow
   title: A Deployment with a memory limit is still accepted
-  explanation: A server-side dry run of a Deployment whose container has a memory limit must succeed in dispatch.
+  explanation: A server-side dry run of a Deployment whose container has a memory limit must succeed in
+    dispatch.
   command:
     args:
     - python
@@ -89,7 +99,8 @@ checks:
   json_path:
   - allow
   expected: 'true'
-  diagnostic: A compliant Deployment was refused. Check the CEL expression, which should require a memory limit and nothing more.
+  diagnostic: A compliant Deployment was refused. Check the CEL expression, which should require a memory
+    limit and nothing more.
 - id: policy-scope
   title: The rule applies only to Dispatch's namespace
   explanation: A Deployment without a memory limit must still be accepted in the sandbox namespace.
@@ -104,7 +115,8 @@ checks:
   json_path:
   - scope
   expected: 'true'
-  diagnostic: The rule also refuses Deployments outside dispatch. Limit the binding with matchResources.namespaceSelector, for example by matching the kubernetes.io/metadata.name label to dispatch.
+  diagnostic: The rule also refuses Deployments outside dispatch. Limit the binding with matchResources.namespaceSelector,
+    for example by matching the kubernetes.io/metadata.name label to dispatch.
 - id: configuration-processing
   title: A new job is completed
   explanation: Dockyard submits a real job and waits for a worker to finish it.
@@ -119,7 +131,8 @@ checks:
   json_path:
   - processing
   expected: 'true'
-  diagnostic: A new job was not completed. Check that Dispatch's Deployments still roll out with kubectl get pods, then kubectl logs deployment/worker.
+  diagnostic: A new job was not completed. Check that Dispatch's Deployments still roll out with kubectl
+    get pods, then kubectl logs deployment/worker.
 capabilities:
 - docker
 - kind
@@ -133,7 +146,9 @@ images:
 - redis
 - busybox
 alternatives:
-- Any policy and binding names, CEL formulation, and namespace selection are accepted when the API server refuses limitless Deployments in dispatch, accepts compliant ones, and leaves other namespaces alone.
+- Any policy and binding names, CEL formulation, and namespace selection are accepted. The API server
+  must refuse Deployments with no limits in dispatch, accept compliant ones, and leave other namespaces
+  alone.
 failure_modes:
 - A policy without a binding, or a binding that only warns, refuses nothing.
 - A binding with no namespace selection applies to the whole cluster.

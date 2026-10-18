@@ -32,7 +32,7 @@ url-anatomy
 ```
 
 `127.0.0.1`, also called **localhost**, always means “the machine making this request”.
-Inside a container, that is the container itself, not your computer or a neighbouring container.
+Inside a container, that is the container itself, not your computer or a neighboring container.
 Containers in the same Kubernetes Pod share one network, so for them localhost does reach each other.
 
 ```figure

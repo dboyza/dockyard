@@ -6,7 +6,9 @@ The **CIS Kubernetes Benchmark**, published by the Center for Internet Security,
 Each recommendation has a number, such as 4.2.1, and is marked Automated when a tool can check it or Manual when a person must judge it.
 
 **kube-bench** is an open-source tool that runs those checks.
-It reads the processes, command-line flags, and configuration files on the node where it runs, compares them with the benchmark, and reports each check as PASS, FAIL, WARN, or INFO, with remediation advice.
+It reads the processes, command-line flags, and configuration files on the node where it runs.
+It compares them with the benchmark.
+It reports each check as PASS, FAIL, WARN, or INFO, with advice on how to fix it.
 
 ```figure
 cis-benchmark
@@ -23,7 +25,8 @@ limactl shell "$DOCKYARD_WORKER" sudo kube-bench run --targets node --benchmark 
 ```
 
 `--targets node` checks the worker settings, mostly the kubelet; `--targets master` checks the control-plane components on `$DOCKYARD_CONTROL_PLANE`.
-Normally kube-bench picks the benchmark that matches the cluster's version, but this version of kube-bench does not know Kubernetes 1.37 yet, so `--benchmark cis-1.12` names the newest benchmark it has.
+Normally kube-bench picks the benchmark that matches the cluster's version.
+This version of kube-bench does not know Kubernetes 1.37 yet, so `--benchmark cis-1.12` names the newest benchmark it has.
 Most checks still apply unchanged.
 `--check 4.2.1,4.2.2` runs only the checks you name, which keeps the output short.
 

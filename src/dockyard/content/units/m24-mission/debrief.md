@@ -1,8 +1,11 @@
 ## Compare your recovery
 
 The load balancer was sending API traffic only to the stopped control-plane node.
-Regenerating its configuration with `python -m dockyard.native lb-config` listed all three control-plane nodes; HAProxy's health checks then skipped the stopped one and sent traffic to the two that were running, while their etcd members kept quorum.
-The application had the faults from the triage lesson, a Service selecting `track: retired` and the worker scaled to zero, plus the decisions lesson's single API copy and wide-open Role.
+Regenerating its configuration with `python -m dockyard.native lb-config` listed all three control-plane nodes.
+HAProxy's health checks then skipped the stopped one and sent traffic to the two that were running.
+Their etcd members kept quorum.
+The application had the faults from the triage lesson: a Service selecting `track: retired` and the worker scaled to zero.
+It also had the decisions lesson's faults: a single API copy and a wide-open Role.
 The release step showed the difference between changing a file and running a new build.
 
 Your order may differ, but the load balancer usually comes first, because nothing else can be changed until kubectl reaches the API.

@@ -153,7 +153,7 @@ def signing() -> dict[str, Any]:
 
 
 def image_minimal(reference: str) -> dict[str, Any]:
-    """Pull an image and inspect a stopped, lab-labelled container made from it."""
+    """Pull an image and inspect a stopped, lab-labeled container made from it."""
     from dockyard.probes.docker import filesystem_findings, nonroot
 
     pulled = run(["docker", "pull", "-q", reference], timeout=180)

@@ -72,4 +72,5 @@ Give it a minute before deciding whether the fix worked.
 - A new Pod getting a node shows the scheduler and API are working together; `python wait-control-plane.py` waits for exactly that.
 - A new Dispatch job completing shows the application works end to end.
 
-Check work looks at all of these, and also checks the original nodes, namespace, and database row are still the same ones, so a rebuilt cluster would not pass.
+Check work looks at all of these.
+It also checks that the original nodes, namespace, and database row are still the same ones, so a rebuilt cluster would not pass.

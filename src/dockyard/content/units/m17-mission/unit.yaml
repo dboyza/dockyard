@@ -101,9 +101,9 @@ checks:
     with automountServiceAccountToken: false, then roll them out again.'
 - id: security-network
   title: Allowed and blocked connections match the intended rules
-  explanation: Across two nodes, the trusted frontend must reach the API, while the untrusted frontend,
-    a trusted label in the wrong namespace, frontend-to-database, and API-to-outside-target connections
-    must all be blocked.
+  explanation: 'Across two nodes, the trusted frontend must reach the API. These connections must all
+    be blocked: the untrusted frontend, a trusted label in the wrong namespace, frontend-to-database,
+    and API-to-outside-target.'
   command:
     args:
     - python
@@ -116,9 +116,9 @@ checks:
   - network
   expected: 'true'
   diagnostic: At least one connection is allowed or blocked wrongly. Use --json with Check work to see
-    which. If the wrong-namespace client gets through, check the namespaceSelector and podSelector are
-    in the same from item; if an allowed path fails, check the matching egress and ingress rules and their
-    exact ports.
+    which. If the wrong-namespace client gets through, check that the namespaceSelector and podSelector
+    are in the same from item. If an allowed path fails, check the matching egress and ingress rules and
+    their exact ports.
 - id: security-dns
   title: DNS works over both UDP and TCP
   explanation: Real DNS lookups for the database must succeed over UDP and over TCP under the default-deny
@@ -170,8 +170,8 @@ checks:
   - runtime
   expected: 'true'
   diagnostic: The running API is not fully restricted. Check its securityContext has allowPrivilegeEscalation
-    false, capabilities drop ALL, and readOnlyRootFilesystem true, with runAsNonRoot and a RuntimeDefault
-    seccomp profile, then roll out the Deployment so new Pods start with it.
+    false, capabilities drop ALL, and readOnlyRootFilesystem true. It also needs runAsNonRoot and a RuntimeDefault
+    seccomp profile. Then roll out the Deployment so new Pods start with it.
 - id: security-workflow
   title: A job from the trusted frontend completes
   explanation: A real job submitted from the trusted frontend must be completed by a worker and saved

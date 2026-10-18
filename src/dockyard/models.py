@@ -85,7 +85,7 @@ class Command(Contract):
 
 
 class DiagnosticCase(Contract):
-    """Advice for one recognisable failure, chosen by searching what the check observed."""
+    """Advice for one recognizable failure, chosen by searching what the check observed."""
 
     # A regular expression; placeholders such as {{port}} are expanded literally first.
     observed: str = Field(min_length=1)

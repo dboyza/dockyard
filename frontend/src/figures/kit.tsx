@@ -132,7 +132,7 @@ export function Box({
   );
 }
 
-/** A labelled boundary such as "Your computer" or "Container". */
+/** A labeled boundary such as "Your computer" or "Container". */
 export function Region({
   x,
   y,

@@ -3,8 +3,8 @@ revision: 1
 module: 29
 order: 1
 title: Minimize an image's footprint
-summary: Remove the shell and package managers from the Dispatch image, check it for setuid programs, run
-  it as non-root, and start it without a shell.
+summary: Remove the shell and package managers from the Dispatch image, check it for setuid programs,
+  run it as non-root, and start it without a shell.
 kind: lesson
 runtime: docker
 minutes: 30
@@ -34,11 +34,12 @@ prediction:
 hints:
 - docker exec "$DOCKYARD_CONTAINER" id shows the user; find / -xdev -type f -perm /6000 inside it lists
   setuid and setgid files.
-- A final RUN step can clear setuid bits with chmod a-s, remove apk and pip, and delete /bin/busybox, which
-  every shell in this Alpine image links to; then set USER 10001:10001 and switch CMD to the exec form.
+- A final RUN step can clear setuid bits with chmod a-s, remove apk and pip, and delete /bin/busybox.
+  Every shell in this Alpine image links to /bin/busybox. Then set USER 10001:10001 and switch CMD to
+  the exec form.
 - Add RUN find / -xdev -type f -perm /6000 -exec chmod a-s {} + && rm -rf /sbin/apk /etc/apk /lib/apk
-  /usr/local/bin/pip* && rm /bin/busybox, then USER 10001:10001 and CMD ["python", "app.py"], copy the
-  files with --chown=10001:10001, rebuild, and replace the container.
+  /usr/local/bin/pip* && rm /bin/busybox. Then add USER 10001:10001 and CMD ["python", "app.py"]. Copy
+  the files with --chown=10001:10001, rebuild, and replace the container.
 sources:
 - https://docs.docker.com/build/building/best-practices/
 - https://docs.docker.com/reference/dockerfile/#shell-and-exec-form

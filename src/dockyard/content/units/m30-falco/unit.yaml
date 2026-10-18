@@ -42,8 +42,8 @@ hints:
   container; extra rules go in /etc/falco/rules.d.
 - Combine spawned_process, container, a proc.name list of shells, and k8s.ns.name in a condition; include
   %k8s.ns.name and %k8s.pod.name in the output; validate with falco -V before starting.
-- Write the rule to /etc/falco/rules.d/dockyard.yaml on the worker, validate it with sudo falco -V /etc/falco/falco_rules.yaml
-  -V /etc/falco/rules.d/dockyard.yaml, run sudo systemctl enable --now falco, and follow sudo journalctl
+- Write the rule to /etc/falco/rules.d/dockyard.yaml on the worker. Validate it with sudo falco -V /etc/falco/falco_rules.yaml
+  -V /etc/falco/rules.d/dockyard.yaml. Run sudo systemctl enable --now falco, and follow sudo journalctl
   -u falco -f for the namespace and Pod.
 sources:
 - https://falco.org/docs/concepts/rules/basic-elements/

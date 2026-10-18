@@ -122,9 +122,9 @@ checks:
   json_path:
   - gateway
   expected: 'true'
-  diagnostic: 'The Gateway path does not work yet. Run kubectl describe httproute dispatch and read the
-    conditions under Status > Parents: a missing parent means parentRefs should name dispatch-gateway;
-    ResolvedRefs False means the backendRefs Service or port is wrong (Service dispatch, port 8080).'
+  diagnostic: The Gateway path does not work yet. Run kubectl describe httproute dispatch and read the
+    conditions under Status > Parents. A missing parent means parentRefs should name dispatch-gateway.
+    ResolvedRefs False means the backendRefs Service or port is wrong (Service dispatch, port 8080).
 - id: routing-host-boundary
   title: An unmatched hostname gets a 404
   explanation: A request for unmatched.dispatch.test must not reach Dispatch, showing the route matches

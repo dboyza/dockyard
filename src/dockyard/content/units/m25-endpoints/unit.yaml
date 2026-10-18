@@ -38,10 +38,10 @@ prediction:
 hints:
 - 'Run the metadata request from untrusted-client, then read frontend-egress.yaml: what does the rule
   - {} allow?'
-- 'Replace the rule list with one rule for CoreDNS (kube-system, k8s-app: kube-dns, port 53 UDP and TCP)
-  and one for the Dispatch API (dispatch namespace, app: dispatch, port 8080).'
-- Put namespaceSelector and podSelector in the same list item under to for each rule, apply the file with
-  kubectl apply -f frontend-egress.yaml, and repeat the requests from both clients.
+- 'Replace the rule list with two rules. One is for CoreDNS (kube-system, k8s-app: kube-dns, port 53 UDP
+  and TCP). The other is for the Dispatch API (dispatch namespace, app: dispatch, port 8080).'
+- Put namespaceSelector and podSelector in the same list item under to for each rule. Apply the file with
+  kubectl apply -f frontend-egress.yaml. Then repeat the requests from both clients.
 sources:
 - https://kubernetes.io/docs/concepts/services-networking/network-policies/
 - https://kubernetes.io/docs/tasks/administer-cluster/securing-a-cluster/

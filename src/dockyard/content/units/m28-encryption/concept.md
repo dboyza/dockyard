@@ -44,7 +44,9 @@ resources:
 
 - `resources` says which kinds of objects to encrypt; here, Secrets.
 - `providers` is an ordered list. The **first** provider encrypts every new write. When reading, the API server tries each provider until one succeeds.
-- `aescbc` encrypts with AES using the key given; `aesgcm` and `secretbox` are alternatives, and production clusters often use `kms`, which keeps the key in a separate key management service.
+- `aescbc` encrypts with AES using the key given.
+  `aesgcm` and `secretbox` are alternatives.
+  Production clusters often use `kms`, which keeps the key in a separate key management service.
 - `identity` means "no encryption". Listed last, it lets the API server still read Secrets written before encryption was turned on. Listed first, it would turn encryption off.
 
 Generate the key on the control-plane node, so it never lands in your workspace:
@@ -53,7 +55,8 @@ Generate the key on the control-plane node, so it never lands in your workspace:
 head -c 32 /dev/urandom | base64
 ```
 
-The file holds the key itself, so keep it readable only by root: create it with `sudo`, in a folder with permissions `700`, and give the file permissions `600`.
+The file holds the key itself, so keep it readable only by root.
+Create it with `sudo`, in a folder with permissions `700`, and give the file permissions `600`.
 
 ## Wiring it into the API server
 
@@ -98,6 +101,7 @@ reencrypt-secrets
 
 ## If something goes wrong
 
-- **The API server does not come back**: on the control plane, `sudo crictl ps -a --name kube-apiserver` and `sudo crictl logs` on the newest container usually name the problem, such as a key that is not 32 bytes once decoded, or a path that does not match the mount.
+- **The API server does not come back**: on the control plane, `sudo crictl ps -a --name kube-apiserver` and `sudo crictl logs` on the newest container usually name the problem.
+  Common causes are a key that is not 32 bytes once decoded, or a path that does not match the mount.
 - **New Secrets are still plain**: `identity` is listed first, or the API server has not restarted with the flag.
 - **Pods cannot read their Secrets afterwards**: the configuration lost `identity`, so Secrets written before encryption cannot be read. Keep it last until every Secret is rewritten.

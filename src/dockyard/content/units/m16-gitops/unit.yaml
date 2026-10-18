@@ -66,8 +66,8 @@ prepare:
 checks:
 - id: delivery-pipeline
   title: The published image passed its tests
-  explanation: release.json must record a tested release whose digest matches the registry, the tests
-    must pass again against that exact image, and its source fingerprints must match the current files.
+  explanation: release.json must record a tested release whose digest matches the registry. The tests
+    must pass again against that exact image. Its source fingerprints must match the current files.
   command:
     args:
     - python

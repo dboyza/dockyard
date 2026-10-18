@@ -67,4 +67,6 @@ Create a new test Service, look up its name from the trusted frontend, compare t
 - DNS fails but the IP works: look at CoreDNS.
 - DNS works but the IP fails: look at kube-proxy and the endpoints.
 
-Check work does exactly this with a temporary Service of its own, using `/healthz` so a database problem cannot be mistaken for a routing problem, and then runs a real job.
+Check work does exactly this with a temporary Service of its own.
+It uses `/healthz`, so a database problem cannot be mistaken for a routing problem.
+Then it runs a real job.

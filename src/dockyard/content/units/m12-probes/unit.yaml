@@ -81,8 +81,9 @@ checks:
     or ImagePullBackOff means the image name is wrong; frequent RESTARTS usually mean a probe problem.
 - id: release-probes
   title: Each probe checks the right thing
-  explanation: The API needs startup on /startupz with at least 30 seconds of budget, liveness on /healthz,
-    readiness on /readyz, a grace period of 20 seconds or more, and both Pods started and ready.
+  explanation: The API needs a startup probe on /startupz with at least 30 seconds of budget, liveness
+    on /healthz, and readiness on /readyz. It also needs a grace period of 20 seconds or more, and both
+    Pods started and ready.
   command:
     args:
     - python
@@ -94,9 +95,9 @@ checks:
   json_path:
   - probes
   expected: 'true'
-  diagnostic: 'The probes are not set up as required. Check the api container: startupProbe path /startupz
-    with periodSeconds × failureThreshold of at least 30, livenessProbe /healthz, readinessProbe /readyz,
-    all on port 8080, and terminationGracePeriodSeconds of at least 20.'
+  diagnostic: The probes are not set up as required. Check the api container. The startupProbe path is
+    /startupz, with periodSeconds × failureThreshold of at least 30. The livenessProbe is /healthz and
+    the readinessProbe is /readyz, all on port 8080. terminationGracePeriodSeconds must be at least 20.
 - id: release-termination
   title: Dispatch shuts down cleanly on SIGTERM
   explanation: The termination-proof Pod must receive SIGTERM, log it, and exit with code 0.

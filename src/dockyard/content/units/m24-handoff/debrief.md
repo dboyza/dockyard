@@ -8,7 +8,7 @@ Rolling back, or setting a working image, let the rollout complete, and a new jo
 
 - Which column in `kubectl get deployment` first showed that the release had not finished?
 - What would have happened with `maxUnavailable: 1` instead of `0`?
-- Could someone use your handoff alone to repeat your checks and recognise when to roll back?
+- Could someone use your handoff alone to repeat your checks and recognize when to roll back?
 
 ## Beyond this lab
 

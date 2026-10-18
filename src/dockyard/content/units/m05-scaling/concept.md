@@ -43,8 +43,9 @@ Its printed address is an observation, not an address to hard-code into the app.
 ## Practice a database backup before the capstone
 
 SQLite used a closed file in the previous module.
-PostgreSQL is a running database server, so use its own `pg_dump` tool to make a consistent logical backup: a file of SQL instructions that recreate the database’s schema and data.
-First submit a recognisable job and wait for completion, then run:
+PostgreSQL is a running database server, so use its own `pg_dump` tool to make a consistent logical backup.
+A logical backup is a file of SQL instructions that recreate the database’s structure and data.
+First submit a recognizable job and wait for completion, then run:
 
 ```sh
 docker compose exec -T db pg_dump -U dispatch -d dispatch > backup.sql

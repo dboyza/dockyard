@@ -120,9 +120,9 @@ checks:
     and _count, and run sh monitoring.sh after editing.
 - id: visibility-alert
   title: The latency alert fired under impact and then cleared
-  explanation: alert-evidence.json must show the alert firing during the slowdown and clearing afterwards,
-    for the current rules.yaml and dashboard.json, with a 15-second for, warning severity, annotations,
-    and delay_ms back at 20.
+  explanation: alert-evidence.json must show the alert firing during the slowdown and clearing afterwards.
+    It must be for the current rules.yaml and dashboard.json. The alert needs a 15-second for, warning
+    severity, and annotations, and delay_ms must be back at 20.
   command:
     args:
     - python
@@ -134,13 +134,14 @@ checks:
   json_path:
   - alert
   expected: 'true'
-  diagnostic: 'The alert evidence is missing, out of date, or shows the wrong behaviour. Make sure rules.yaml
+  diagnostic: 'The alert evidence is missing, out of date, or shows the wrong behavior. Make sure rules.yaml
     measures the slow fraction above 0.1 with for: 15s, run sh monitoring.sh, then run python alert-proof.py
     again. Editing rules.yaml or dashboard.json after the rehearsal makes its evidence out of date.'
 - id: visibility-slo
   title: Before and after measurements show the fix
-  explanation: slo-before.json must be below 95% good and slo-after.json at or above it, measured in that
-    order, with the 95% / 250 ms policy unchanged, delay_ms at 20, and a fresh read fast enough now.
+  explanation: slo-before.json must be below 95% good, and slo-after.json must be at or above it, measured
+    in that order. The 95% / 250 ms policy must be unchanged, delay_ms must be at 20, and a fresh read
+    must be fast enough now.
   command:
     args:
     - python

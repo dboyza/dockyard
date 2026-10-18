@@ -37,8 +37,8 @@ hints:
 - For the worker, use kubectl debug WORKER_POD -it --copy-to=worker-debug --container=worker -- sh. For
   the API, use kubectl debug API_POD --image="$DOCKYARD_BUSYBOX_LOCAL_IMAGE" --target=api --profile=general
   -- ps, then kubectl logs on the container it names.
-- Change the worker command in worker.yaml back to python worker.py and run sh run.sh, save the ephemeral
-  container's ps output from an API Pod as api-processes.txt, and delete the worker-debug Pod.
+- Change the worker command in worker.yaml back to python worker.py and run sh run.sh. Save the ephemeral
+  container's ps output from an API Pod as api-processes.txt. Then delete the worker-debug Pod.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/
 - https://kubernetes.io/docs/concepts/workloads/pods/ephemeral-containers/
@@ -102,7 +102,7 @@ checks:
   - worker
   expected: 'true'
   diagnostic: The worker Pods are still not running. Read kubectl logs deployment/worker for the file
-    Python could not open, find the real file name in a debugging copy, correct the command in worker.yaml,
+    Python could not open. Find the real file name in a debugging copy, correct the command in worker.yaml,
     and run sh run.sh.
 - id: debug-cleanup
   title: No debugging copies are left behind

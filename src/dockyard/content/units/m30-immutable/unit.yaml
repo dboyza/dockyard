@@ -38,8 +38,8 @@ hints:
   /bin, and /sbin.'
 - readOnlyRootFilesystem and allowPrivilegeEscalation go in the container's securityContext; each path
   the uploader writes needs its own emptyDir volume and volumeMount.
-- 'Fingerprint each Pod with find /usr /etc /bin /sbin -xdev -type f -exec md5sum {} + | sort | md5sum,
-  write the odd one''s name into tampered-pod.txt, then add readOnlyRootFilesystem: true, allowPrivilegeEscalation:
+- 'Fingerprint each Pod with find /usr /etc /bin /sbin -xdev -type f -exec md5sum {} + | sort | md5sum.
+  Write the odd one''s name into tampered-pod.txt. Then add readOnlyRootFilesystem: true, allowPrivilegeEscalation:
   false, and emptyDir mounts at /tmp and /var/cache/uploads, and apply.'
 sources:
 - https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
@@ -99,8 +99,8 @@ checks:
     configuration folders before rolling out, and record the one that differs.
 - id: immutable-pods
   title: Every uploader is immutable
-  explanation: Three uploader Pods must run with a read-only root filesystem and no privilege escalation,
-    root inside them must be unable to change the image's files, and the tampered Pod must be gone.
+  explanation: Three uploader Pods must run with a read-only root filesystem and no privilege escalation.
+    Root inside them must be unable to change the image's files. The tampered Pod must be gone.
   command:
     args:
     - python

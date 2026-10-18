@@ -38,7 +38,7 @@ The supplied `frontend-egress.yaml` has a single rule, `- {}`, which allows ever
 Replace it with rules for exactly what the clients need:
 
 - **DNS**: Pods look up Service names through CoreDNS, which runs in `kube-system` with the label `k8s-app: kube-dns`, on port 53 over UDP and TCP.
-- **The Dispatch API**: Pods labelled `app: dispatch` in the `dispatch` namespace, on port 8080.
+- **The Dispatch API**: Pods labeled `app: dispatch` in the `dispatch` namespace, on port 8080.
 
 ```figure
 egress-allowlist

@@ -1,12 +1,15 @@
 ## Finding problems before they are deployed
 
-Most security mistakes in Kubernetes are written down long before they run: a `privileged: true` copied from a forum answer, a `hostPath` mount added "just in case", a container with no resource limits.
+Most security mistakes in Kubernetes are written down long before they run.
+Examples are a `privileged: true` copied from a forum answer, a `hostPath` mount added "just in case", or a container with no resource limits.
 **Static analysis** reads manifests without running them and reports risky settings, so a reviewer, or a pipeline, can catch them before they reach a cluster.
 
 This lesson uses two widely used analysers, both installed in your lab terminal:
 
 - **KubeLinter** checks manifests against a list of rules and reports each problem with a remediation. It exits with an error when it finds any, which makes it easy to use as a pipeline gate.
-- **kubesec** gives each workload a **risk score**: points for good settings, a large penalty for critical ones such as privileged containers, and advice on what would raise the score.
+- **kubesec** gives each workload a **risk score**.
+  Good settings earn points, and critical problems such as privileged containers cost a large penalty.
+  It also gives advice on what would raise the score.
 
 ```figure
 static-analysis

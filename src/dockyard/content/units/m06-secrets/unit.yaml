@@ -118,9 +118,9 @@ checks:
   json_path:
   - signed
   expected: 'true'
-  diagnostic: 'SIGNATURE is missing or does not match. The signing step must read the token from release-token.txt:
-    mount it with RUN --mount=type=secret,id=release_token and redirect /run/secrets/release_token into
-    sign.py, pass --secret id=release_token,src=release-token.txt to docker build, then replace the container.'
+  diagnostic: SIGNATURE is missing or does not match. The signing step must read the token from release-token.txt.
+    Mount it with RUN --mount=type=secret,id=release_token and redirect /run/secrets/release_token into
+    sign.py. Pass --secret id=release_token,src=release-token.txt to docker build, then replace the container.
 - id: secret-unrecorded
   title: The token appears nowhere in the image
   explanation: The token must not appear in the image history, its configuration, or any file in the layers

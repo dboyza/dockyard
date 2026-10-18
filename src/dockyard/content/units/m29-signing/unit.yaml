@@ -38,7 +38,7 @@ hints:
   --yes REGISTRY/dispatch@DIGEST and cosign verify --key cosign.pub --insecure-ignore-tlog=true with the
   same reference.
 - Write a ValidatingAdmissionPolicy whose expression requires every container image to start with REGISTRY/
-  and contain @sha256:, bind it with Deny to the production namespace, set production.yaml's image to
+  and contain @sha256:. Bind it with Deny to the production namespace. Set production.yaml's image to
   REGISTRY/dispatch@DIGEST, and run sh run.sh.
 sources:
 - https://docs.sigstore.dev/cosign/signing/signing_with_containers/

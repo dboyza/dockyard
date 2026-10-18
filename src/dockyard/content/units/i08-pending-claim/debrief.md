@@ -1,6 +1,6 @@
 ## Compare your diagnosis
 
-The archiver required a node labelled for a `cold` storage tier, and no node had that label.
+The archiver required a node labeled for a `cold` storage tier, and no node had that label.
 With nothing to schedule, the claim waited for its first consumer forever.
 Pointing the archiver at the existing `warm` tier let the Pod schedule, and the claim was bound and provisioned on that node.
 

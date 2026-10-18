@@ -111,7 +111,7 @@ export function PlacementPage({ model }: { model: Workbench }) {
         <p>
           Pick a mission from a part of the course you already know, prepare its
           lab, and try it. Hints and the reference solution are there if you
-          need them, but a pass with help does not count as placing out of that
+          need them. But a pass with help does not count as placing out of that
           part.
         </p>
         <p>

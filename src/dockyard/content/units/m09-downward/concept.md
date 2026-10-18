@@ -11,7 +11,8 @@ A container does not automatically know its own Pod's details.
 ## The Downward API
 
 The **Downward API** lets a Pod pass facts about itself down into its own containers.
-Kubernetes already knows these facts, because they are in the Pod object: its name, namespace, labels, the node it was scheduled to, and each container's resource requests and limits.
+Kubernetes already knows these facts, because they are stored in the Pod object.
+They include its name, namespace, labels, the node it was scheduled to, and each container's resource requests and limits.
 The Downward API copies them into the container in one of two ways.
 
 ```figure

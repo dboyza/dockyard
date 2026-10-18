@@ -47,7 +47,8 @@ quorum-model
 On the primary control-plane VM, the API server and etcd manifests have been moved out of `/etc/kubernetes/manifests`, so the kubelet stopped them.
 The VM and its kubelet are still running, and the other two control-plane nodes still have quorum.
 But HAProxy’s configuration lists only the primary, so every request fails.
-From your lab terminal, `kubectl` reports something like “Unable to connect to the server: EOF”: HAProxy accepts the connection, finds no healthy server to pass it to, and closes it.
+From your lab terminal, `kubectl` reports something like “Unable to connect to the server: EOF”.
+HAProxy accepts the connection, finds no healthy server to pass it to, and closes it.
 Leave the primary broken: the point is to prove the cluster works *without* it.
 
 The primary node may show NotReady, which is fine.
@@ -79,7 +80,9 @@ limactl shell --workdir=/tmp "$DOCKYARD_WORKER" sudo systemctl reload haproxy
 ## Proving it works
 
 `kubectl get --raw=/readyz` checks the API is ready.
-Check work goes further: it writes, reads, and deletes a ConfigMap through the load balancer, asks the two surviving etcd members if they are healthy, and runs a real job.
+Check work goes further.
+It writes, reads, and deletes a ConfigMap through the load balancer.
+It also asks the two surviving etcd members if they are healthy, and runs a real job.
 
 This proves the cluster survived losing one control-plane node.
 It does not make the whole system highly available: the load balancer, the database volume, and your computer are each still a single point of failure.

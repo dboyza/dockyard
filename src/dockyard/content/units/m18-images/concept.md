@@ -15,7 +15,8 @@ That is why the database’s date belongs in every report: the same image scanne
 ## This lab
 
 This version of Dispatch deliberately installs an old library it never uses, PyJWT 1.7.1, which has a known flaw, CVE-2022-29217.
-Dispatch does not import it, so the flaw is not reachable, but an unused component is still something that could be misused, and it adds noise to every scan.
+Dispatch does not import it, so the flaw cannot be reached.
+Even so, an unused component could be misused, and it adds noise to every scan.
 Removing what you do not need is one of the simplest ways to reduce risk.
 
 The lab uses the **Trivy** scanner with a fixed, downloaded database so results are repeatable.
@@ -28,7 +29,9 @@ trivy image --format cyclonedx --output inventory.json report-service:5
 
 The supplied helpers wrap these for the lab, working offline:
 
-- `python scan.py before` or `after` scans the current image and writes `scan-PHASE.json` (the findings), `sbom-PHASE.json` (the inventory), and `scan-evidence-PHASE.json`, which records the image’s identity and the vulnerability database’s date under `database.updated_at`.
+- `python scan.py before` or `after` scans the current image.
+  It writes `scan-PHASE.json` (the findings) and `sbom-PHASE.json` (the inventory).
+  It also writes `scan-evidence-PHASE.json`, which records the image’s identity and the vulnerability database’s date under `database.updated_at`.
 - `build.json` has one setting, `include_legacy_dependency`, which controls whether the old library is installed.
 - `sh repair-image.sh` rebuilds the image, restarts the API and worker so they run the new image, and scans again as `after`.
 

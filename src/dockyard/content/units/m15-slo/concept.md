@@ -33,7 +33,9 @@ Readiness probes can stay green through a slowdown, because they check that the 
 ## This lab
 
 Dispatch has been configured to wait 600 ms before answering business reads, set by `delay_ms` in the `dispatch-settings` ConfigMap.
-The supplied `measure-slo.py` makes twenty real reads from inside the cluster, records the time, status, and request ID of each, and calculates the good fraction using the objective in `slo.json`.
+The supplied `measure-slo.py` makes twenty real reads from inside the cluster.
+It records the time, status, and request ID of each read.
+Then it calculates the good fraction using the objective in `slo.json`.
 Measuring from inside the cluster avoids counting the extra time of the tunnel from your computer.
 
 Make sure the API is ready first; otherwise the reads fail to connect and you measure an outage instead of the slowdown:
@@ -61,4 +63,5 @@ Twenty reads are enough to see the calculation work and a clear before-and-after
 They are far too few to promise a monthly reliability level.
 Whenever you report an SLO result, include the sample size, the time window, where it was measured, what was excluded, and the threshold.
 
-Real teams also alert on the **burn rate**, how fast the error budget is being used up, over both a short and a long window, so a sudden outage and a slow leak are both noticed.
+Real teams also alert on the **burn rate**, which is how fast the error budget is being used up.
+They watch it over both a short and a long window, so a sudden outage and a slow leak are both noticed.

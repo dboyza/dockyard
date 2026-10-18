@@ -52,7 +52,7 @@ spec:
       port: 8080
 ```
 
-This lets Pods labelled `app: trusted` **in** the `frontend` namespace reach Dispatch on port 8080.
+This lets Pods labeled `app: trusted` **in** the `frontend` namespace reach Dispatch on port 8080.
 
 The indentation of the `from` list is the single most common NetworkPolicy mistake:
 
@@ -74,7 +74,9 @@ DNS usually uses UDP but falls back to TCP for larger answers, and allowing only
 
 ## This lab
 
-The `dispatch` namespace starts with ingress and egress denied for every Pod, plus rules that allow DNS, the trusted frontend to reach the API, the API and workers to reach PostgreSQL and Redis, and the inventory Pod to reach the Kubernetes API.
+The `dispatch` namespace starts with ingress and egress denied for every Pod.
+Rules then allow DNS, and let the trusted frontend reach the API.
+Other rules let the API and workers reach PostgreSQL and Redis, and let the inventory Pod reach the Kubernetes API.
 
 ```sh
 kubectl get networkpolicy
@@ -96,4 +98,5 @@ Check work tests a whole set of paths, across two nodes:
 - the API cannot reach an outside test target that the frontend *can* reach.
 
 NetworkPolicy controls which connections are allowed.
-It is not encryption, it does not check who a user is, and traffic from the nodes themselves can behave differently, which is why this lab only tests Pod-to-Pod traffic.
+It is not encryption, and it does not check who a user is.
+Traffic from the nodes themselves can behave differently, which is why this lab only tests Pod-to-Pod traffic.

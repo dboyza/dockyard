@@ -125,8 +125,9 @@ Every process’s cgroup is visible in `/proc/PID/cgroup`, which shows which lim
 
 ## Check the thing that matters
 
-Linux often has several layers that can disagree:
-a file can hold a new setting while the running program still uses the old one, and a certificate can be renewed on disk while the server still presents the previous one until it restarts.
+Linux often has several layers that can disagree.
+A file can hold a new setting while the running program still uses the old one.
+A certificate can be renewed on disk while the server still presents the previous one until it restarts.
 After a change, check the running process or a real request, not just the file.
 
 ```figure

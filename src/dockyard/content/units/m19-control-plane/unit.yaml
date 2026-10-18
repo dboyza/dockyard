@@ -64,8 +64,8 @@ checks:
 - id: native-operator
   title: The operator client inside the control plane works securely
   explanation: $HOME/.kube/operator.conf in the control-plane VM must list both nodes against the real
-    API server with certificate checks on, be mode 600, and all four control-plane static Pods must be
-    running.
+    API server with certificate checks on. It must be mode 600. All four control-plane static Pods must
+    be running.
   command:
     args:
     - python

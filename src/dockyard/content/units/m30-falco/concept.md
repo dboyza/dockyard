@@ -5,7 +5,9 @@ Prevention is never complete, so you also need **detection**: noticing when some
 
 **Falco** watches system calls on a node as they happen, enriches each with context such as the container, Pod, and namespace, and checks the stream against **rules**.
 When a rule matches, Falco writes an alert.
-This is **behavioral detection**: it does not look for known malware files, it looks for actions that should not happen, such as a shell starting inside a web server or a process reading a password file.
+This is **behavioral detection**.
+It does not look for known malware files.
+It looks for actions that should not happen, such as a shell starting inside a web server or a process reading a password file.
 
 ```figure
 falco-pipeline
@@ -62,7 +64,9 @@ Then `sudo systemctl restart falco` loads it.
 
 ## Fix it
 
-1. Create `/etc/falco/rules.d/dockyard.yaml` on the worker with a rule that alerts when a shell starts in a container in the `billing`, `dispatch`, or `frontend` namespaces, naming the namespace and Pod in its output.
+1. Create `/etc/falco/rules.d/dockyard.yaml` on the worker.
+   Add a rule that alerts when a shell starts in a container in the `billing`, `dispatch`, or `frontend` namespaces.
+   The output must name the namespace and Pod.
 2. Validate it with `falco -V`, then enable and start Falco.
 3. Follow the alerts. Something keeps starting shells; find which namespace and workload it is.
 4. Write it into `finding.txt` in your workspace as `NAMESPACE/NAME`, where `NAME` is the Deployment or the Pod.

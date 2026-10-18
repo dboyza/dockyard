@@ -8,5 +8,7 @@
 6. Choose **Check work**.
 
 Look at the dashboard, the Prometheus targets, the request logs, `alert-evidence.json`, and both SLO records.
-Write a short incident note that separates the application slowdown from the monitoring faults, states what your measurements can and cannot show, and names a prevention step for each fault.
+Write a short incident note.
+Separate the application slowdown from the monitoring faults.
+State what your measurements can and cannot show, and name a prevention step for each fault.
 Keep the database storage and the normal workers running.

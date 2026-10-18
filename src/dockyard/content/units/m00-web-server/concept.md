@@ -71,7 +71,7 @@ The web server shares whichever folder it starts in, so we use `-w /site` to sta
 
 ## The whole command
 
-Here is everything together, with each part labelled:
+Here is everything together, with each part labeled:
 
 ```figure
 web-server-command

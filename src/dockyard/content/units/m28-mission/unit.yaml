@@ -39,9 +39,9 @@ prediction:
 hints:
 - 'Check each layer''s starting state: the stored prefix of plugin-credentials with etcdctl, dmesg inside
   plugin-runner, and ip link on the worker.'
-- 'Reuse the patterns from the three lessons: an EncryptionConfiguration wired into the API server, a
-  runsc handler with a labelled node and a RuntimeClass, and wireguardEnabled in the default FelixConfiguration.'
-- 'Enable encryption and rewrite all Secrets, register runsc on the worker and label it, create RuntimeClass
+- Reuse the patterns from the three lessons. Wire an EncryptionConfiguration into the API server. Add
+  a runsc handler with a labeled node and a RuntimeClass, and set wireguardEnabled in the default FelixConfiguration.
+- 'Enable encryption and rewrite all Secrets. Register runsc on the worker and label it. Create RuntimeClass
   sandboxed with handler runsc, set runtimeClassName: sandboxed in plugins.yaml, and patch the FelixConfiguration.'
 sources:
 - https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/

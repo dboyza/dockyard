@@ -63,7 +63,8 @@ kubectl describe httproute dispatch
 ```
 
 In `describe httproute`, look under **Status → Parents** for the conditions and their messages.
-If the route names a Gateway that does not exist, there is no entry under Parents at all: no controller has picked the route up, so nothing reports on it.
+If the route names a Gateway that does not exist, there is no entry under Parents at all.
+No controller has picked the route up, so nothing reports on it.
 An empty Parents list is itself the clue to check `parentRefs`.
 
 ```figure

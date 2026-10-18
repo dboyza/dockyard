@@ -16,7 +16,8 @@ binary-verification
 ## Where the official checksums come from
 
 The project serves each checksum next to its binary, for example `https://dl.k8s.io/release/v1.37.1/bin/linux/arm64/kubelet.sha512`.
-Fetch checksums from the official source, never from the same folder as the binary you are checking: whoever could alter the binary could alter a checksum stored beside it.
+Fetch checksums from the official source, never from the same folder as the binary you are checking.
+Whoever could alter the binary could alter a checksum stored beside it.
 This lab has no internet requirement, so Dockyard copied the official values into your workspace's `release-checksums` folder, one file per binary, each holding a single SHA-512 value.
 
 ```sh
@@ -27,7 +28,9 @@ cat release-checksums/kubelet.sha512
 ## Calculating and comparing
 
 `sha512sum FILE` prints a file's SHA-512 checksum followed by its name.
-Comparing 128 hexadecimal characters by eye is error-prone, so let `sha512sum -c` do it: it reads lines of the form `CHECKSUM  FILE`, with two spaces, calculates each file's checksum, and prints `OK` or `FAILED`.
+Comparing 128 hexadecimal characters by eye is error-prone, so let `sha512sum -c` do it.
+It reads lines of the form `CHECKSUM  FILE`, with two spaces.
+It calculates each file's checksum, and prints `OK` or `FAILED`.
 
 The staged binaries are on the control-plane node and the checksums are in your workspace, so build the line on your computer and send it to the node:
 

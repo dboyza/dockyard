@@ -84,8 +84,8 @@ checks:
     try again.
 - id: confine-footprint
   title: The control plane carries no leftovers
-  explanation: The debug-share service must not run or start at boot, nothing may listen on port 2222,
-    and the contractor account must not be able to use sudo or log in.
+  explanation: The debug-share service must not run or start at boot. Nothing may listen on port 2222.
+    The contractor account must not be able to use sudo or log in.
   command:
     args:
     - python

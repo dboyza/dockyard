@@ -3,7 +3,8 @@ revision: 3
 module: 1
 order: 1
 title: 'Meet Dispatch: run its first version'
-summary: Meet the application you’ll work on for the rest of the course, then start its first version and send it a request.
+summary: Meet the application you’ll work on for the rest of the course, then start its first version
+  and send it a request.
 kind: lesson
 runtime: docker
 minutes: 30
@@ -26,7 +27,9 @@ prediction:
   - The request still succeeds, because the image is still on your computer.
   - Dispatch answers with a status saying it has stopped.
   correct: 0
-  explanation: Only a running process can answer a request. Stopping the container ended Dispatch’s main process, so nothing is listening behind the published port. The image is still there, ready to start a container again, but an image cannot answer anything by itself.
+  explanation: Only a running process can answer a request. Stopping the container ended Dispatch’s main
+    process, so nothing is listening behind the published port. The image is still there, ready to start
+    a container again, but an image cannot answer anything by itself.
 hints:
 - 'Start with docker ps -a: is there a container with this lab’s name, and is it running?'
 - The command in Understand needs every line, including the label, port mapping, and folder mount.

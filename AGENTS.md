@@ -28,6 +28,7 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 ## Teaching and language
 
 - Write as a patient teacher in plain English: explain the purpose, introduce terms before using them, show an action, then explain the expected observation.
+- Keep learner-facing sentences to 30 words or fewer, use American spelling, and avoid filler words; `tests/test_plain_language.py` enforces this for lessons, hints, check messages, figures, and the learner documents.
 - Teach container fundamentals before Dispatch; introduce Dispatch as the supplied background job application and distinguish its current stage from components added later.
 - Explain the central ideas of each lesson and reference primer with embedded figures as well as prose, introducing one new idea at a time.
 - Make prerequisites, workspace files, command placeholders, and completion criteria visible where they are needed.

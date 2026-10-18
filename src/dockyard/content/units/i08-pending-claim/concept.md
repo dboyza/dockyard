@@ -18,7 +18,9 @@ Hints and the reference solution are available, but using them marks this attemp
 ## Useful reminders
 
 `Pending` tells you something has not finished; it does not tell you why.
-The `standard` class waits for the first Pod that uses a claim to be scheduled before creating storage, so a claim can be Pending simply because its Pod cannot be scheduled.
+The `standard` class waits until the first Pod that uses a claim is scheduled.
+Only then does it create storage.
+So a claim can be Pending simply because its Pod cannot be scheduled.
 A Pod’s `nodeSelector` says which node labels it requires.
 If no node has those labels, the Pod stays Pending, and so does its claim.
 

@@ -2,7 +2,8 @@
 
 A container image is built, scanned, and tested once, then run many times.
 That only means something if the running container stays the same as the image.
-If a process inside it can rewrite programs or configuration, an attacker who gets in can plant tools, change behavior, and stay hidden, and the image you scanned no longer describes what is running.
+If a process inside it can rewrite programs or configuration, an attacker who gets in can plant tools, change behavior, and stay hidden.
+Then the image you scanned no longer describes what is running.
 
 An **immutable container** cannot change its own files while it runs.
 Anything it legitimately needs to write, such as temporary files or a cache, goes to a separate volume that disappears with the Pod.

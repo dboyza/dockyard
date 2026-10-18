@@ -124,8 +124,9 @@ checks:
     sets the startup allowance.
 - id: exam-schedule
   title: The CronJob is scheduled correctly and its test Job succeeded
-  explanation: release-audit must use schedule 17 2 * * *, timeZone UTC, concurrencyPolicy Forbid, and
-    not be suspended; Job release-audit-proof must be created from it, complete, and log release dispatch-exam-a.
+  explanation: release-audit must use schedule 17 2 * * *, timeZone UTC, and concurrencyPolicy Forbid,
+    and it must not be suspended. Job release-audit-proof must be created from it, complete, and log release
+    dispatch-exam-a.
   command:
     args:
     - python

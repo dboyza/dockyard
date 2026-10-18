@@ -1,6 +1,8 @@
 ## What changed
 
-Calico now encrypts all Pod traffic between the nodes with WireGuard: each node has its own key pair, publishes its public key on its Node object, and sends traffic for other nodes through `wireguard.cali`.
+Calico now encrypts all Pod traffic between the nodes with WireGuard.
+Each node has its own key pair and publishes its public key on its Node object.
+It sends traffic for other nodes through `wireguard.cali`.
 Dispatch and the frontend changed nothing and noticed nothing.
 
 Check your understanding: two Pods on the same node talk to each other.

@@ -10,7 +10,8 @@ So a working request is not proof that the node is healthy.
 
 The API server also does not notice straight away.
 Every node renews a small **Lease** object in the `kube-node-lease` namespace every few seconds.
-When renewals stop, it can take up to about a minute before the node is marked `NotReady`, so for a while a stale `Ready` status can outlive the kubelet itself.
+When renewals stop, it can take up to about a minute before the node is marked `NotReady`.
+For a while, a stale `Ready` status can outlive the kubelet itself.
 
 ```figure
 kubelet-stopped

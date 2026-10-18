@@ -13,7 +13,9 @@ If you already know some Docker or Kubernetes, open **Your course → Find your 
 Try a mission to see which topics need practice; every lesson remains available.
 Your course remains freely browsable, with searchable explanations and supplied checkpoints for later modules.
 Reference desk contains supporting primers and a searchable glossary.
-Each lesson and primer figure lists its key terms beneath it; select one to read its glossary entry, then use **Back to the figure** to return to the same figure and step.
+Each lesson and primer figure lists its key terms beneath it.
+Select one to read its glossary entry.
+Then use **Back to the figure** to return to the same figure and step.
 
 ## Meet Dispatch
 
@@ -26,7 +28,8 @@ The Overview page explains the project before you start.
 The sidebar has five main destinations: Overview, Your course, Practice, Your progress, and Lab manager.
 Placement lives within Your course; troubleshooting and exams live within Practice; reviews and saved projects live within Your progress.
 Reference desk and Settings and data stay at the bottom of the sidebar.
-Find a lesson or glossary term using the search field at the top of the page, or press `/` from anywhere to jump to it and Escape to clear it.
+Find a lesson or glossary term using the search field at the top of the page.
+Press `/` from anywhere to jump to the search field, and press Escape to clear it.
 Matching glossary terms appear above the lessons, with the closest names first.
 Each page, lesson, exam, primer, and glossary entry has its own address, so the browser's Back and Forward buttons, reloading, and bookmarks keep your place.
 If Dockyard has restarted since you signed in, a bookmark asks you to run `./dockyard`; its sign-in link then opens the bookmarked page.
@@ -91,7 +94,8 @@ Task weights total 100 and permit partial credit where an assessed task has mult
 Browser reload does not reset the deadline.
 The running workbench grades at expiry even when the browser is closed.
 If the workbench process is unavailable at the deadline, or infrastructure prevents reliable grading, the attempt is invalidated without assigning a score.
-If Pods are still starting or stopping when you submit, grading waits and checks again for up to about a minute before deciding the environment is too unsettled to score.
+If Pods are still starting or stopping when you submit, grading waits and checks again.
+It waits for up to about a minute before deciding the environment is too unsettled to score.
 Keep the workbench process running during timed practice.
 Hints and reference reveals are unavailable during an active timed attempt.
 Use Independent retake before starting another timer on an already assessed or supported fixture.

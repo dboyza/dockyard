@@ -32,7 +32,7 @@ prediction:
   - They run on any node, and the selector is only documentation.
   - They replace the node's default runtime for every Pod on matching nodes.
   correct: 0
-  explanation: Kubernetes adds the RuntimeClass's node selector to each Pod that uses it, so the scheduler
+  explanation: Kubernetes adds the RuntimeClass's node selector to each Pod that uses it. So the scheduler
     only considers nodes that carry those labels, typically the ones with the runtime installed.
 hints:
 - Inside the preview container, dmesg shows whose kernel is answering; on the worker, sudo crictl info
@@ -40,8 +40,8 @@ hints:
 - Add a runtimes.runsc section with runtime_type io.containerd.runsc.v1 under the io.containerd.cri.v1.runtime
   plugin in /etc/containerd/config.toml, restart containerd, label the node, and create a RuntimeClass
   with handler runsc.
-- 'Append the runsc section to the worker''s containerd config and restart containerd, run kubectl label
-  node lima-$DOCKYARD_WORKER sandbox.dockyard.io/gvisor=true, create RuntimeClass gvisor with that nodeSelector,
+- 'Append the runsc section to the worker''s containerd config and restart containerd. Run kubectl label
+  node lima-$DOCKYARD_WORKER sandbox.dockyard.io/gvisor=true. Create RuntimeClass gvisor with that nodeSelector,
   and set runtimeClassName: gvisor in untrusted.yaml.'
 sources:
 - https://kubernetes.io/docs/concepts/containers/runtime-class/

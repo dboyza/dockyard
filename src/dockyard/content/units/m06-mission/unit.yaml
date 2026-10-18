@@ -309,7 +309,7 @@ checks:
   expected: 'true'
   diagnostic: 'The API, db, or queue container has no health check, or it is not currently healthy. Run
     docker compose ps and look for (healthy) in the STATUS column. For a missing one, add a healthcheck:
-    to that service; for an unhealthy one, run docker inspect --format ''{{json .State.Health}}'' on the
+    to that service. For an unhealthy one, run docker inspect --format ''{{json .State.Health}}'' on the
     container to read its recent check output.'
 - id: compose-guarded
   title: The API and workers wait for a healthy database and queue

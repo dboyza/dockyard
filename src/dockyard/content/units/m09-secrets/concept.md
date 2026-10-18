@@ -1,7 +1,8 @@
 ## Keep passwords out of ordinary configuration
 
 A **Secret** is like a ConfigMap, but meant for sensitive values such as passwords, tokens, and keys.
-It is a separate object type so that access to it can be controlled separately, and so tools treat it more carefully, for example by hiding values in `kubectl describe`.
+It is a separate object type so that access to it can be controlled on its own.
+Tools also treat it more carefully, for example by hiding its values in `kubectl describe`.
 
 Be clear about what a Secret does *not* do.
 Its values are stored **base64 encoded**, which is a way of writing any bytes as plain text.

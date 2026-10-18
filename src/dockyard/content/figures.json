@@ -54,7 +54,7 @@
     "id": "image-layers",
     "title": "An image is a stack of layers",
     "caption": "docker history lists the newest layer first, which is the same order as the top of the stack.",
-    "description": "On the left, simplified docker history output lists four rows from newest to oldest: a settings-only row of 0 bytes, a 44.1 MB layer that installs Python, a 2.94 MB layer that adds system packages, and a 9.31 MB layer that adds the Alpine Linux files. On the right, the same three file layers are drawn as a stack, with Python on top and Alpine Linux at the bottom, all read-only and shared by every container.",
+    "description": "On the left, simplified docker history output lists four rows from newest to oldest. The first is a settings-only row of 0 bytes. Next is a 44.1 MB layer that installs Python, then a 2.94 MB layer that adds system packages. The last is a 9.31 MB layer that adds the Alpine Linux files. On the right, the same three file layers are drawn as a stack, with Python on top and Alpine Linux at the bottom. All of them are read-only and shared by every container.",
     "terms": [
       "layer",
       "image"
@@ -145,7 +145,7 @@
     "id": "web-server-command",
     "title": "Every part of the web server command",
     "caption": "Everything before the image configures the container. Everything after it is the main process.",
-    "description": "The docker run command for the web server, one option per line, with a note beside each: -d runs in the background; --name gives the name used in later commands; --label marks it as this lab's container; -p connects your port on this computer to port 8000; -v makes your folder appear at /site read-only; -w starts the process in /site; the image variable is the image to start from; and python -m http.server 8000 is the main process.",
+    "description": "The docker run command for the web server, one option per line, with a note beside each. -d runs in the background. --name gives the name used in later commands. --label marks it as this lab's container. -p connects your port on this computer to port 8000. -v makes your folder appear at /site read-only. -w starts the process in /site. The image variable is the image to start from. python -m http.server 8000 is the main process.",
     "terms": [
       "published-port",
       "bind-mount",
@@ -156,7 +156,7 @@
     "id": "reconciliation-model",
     "title": "Intent survives a missing Pod",
     "caption": "A simplified model of a Deployment controller, separate from your real lab.",
-    "description": "An interactive model with a desired replica count, a list of observed Pods that can be deleted, and a button that advances the controller one step toward the desired count.",
+    "description": "An interactive model with a desired replica count and a list of observed Pods that can be deleted. A button advances the controller one step toward the desired count.",
     "terms": [
       "reconciliation",
       "deployment",
@@ -180,7 +180,7 @@
     "id": "quorum-model",
     "title": "A majority and a route are separate requirements",
     "caption": "A simplified model of etcd quorum and a load-balanced API endpoint, separate from your real lab.",
-    "description": "An interactive model with three control-plane nodes, each running an etcd member, and a load balancer that can route to any of them; you stop members, choose routes, and try a write to see whether it succeeds.",
+    "description": "An interactive model with three control-plane nodes, each running an etcd member, and a load balancer that can route to any of them. You stop members, choose routes, and try a write to see whether it succeeds.",
     "terms": [
       "quorum",
       "etcd",
@@ -248,7 +248,7 @@
     "id": "dispatch-first-run",
     "title": "Dispatch’s first version in this lab",
     "caption": "The same pattern as the foundations web server: a published port in, and a read-only folder of code mounted.",
-    "description": "On your computer, a curl request to /healthz goes to 127.0.0.1 on an assigned port such as 54321, which is published with -p to port 8080 in the container. Inside the container, python app.py runs the Dispatch API on port 8080 and replies with status ok. The workspace folder containing app.py is bind mounted read-only at /app inside the container.",
+    "description": "On your computer, a curl request to /healthz goes to 127.0.0.1 on an assigned port such as 54321. That port is published with -p to port 8080 in the container. Inside the container, python app.py runs the Dispatch API on port 8080 and replies with status ok. The workspace folder containing app.py is bind mounted read-only at /app inside the container.",
     "terms": [
       "dispatch",
       "published-port",
@@ -259,7 +259,7 @@
     "id": "container-states",
     "title": "A container’s states and the commands that move it",
     "caption": "Stopping a container keeps it. Only docker rm removes it.",
-    "description": "A state diagram. docker create makes a Created container from an image; docker start moves it to Running; docker stop, or the process ending, moves it to Exited; docker start runs an exited container again; and docker rm moves an exited container to Removed. A dashed shortcut shows docker run as create plus start. Notes say docker ps lists running containers and docker ps -a lists created and exited ones too.",
+    "description": "A state diagram. docker create makes a Created container from an image. docker start moves it to Running. docker stop, or the process ending, moves it to Exited. docker start runs an exited container again. docker rm moves an exited container to Removed. A dashed shortcut shows docker run as create plus start. Notes say docker ps lists running containers and docker ps -a lists created and exited ones too.",
     "terms": [
       "container",
       "exit-status"
@@ -433,7 +433,7 @@
     "id": "port-mapping-mismatch",
     "title": "A running container behind the wrong mapping",
     "caption": "The host side of a mapping can be right while the container side points where nothing listens.",
-    "description": "A sequence in two steps. At first, a curl request to 127.0.0.1 port 49152 is forwarded to port 8081 in the container, but Dispatch listens on 8080, so nothing answers and the request fails. After the container is replaced with a mapping to 8080, the same request reaches Dispatch and returns status ok.",
+    "description": "A sequence in two steps. At first, a curl request to 127.0.0.1 port 49152 is forwarded to port 8081 in the container. Dispatch listens on 8080, so nothing answers and the request fails. After the container is replaced with a mapping to 8080, the same request reaches Dispatch and returns status ok.",
     "terms": [
       "published-port",
       "port"
@@ -463,7 +463,7 @@
     "id": "bridge-network",
     "title": "Connecting two containers by name",
     "caption": "A shared user-defined network gives containers a path and a name to use; no published port is needed between them.",
-    "description": "A sequence in three steps. Your terminal requests /dependency from the API through its published port. With no shared network, the API cannot resolve the name dependency. After both containers join the lab network, with the alias dependency on the dependency container, the API's request to dependency:8080 succeeds because Docker's DNS turns the name into the current address. The dependency still has no published port.",
+    "description": "A sequence in three steps. Your terminal requests /dependency from the API through its published port. With no shared network, the API cannot resolve the name dependency. Both containers now join the lab network, and the dependency container has the alias dependency. The API's request to dependency:8080 succeeds because Docker's DNS turns the name into the current address. The dependency still has no published port.",
     "terms": [
       "bridge-network",
       "dns"
@@ -672,7 +672,7 @@
     "id": "image-reference",
     "title": "Reading an image reference",
     "caption": "A reference ends with either a tag, which can move, or a digest, which identifies fixed content.",
-    "description": "Two image references with their parts labelled. In 127.0.0.1:49804/dispatch:release, 127.0.0.1:49804 is the registry, dispatch is the repository, and release is a tag that can move. In 127.0.0.1:49804/dispatch@sha256:3f1a…, the registry and repository are the same, and sha256:3f1a… is a digest identifying fixed content.",
+    "description": "Two image references with their parts labeled. In 127.0.0.1:49804/dispatch:release, 127.0.0.1:49804 is the registry, dispatch is the repository, and release is a tag that can move. In 127.0.0.1:49804/dispatch@sha256:3f1a…, the registry and repository are the same, and sha256:3f1a… is a digest identifying fixed content.",
     "terms": [
       "registry",
       "tag",
@@ -683,7 +683,7 @@
     "id": "tags-vs-digests",
     "title": "A tag moves; a digest stays",
     "caption": "Deploy by digest when you need to know exactly which image will run.",
-    "description": "A sequence in two steps. In the registry, the tag dispatch:release and the digest reference dispatch@sha256:3f1a… both point at image A. Then someone pushes image B, sha256:9c2e…, under the same tag. The tag now points at image B, so a deploy by tag gets image B, while the digest reference still points at image A, so a deploy by digest still gets image A.",
+    "description": "A sequence in two steps. In the registry, the tag dispatch:release and the digest reference dispatch@sha256:3f1a… both point at image A. Then someone pushes image B, sha256:9c2e…, under the same tag. The tag now points at image B, so a deploy by tag gets image B. The digest reference still points at image A, so a deploy by digest still gets image A.",
     "terms": [
       "tag",
       "digest",
@@ -790,7 +790,7 @@
     "id": "labels-selectors",
     "title": "How a Service chooses its Pods",
     "caption": "A selector matches labels exactly; one wrong character leaves the Service with nowhere to send requests.",
-    "description": "A sequence in two steps. The Service dispatch has the selector app=dispatch. Two Pods labelled app=dispatch are selected and a Pod labelled app=worker is not, so the EndpointSlice lists 2 ready Pod addresses. When the selector is mistyped as app=dispach, no Pod matches, and the EndpointSlice is empty.",
+    "description": "A sequence in two steps. The Service dispatch has the selector app=dispatch. Two Pods labeled app=dispatch are selected and a Pod labeled app=worker is not, so the EndpointSlice lists 2 ready Pod addresses. When the selector is mistyped as app=dispach, no Pod matches, and the EndpointSlice is empty.",
     "terms": [
       "label-selector",
       "service",
@@ -799,7 +799,7 @@
     "steps": [
       {
         "label": "The selector matches",
-        "text": "Both Pods labelled app=dispatch are selected, and their ready addresses appear in the EndpointSlice."
+        "text": "Both Pods labeled app=dispatch are selected, and their ready addresses appear in the EndpointSlice."
       },
       {
         "label": "One wrong character",
@@ -820,7 +820,7 @@
     "id": "kubeconfig-contexts",
     "title": "What a context combines",
     "caption": "Switching context changes which cluster, login, and namespace your next command uses.",
-    "description": "Inside the kubeconfig file named by KUBECONFIG, a cluster entry says where the API is, a user entry says how to log in, and a namespace such as dispatch is the default. A context combines the cluster, the user, and the namespace. The current-context setting points at one context, and every kubectl command goes to it.",
+    "description": "Inside the kubeconfig file named by KUBECONFIG, a cluster entry says where the API is. A user entry says how to log in. A namespace such as dispatch is the default. A context combines the cluster, the user, and the namespace. The current-context setting points at one context, and every kubectl command goes to it.",
     "terms": [
       "kubeconfig",
       "namespace"
@@ -830,7 +830,7 @@
     "id": "change-workflow",
     "title": "A careful change, step by step",
     "caption": "The first three steps cost nothing and catch most mistakes before they reach the cluster.",
-    "description": "Five steps in a row: render fills in the image, diff shows what would change, a server dry run checks the object, apply saves it in the cluster, and rollout status confirms the Pods are ready. The first three change nothing; the last two change the cluster. A note says to check which context you are using before any of these steps.",
+    "description": "Five steps in a row. Render fills in the image. Diff shows what would change. A server dry run checks the object. Apply saves it in the cluster. Rollout status confirms the Pods are ready. The first three change nothing; the last two change the cluster. A note says to check which context you are using before any of these steps.",
     "terms": [
       "manifest",
       "kubeconfig"
@@ -872,7 +872,7 @@
     "id": "port-forward",
     "title": "What kubectl port-forward connects",
     "caption": "The tunnel goes straight to one Pod, and exists only while the command runs.",
-    "description": "On your computer, curl sends a request to 127.0.0.1 port 18080, where kubectl port-forward is listening. kubectl uses the Service dispatch only to choose one of its Pods, then carries the request through a temporary tunnel straight to that Pod, where the API listens on port 8080. A note says requests do not pass through the Service.",
+    "description": "On your computer, curl sends a request to 127.0.0.1 port 18080, where kubectl port-forward is listening. kubectl uses the Service dispatch only to choose one of its Pods. Then it carries the request through a temporary tunnel straight to that Pod, where the API listens on port 8080. A note says requests do not pass through the Service.",
     "terms": [
       "port-forward",
       "service"
@@ -926,7 +926,7 @@
     "id": "configmap-delivery",
     "title": "Two ways a ConfigMap reaches a container",
     "caption": "The same ConfigMap can feed an environment variable and a mounted file, and they behave differently.",
-    "description": "The ConfigMap dispatch-settings holds environment: learning and a banner.txt key. Inside the API container, the environment key becomes the environment variable DISPATCH_ENV, read once at start, and banner.txt becomes the mounted file /config/banner.txt, which is kept up to date. Dispatch's /config address shows both.",
+    "description": "The ConfigMap dispatch-settings holds environment: learning and a banner.txt key. Inside the API container, the environment key becomes the environment variable DISPATCH_ENV, which is read once at start. The banner.txt key becomes the mounted file /config/banner.txt, which is kept up to date. Dispatch's /config address shows both.",
     "terms": [
       "configmap",
       "environment-variable"
@@ -936,7 +936,7 @@
     "id": "config-update-timing",
     "title": "When a ConfigMap change arrives",
     "caption": "Mounted files follow the ConfigMap; environment variables wait for a new container.",
-    "description": "A sequence in three steps. At first the ConfigMap has environment learning and banner v1, and the running Pod shows DISPATCH_ENV=learning and banner.txt v1. After the ConfigMap is edited to testing and v2, the mounted banner.txt updates to v2 within a minute or two, but DISPATCH_ENV still shows the old value learning because it is read only at start. After kubectl rollout restart, a new Pod shows DISPATCH_ENV=testing and banner v2.",
+    "description": "A sequence in three steps. At first the ConfigMap has environment learning and banner v1, and the running Pod shows DISPATCH_ENV=learning and banner.txt v1. After the ConfigMap is edited to testing and v2, the mounted banner.txt updates to v2 within a minute or two. DISPATCH_ENV still shows the old value learning, because it is read only at start. After kubectl rollout restart, a new Pod shows DISPATCH_ENV=testing and banner v2.",
     "terms": [
       "configmap",
       "environment-variable"
@@ -1040,7 +1040,7 @@
   {
     "id": "ingress-routing",
     "title": "How an Ingress request is served",
-    "caption": "The Ingress is only rules; the controller reads them, terminates HTTPS, and forwards to the Service.",
+    "caption": "The Ingress is only rules. The controller reads them, handles the HTTPS encryption, and forwards requests to the Service.",
     "description": "Your client sends an HTTPS request for https://dispatch.test/ to Traefik, the ingress controller. Traefik reads the Ingress rules, which send dispatch.test/ to dispatch:8080, and takes its certificate from the Secret dispatch-tls holding tls.crt and tls.key. It forwards the request over HTTP to the Service dispatch on port 8080, and from there to the Pods.",
     "terms": [
       "ingress",
@@ -1172,7 +1172,7 @@
     "id": "probe-roles",
     "title": "What each probe does, and when",
     "caption": "Readiness controls traffic; liveness controls restarts. Only liveness should ignore dependencies.",
-    "description": "A sequence in four steps showing the startup probe on /startupz, the liveness probe on /healthz, and the readiness probe on /readyz, beside the Pod's place in the Service endpoints and its restart count. While warming up, only the startup probe checks, and the Pod is not yet in the endpoints. Once started, liveness and readiness pass and the Pod is included. When the database is down, readiness fails and the Pod is removed from the endpoints, but liveness still passes, so nothing restarts. If liveness wrongly uses /readyz, the database outage makes liveness fail too, and restarts keep climbing.",
+    "description": "A sequence in four steps. It shows the startup probe on /startupz, the liveness probe on /healthz, and the readiness probe on /readyz. Beside them are the Pod's place in the Service endpoints and its restart count. While warming up, only the startup probe checks, and the Pod is not yet in the endpoints. Once started, liveness and readiness pass and the Pod is included. When the database is down, readiness fails and the Pod is removed from the endpoints, but liveness still passes, so nothing restarts. If liveness wrongly uses /readyz, the database outage makes liveness fail too, and restarts keep climbing.",
     "terms": [
       "startup-probe",
       "liveness",
@@ -1242,7 +1242,7 @@
     "id": "canary-split",
     "title": "A canary beside the stable release",
     "caption": "The main Service selects both tracks; the preview Service selects only the canary.",
-    "description": "The Service dispatch selects app=dispatch and sends traffic to three Pods: two release 1 Pods from the Deployment dispatch with track=stable, and one release 2 Pod from dispatch-canary with track=canary. The Service dispatch-preview selects track=canary and reaches only the canary Pod. A note says about one in three connections to dispatch reaches the canary.",
+    "description": "The Service dispatch selects app=dispatch and sends traffic to three Pods. Two are release 1 Pods from the Deployment dispatch with track=stable. One is a release 2 Pod from dispatch-canary with track=canary. The Service dispatch-preview selects track=canary and reaches only the canary Pod. A note says about one in three connections to dispatch reaches the canary.",
     "terms": [
       "canary",
       "label-selector"
@@ -1283,7 +1283,7 @@
     "id": "qos-classes",
     "title": "Quality of service classes",
     "caption": "Requests and limits decide which Pods are evicted first when memory runs short.",
-    "description": "Three classes from left to right: BestEffort, with no requests or limits; Burstable, with some requests or limits, which includes Dispatch's API; and Guaranteed, with requests equal to limits. When a node runs short of memory, BestEffort Pods are evicted first and Guaranteed Pods last.",
+    "description": "Three classes from left to right. BestEffort has no requests or limits. Burstable has some requests or limits, and includes Dispatch's API. Guaranteed has requests equal to limits. When a node runs short of memory, BestEffort Pods are evicted first and Guaranteed Pods last.",
     "terms": [
       "qos-class",
       "request",
@@ -1294,7 +1294,7 @@
     "id": "taints-affinity",
     "title": "Taints repel, tolerations allow, affinity attracts",
     "caption": "Dedicating nodes takes a taint on the nodes plus a toleration and affinity on the Pod.",
-    "description": "A sequence in three steps with three nodes: the control plane, tainted control-plane:NoSchedule, and two workers, each tainted pool=apps:NoSchedule and labelled pool=apps. A Dispatch Pod with no toleration is refused by every node because of untolerated taints and stays Pending. With a toleration for pool=apps, the workers allow it but nothing sends it there, and the control plane still refuses. With the toleration and affinity for pool=apps, the control plane is excluded because it is not pool=apps, and Pods are placed on the workers.",
+    "description": "A sequence in three steps with three nodes: the control plane, tainted control-plane:NoSchedule, and two workers, each tainted pool=apps:NoSchedule and labeled pool=apps. A Dispatch Pod with no toleration is refused by every node because of untolerated taints and stays Pending. With a toleration for pool=apps, the workers allow it but nothing sends it there, and the control plane still refuses. With the toleration and affinity for pool=apps, the control plane is excluded because it is not pool=apps, and Pods are placed on the workers.",
     "terms": [
       "taint",
       "node-affinity"
@@ -1327,7 +1327,7 @@
     "id": "hpa-math",
     "title": "How the HPA chooses a replica count",
     "caption": "Utilization is measured against the request, then the result is kept between min and max.",
-    "description": "The Metrics Server measures each Pod, the HPA compares the measurement with its target, and the Deployment is scaled from 2 to 4 replicas, repeating every few seconds. The calculation: the target is 50% of the 50m request, so aim for 25m per Pod; the measured average use is 100m per Pod, 200%; desired is 2 Pods times 200% divided by 50%, which is 8 Pods; capped at maxReplicas, that is 4 Pods, and the HPA reports ScalingLimited.",
+    "description": "The Metrics Server measures each Pod, the HPA compares the measurement with its target, and the Deployment is scaled from 2 to 4 replicas, repeating every few seconds. The calculation has four parts. The target is 50% of the 50m request, so aim for 25m per Pod. The measured average use is 100m per Pod, which is 200%. The desired count is 2 Pods times 200% divided by 50%, which is 8 Pods. That is capped at maxReplicas, so it becomes 4 Pods, and the HPA reports ScalingLimited.",
     "terms": [
       "hpa",
       "request",
@@ -1423,7 +1423,7 @@
     "id": "operator-loop",
     "title": "An operator restoring drift",
     "caption": "The custom resource is the source of truth; the controller keeps the Deployment matching it.",
-    "description": "A sequence in three steps. The WorkerPool dispatch asks for 2 replicas, the workerpool-controller watches it and manages the Deployment dispatch-workers at 2 replicas, and two worker Pods are ready, so the WorkerPool status shows Ready True. Someone scales the Deployment to 0 by hand, the worker Pods terminate, and status shows Ready False. The controller notices the drift and sets the Deployment back to 2, starting new workers and returning to Ready True.",
+    "description": "A sequence in three steps. The WorkerPool dispatch asks for 2 replicas. The workerpool-controller watches it and manages the Deployment dispatch-workers at 2 replicas. Two worker Pods are ready, so the WorkerPool status shows Ready True. Someone scales the Deployment to 0 by hand, the worker Pods terminate, and status shows Ready False. The controller notices the drift and sets the Deployment back to 2, starting new workers and returning to Ready True.",
     "terms": [
       "operator",
       "reconciliation"
@@ -1466,8 +1466,8 @@
   {
     "id": "prometheus-scrape",
     "title": "How Prometheus chooses what to scrape",
-    "caption": "Relabel rules decide which Pods are targets and how their series are labelled.",
-    "description": "Prometheus asks the Kubernetes API which Pods exist, then applies relabel rules that keep only Pods labelled app=dispatch with a container port named http. Dispatch Pods A and B are kept and scraped directly, each with its own pod label; the db Pod is dropped. Prometheus scrapes every five seconds.",
+    "caption": "Relabel rules decide which Pods are targets and how their series are labeled.",
+    "description": "Prometheus asks the Kubernetes API which Pods exist, then applies relabel rules that keep only Pods labeled app=dispatch with a container port named http. Dispatch Pods A and B are kept and scraped directly, each with its own pod label; the db Pod is dropped. Prometheus scrapes every five seconds.",
     "terms": [
       "metric",
       "label-selector"
@@ -1477,7 +1477,7 @@
     "id": "histogram-buckets",
     "title": "From histogram buckets to a slow fraction",
     "caption": "Divide the bucket at your threshold by the total count, then subtract from one.",
-    "description": "A bar chart of 200 requests in cumulative buckets: 120 at or under 0.1 seconds, 170 at or under 0.25 seconds, 190 at or under 0.5 seconds, 198 at or under 1 second, and 200 in all. Each bucket counts every request at or under its limit. Fast enough is 170 divided by 200, which is 85%. Too slow is 1 minus 0.85, which is 15%. Since 15% is above the 10% threshold, the alert condition is true.",
+    "description": "A bar chart of 200 requests in cumulative buckets. 120 took 0.1 seconds or less. 170 took 0.25 seconds or less. 190 took 0.5 seconds or less. 198 took 1 second or less, and all 200 are counted in the last bucket. Each bucket counts every request at or under its limit. Fast enough is 170 divided by 200, which is 85%. Too slow is 1 minus 0.85, which is 15%. Since 15% is above the 10% threshold, the alert condition is true.",
     "terms": [
       "histogram"
     ]
@@ -1577,7 +1577,7 @@
     "id": "least-privilege",
     "title": "Removing access the reader does not need",
     "caption": "Least privilege keeps the useful permission and removes the rest, and you test both.",
-    "description": "A sequence in two steps showing the Role dispatch-pod-reader beside kubectl auth can-i answers for dispatch-reader. At first the rule allows get, list, and watch on pods and secrets, so listing Pods in dispatch says yes, getting Secrets in dispatch also says yes, which is too much, and listing Pods in kube-system says no. After removing secrets from the rule, the answers are yes, no, and no.",
+    "description": "A sequence in two steps showing the Role dispatch-pod-reader beside kubectl auth can-i answers for dispatch-reader. At first the rule allows get, list, and watch on pods and secrets. Listing Pods in dispatch says yes. Getting Secrets in dispatch also says yes, which is too much. Listing Pods in kube-system says no. After removing secrets from the rule, the answers are yes, no, and no.",
     "terms": [
       "rbac",
       "service-account"
@@ -1597,7 +1597,7 @@
     "id": "netpol-default-deny",
     "title": "From open, to closed, to exactly what is needed",
     "caption": "Start from default deny, then allow each path the application really uses.",
-    "description": "A sequence in three steps with a frontend namespace holding trusted and untrusted Pods, DNS in kube-system, and a dispatch namespace holding the API, a worker, PostgreSQL, and Redis. With no policy, every connection is allowed. With default deny, every connection is blocked, including DNS lookups. With allow rules added, the trusted frontend can reach the API, the API can reach PostgreSQL, the worker can reach Redis and DNS, and the untrusted frontend Pod is still blocked.",
+    "description": "A sequence in three steps. A frontend namespace holds trusted and untrusted Pods. DNS runs in kube-system. A dispatch namespace holds the API, a worker, PostgreSQL, and Redis. With no policy, every connection is allowed. With default deny, every connection is blocked, including DNS lookups. With allow rules added, the trusted frontend can reach the API. The API can reach PostgreSQL, and the worker can reach Redis and DNS. The untrusted frontend Pod is still blocked.",
     "terms": [
       "network-policy",
       "dns"
@@ -1621,7 +1621,7 @@
     "id": "netpol-and-or",
     "title": "One dash changes the meaning",
     "caption": "Selectors in one list item must all match; selectors in separate items each allow traffic on their own.",
-    "description": "Two versions of a from list. In the first, namespaceSelector for the frontend namespace and podSelector for app trusted are in one list item, so both must match: a trusted Pod in frontend is allowed, and any other Pod is not. In the second, a dash before podSelector makes them two list items, so either is enough: any Pod in frontend is allowed, and so is a trusted Pod anywhere in the policy's own namespace.",
+    "description": "Two versions of a from list. In the first, namespaceSelector for the frontend namespace and podSelector for app trusted are in one list item, so both must match. A trusted Pod in frontend is allowed, and any other Pod is not. In the second, a dash before podSelector makes them two list items, so either is enough. Any Pod in frontend is allowed, and so is a trusted Pod anywhere in the policy's own namespace.",
     "terms": [
       "network-policy",
       "label-selector"
@@ -1631,7 +1631,7 @@
     "id": "admission-vs-context",
     "title": "Admission at creation, restrictions while running",
     "caption": "Admission decides whether a Pod may exist; its security context limits what it can do.",
-    "description": "A new Pod from a Deployment goes to Pod Security Admission, which enforces the restricted standard for its namespace and is checked once, when the Pod is created. The Pod is either accepted and created, or rejected and never runs. An accepted Pod's running container keeps its securityContext restrictions for its whole life: runAsUser 12000, no capabilities, no new privileges, the RuntimeDefault seccomp profile, and a read-only root filesystem.",
+    "description": "A new Pod from a Deployment goes to Pod Security Admission, which enforces the restricted standard for its namespace and is checked once, when the Pod is created. The Pod is either accepted and created, or rejected and never runs. An accepted Pod's running container keeps its securityContext restrictions for its whole life. They are runAsUser 12000, no capabilities, no new privileges, the RuntimeDefault seccomp profile, and a read-only root filesystem.",
     "terms": [
       "pod-security-admission",
       "security-context"
@@ -1688,7 +1688,7 @@
     "id": "encrypted-restore",
     "title": "Restoring onto new storage, then switching",
     "caption": "Restore beside the original, verify the data, and only then move traffic.",
-    "description": "A sequence in three steps. The original database db-0 is stopped with its storage data-db-0 kept, the encrypted backup backup.enc is in one place and its key in separate private lab data, and the Service db has no ready database. Restoring decrypts the backup in memory with the key and loads it into db-recovery, which has its own new claim, and the known record is found. Finally the Service db selects recovery: restored, so traffic goes to db-recovery, while the original storage is kept to switch back if needed.",
+    "description": "A sequence in three steps. The original database db-0 is stopped, with its storage data-db-0 kept. The encrypted backup backup.enc is in one place and its key is in separate private lab data. The Service db has no ready database. Restoring decrypts the backup in memory with the key and loads it into db-recovery, which has its own new claim, and the known record is found. Finally the Service db selects recovery: restored, so traffic goes to db-recovery, while the original storage is kept to switch back if needed.",
     "terms": [
       "restore-test",
       "pvc"
@@ -1712,7 +1712,7 @@
     "id": "runtime-layers",
     "title": "The layers beneath Kubernetes",
     "caption": "kubectl talks to the API; crictl talks to the node’s runtime through the CRI.",
-    "description": "kubectl talks to the API server, which holds Kubernetes objects. On one node, the kubelet receives the Pods for that node and asks containerd, through the Container Runtime Interface, to run them; containerd listens on a socket under /run/containerd and runs the containers in kubepods.slice cgroups. crictl connects to containerd through the CRI, and ctr talks to containerd directly. A note says kubectl sees objects, while crictl sees what is really running on one node.",
+    "description": "kubectl talks to the API server, which holds Kubernetes objects. On one node, the kubelet receives the Pods for that node and asks containerd, through the Container Runtime Interface, to run them. containerd listens on a socket under /run/containerd and runs the containers in kubepods.slice cgroups. crictl connects to containerd through the CRI, and ctr talks to containerd directly. A note says kubectl sees objects, while crictl sees what is really running on one node.",
     "terms": [
       "api-server",
       "kubelet",
@@ -1896,7 +1896,7 @@
     "id": "upgrade-order",
     "title": "The order of a kubeadm upgrade",
     "caption": "Upgrade the control plane first, then each worker, moving one minor version at a time.",
-    "description": "The upgrade goes from 1.36.5 to 1.37.1, one minor version. On the control-plane node: upgrade the kubeadm package, run kubeadm upgrade plan, run kubeadm upgrade apply v1.37.1, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. On each worker, one at a time: upgrade the kubeadm package, run kubeadm upgrade node, drain and upgrade the kubelet and kubectl packages, daemon-reload and restart the kubelet, then uncordon. A warning says never to run kubeadm upgrade apply on a worker.",
+    "description": "The upgrade goes from 1.36.5 to 1.37.1, one minor version. On the control-plane node, upgrade the kubeadm package. Run kubeadm upgrade plan, then kubeadm upgrade apply v1.37.1. Drain the node, upgrade the kubelet and kubectl packages, run daemon-reload, and restart the kubelet. Then uncordon. On each worker, one at a time, upgrade the kubeadm package and run kubeadm upgrade node. Drain the node, upgrade the kubelet and kubectl packages, run daemon-reload, and restart the kubelet. Then uncordon. A warning says never to run kubeadm upgrade apply on a worker.",
     "terms": [
       "kubeadm",
       "kubelet",
@@ -1963,7 +1963,7 @@
     "id": "csi-chain",
     "title": "A volume that cannot follow its Pod",
     "caption": "The hostpath volume lives on one worker, so the database must run there.",
-    "description": "A sequence in three steps. The CSI node plugin is registered on the worker VM, where the hostpath folder holds PV data-db-0. At first db-0 runs on the worker with its volume attached and mounted. After the StatefulSet is changed to run on the control plane, db-0 there cannot use its volume, because the driver is not there and the data lives on the worker. When it is placed on the worker again, db-0 reuses the original claim and data.",
+    "description": "A sequence in three steps. The CSI node plugin is registered on the worker VM, where the hostpath folder holds PV data-db-0. At first db-0 runs on the worker with its volume attached and mounted. After the StatefulSet is changed to run on the control plane, db-0 there cannot use its volume. The driver is not there, and the data lives on the worker. When it is placed on the worker again, db-0 reuses the original claim and data.",
     "terms": [
       "csi",
       "pv"
@@ -2024,7 +2024,7 @@
     "id": "static-pod-repair",
     "title": "Two faults, each blocking the other’s fix",
     "caption": "The scheduler needs both its file in the folder and a kubelet watching the folder.",
-    "description": "A sequence in three steps. At first /etc/kubernetes/manifests holds etcd, kube-apiserver, and kube-controller-manager, because kube-scheduler.yaml was moved away, and the kubelet is stopped, so the scheduler is not running and a brand-new Pod stays Pending with no node. After the file is moved back, the kubelet is still stopped, so nothing changes. After the kubelet starts, it runs the scheduler again and a new Pod gets a node. Pods that already had a node keep running throughout.",
+    "description": "A sequence in three steps. At first /etc/kubernetes/manifests holds etcd, kube-apiserver, and kube-controller-manager, because kube-scheduler.yaml was moved away. The kubelet is stopped. So the scheduler is not running, and a brand-new Pod stays Pending with no node. After the file is moved back, the kubelet is still stopped, so nothing changes. After the kubelet starts, it runs the scheduler again and a new Pod gets a node. Pods that already had a node keep running throughout.",
     "terms": [
       "static-pod",
       "kubelet"
@@ -2068,7 +2068,7 @@
     "id": "triage-loop",
     "title": "The triage loop",
     "caption": "One guess, one test, one change at a time, so you always know what helped.",
-    "description": "Five stages in a loop: observe the symptom in a user's words, guess one cause that explains it, test with a command that proves it either way, change one thing if the test agrees, and check whether the symptom changed. Repeat until the symptom is gone. A note says if a test disagrees with your guess, change the guess, not the cluster.",
+    "description": "Five stages in a loop. Observe the symptom in a user's words. Guess one cause that explains it. Test with a command that proves it either way. Change one thing if the test agrees. Check whether the symptom changed. Repeat until the symptom is gone. A note says if a test disagrees with your guess, change the guess, not the cluster.",
     "terms": [
       "triage"
     ]
@@ -2112,7 +2112,7 @@
     "id": "rollout-columns",
     "title": "Still answering, but not finished",
     "caption": "Compare all four counts; available Pods alone do not mean the release succeeded.",
-    "description": "A sequence in two steps. With the bad image, the Deployment shows desired 2, up-to-date 1, available 2, and total 3: the previous ReplicaSet's two Pods are ready and serving while the newest ReplicaSet's Pod is stuck in ErrImageNeverPull, so the rollout is stuck. After rolling back, all four counts are 2: the newest ReplicaSet's two Pods are ready and serving, the old Pods are scaled away, and the rollout has finished.",
+    "description": "A sequence in two steps. With the bad image, the Deployment shows desired 2, up-to-date 1, available 2, and total 3. The previous ReplicaSet's two Pods are ready and serving. The newest ReplicaSet's Pod is stuck in ErrImageNeverPull, so the rollout is stuck. After rolling back, all four counts are 2: the newest ReplicaSet's two Pods are ready and serving, the old Pods are scaled away, and the rollout has finished.",
     "terms": [
       "rolling-update",
       "replicaset"
@@ -2168,7 +2168,7 @@
     "id": "command-anatomy",
     "title": "Reading a command before you run it",
     "caption": "Name the program, its arguments, and its options, and replace every placeholder in full.",
-    "description": "The command kubectl get pods -n dispatch split into its parts: kubectl is the program, get and pods are arguments, and -n dispatch is an option with its value. Below it, the lesson text docker logs <container name> becomes docker logs web when typed: the whole placeholder, including the angle brackets, is replaced.",
+    "description": "The command kubectl get pods -n dispatch is split into its parts. kubectl is the program. get and pods are arguments. -n dispatch is an option with its value. Below it, the lesson text docker logs <container name> becomes docker logs web when typed: the whole placeholder, including the angle brackets, is replaced.",
     "terms": [
       "shell",
       "namespace"
@@ -2178,7 +2178,7 @@
     "id": "shell-streams",
     "title": "Where a command’s output goes",
     "caption": "Output and error messages travel separately, and the exit status reports how the command finished.",
-    "description": "A sequence in four steps around a command. First, its standard output and standard error both appear in the terminal. Second, > file sends standard output into a file while error messages still reach the screen. Third, a pipe sends the output of printf into sort, which prints the sorted lines. Fourth, every command finishes with an exit status: 0 means success and lets && run the next command, while any other number means a reported problem, and && skips the next command.",
+    "description": "A sequence in four steps around a command. First, its standard output and standard error both appear in the terminal. Second, > file sends standard output into a file while error messages still reach the screen. Third, a pipe sends the output of printf into sort, which prints the sorted lines. Fourth, every command finishes with an exit status. 0 means success and lets && run the next command. Any other number means a reported problem, and && skips the next command.",
     "terms": [
       "standard-streams",
       "exit-status"
@@ -2330,7 +2330,7 @@
     "id": "service-name-to-pod",
     "title": "From a Service name to a Pod",
     "caption": "Resolving the name is only the first of three steps.",
-    "description": "A sequence in three steps. First, a client Pod asks DNS for dispatch and gets the Service’s ClusterIP. Second, traffic sent to that ClusterIP is forwarded to one of the two ready dispatch Pods, its endpoints, and the application answers. Third, both Pods are not ready, so the Service has no ready endpoints: the name still resolves to the same ClusterIP, but the request has nowhere to go and fails.",
+    "description": "A sequence in three steps. First, a client Pod asks DNS for dispatch and gets the Service’s ClusterIP. Second, traffic sent to that ClusterIP is forwarded to one of the two ready dispatch Pods, its endpoints, and the application answers. Third, both Pods are not ready, so the Service has no ready endpoints. The name still resolves to the same ClusterIP, but the request has nowhere to go and fails.",
     "terms": [
       "dns",
       "cluster-ip",
@@ -2355,7 +2355,7 @@
     "id": "dns-blocked-by-policy",
     "title": "Allowing the database but not DNS",
     "caption": "A name lookup is traffic too, so an egress policy must allow it.",
-    "description": "The api Pod has an egress network policy that allows only TCP port 5432 to the database. Its first step, asking CoreDNS on port 53 what postgres means, is blocked, so it never learns the address and the allowed connection to port 5432 is never made. A note says to also allow port 53 over UDP and TCP to the cluster’s DNS.",
+    "description": "The api Pod has an egress network policy that allows only TCP port 5432 to the database. Its first step is asking CoreDNS on port 53 what postgres means. That step is blocked, so it never learns the address. The allowed connection to port 5432 is never made. A note says to also allow port 53 over UDP and TCP to the cluster’s DNS.",
     "terms": [
       "network-policy",
       "dns"
@@ -2365,7 +2365,7 @@
     "id": "file-mode-bits",
     "title": "Reading a file’s mode",
     "caption": "Three sets of three: the owner, the group, and everyone else.",
-    "description": "The mode -rw-r----- from the example jobs.db line, in two steps. The first character, a dash, means an ordinary file. The next nine split into three sets: rw- lets the owner, UID 10001, read and write; r-- lets members of group 10001 read; and --- gives everyone else no access. In the second step each set is added up, with r worth 4, w worth 2, and x worth 1, giving 6, 4, and 0: the numeric mode 640.",
+    "description": "The mode -rw-r----- from the example jobs.db line, in two steps. The first character, a dash, means an ordinary file. The next nine split into three sets. rw- lets the owner, UID 10001, read and write. r-- lets members of group 10001 read. --- gives everyone else no access. In the second step each set is added up, with r worth 4, w worth 2, and x worth 1. That gives 6, 4, and 0, which is the numeric mode 640.",
     "terms": [
       "file-mode",
       "uid"
@@ -2385,7 +2385,7 @@
     "id": "container-shared-kernel",
     "title": "Containers are isolated processes on one kernel",
     "caption": "Namespaces limit what a process can see; cgroups limit what it can use.",
-    "description": "One Linux machine with a single kernel along the bottom. Above it run an ordinary process and two containers. Each container is a process wrapped in namespaces, which give it its own process list starting at PID 1, its own network with its own localhost, and its own files. Each also sits in a cgroup with limits, such as 256 MiB of memory for one and half a CPU for the other. Every one of them uses the same kernel.",
+    "description": "One Linux machine with a single kernel along the bottom. Above it run an ordinary process and two containers. Each container is a process wrapped in namespaces. The namespaces give it its own process list starting at PID 1, its own network with its own localhost, and its own files. Each also sits in a cgroup with limits, such as 256 MiB of memory for one and half a CPU for the other. Every one of them uses the same kernel.",
     "terms": [
       "linux-namespace",
       "cgroup",
@@ -2396,7 +2396,7 @@
     "id": "file-vs-running",
     "title": "The file changed; the process did not",
     "caption": "A program reads its settings when it starts, so check the running process after a change.",
-    "description": "A sequence in two steps. First, a configuration file on disk is edited to say port 9090, but the running service read the file when it started and still listens on 8080, so systemctl reports active (running) while requests to 9090 fail. Second, after a restart the service reads the file again and listens on 9090, so the file and the running process agree.",
+    "description": "A sequence in two steps. First, a configuration file on disk is edited to say port 9090. But the running service read the file when it started and still listens on 8080. So systemctl reports active (running) while requests to 9090 fail. Second, after a restart the service reads the file again and listens on 9090, so the file and the running process agree.",
     "terms": [
       "systemd"
     ],
@@ -2426,7 +2426,7 @@
     "id": "node-change-loop",
     "title": "Changing a node safely",
     "caption": "Back up first, wait for the component to return, and read its logs before guessing.",
-    "description": "Four steps in a row. Copy the file you will change to a folder outside the static Pod manifests folder. Make the smallest edit the task needs. Make it take effect by restarting the kubelet, or by waiting while the kubelet restarts a static Pod whose manifest changed. Wait until the API server's readyz endpoint prints ok. A side path from the last step applies when the component has not returned after two minutes: read why in the kubelet journal or the container logs from crictl, then fix the edit or copy the backup back, and wait again.",
+    "description": "Four steps in a row. Copy the file you will change to a folder outside the static Pod manifests folder. Make the smallest edit the task needs. Make it take effect by restarting the kubelet, or by waiting while the kubelet restarts a static Pod whose manifest changed. Wait until the API server's readyz endpoint prints ok. A side path from the last step applies when the component has not returned after two minutes. Read why in the kubelet journal or the container logs from crictl. Then fix the edit or copy the backup back, and wait again.",
     "terms": [
       "kubelet",
       "static-pod",
@@ -2437,7 +2437,7 @@
     "id": "downward-api",
     "title": "Facts about the Pod, passed down to its container",
     "caption": "Environment variables are fixed when the container starts; the labels file is kept current.",
-    "description": "On the left, the Pod object in the API server holds spec.nodeName worker2, a memory limit of 192Mi, and metadata with the name dispatch-x2l, the namespace dispatch, and the label app=dispatch. On the right, the api container receives DISPATCH_NODE_NAME=worker2, DISPATCH_MEMORY_LIMIT=201326592, DISPATCH_POD_NAME=dispatch-x2l, and DISPATCH_POD_NAMESPACE=dispatch through fieldRef and resourceFieldRef, and a file /etc/podinfo/labels containing app=\"dispatch\" through a downwardAPI volume. A note says the environment is fixed at start while the file is kept current.",
+    "description": "On the left, the Pod object in the API server holds spec.nodeName worker2 and a memory limit of 192Mi. Its metadata has the name dispatch-x2l, the namespace dispatch, and the label app=dispatch. On the right, the api container receives DISPATCH_NODE_NAME=worker2, DISPATCH_MEMORY_LIMIT=201326592, DISPATCH_POD_NAME=dispatch-x2l, and DISPATCH_POD_NAMESPACE=dispatch through fieldRef and resourceFieldRef, and a file /etc/podinfo/labels containing app=\"dispatch\" through a downwardAPI volume. A note says the environment is fixed at start while the file is kept current.",
     "terms": [
       "downward-api",
       "environment-variable",
@@ -2473,7 +2473,7 @@
     "id": "admission-policy",
     "title": "Where an admission policy acts",
     "caption": "A policy describes the rule; its binding decides where it applies and what a failure does.",
-    "description": "A sequence in two steps. First, a request passes through the API server in order: it is authenticated, authorized by RBAC, checked by admission controllers such as Pod Security Admission and ValidatingAdmissionPolicy, and only then stored in etcd. Second, a policy holding the CEL rule and a binding naming the dispatch namespace with the Deny action feed the admission stage: a Deployment without a memory limit is denied in dispatch and allowed in sandbox.",
+    "description": "A sequence in two steps. First, a request passes through the API server in order. It is authenticated and then authorized by RBAC. Admission controllers such as Pod Security Admission and ValidatingAdmissionPolicy check it. Only then is it stored in etcd. Second, a policy holding the CEL rule and a binding naming the dispatch namespace with the Deny action feed the admission stage. A Deployment without a memory limit is denied in dispatch and allowed in sandbox.",
     "terms": [
       "admission-policy",
       "rbac",
@@ -2494,7 +2494,7 @@
     "id": "ephemeral-debug",
     "title": "Two ways in with kubectl debug",
     "caption": "An ephemeral container joins a running Pod; a debugging copy is a separate Pod with a different command.",
-    "description": "A sequence in two steps. First, a running API Pod holds the api container, whose process 1 is python app.py; an ephemeral busybox container is added beside it with --target=api, shares its process namespace, and its ps lists python app.py. The Pod is not restarted. Second, a worker Pod whose container keeps crashing is copied into a new Pod called worker-debug, with the same image, environment, and mounts but running sh instead, so its files can be explored; the copy belongs to no Deployment and stays until it is deleted.",
+    "description": "A sequence in two steps. First, a running API Pod holds the api container, whose process 1 is python app.py. An ephemeral busybox container is added beside it with --target=api. It shares the process namespace, so its ps lists python app.py. The Pod is not restarted. Second, a worker Pod whose container keeps crashing is copied into a new Pod called worker-debug. The copy has the same image, environment, and mounts but runs sh instead, so its files can be explored. It belongs to no Deployment and stays until it is deleted.",
     "terms": [
       "ephemeral-container",
       "pod",
@@ -2515,7 +2515,7 @@
     "id": "build-secret",
     "title": "A build argument against a build secret",
     "caption": "A build argument is recorded with the step that used it; a secret mount exists only while its step runs.",
-    "description": "A sequence in two steps. First, docker build passes RELEASE_TOKEN as a build argument into the RUN step that signs the release; the image ends up with a SIGNATURE layer and a history line, RUN |1 RELEASE_TOKEN=dyk_..., that records the token and travels with the image. Second, docker build passes the token with --secret id=release_token; it is mounted at /run/secrets/release_token for that RUN step only, the step reads the file, and the image holds the SIGNATURE layer and a history line showing only the command.",
+    "description": "A sequence in two steps. First, docker build passes RELEASE_TOKEN as a build argument into the RUN step that signs the release. The image ends up with a SIGNATURE layer and a history line, RUN |1 RELEASE_TOKEN=dyk_..., that records the token. That line travels with the image. Second, docker build passes the token with --secret id=release_token. It is mounted at /run/secrets/release_token for that RUN step only, and the step reads the file. The image holds the SIGNATURE layer and a history line showing only the command.",
     "terms": [
       "build-secret",
       "layer",
@@ -2536,7 +2536,7 @@
     "id": "cis-benchmark",
     "title": "Checking a cluster against the CIS benchmark",
     "caption": "kube-bench reads each node's settings and reports every benchmark check it runs; fixes take effect only when the process restarts.",
-    "description": "A sequence in two steps. First, kube-bench reads the control-plane node, where kube-apiserver runs with profiling on by default, and the worker node, whose kubelet configuration allows anonymous requests and AlwaysAllow authorization; it reports checks 4.2.1, 4.2.2, and 1.2.15 as FAIL. Second, after the kubelet configuration is changed to anonymous off and Webhook authorization and the kubelet restarted, and the API server's static Pod manifest gets --profiling=false, the same three checks report PASS.",
+    "description": "A sequence in two steps. First, kube-bench reads the control-plane node, where kube-apiserver runs with profiling on by default. It also reads the worker node, whose kubelet configuration allows anonymous requests and AlwaysAllow authorization. It reports checks 4.2.1, 4.2.2, and 1.2.15 as FAIL. Second, the kubelet configuration is changed to anonymous off and Webhook authorization, and the kubelet is restarted. The API server's static Pod manifest gets --profiling=false. Now the same three checks report PASS.",
     "terms": [
       "cis-benchmark",
       "kubelet",
@@ -2557,7 +2557,7 @@
     "id": "node-endpoints",
     "title": "Node endpoints a Pod can reach",
     "caption": "Without an egress policy, a Pod can reach the node's metadata service and its kubelet API.",
-    "description": "Inside one node, a Pod called untrusted-client has no egress policy. One arrow reaches the metadata service at 169.254.169.254, which hands out credentials, labelled borrow the node's identity. Another reaches the kubelet API on the node's address at port 10250, labelled probe or attack the node.",
+    "description": "Inside one node, a Pod called untrusted-client has no egress policy. One arrow reaches the metadata service at 169.254.169.254, which hands out credentials, labeled borrow the node's identity. Another reaches the kubelet API on the node's address at port 10250, labeled probe or attack the node.",
     "terms": [
       "network-policy",
       "kubelet"
@@ -2567,7 +2567,7 @@
     "id": "egress-allowlist",
     "title": "An egress allowlist",
     "caption": "An egress policy allows only listed destinations; everything else is dropped.",
-    "description": "A sequence in two steps. First, both frontend clients are selected by a policy whose only egress rule is empty, so they can reach CoreDNS, the Dispatch API, the metadata service, and the kubelet API. Second, the policy lists only CoreDNS on port 53 and the Dispatch API on port 8080; those stay reachable, and the metadata service and kubelet API are crossed out.",
+    "description": "A sequence in two steps. First, both frontend clients are selected by a policy whose only egress rule is empty. So they can reach CoreDNS, the Dispatch API, the metadata service, and the kubelet API. Second, the policy lists only CoreDNS on port 53 and the Dispatch API on port 8080. Those stay reachable. The metadata service and kubelet API are crossed out.",
     "terms": [
       "network-policy",
       "egress"
@@ -2607,7 +2607,7 @@
     "id": "anonymous-requests",
     "title": "What happens to a request without credentials",
     "caption": "By default, a request without credentials becomes the anonymous user and RBAC decides; restricting anonymous access rejects it first.",
-    "description": "A sequence in two steps. First, a curl request with no certificate or token passes authentication as system:anonymous, then reaches RBAC authorization, where the public-status binding to system:unauthenticated allows reading, so ConfigMaps are returned with 200 OK. Second, the authentication configuration accepts anonymous requests only for health paths: requests for the API and /version get 401 Unauthorized before RBAC is consulted, while /livez, /readyz, and /healthz still return 200 OK.",
+    "description": "A sequence in two steps. First, a curl request with no certificate or token passes authentication as system:anonymous. It then reaches RBAC authorization, where the public-status binding to system:unauthenticated allows reading. So ConfigMaps are returned with 200 OK. Second, the authentication configuration accepts anonymous requests only for health paths. Requests for the API and /version get 401 Unauthorized before RBAC is consulted. /livez, /readyz, and /healthz still return 200 OK.",
     "terms": [
       "authentication",
       "rbac"
@@ -2627,7 +2627,7 @@
     "id": "static-pod-mounts",
     "title": "Giving a static Pod a file from its node",
     "caption": "A file on the node reaches the API server's container only through a hostPath volume and a matching mount.",
-    "description": "On the control-plane node, the file /etc/kubernetes/auth-config.yaml connects through a hostPath volume to a volumeMount at the same path inside the kube-apiserver container, where the --authentication-config flag refers to it.",
+    "description": "On the control-plane node, the file /etc/kubernetes/auth-config.yaml connects through a hostPath volume to a volumeMount at the same path inside the kube-apiserver container. The --authentication-config flag refers to it there.",
     "terms": [
       "static-pod",
       "volume"
@@ -2637,7 +2637,7 @@
     "id": "service-account-tokens",
     "title": "ServiceAccount tokens in a namespace",
     "caption": "Pods get a token for their ServiceAccount; give each workload only the identity it needs, and none if it never calls the API.",
-    "description": "A sequence in two steps. First, in the reports namespace, the report-builder and report-viewer Pods both run as the default ServiceAccount, which is bound to the edit role; the viewer has a token mounted although it never calls the API, and a legacy token Secret that never expires also exists. Second, report-builder runs as its own account that can get one ConfigMap, the viewer has no token, and the legacy token is deleted.",
+    "description": "A sequence in two steps. First, in the reports namespace, the report-builder and report-viewer Pods both run as the default ServiceAccount, which is bound to the edit role. The viewer has a token mounted although it never calls the API. A legacy token Secret that never expires also exists. Second, report-builder runs as its own account that can get one ConfigMap, the viewer has no token, and the legacy token is deleted.",
     "terms": [
       "service-account",
       "rbac"
@@ -2677,7 +2677,7 @@
     "id": "rbac-audit",
     "title": "Tracing who holds a cluster-wide role",
     "caption": "Follow each subject through its binding to the role it grants, then measure the result with kubectl auth can-i.",
-    "description": "Two subjects, the ServiceAccount ci/deployer and the group dispatch-operators, each connect through a ClusterRoleBinding, ci-deployer-admin and dispatch-operators-all, to a ClusterRole: cluster-admin, which allows everything, and dispatch-ops, which allows every verb on every resource. A note shows kubectl get clusterrolebindings -o wide and kubectl auth can-i --list with impersonation.",
+    "description": "There are two subjects. The ServiceAccount ci/deployer connects through the ClusterRoleBinding ci-deployer-admin to the ClusterRole cluster-admin, which allows everything. The group dispatch-operators connects through the ClusterRoleBinding dispatch-operators-all to the ClusterRole dispatch-ops, which allows every verb on every resource. A note shows kubectl get clusterrolebindings -o wide and kubectl auth can-i --list with impersonation.",
     "terms": [
       "rbac",
       "impersonation"
@@ -2687,7 +2687,7 @@
     "id": "host-footprint",
     "title": "A node's footprint",
     "caption": "A node needs only a few services; everything else is attack surface to remove.",
-    "description": "A sequence in two steps. First, a worker node runs what it needs, the kubelet, containerd, calico-node, and ssh, plus extra attack surface: the report-share service listening on 0.0.0.0 port 8081 and serving files, and a backup account with passwordless sudo. Second, report-share is masked with its port closed, and the backup account is retired with no login shell and no sudo.",
+    "description": "A sequence in two steps. First, a worker node runs what it needs: the kubelet, containerd, calico-node, and ssh. It also has extra attack surface. The report-share service listens on 0.0.0.0 port 8081 and serves files, and a backup account has passwordless sudo. Second, report-share is masked with its port closed, and the backup account is retired with no login shell and no sudo.",
     "terms": [
       "attack-surface",
       "systemd-unit"
@@ -2755,7 +2755,7 @@
     "id": "encryption-at-rest",
     "title": "Encryption at rest",
     "caption": "With encryption at rest, the API server encrypts Secrets before etcd stores them and decrypts them on the way out.",
-    "description": "A sequence in two steps. First, kubectl or a Pod reads a Secret through the API server, which stores it in etcd unencrypted, so etcd and its backups hold the plain value starting with k8s and a zero byte. Second, the API server uses aescbc with key1, so etcd holds values starting k8s:enc:aescbc:v1:key1 and backups hold ciphertext; the reader still sees the value either way.",
+    "description": "A sequence in two steps. First, kubectl or a Pod reads a Secret through the API server. The API server stores it in etcd unencrypted, so etcd and its backups hold the plain value starting with k8s and a zero byte. Second, the API server uses aescbc with key1, so etcd holds values starting k8s:enc:aescbc:v1:key1 and backups hold ciphertext; the reader still sees the value either way.",
     "terms": [
       "encryption-at-rest",
       "etcd"
@@ -2795,7 +2795,7 @@
     "id": "wireguard-tunnel",
     "title": "Encrypting traffic between nodes",
     "caption": "Calico can carry Pod traffic between nodes through an encrypted WireGuard tunnel instead of plain VXLAN.",
-    "description": "A sequence in two steps. First, the trusted-client Pod on the control-plane node sends requests to the Dispatch API Pod on the worker through VXLAN, where a POST to /jobs is readable by anyone on the node network. Second, the same traffic passes through wireguard.cali and is encrypted, each node encrypting with the other's public key.",
+    "description": "A sequence in two steps. First, the trusted-client Pod on the control-plane node sends requests to the Dispatch API Pod on the worker through VXLAN. There, a POST to /jobs is readable by anyone on the node network. Second, the same traffic passes through wireguard.cali and is encrypted, each node encrypting with the other's public key.",
     "terms": [
       "wireguard",
       "pod-to-pod-encryption"
@@ -2815,7 +2815,7 @@
     "id": "wireguard-check",
     "title": "Checking WireGuard is working",
     "caption": "Each node publishes a public key, and the wireguard.cali counters grow as Pods talk across nodes.",
-    "description": "A terminal shows kubectl listing both nodes with a WireGuard public key annotation, then ip -s link show wireguard.cali on the worker, whose received and sent byte counters grow with cross-node traffic.",
+    "description": "A terminal shows kubectl listing both nodes with a WireGuard public key annotation. Then it shows ip -s link show wireguard.cali on the worker. Its received and sent byte counters grow with cross-node traffic.",
     "terms": [
       "wireguard"
     ]
@@ -2824,7 +2824,7 @@
     "id": "sandbox-kernel",
     "title": "A sandbox kernel between container and node",
     "caption": "gVisor answers a container's system calls itself and asks the node's kernel for only a few fixed operations.",
-    "description": "A sequence in two steps. First, template-preview, running untrusted code, sends its system calls straight to the node's Linux kernel, which answers every call, so a kernel bug reachable by one call can mean escaping to the node. Second, the calls go to gVisor's Sentry, a kernel in user space, which makes only a few fixed calls to the node's kernel, now much less exposed; the cost is slower system calls and some unsupported ones.",
+    "description": "A sequence in two steps. First, template-preview, running untrusted code, sends its system calls straight to the node's Linux kernel. The kernel answers every call, so a kernel bug reachable by one call can mean escaping to the node. Second, the calls go to gVisor's Sentry, a kernel in user space. It makes only a few fixed calls to the node's kernel, which is now much less exposed. The cost is slower system calls and some unsupported ones.",
     "terms": [
       "sandboxed-runtime",
       "system-call"
@@ -2844,7 +2844,7 @@
     "id": "runtimeclass-flow",
     "title": "How a RuntimeClass picks a runtime",
     "caption": "A Pod names a RuntimeClass, which names a containerd handler and the nodes that have it.",
-    "description": "A Pod with runtimeClassName gvisor refers to the RuntimeClass gvisor, whose handler is runsc and which has a node selector. The Pod is scheduled to the labelled worker, where containerd's runsc handler starts it in a gVisor sandbox. A note says the selector keeps the Pod off nodes that have no runsc handler.",
+    "description": "A Pod with runtimeClassName gvisor refers to the RuntimeClass gvisor, whose handler is runsc and which has a node selector. The Pod is scheduled to the labeled worker, where containerd's runsc handler starts it in a gVisor sandbox. A note says the selector keeps the Pod off nodes that have no runsc handler.",
     "terms": [
       "runtimeclass",
       "sandboxed-runtime"
@@ -2854,7 +2854,7 @@
     "id": "audit-pipeline",
     "title": "How an audit entry is made",
     "caption": "The API server matches each request against the policy's rules in order and writes one JSON line at the chosen level.",
-    "description": "A request to get the Secret dispatch-database reaches the API server, which checks its audit policy rules in order, first match wins: None for events, Metadata for secrets, Metadata for everything else. It writes one JSON line to audit.log recording the user, verb, object, and time.",
+    "description": "A request to get the Secret dispatch-database reaches the API server. The API server checks its audit policy rules in order, and the first match wins. The rules are None for events, Metadata for secrets, and Metadata for everything else. It writes one JSON line to audit.log recording the user, verb, object, and time.",
     "terms": [
       "audit-log",
       "authentication"
@@ -2904,7 +2904,7 @@
     "id": "falco-rule",
     "title": "The parts of a Falco rule",
     "caption": "A rule's condition chooses events, its output describes them, and its priority ranks them.",
-    "description": "A Falco rule named Shell in application container, with a condition combining spawned_process, container, a list of shell names, and a list of namespaces; an output naming the namespace and Pod with %k8s.ns.name and %k8s.pod.name; and priority WARNING. A note summarizes condition, output, and priority.",
+    "description": "A Falco rule named Shell in application container. Its condition combines spawned_process, container, a list of shell names, and a list of namespaces. Its output names the namespace and Pod with %k8s.ns.name and %k8s.pod.name. Its priority is WARNING. A note summarizes condition, output, and priority.",
     "terms": [
       "falco"
     ]
@@ -2923,7 +2923,7 @@
     "id": "risk-score",
     "title": "How a kubesec score adds up",
     "caption": "A critical setting costs many points; each good setting earns a few.",
-    "description": "A sequence in two steps. First, the resizer has privileged true, a critical finding worth minus 30, and none of the good settings, for a score of minus 30. Second, privileged is gone, and runAsNonRoot, runAsUser, and runAsGroup, a read-only root filesystem, requests and limits, dropped capabilities, and a ServiceAccount without a token earn points, for a score of 14 with no critical findings.",
+    "description": "A sequence in two steps. First, the resizer has privileged true, a critical finding worth minus 30, and none of the good settings, for a score of minus 30. Second, privileged is gone. runAsNonRoot, runAsUser, and runAsGroup earn points. So do a read-only root filesystem, requests and limits, dropped capabilities, and a ServiceAccount without a token. The score is 14, with no critical findings.",
     "terms": [
       "static-analysis",
       "security-context"
@@ -2943,7 +2943,7 @@
     "id": "image-footprint",
     "title": "An image's footprint",
     "caption": "Ship only what the application needs; everything else is attack surface inside the image.",
-    "description": "A sequence in two steps. First, the Dispatch image holds what Dispatch needs, Python, its libraries, and app.py, running as root, plus BusyBox, which provides sh, ash, and about 300 other commands, and the apk and pip package managers. A third box notes that this image has no setuid files, although many images have some. Second, BusyBox and the package managers are removed, any setuid bits would be cleared, and the image runs as user 10001.",
+    "description": "A sequence in two steps. First, the Dispatch image holds what Dispatch needs: Python, its libraries, and app.py, running as root. It also holds BusyBox, which provides sh, ash, and about 300 other commands. The apk and pip package managers are there too. A third box notes that this image has no setuid files, although many images have some. Second, BusyBox and the package managers are removed, any setuid bits would be cleared, and the image runs as user 10001.",
     "terms": [
       "attack-surface",
       "setuid"
@@ -2982,7 +2982,7 @@
     "id": "release-admission",
     "title": "Admitting only release images",
     "caption": "In production, only images from the release registry pinned by digest are admitted.",
-    "description": "Three image references reach the production admission policy: busybox from another registry is refused, the release registry's dispatch by tag 1.0 is refused, and the release registry's dispatch by sha256 digest is admitted.",
+    "description": "Three image references reach the production admission policy. The image busybox from another registry is refused. The release registry's dispatch by tag 1.0 is refused. The release registry's dispatch by sha256 digest is admitted.",
     "terms": [
       "admission-policy",
       "digest"
@@ -2992,7 +2992,7 @@
     "id": "kubelet-api-access",
     "title": "Who can use the kubelet API",
     "caption": "Two kubelet settings decide whether a request without credentials can run commands in Pods.",
-    "description": "A sequence in two steps. First, with anonymous access on and AlwaysAllow authorization, any Pod sending a request without credentials to port 10250 is allowed to run exec and read logs. Second, with anonymous access off and Webhook authorization, the same request is refused with 401 Unauthorized, while the API server, using its client certificate, is allowed when RBAC permits.",
+    "description": "A sequence in two steps. First, with anonymous access on and AlwaysAllow authorization, any Pod sending a request without credentials to port 10250 is allowed to run exec and read logs. Second, with anonymous access off and Webhook authorization, the same request is refused with 401 Unauthorized. The API server, using its client certificate, is allowed when RBAC permits.",
     "terms": [
       "kubelet",
       "authentication"

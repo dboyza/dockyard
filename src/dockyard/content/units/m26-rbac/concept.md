@@ -48,7 +48,9 @@ The second answers `yes` or `no` for one action.
 A ServiceAccount's username is always `system:serviceaccount:NAMESPACE:NAME`.
 For a group, any made-up user name works, because the check is about the group.
 
-Some permissions deserve extra suspicion even when they look narrow: anything on `secrets`, `pods/exec`, `nodes/proxy`, and the verbs `escalate`, `bind`, and `impersonate`, each of which can be turned into more access.
+Some permissions deserve extra suspicion even when they look narrow.
+These are anything on `secrets`, `pods/exec`, and `nodes/proxy`, and the verbs `escalate`, `bind`, and `impersonate`.
+Each of them can be turned into more access.
 
 ## Narrowing the scope
 

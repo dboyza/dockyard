@@ -1,6 +1,9 @@
 ## Compare your recovery
 
-There were three faults: the API server's `--etcd-servers` pointed at the wrong port, the scheduler's manifest had been moved out of `/etc/kubernetes/manifests`, and the sentinel had been deleted after the snapshot.
+There were three faults.
+The API server's `--etcd-servers` pointed at the wrong port.
+The scheduler's manifest had been moved out of `/etc/kubernetes/manifests`.
+The sentinel had been deleted after the snapshot.
 The node's own tools found the first two: the API server's container log showed refused connections to etcd, and the manifests directory had only three files.
 The restore brought back the original sentinel, and the revision bump made controllers re-read the restored state.
 A fresh Pod getting a node, and a new job completing, showed the cluster could do new work, not just keep old work running.

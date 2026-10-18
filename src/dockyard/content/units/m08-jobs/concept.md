@@ -75,7 +75,10 @@ Always put quotes around the schedule in YAML, because `*` has a special meaning
 
 ## CronJob settings you need to know
 
-- `concurrencyPolicy` decides what happens if a run is still going when the next one is due: `Allow` runs both, `Forbid` skips the new one, and `Replace` stops the old one and starts the new one.
+- `concurrencyPolicy` decides what happens if a run is still going when the next one is due.
+  `Allow` runs both.
+  `Forbid` skips the new one.
+  `Replace` stops the old one and starts the new one.
 - `suspend: true` pauses the schedule. Jobs already created keep running.
 - `successfulJobsHistoryLimit` and `failedJobsHistoryLimit` control how many finished Jobs are kept for you to inspect.
 

@@ -90,8 +90,8 @@ checks:
   - packets
   expected: 'true'
   diagnostic: Traffic between the nodes is still blocked. Check where the frontend and API Pods run with
-    -o wide, then look for rules dropping UDP 4789 with sudo iptables -t raw -nvL PREROUTING on each VM,
-    and that net.ipv4.ip_forward is 1 on the worker.
+    -o wide. Then look for rules dropping UDP 4789 with sudo iptables -t raw -nvL PREROUTING on each VM.
+    Check that net.ipv4.ip_forward is 1 on the worker.
 - id: infrastructure-dns
   title: A new Service name resolves to its ClusterIP
   explanation: Dockyard creates a new Service and checks its full DNS name, resolved from the trusted

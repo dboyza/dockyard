@@ -5,4 +5,4 @@ Check work proved it both ways: allowed paths connected, and blocked paths faile
 
 Check your understanding:
 Which blocked request proves the boundary is enforced, and which allowed request proves you did not just break everything?
-Rewrite the `from` list so that *either* the frontend namespace *or* any Pod labelled `app: trusted` in `dispatch` is allowed.
+Rewrite the `from` list so that *either* the frontend namespace *or* any Pod labeled `app: trusted` in `dispatch` is allowed.

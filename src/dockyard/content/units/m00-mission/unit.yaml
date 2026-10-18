@@ -20,17 +20,22 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: docker ps shows the welcome container as Up, with 127.0.0.1:PORT->80/tcp, yet requests to that port never get a page. Which explanation fits best?
+  question: docker ps shows the welcome container as Up, with 127.0.0.1:PORT->80/tcp, yet requests to
+    that port never get a page. Which explanation fits best?
   options:
   - Requests are forwarded to port 80 in the container, but the server is listening on a different port.
   - The container stopped, and docker ps is showing an old status.
   - The image is missing, so the server has nothing to run.
   correct: 0
-  explanation: Up means the main process is running, and the port mapping shows where Docker forwards traffic. If nothing listens on the container side of that mapping, every request fails even though the container looks healthy.
+  explanation: Up means the main process is running, and the port mapping shows where Docker forwards
+    traffic. If nothing listens on the container side of that mapping, every request fails even though
+    the container looks healthy.
 hints:
-- Compare where Docker forwards traffic, from docker port "$DOCKYARD_CONTAINER", with the port in the container's command, from docker ps --no-trunc.
+- Compare where Docker forwards traffic, from docker port "$DOCKYARD_CONTAINER", with the port in the
+  container's command, from docker ps --no-trunc.
 - docker inspect --format '{{json .Mounts}}' "$DOCKYARD_CONTAINER" shows the mount. Look at its RW value.
-- Port mappings and mounts cannot be changed on an existing container. Remove it with docker rm -f "$DOCKYARD_CONTAINER", then run a corrected container with the same name and label.
+- Port mappings and mounts cannot be changed on an existing container. Remove it with docker rm -f "$DOCKYARD_CONTAINER",
+  then run a corrected container with the same name and label.
 sources:
 - https://docs.docker.com/engine/network/port-publishing/
 - https://docs.docker.com/engine/storage/bind-mounts/
@@ -76,7 +81,8 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Docker has no container with this lab's name and label. A replacement container needs both the name in $DOCKYARD_CONTAINER and the label io.dockyard.lab=$DOCKYARD_LAB.
+  diagnostic: Docker has no container with this lab's name and label. A replacement container needs both
+    the name in $DOCKYARD_CONTAINER and the label io.dockyard.lab=$DOCKYARD_LAB.
 - id: still-running
   title: The web server is running
   explanation: The server must keep running to answer requests.
@@ -94,7 +100,8 @@ checks:
   diagnostic: The container is not running. Its logs usually explain why the main process stopped.
 - id: page-response
   title: The welcome page comes back from the assigned port
-  explanation: A request to the assigned port on this computer must reach the server and return the welcome page.
+  explanation: A request to the assigned port on this computer must reach the server and return the welcome
+    page.
   command:
     args:
     - curl
@@ -110,17 +117,21 @@ checks:
     - --retry-all-errors
     - http://127.0.0.1:{{port}}/
   expected: Welcome aboard
-  diagnostic: The welcome page did not come back from http://127.0.0.1:$DOCKYARD_PORT/. Compare where Docker forwards traffic with the port the server listens on, and check which folder the server is serving.
+  diagnostic: The welcome page did not come back from http://127.0.0.1:$DOCKYARD_PORT/. Compare where
+    Docker forwards traffic with the port the server listens on, and check which folder the server is
+    serving.
 - id: assigned-port
   title: The page is published on this lab's assigned port
-  explanation: The assigned port belongs to this lab, so publishing there avoids clashing with anything else on your computer.
+  explanation: The assigned port belongs to this lab, so publishing there avoids clashing with anything
+    else on your computer.
   command:
     args:
     - docker
     - port
     - '{{container}}'
   expected: 127.0.0.1:{{port}}
-  diagnostic: docker port does not show 127.0.0.1:$DOCKYARD_PORT. Publish the server's port on that exact address and port.
+  diagnostic: docker port does not show 127.0.0.1:$DOCKYARD_PORT. Publish the server's port on that exact
+    address and port.
 - id: loopback-only
   title: No other computer can reach the page
   explanation: Publishing only on 127.0.0.1 keeps the page private to this computer.
@@ -131,10 +142,12 @@ checks:
     - '{{container}}'
   expectation: absent
   expected: 0.0.0.0
-  diagnostic: docker port shows 0.0.0.0, which means the page is reachable from other devices on your network. Include 127.0.0.1 in every -p option.
+  diagnostic: docker port shows 0.0.0.0, which means the page is reachable from other devices on your
+    network. Include 127.0.0.1 in every -p option.
 - id: read-only-mount
   title: The server cannot change the files it serves
-  explanation: A read-only mount lets the server share the welcome folder without being able to alter it.
+  explanation: A read-only mount lets the server share the welcome folder without being able to alter
+    it.
   command:
     args:
     - docker
@@ -147,9 +160,11 @@ checks:
   - '0'
   - RW
   expected: 'false'
-  diagnostic: The mounted folder is writable from inside the container. Mount it read-only, and remember that mounts are fixed when a container is created.
+  diagnostic: The mounted folder is writable from inside the container. Mount it read-only, and remember
+    that mounts are fixed when a container is created.
 alternatives:
-- The server may listen on any port inside the container, as long as the assigned port on 127.0.0.1 leads to it.
+- The server may listen on any port inside the container, as long as the assigned port on 127.0.0.1 leads
+  to it.
 - The welcome folder may be mounted at any path, with -v and :ro or with --mount and readonly.
 - Running the server in the folder through -w, or with python -m http.server --directory, are both accepted.
 failure_modes:

@@ -18,7 +18,8 @@ etcd-scope
 ## Identity: why "the same name" is not enough
 
 Every Kubernetes object gets a **UID**, a unique ID assigned when it is created.
-If you delete a ConfigMap and create a new one with the same name and contents, it gets a new UID: it is a different object that looks the same.
+If you delete a ConfigMap and create a new one with the same name and contents, it gets a new UID.
+It is a different object that looks the same.
 A real restore brings back the original object, with its original UID.
 
 In this lab you will take a snapshot, then delete an original ConfigMap called `maintenance-sentinel`, and bring it back from the snapshot.
@@ -129,7 +130,9 @@ Never keep a backup copy of a manifest in `/etc/kubernetes/manifests`; the kubel
 ## Check that it really recovered
 
 Back in the lab terminal, run `python wait-control-plane.py`.
-It retries until the API answers a read and a write and the scheduler places a fresh test Pod, then removes that Pod; its source is in the workspace if you want to see exactly what it does.
+It retries until the API answers a read and a write, and the scheduler places a fresh test Pod.
+Then it removes that Pod.
+Its source is in the workspace if you want to see exactly what it does.
 Then:
 
 ```sh
@@ -139,5 +142,7 @@ kubectl get nodes
 
 Restored objects briefly show the status they had in the snapshot, so give controllers a minute to catch up before trusting what `kubectl get` reports.
 
-Check work compares the sentinel's UID with the original, checks etcd's revision jumped ahead and the old revision is compacted, schedules a new Pod, and sends a new Dispatch job.
+Check work compares the sentinel's UID with the original.
+It checks that etcd's revision jumped ahead and the old revision is compacted.
+It also schedules a new Pod and sends a new Dispatch job.
 It also checks the database row written before the snapshot is still there, which shows the application data was never part of this restore.

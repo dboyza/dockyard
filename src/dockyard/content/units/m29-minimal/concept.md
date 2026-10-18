@@ -2,7 +2,9 @@
 
 A container image usually carries much more than the application: a shell, a package manager, network tools, and programs with special privileges.
 The application never uses them, but an attacker who gets code running in the container will.
-A shell lets them run commands; a package manager lets them install tools; a **setuid** program, which runs with its owner's privileges, often root, is a classic way to raise their own privileges.
+A shell lets them run commands.
+A package manager lets them install tools.
+A **setuid** program runs with its owner's privileges, often root, so it is a classic way to raise their own privileges.
 Every extra package is also another source of vulnerabilities for scanners to report and for you to patch.
 
 **Minimizing the base image footprint** means shipping only what the application needs to run.
@@ -14,7 +16,9 @@ image-footprint
 ## Ways to get there
 
 - **Choose a smaller base.** `slim` and `alpine` variants leave out most tools. **Distroless** images go further: they contain the language runtime and its libraries, but no shell or package manager at all.
-- **Build in one stage, run in another.** A multi-stage build compiles and downloads in a full builder image, then copies only the results into a small final image.
+- **Build in one stage, run in another.**
+  A multi-stage build compiles and downloads in a full builder image.
+  It then copies only the results into a small final image.
 - **Remove what remains.** When you cannot change the base, delete what the application does not need in the final stage, and run as a non-root user.
 
 This lab's Dispatch image is built from the pinned Python image, which is based on **Alpine Linux**.
@@ -54,7 +58,8 @@ USER 10001:10001
 `chmod a-s` removes the setuid and setgid bits.
 `/etc/apk` and `/lib/apk` hold `apk`'s settings and its record of installed packages.
 Deleting `/bin/busybox` removes every command linked to it at once; the links stay, but they point at nothing and cannot run.
-The shell that runs this step is BusyBox too, and it keeps working until the step ends, even after its own file is deleted, so it can be the last thing removed.
+The shell that runs this step is BusyBox too.
+It keeps working until the step ends, even after its own file is deleted, so it can be the last thing removed.
 Anything after this step that needs a shell will fail, so put it last.
 
 ## Starting without a shell

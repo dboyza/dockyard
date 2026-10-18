@@ -59,7 +59,9 @@ The rule then refuses the four calls that change file permissions, returning err
 The processor never needs to change permissions, and an attacker who drops a file often wants to make it executable.
 
 This profile blocks only what it lists, so it is easy to write but stops only what you thought of.
-The opposite style, `"defaultAction": "SCMP_ACT_ERRNO"` with a list of allowed calls, is much stronger and much harder to get right; tools exist that record which calls an application makes so you can build one.
+The opposite style, `"defaultAction": "SCMP_ACT_ERRNO"` with a list of allowed calls, is much stronger.
+It is also much harder to get right.
+Tools exist that record which calls an application makes, so you can build one.
 
 The kubelet looks for Localhost profiles under `/var/lib/kubelet/seccomp` on the node running the Pod, and `localhostProfile` is a path relative to that folder:
 

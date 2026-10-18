@@ -3,7 +3,8 @@ revision: 1
 module: 0
 order: 3
 title: Serve a web page from a container
-summary: Run a small web server in a container, reach it from your computer, and serve a page from your own folder.
+summary: Run a small web server in a container, reach it from your computer, and serve a page from your
+  own folder.
 kind: lesson
 runtime: docker
 minutes: 30
@@ -19,17 +20,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: The web server is running and serving your folder. You edit site/index.html on your computer and request the page again, without restarting anything. What comes back?
+  question: The web server is running and serving your folder. You edit site/index.html on your computer
+    and request the page again, without restarting anything. What comes back?
   options:
   - The edited page, because the container reads the same folder through the bind mount.
   - The original page, because Docker copied the folder when the container started.
   - An error, because files cannot change while a container is using them.
   correct: 0
-  explanation: A bind mount is not a copy. The container looks directly at the folder on your computer, so it sees every change straight away.
+  explanation: A bind mount is not a copy. The container looks directly at the folder on your computer,
+    so it sees every change straight away.
 hints:
 - Start with docker ps. Is the container running, and what does its PORTS column show?
-- 'Compare your -p option with the one in Understand: 127.0.0.1, then $DOCKYARD_PORT, then 8000, separated by colons.'
-- Ports and mounts are fixed when a container is created. Remove the container with docker rm -f "$DOCKYARD_CONTAINER", then run the full command from Understand again.
+- 'Compare your -p option with the one in Understand: 127.0.0.1, then $DOCKYARD_PORT, then 8000, separated
+  by colons.'
+- Ports and mounts are fixed when a container is created. Remove the container with docker rm -f "$DOCKYARD_CONTAINER",
+  then run the full command from Understand again.
 sources:
 - https://docs.docker.com/get-started/docker-concepts/running-containers/publishing-ports/
 - https://docs.docker.com/engine/network/port-publishing/
@@ -57,7 +62,8 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Docker has no container with this lab's name and label. Run docker ps -a to see what exists, then create the container with the docker run command from Understand.
+  diagnostic: Docker has no container with this lab's name and label. Run docker ps -a to see what exists,
+    then create the container with the docker run command from Understand.
 - id: still-running
   title: The web server is running
   explanation: A server is a process that keeps running so it can answer requests.
@@ -72,10 +78,12 @@ checks:
   - State
   - Running
   expected: 'true'
-  diagnostic: The container is not running. Run docker logs "$DOCKYARD_CONTAINER" to see why its main process stopped, and check that the command after the image name is python -m http.server 8000.
+  diagnostic: The container is not running. Run docker logs "$DOCKYARD_CONTAINER" to see why its main
+    process stopped, and check that the command after the image name is python -m http.server 8000.
 - id: page-response
   title: Your page comes back from the assigned port
-  explanation: A request to the assigned port on your computer must reach the server in the container, which must answer with the page from your workspace.
+  explanation: A request to the assigned port on your computer must reach the server in the container,
+    which must answer with the page from your workspace.
   command:
     args:
     - curl
@@ -91,10 +99,14 @@ checks:
     - --retry-all-errors
     - http://127.0.0.1:{{port}}/
   expected: Hello from your workspace
-  diagnostic: Your page did not come back from http://127.0.0.1:$DOCKYARD_PORT/. Run that curl command yourself. "Connection refused", "Failed to connect", or "Empty reply from server" points at the port mapping, so compare docker port "$DOCKYARD_CONTAINER" with Understand. A directory listing instead of your page means the server is serving a different folder, so check the -v and -w options.
+  diagnostic: Your page did not come back from http://127.0.0.1:$DOCKYARD_PORT/. Run that curl command
+    yourself. "Connection refused", "Failed to connect", or "Empty reply from server" points at the port
+    mapping, so compare docker port "$DOCKYARD_CONTAINER" with Understand. A directory listing instead
+    of your page means the server is serving a different folder, so check the -v and -w options.
 - id: published-port
   title: The server's port is published on your assigned port
-  explanation: Port 8000 inside the container must be connected to the port Dockyard assigned on your computer.
+  explanation: Port 8000 inside the container must be connected to the port Dockyard assigned on your
+    computer.
   command:
     args:
     - docker
@@ -109,10 +121,13 @@ checks:
   - '0'
   - HostPort
   expected: '{{port}}'
-  diagnostic: Container port 8000 is not published on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER" to see what is published. Port mappings are fixed when a container is created, so remove it and run it again with -p "127.0.0.1:$DOCKYARD_PORT:8000".
+  diagnostic: Container port 8000 is not published on $DOCKYARD_PORT. Run docker port "$DOCKYARD_CONTAINER"
+    to see what is published. Port mappings are fixed when a container is created, so remove it and run
+    it again with -p "127.0.0.1:$DOCKYARD_PORT:8000".
 - id: loopback-binding
   title: Only this computer can reach the page
-  explanation: Publishing on 127.0.0.1 keeps a practice server private to your computer rather than open to your whole network.
+  explanation: Publishing on 127.0.0.1 keeps a practice server private to your computer rather than open
+    to your whole network.
   command:
     args:
     - docker
@@ -127,10 +142,13 @@ checks:
   - '0'
   - HostIp
   expected: 127.0.0.1
-  diagnostic: The port is published on an address other than 127.0.0.1. If docker port "$DOCKYARD_CONTAINER" shows 0.0.0.0 or ::, the address was left out of -p. Remove the container and run it again with -p "127.0.0.1:$DOCKYARD_PORT:8000".
+  diagnostic: The port is published on an address other than 127.0.0.1. If docker port "$DOCKYARD_CONTAINER"
+    shows 0.0.0.0 or ::, the address was left out of -p. Remove the container and run it again with -p
+    "127.0.0.1:$DOCKYARD_PORT:8000".
 - id: read-only-mount
   title: The container can read your folder but not change it
-  explanation: The ro option makes the bind mount read-only, so the server can share your files but cannot alter them.
+  explanation: The ro option makes the bind mount read-only, so the server can share your files but cannot
+    alter them.
   command:
     args:
     - docker
@@ -143,7 +161,8 @@ checks:
   - '0'
   - RW
   expected: 'false'
-  diagnostic: The container has no read-only mount. Check that -v ends with :ro, as in -v "$DOCKYARD_WORKSPACE/site:/site:ro". Mounts are fixed when a container is created, so remove it and run it again.
+  diagnostic: The container has no read-only mount. Check that -v ends with :ro, as in -v "$DOCKYARD_WORKSPACE/site:/site:ro".
+    Mounts are fixed when a container is created, so remove it and run it again.
 alternatives:
 - The folder may be mounted at any path inside the container, as long as the server serves it.
 - docker run --mount with readonly is accepted in place of -v with :ro.

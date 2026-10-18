@@ -37,7 +37,7 @@ hints:
   allowPrivilegeEscalation false, dropped capabilities, resource requests and limits, and a ServiceAccount
   without an automounted token.
 - Compare your manifest with the findings until KubeLinter reports no errors and kubesec scores the Deployment
-  10 or more, then run sh run.sh and check kubectl logs -n media deploy/resizer.
+  10 or more. Then run sh run.sh and check kubectl logs -n media deploy/resizer.
 sources:
 - https://docs.kubelinter.io/
 - https://kubesec.io/

@@ -99,8 +99,8 @@ checks:
   - runtime
   expected: 'true'
   diagnostic: The running API is not fully restricted. Check its securityContext has allowPrivilegeEscalation
-    false, capabilities drop ALL, and readOnlyRootFilesystem true, with runAsNonRoot and a RuntimeDefault
-    seccomp profile, then roll out the Deployment so new Pods start with it.
+    false, capabilities drop ALL, and readOnlyRootFilesystem true. It also needs runAsNonRoot and a RuntimeDefault
+    seccomp profile. Then roll out the Deployment so new Pods start with it.
 - id: security-workflow
   title: A job from the trusted frontend completes
   explanation: A real job submitted from the trusted frontend must be completed by a worker and saved

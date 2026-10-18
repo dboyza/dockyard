@@ -100,8 +100,9 @@ checks:
     sh monitoring.sh after each change so Prometheus reloads it.'
 - id: visibility-slo
   title: Before and after measurements show the fix
-  explanation: slo-before.json must be below 95% good and slo-after.json at or above it, measured in that
-    order, with the 95% / 250 ms policy unchanged, delay_ms at 20, and a fresh read fast enough now.
+  explanation: slo-before.json must be below 95% good, and slo-after.json must be at or above it, measured
+    in that order. The 95% / 250 ms policy must be unchanged, delay_ms must be at 20, and a fresh read
+    must be fast enough now.
   command:
     args:
     - python

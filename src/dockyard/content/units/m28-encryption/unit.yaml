@@ -35,10 +35,10 @@ prediction:
 hints:
 - Read the start of /registry/secrets/dispatch/dispatch-database with etcdctl inside the etcd container;
   plain values start with k8s and a zero byte.
-- 'An EncryptionConfiguration lists providers in order: put aescbc with a new key first and identity last,
-  then pass the file with --encryption-provider-config and mount its folder into the API server.'
+- An EncryptionConfiguration lists providers in order. Put aescbc with a new key first and identity last.
+  Then pass the file with --encryption-provider-config and mount its folder into the API server.
 - Create /etc/kubernetes/enc/encryption-config.yaml on the control plane with a key from head -c 32 /dev/urandom
-  | base64, add the flag and a hostPath mount to kube-apiserver.yaml, wait for /readyz, then run kubectl
+  | base64. Add the flag and a hostPath mount to kube-apiserver.yaml, and wait for /readyz. Then run kubectl
   get secrets -A -o json | kubectl replace -f -.
 sources:
 - https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/

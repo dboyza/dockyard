@@ -39,9 +39,9 @@ hints:
 - The draft policy logs everything in full; list the rules you need from most specific to most general.
 - The API server needs --audit-policy-file and --audit-log-path, plus rotation flags, and both paths mounted
   into its static Pod; each audit line is JSON with user.username and objectRef.
-- Put None for events, Metadata for secrets, RequestResponse for workload writes, and Metadata last; install
-  the policy, add the flags and mounts, wait for /readyz, then grep the log for dispatch-database and
-  write the username into finding.txt.
+- Put None for events, Metadata for secrets, RequestResponse for workload writes, and Metadata last. Install
+  the policy, add the flags and mounts, and wait for /readyz. Then grep the log for dispatch-database
+  and write the username into finding.txt.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/
 - https://kubernetes.io/docs/reference/config-api/apiserver-audit.v1/

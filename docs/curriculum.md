@@ -119,7 +119,8 @@ Each exam uses a 120-minute default, weighted performance tasks, independent fix
 Blueprint weights should follow the dated official domain distribution, and every objective must appear somewhere in the full course assessment map.
 The current CKA domain weights are 25% architecture/install/configuration, 15% workloads/scheduling, 20% services/networking, 10% storage, and 30% troubleshooting.
 The current CKAD domain weights are 20% design/build, 20% deployment, 15% observability/maintenance, 25% environment/configuration/security, and 20% services/networking.
-The current CKS domain weights are 15% cluster setup, 15% cluster hardening, 10% system hardening, 20% minimize microservice vulnerabilities, 20% supply chain security, and 20% monitoring, logging, and runtime security, checked 2026-10-03.
+The current CKS domain weights were checked on 2026-10-03.
+They are 15% cluster setup, 15% cluster hardening, 10% system hardening, 20% minimize microservice vulnerabilities, 20% supply chain security, and 20% monitoring, logging, and runtime security.
 Sources: [CKA domains](https://github.com/cncf/curriculum/blob/master/cka/README.md) and [CKAD domains](https://github.com/cncf/curriculum/blob/master/ckad/README.md), checked 2026-09-26.
 
 ## Required curriculum evidence
@@ -130,6 +131,7 @@ Every unit must declare measurable outcomes, prerequisites, runtime profile, res
 Every independent mission must define acceptable alternatives and what evidence earns completion.
 Every capstone must connect to earlier Dispatch checkpoints and produce a useful export.
 Every objective mapping must name the explaining unit, practicing unit, and independently assessing unit.
-Never infer full CKA or CKAD coverage from these module titles alone; P0 must verify each objective against the pinned official documents and fill any gaps without reducing this scope.
+Never infer full CKA or CKAD coverage from these module titles alone.
+P0 must verify each objective against the pinned official documents and fill any gaps without reducing this scope.
 HA behavior, network enforcement, restore correctness, and upgrades require real environment evidence wherever claimed.
 If an objective requires an additional focused exercise, add it to the relevant module and update the inventory rather than hiding the gap.

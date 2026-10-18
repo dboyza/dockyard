@@ -38,8 +38,8 @@ hints:
   limactl shell, and read each remediation.
 - The kubelet settings live in /var/lib/kubelet/config.yaml under authentication.anonymous and authorization;
   the API server flags live in /etc/kubernetes/manifests/kube-apiserver.yaml.
-- Set anonymous.enabled to false and authorization.mode to Webhook, then sudo systemctl restart kubelet
-  on the worker; add - --profiling=false to the kube-apiserver command and wait for kubectl get --raw=/readyz.
+- Set anonymous.enabled to false and authorization.mode to Webhook, then run sudo systemctl restart kubelet
+  on the worker. Add - --profiling=false to the kube-apiserver command, and wait for kubectl get --raw=/readyz.
 sources:
 - https://www.cisecurity.org/benchmark/kubernetes
 - https://github.com/aquasecurity/kube-bench

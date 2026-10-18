@@ -2,7 +2,7 @@
 
 ## Symptom and evidence
 
-- Dispatch requests failed. `kubectl get endpointslices -l kubernetes.io/service-name=dispatch` listed no endpoints, and the Service selected `track: retired` while the API Pods are labelled `track: stable`.
+- Dispatch requests failed. `kubectl get endpointslices -l kubernetes.io/service-name=dispatch` listed no endpoints, and the Service selected `track: retired` while the API Pods are labeled `track: stable`.
 - After fixing the route, new jobs stayed `queued`. `kubectl get deployment worker` showed 0 replicas.
 
 ## Repair and verification

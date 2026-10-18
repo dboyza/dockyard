@@ -64,8 +64,9 @@ prepare:
 checks:
 - id: capacity-resources
   title: The API has sensible requests and limits in force
-  explanation: Each API container must request 25m-100m CPU and 32-128Mi memory, have limits no higher
-    than 1 CPU and 512Mi, be Burstable, and have those limits really applied inside the container.
+  explanation: Each API container must request 25m-100m CPU and 32-128Mi memory. Its limits must be no
+    higher than 1 CPU and 512Mi. It must be Burstable, and those limits must really be applied inside
+    the container.
   command:
     args:
     - python
@@ -100,8 +101,8 @@ checks:
     must be no more than 2.
 - id: capacity-scaling
   title: Real CPU load scales the API to four copies
-  explanation: The HPA must target Deployment dispatch with 2-4 replicas and a 50% CPU target, be active,
-    measure over 50%, and have four available API Pods while the load runs.
+  explanation: The HPA must target Deployment dispatch with 2-4 replicas and a 50% CPU target. It must
+    be active and measure over 50%. Four API Pods must be available while the load runs.
   command:
     args:
     - python

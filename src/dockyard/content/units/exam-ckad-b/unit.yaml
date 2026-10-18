@@ -121,9 +121,9 @@ checks:
   diagnostic: Review the API’s readiness first; it cannot save jobs without its database password.
 - id: exam-resources
   title: Two workers run within the resource limits
-  explanation: Two available workers, each with a CPU request above zero and a limit of at most 500m,
-    a memory request of at least 32Mi, a memory limit of at most 256Mi, requests no larger than limits,
-    and the limit applied to the running container.
+  explanation: Two workers must be available. Each needs a CPU request above zero and a CPU limit of at
+    most 500m. Each needs a memory request of at least 32Mi and a memory limit of at most 256Mi. Requests
+    must be no larger than limits, and the limit must be applied to the running container.
   command:
     args:
     - python

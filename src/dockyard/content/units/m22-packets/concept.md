@@ -57,4 +57,6 @@ Never flush the whole firewall with `iptables -F`: Calico and kube-proxy rely on
 
 ## Prove it works
 
-Check work sends a request from the frontend to an API Pod IP on the worker, creates a fresh Service and checks its DNS name and ClusterIP, and runs a real job, while confirming the original data is still there.
+Check work sends a request from the frontend to an API Pod IP on the worker.
+It creates a fresh Service and checks its DNS name and ClusterIP.
+It also runs a real job, and confirms the original data is still there.

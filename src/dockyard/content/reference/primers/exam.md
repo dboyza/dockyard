@@ -109,11 +109,15 @@ set expandtab tabstop=2 shiftwidth=2
 ```
 
 When an object has no file, `kubectl edit deployment NAME` opens the live object in your editor.
-Some fields cannot be changed on a running Pod; kubectl then saves your edited copy to a temporary file, and `kubectl replace --force -f THAT_FILE` deletes and recreates the Pod with your changes.
+Some fields cannot be changed on a running Pod.
+When that happens, kubectl saves your edited copy to a temporary file.
+Run `kubectl replace --force -f THAT_FILE` to delete the Pod and create it again with your changes.
 
 ## Work safely on a node
 
-Some tasks, most of them in the CKA and CKS, change a node rather than an object in the API: the kubelet's configuration, a static Pod manifest, or a file that only exists on that machine.
+Some tasks change a node instead of an object in the API.
+Most of these are in the CKA and CKS.
+Examples are the kubelet's configuration, a static Pod manifest, or a file that exists only on that machine.
 In the exam you reach the node with `ssh`; in Dockyard you use `limactl shell` with the node named in the lesson.
 A mistake on a node can stop the kubelet or the API server, so follow the same steps every time.
 

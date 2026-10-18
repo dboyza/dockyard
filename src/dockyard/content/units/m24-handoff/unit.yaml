@@ -94,8 +94,8 @@ checks:
   - rollout
   expected: 'true'
   diagnostic: The rollout has not finished. Run kubectl rollout status deployment/dispatch and kubectl
-    get pods -l app=dispatch, read the stuck Pod’s events with kubectl describe pod, then use kubectl
-    rollout undo deployment/dispatch or set a working image.
+    get pods -l app=dispatch. Read the stuck Pod’s events with kubectl describe pod. Then use kubectl
+    rollout undo deployment/dispatch, or set a working image.
 - id: handoff-workflow
   title: A new job from the browser and the frontend completes
   explanation: Real jobs submitted through the lab’s Dispatch port and from the trusted frontend on another
@@ -111,9 +111,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: 'A job did not complete. Follow the request step by step: check kubectl get endpointslices
-    -l kubernetes.io/service-name=dispatch lists API Pods, then submit a job and, if it stays queued,
-    check kubectl get deployment worker and kubectl logs deployment/worker.'
+  diagnostic: A job did not complete. Follow the request step by step. Check kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch lists API Pods. Then submit a job. If it stays queued, check
+    kubectl get deployment worker and kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

@@ -38,9 +38,9 @@ hints:
   needs hardening, a release image, and a policy for its namespace.
 - docker build -t REGISTRY/dispatch:2.0 ., docker push it, read its digest with docker inspect --format
   '{{index .RepoDigests 0}}', then sign and verify that reference with cosign.
-- Add the minimal-image RUN step before USER in the Dockerfile, publish and sign the image, write the
-  release policy for production, set production.yaml's image to the digest reference with the hardened
-  settings from m29-analysis, and run sh run.sh.
+- Add the minimal-image RUN step before USER in the Dockerfile. Publish and sign the image, and write
+  the release policy for production. Set production.yaml's image to the digest reference with the hardened
+  settings from m29-analysis, then run sh run.sh.
 sources:
 - https://docs.sigstore.dev/cosign/signing/signing_with_containers/
 - https://docs.kubelinter.io/

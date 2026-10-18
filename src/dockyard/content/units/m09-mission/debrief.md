@@ -1,4 +1,4 @@
-## Same image, different behaviour
+## Same image, different behavior
 
 Each environment got its settings and password from its own namespace, and both processed real jobs.
 That shows configuration and identity are separated.

@@ -11,7 +11,7 @@ minutes: 40
 outcomes:
 - Use a short observe, guess, test, change, check loop instead of trying every fix.
 - Follow a request from the Service to the saved result to find where it stops.
-- Recognise when fixing one fault reveals another.
+- Recognize when fixing one fault reveals another.
 prerequisites:
 - m23-mission
 objectives:
@@ -93,9 +93,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: 'A job did not complete. Follow the request step by step: check kubectl get endpointslices
-    -l kubernetes.io/service-name=dispatch lists API Pods, then submit a job and, if it stays queued,
-    check kubectl get deployment worker and kubectl logs deployment/worker.'
+  diagnostic: A job did not complete. Follow the request step by step. Check kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch lists API Pods. Then submit a job. If it stays queued, check
+    kubectl get deployment worker and kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

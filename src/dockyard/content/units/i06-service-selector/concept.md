@@ -1,7 +1,8 @@
 ## What you’re walking into
 
 A release changed some labels.
-Since then, both Dispatch API Pods are running and ready, and you can reach each one directly by its IP, but requests to the `dispatch` Service fail to connect.
+Since then, both Dispatch API Pods are running and ready.
+You can reach each one directly by its IP, but requests to the `dispatch` Service fail to connect.
 
 ## How to approach an incident
 
@@ -18,7 +19,7 @@ Hints and the reference solution are available, but using them marks this attemp
 
 A Service’s name can resolve perfectly while it has no Pods behind it.
 Its EndpointSlices show which Pods it has actually selected.
-A selector with several labels only matches Pods that have **all** of them: a Service selecting `app: catalog` and `tier: public` ignores a Pod labelled only `app: catalog`.
+A selector with several labels only matches Pods that have **all** of them: a Service selecting `app: catalog` and `tier: public` ignores a Pod labeled only `app: catalog`.
 
 The Service was changed directly in the cluster, not through a workspace file.
 You can change it the same way, with `kubectl edit service dispatch`.

@@ -41,8 +41,8 @@ hints:
   kubectl get secrets -A --field-selector type=kubernetes.io/service-account-token finds long-lived tokens.
 - The anonymous fix has two parts, as in m26-anonymous; the auditors need the view ClusterRole through
   RoleBindings in two namespaces.
-- Delete rolebinding legacy-dashboard in dispatch, add the authentication configuration and mount to the
-  API server, delete secret deployer-token in ci, bind view to the auditors group in dispatch and frontend,
+- Delete rolebinding legacy-dashboard in dispatch. Add the authentication configuration and mount to the
+  API server. Delete secret deployer-token in ci. Bind view to the auditors group in dispatch and frontend,
   and delete clusterrolebinding auditors-admin.
 sources:
 - https://kubernetes.io/docs/reference/access-authn-authz/authentication/#anonymous-authenticator-configuration

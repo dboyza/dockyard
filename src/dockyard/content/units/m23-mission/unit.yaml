@@ -36,8 +36,9 @@ hints:
   logs of any container that keeps exiting.'
 - Something is missing from the manifests directory; look under /var/lib/dockyard. Compare the API server’s
   --etcd-servers with where etcd listens.
-- Fix the API server’s etcd address, move the scheduler manifest back, restore the snapshot into a new
-  directory with the revision bump and compaction, switch etcd’s data hostPath, and run python wait-control-plane.py.
+- Fix the API server’s etcd address and move the scheduler manifest back. Restore the snapshot into a
+  new directory with the revision bump and compaction. Then switch etcd’s data hostPath and run python
+  wait-control-plane.py.
 sources:
 - https://etcd.io/docs/v3.6/op-guide/recovery/
 - https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/
@@ -80,8 +81,8 @@ checks:
     bring back the original from the etcd snapshot. If nodes or the cluster were rebuilt, reset the lab.
 - id: recovery-components
   title: The kubelet and all four control-plane components are running
-  explanation: On the control-plane node the kubelet service must be active, containers for etcd, the
-    API server, the controller manager, and the scheduler must be running, and the API must report ready.
+  explanation: On the control-plane node, the kubelet service must be active. Containers for etcd, the
+    API server, the controller manager, and the scheduler must be running. The API must report ready.
   command:
     args:
     - python
@@ -93,8 +94,8 @@ checks:
   json_path:
   - components
   expected: 'true'
-  diagnostic: Part of the control plane is not running. Inside the control-plane VM check systemctl status
-    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a; read sudo crictl
+  diagnostic: Part of the control plane is not running. Inside the control-plane VM, check systemctl status
+    kubelet, sudo ls /etc/kubernetes/manifests for all four files, and sudo crictl ps -a. Read sudo crictl
     logs for any component that keeps exiting.
 - id: recovery-scheduled
   title: A brand-new Pod is scheduled onto a node
@@ -112,7 +113,7 @@ checks:
   - scheduled
   expected: 'true'
   diagnostic: A new Pod was not given a node. Check the scheduler is running with sudo crictl ps --name
-    kube-scheduler on the control-plane node and that its manifest is in /etc/kubernetes/manifests; if
+    kube-scheduler on the control-plane node, and that its manifest is in /etc/kubernetes/manifests. If
     it has just restarted, run python wait-control-plane.py and check again.
 - id: recovery-restored
   title: The original objects came back from the snapshot

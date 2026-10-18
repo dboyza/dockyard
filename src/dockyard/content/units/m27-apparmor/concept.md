@@ -1,9 +1,13 @@
 ## Limiting what a process may touch
 
 Containers share their node's kernel.
-Namespaces and cgroups decide what a container can see and how much it may use, but a process running as root inside a container can still do a great deal if it escapes its intended behavior, for example through a bug in code that parses untrusted files.
+Namespaces and cgroups decide what a container can see and how much it may use.
+But a process running as root inside a container can still do a great deal if it escapes its intended behavior.
+This can happen, for example, through a bug in code that parses untrusted files.
 
-**AppArmor** is a Linux security module: part of the kernel that checks every file access, program run, and network use against a **profile**, a list of what one program may do.
+**AppArmor** is a Linux security module, which is part of the kernel.
+It checks every file access, program run, and network use against a **profile**.
+A profile is a list of what one program may do.
 When a profile is in **enforce** mode, the kernel refuses anything the profile does not allow, even for root.
 In **complain** mode it only logs what it would have refused, which helps while writing a profile.
 

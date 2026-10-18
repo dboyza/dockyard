@@ -71,7 +71,7 @@ Check work will append a new line through `producer` and expect it to appear in 
 
 ## 8. Restrict access with a NetworkPolicy (10%)
 
-Only Pods in `dispatch` labelled `role: audit-reader` may connect to the `audit-target` Pods on TCP port 8080.
+Only Pods in `dispatch` labeled `role: audit-reader` may connect to the `audit-target` Pods on TCP port 8080.
 
 - The existing `audit-reader` Pod must still connect, and `audit-outsider` must be refused.
 - Keep all three Deployments running and do not change their labels or commands.

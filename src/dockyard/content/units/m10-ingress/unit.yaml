@@ -120,10 +120,10 @@ checks:
   json_path:
   - tls
   expected: 'true'
-  diagnostic: 'The HTTPS request failed. Run the curl command from the lesson and read its error: a certificate
-    error points at the Ingress’s tls secretName, which should be dispatch-tls; a 404 or 502 points at
+  diagnostic: The HTTPS request failed. Run the curl command from the lesson and read its error. A certificate
+    error points at the Ingress’s tls secretName, which should be dispatch-tls. A 404 or 502 points at
     the rule’s backend, which should be Service dispatch port 8080. kubectl describe ingress dispatch
-    shows both.'
+    shows both.
 capabilities:
 - docker
 - kind

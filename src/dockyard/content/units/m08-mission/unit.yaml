@@ -151,9 +151,9 @@ checks:
   json_path:
   - schedule
   expected: 'true'
-  diagnostic: 'The CronJob settings are not right yet. Run kubectl get cronjob dispatch-maintenance -o
-    yaml and check: schedule ''*/5 * * * *'', suspend false or absent, concurrencyPolicy Forbid, backoffLimit
-    between 0 and 3, and restartPolicy Never or OnFailure.'
+  diagnostic: The CronJob settings are not right yet. Run kubectl get cronjob dispatch-maintenance -o
+    yaml and check the settings. The schedule is '*/5 * * * *', suspend is false or absent, and concurrencyPolicy
+    is Forbid. backoffLimit is between 0 and 3, and restartPolicy is Never or OnFailure.
 - id: workload-maintenance
   title: The proof Job completed and wrote its database row
   explanation: A Job named maintenance-proof must complete and leave a fresh row in the maintenance_runs

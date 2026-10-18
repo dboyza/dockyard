@@ -241,10 +241,10 @@ checks:
   json_path:
   - restored
   expected: 'true'
-  diagnostic: 'The original recovery-$DOCKYARD_LAB job is missing from the API''s database. Request /jobs
+  diagnostic: The original recovery-$DOCKYARD_LAB job is missing from the API's database. Request /jobs
     to see what the API holds. An empty list usually means the API started with a fresh database instead
-    of the restored one: check that you extracted the archive into the same storage the API mounts at
-    /data, and that the API was stopped while you did.'
+    of the restored one. Check that you extracted the archive into the same storage the API mounts at
+    /data, and that the API was stopped while you did.
 - id: storage-backup
   title: The backup archive contains a usable database with that original job
   explanation: Dockyard opens backup.tar and checks it contains a readable database with the original

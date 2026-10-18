@@ -79,8 +79,8 @@ checks:
     if objects were deleted or the cluster was recreated, reset the lab and try again.
 - id: maintenance-drained
   title: The extra worker is drained with a sensible budget
-  explanation: worker2 must be cordoned with no ordinary Pods left, the disruption budget must still select
-    the stable API and require at least one available, and two API copies must be available elsewhere.
+  explanation: worker2 must be cordoned with no ordinary Pods left. The disruption budget must still select
+    the stable API and require at least one available. Two API copies must be available elsewhere.
   command:
     args:
     - python
@@ -93,8 +93,8 @@ checks:
   - drained
   expected: 'true'
   diagnostic: The drain is not complete. Wait for kubectl rollout status deployment/dispatch so both API
-    copies are running elsewhere, then check kubectl get pods -A --field-selector spec.nodeName=NODE for
-    anything left, kubectl get nodes for SchedulingDisabled, and that the budget still has minAvailable
+    copies are running elsewhere. Then check kubectl get pods -A --field-selector spec.nodeName=NODE for
+    anything left. Check kubectl get nodes for SchedulingDisabled. Check that the budget still has minAvailable
     1 for the stable API.
 - id: maintenance-workflow
   title: A job from the frontend completes after maintenance

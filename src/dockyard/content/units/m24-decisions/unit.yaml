@@ -80,9 +80,9 @@ checks:
     and recreating them or rebuilding the cluster; if that already happened, reset the lab.
 - id: handoff-capacity
   title: The API fits the agreed replica, resource, and disruption budget
-  explanation: The API must run 2 to 4 available copies with total requests within 1 CPU and 512 MiB,
-    total memory limits within 1 GiB, limits at least their requests, and a dispatch-operations PDB for
-    app=dispatch,track=stable that keeps one available.
+  explanation: The API must run 2 to 4 available copies. Total requests must be within 1 CPU and 512 MiB,
+    and total memory limits within 1 GiB. Limits must be at least their requests. A dispatch-operations
+    PDB for app=dispatch,track=stable must keep one available.
   command:
     args:
     - python
@@ -95,8 +95,8 @@ checks:
   - capacity
   expected: 'true'
   diagnostic: 'The API is outside the budget. Check kubectl get deployment dispatch for 2 to 4 available
-    copies, multiply its per-container requests and limits by the replica count, and check kubectl get
-    pdb dispatch-operations -o yaml selects app: dispatch and track: stable with minAvailable 1, minAvailable
+    copies. Multiply its per-container requests and limits by the replica count. Then check kubectl get
+    pdb dispatch-operations -o yaml selects app: dispatch and track: stable, with minAvailable 1, minAvailable
     50%, or maxUnavailable 1.'
 - id: handoff-identity
   title: The inventory account can read Pods and nothing more
@@ -132,9 +132,9 @@ checks:
   json_path:
   - workflow
   expected: 'true'
-  diagnostic: 'A job did not complete. Follow the request step by step: check kubectl get endpointslices
-    -l kubernetes.io/service-name=dispatch lists API Pods, then submit a job and, if it stays queued,
-    check kubectl get deployment worker and kubectl logs deployment/worker.'
+  diagnostic: A job did not complete. Follow the request step by step. Check kubectl get endpointslices
+    -l kubernetes.io/service-name=dispatch lists API Pods. Then submit a job. If it stays queued, check
+    kubectl get deployment worker and kubectl logs deployment/worker.
 capabilities:
 - docker
 - limactl

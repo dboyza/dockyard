@@ -7,4 +7,6 @@
 
 Keep the deployer’s permissions limited to Dispatch Deployments, and keep the database password out of Git.
 
-Write `DELIVERY-NOTES.md` explaining the chain of evidence from test to running Pod, what users actually experienced during the failed candidate, and how someone would repeat or reverse a release.
+Write `DELIVERY-NOTES.md`.
+Explain the chain of evidence from test to running Pod.
+Say what users actually experienced during the failed candidate, and how someone would repeat or reverse a release.

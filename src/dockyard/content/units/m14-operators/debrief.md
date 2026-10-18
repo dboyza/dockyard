@@ -1,6 +1,8 @@
 ## Your own object type, reconciled
 
-The CRD taught the API a new word, the WorkerPool said what you wanted, and the controller made it happen, and kept it that way when the Deployment was changed by hand.
+The CRD taught the API a new word.
+The WorkerPool said what you wanted.
+The controller made it happen, and kept it that way when the Deployment was changed by hand.
 
 Check your understanding:
 Follow one change from `kubectl edit workerpool dispatch` to new worker Pods.

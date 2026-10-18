@@ -2,7 +2,9 @@
 
 ## What shipped
 
-Dispatch 2.0, built from the checkpoint Dockerfile with a final step that clears setuid bits and removes BusyBox with its shells, apk, and pip, published to the release registry, and signed by digest with the team's cosign key.
+Dispatch 2.0 was built from the checkpoint Dockerfile.
+A final step clears setuid bits and removes BusyBox, with its shells, apk, and pip.
+The image was published to the release registry and signed by digest with the team's cosign key.
 
 ## Evidence
 

@@ -58,8 +58,8 @@ prepare:
 checks:
 - id: hardening-recovery
   title: The restored backup is serving from separate storage
-  explanation: The encrypted backup must decrypt and reject tampering, the db Service must point at the
-    restored database on a different volume, the original claim must be intact, and the known record must
+  explanation: The encrypted backup must decrypt and reject tampering. The db Service must point at the
+    restored database on a different volume. The original claim must be intact, and the known record must
     be readable through the frontend.
   command:
     args:
@@ -72,9 +72,9 @@ checks:
   json_path:
   - recovery
   expected: 'true'
-  diagnostic: 'The restore is not complete. Run python restore.py and read its output, then check kubectl
-    get statefulsets,pvc and kubectl get service db -o yaml: the Service should select the restored database,
-    and the original claim should still exist.'
+  diagnostic: The restore is not complete. Run python restore.py and read its output. Then check kubectl
+    get statefulsets,pvc and kubectl get service db -o yaml. The Service should select the restored database,
+    and the original claim should still exist.
 - id: hardening-workflow
   title: A job from the frontend completes
   explanation: A real job submitted from the trusted frontend must be completed by a worker and saved
@@ -91,7 +91,7 @@ checks:
   - workflow
   expected: 'true'
   diagnostic: A job from the frontend did not complete. Check the database Pod is running and selected
-    by the db Service, that the API and worker have the current password, and that the frontend network
+    by the db Service. Check the API and worker have the current password. Check the frontend network
     policy names the current client label.
 capabilities:
 - docker

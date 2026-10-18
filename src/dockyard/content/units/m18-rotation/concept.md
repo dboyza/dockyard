@@ -51,4 +51,5 @@ Check work does both attempts and then runs a real job.
 The database account here is an administrator, which is fine for a disposable practice lab.
 Real systems separate the application’s account from the one used to change schemas and manage credentials, and add encrypted connections and storage encryption, which are separate protections.
 
-If PostgreSQL has the new password but a consumer did not restart properly, fix the consumer so it uses the new password; do not print passwords to compare them.
+If PostgreSQL has the new password but a consumer did not restart properly, fix the consumer so it uses the new password.
+Do not print passwords to compare them.

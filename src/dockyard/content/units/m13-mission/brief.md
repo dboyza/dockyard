@@ -7,5 +7,7 @@
 5. Choose **Check work**.
 
 If the drain is blocked, find out why from the budget and placement; do not add force options or delete the budget.
-Write a maintenance note with the node drained, what the samples showed, which Pods were replaced, how much capacity remained, and why these three nodes on one computer are not independent failure domains.
+Write a maintenance note.
+Say which node you drained, what the samples showed, which Pods were replaced, and how much capacity remained.
+Explain why these three nodes on one computer are not independent failure domains.
 Keep the database’s storage and its placement unchanged throughout.

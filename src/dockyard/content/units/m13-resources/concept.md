@@ -92,7 +92,8 @@ spec:
     pods: '24'
 ```
 
-A Pod that would break the quota is rejected at creation with an error, which is a different failure from a Pod that is created but cannot be scheduled.
+A Pod that would break the quota is rejected with an error when you create it.
+That is a different failure from a Pod that is created but cannot be scheduled.
 `kubectl create quota` can also create simple quotas from the command line.
 
 ```sh

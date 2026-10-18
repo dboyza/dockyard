@@ -18,17 +18,21 @@ concept: concept.md
 brief: brief.md
 debrief: debrief.md
 prediction:
-  question: The program in your container prints its message and finishes. What does docker ps show for that container afterwards?
+  question: The program in your container prints its message and finishes. What does docker ps show for
+    that container afterwards?
   options:
   - Nothing, because docker ps lists only running containers.
   - The container, still running and waiting for more work.
   - An error, because Docker deleted the container when its program finished.
   correct: 0
-  explanation: The container stopped when its only process finished, so docker ps leaves it out. It still exists in the Exited state, which is why docker ps -a shows it along with its exit code.
+  explanation: The container stopped when its only process finished, so docker ps leaves it out. It still
+    exists in the Exited state, which is why docker ps -a shows it along with its exit code.
 hints:
 - Run docker ps -a. Is there a container with your lab's name, and what does its STATUS column say?
-- The checks need the container to still exist after its program finishes, so leave out --rm for the run you want checked.
-- If your lab's name is taken by a container that printed something else, remove it with docker rm "$DOCKYARD_CONTAINER", then run the command from Understand again.
+- The checks need the container to still exist after its program finishes, so leave out --rm for the run
+  you want checked.
+- If your lab's name is taken by a container that printed something else, remove it with docker rm "$DOCKYARD_CONTAINER",
+  then run the command from Understand again.
 sources:
 - https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/
 - https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-an-image/
@@ -42,7 +46,8 @@ capabilities:
 checks:
 - id: lab-identity
   title: A container with this lab's name and label exists
-  explanation: The name and the io.dockyard.lab label tell Dockyard which container is yours, so it can check and clean it up without touching anything else.
+  explanation: The name and the io.dockyard.lab label tell Dockyard which container is yours, so it can
+    check and clean it up without touching anything else.
   command:
     args:
     - docker
@@ -55,7 +60,10 @@ checks:
   - Labels
   - io.dockyard.lab
   expected: '{{lab_id}}'
-  diagnostic: Docker has no container with this lab's name and label. Run docker ps -a to see what exists. If you used --rm, the container deleted itself when it finished; run the command again without --rm. A container's labels cannot be changed later, so remove a container with the wrong label and run it again.
+  diagnostic: Docker has no container with this lab's name and label. Run docker ps -a to see what exists.
+    If you used --rm, the container deleted itself when it finished; run the command again without --rm.
+    A container's labels cannot be changed later, so remove a container with the wrong label and run it
+    again.
 - id: python-image
   title: The container was created from the prepared Python image
   explanation: An image supplies a container's starting files. This one contains Alpine Linux and Python.
@@ -70,10 +78,12 @@ checks:
   - Config
   - Image
   expected: '{{python_image}}'
-  diagnostic: The container was created from a different image. Remove it with docker rm "$DOCKYARD_CONTAINER" and run it again with "$DOCKYARD_PYTHON_IMAGE", including the quotes, as the image.
+  diagnostic: The container was created from a different image. Remove it with docker rm "$DOCKYARD_CONTAINER"
+    and run it again with "$DOCKYARD_PYTHON_IMAGE", including the quotes, as the image.
 - id: program-finished
   title: The container stopped after its program finished
-  explanation: A container runs only as long as its main process. This program prints one line and finishes, so the container should be Exited.
+  explanation: A container runs only as long as its main process. This program prints one line and finishes,
+    so the container should be Exited.
   command:
     args:
     - docker
@@ -85,7 +95,9 @@ checks:
   - State
   - Status
   expected: exited
-  diagnostic: The container is not in the exited state. If it is still running or only created, look at its command with docker ps -a --no-trunc; the program after the image name should print one line and finish.
+  diagnostic: The container is not in the exited state. If it is still running or only created, look at
+    its command with docker ps -a --no-trunc. The program after the image name should print one line and
+    finish.
 - id: clean-exit
   title: The program reported success
   explanation: When a process finishes it reports an exit code. Zero means it finished without an error.
@@ -100,7 +112,9 @@ checks:
   - State
   - ExitCode
   expected: '0'
-  diagnostic: The program finished with a non-zero exit code, which means it failed. Read docker logs "$DOCKYARD_CONTAINER" for the error. A missing quote or bracket in the Python code is the most common cause.
+  diagnostic: The program finished with a non-zero exit code, which means it failed. Read docker logs
+    "$DOCKYARD_CONTAINER" for the error. A missing quote or bracket in the Python code is the most common
+    cause.
 - id: program-output
   title: Docker kept the program's output
   explanation: Docker stores what a container's process prints, and docker logs shows it again later.
@@ -111,7 +125,8 @@ checks:
     - '{{container}}'
   output: combined
   expected: Hello from inside a container
-  diagnostic: The container's logs do not contain "Hello from inside a container". Run docker logs "$DOCKYARD_CONTAINER" to see what it printed, then remove it and run it again with the exact message from Understand.
+  diagnostic: The container's logs do not contain "Hello from inside a container". Run docker logs "$DOCKYARD_CONTAINER"
+    to see what it printed, then remove it and run it again with the exact message from Understand.
 alternatives:
 - docker run, or docker create followed by docker start, are both accepted.
 - Any Python command that prints the exact message and exits successfully is accepted.

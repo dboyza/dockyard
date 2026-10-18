@@ -35,8 +35,8 @@ hints:
   under imagePullSecrets.
 - The registry is reachable and the image exists. The workload Secret contains an expired practice identity.
 - Run kubectl create secret docker-registry with --docker-server set to the address in registry.txt, --docker-username=learner,
-  and --docker-password="$DOCKYARD_REGISTRY_PASSWORD", using --dry-run=client -o yaml | kubectl apply
-  -f - to replace the old one, then restart the API.
+  and --docker-password="$DOCKYARD_REGISTRY_PASSWORD". Add --dry-run=client -o yaml | kubectl apply -f
+  - to replace the old Secret. Then restart the API.
 sources:
 - https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/
 - https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/

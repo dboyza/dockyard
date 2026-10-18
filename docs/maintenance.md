@@ -32,7 +32,10 @@ Build browser assets with `npm --prefix frontend run build`.
 ./scripts/check.sh
 ```
 
-It runs, in order: Ruff lint and format checks and mypy, the non-integration Python tests, frontend lint, formatting, TypeScript, and unit tests, the structural curriculum audit in a temporary profile, and `pip-audit` plus `npm audit` dependency advisory scans.
+It runs these steps in order.
+First come the Ruff lint and format checks and mypy, then the non-integration Python tests.
+Next come the frontend lint, formatting, TypeScript, and unit tests.
+Then it runs the structural curriculum audit in a temporary profile, and last the `pip-audit` and `npm audit` dependency advisory scans.
 It stops at the first failure.
 
 Some backend checks bind local loopback sockets.
@@ -53,7 +56,8 @@ DOCKYARD_VM_INTEGRATION=1 .venv/bin/pytest -q tests/test_linux_integration.py
 
 The curriculum suite also records what a learner would see if they checked once, straight after the reference's last command.
 Set `DOCKYARD_FIRST_CHECK_LOG` to a file path to collect one JSON line per unit, with the observations of any criterion that did not pass.
-A first check that fails or reports stale, while a later one passes, means a learner who checks promptly would be failed for timing alone; fix the check rather than the reference.
+A first check that fails or reports stale, while a later one passes, means a learner who checks promptly would be failed for timing alone.
+Fix the check rather than the reference.
 Request checks retry briefly, checks re-observe while the runtime settles, and probes give a short grace period after a repair.
 
 The curriculum audit starts every activity's real fixture, verifies its declared failure criteria, applies the reference, and checks actual passing behavior.
@@ -76,7 +80,8 @@ npm --prefix frontend run test:e2e -- e2e/accessibility.spec.ts e2e/terminal-lay
 ```
 
 Test suites release their disposable profiles with `tests/release_profile.py`, which cleans every lab through its ownership records and deletes the profile only once nothing remains.
-If it reports a kept profile, run the printed `lab clean --all` command; never delete such a profile by hand, because its records are the only safe way to find what is left.
+If it reports a kept profile, run the printed `lab clean --all` command.
+Never delete such a profile by hand, because its records are the only safe way to find what is left.
 
 The exam browser suite needs a prepared disposable profile.
 The preparation script builds the CKAD release exam, applies its reference so a timed attempt scores 100, and records one earlier invalidated attempt for the history checks:
@@ -104,16 +109,26 @@ When the key step leaves runtime evidence, check that evidence, as m07-reconcili
 When the key step is a diagnosis, ask for a fact only the diagnosis reveals, as `finding.txt` does in m01-mission and the CKS investigations; never keyword-match explanatory prose.
 
 A criterion's `diagnostic` is its general advice.
-Its optional `cases` give advice for recognisable failures: each case is a regular expression searched in what the check observed, and the first match replaces the general advice.
+Its optional `cases` give advice for failures that can be recognized.
+Each case is a regular expression searched in what the check observed.
+The first match replaces the general advice.
 Placeholders such as `{{container}}` in a case expand to their literal, escaped values.
 `content/diagnostics.yaml` holds cases every activity on a runtime can meet, such as a missing lab container; they follow each criterion's own cases.
 When a JSON check finds no value at its path, it reports `(absent)` and the path, and keeps the full output as details.
 Reproduce each failure mode in a real lab and read the advice it produces before relying on a case.
 
+Learner-facing text uses short sentences and plain words.
+`tests/test_plain_language.py` fails when a sentence in a lesson, hint, check message, figure description, glossary entry, or learner document runs past 30 words.
+It also fails on filler words such as "utilize" and "in order to", on Latin abbreviations such as "e.g." and "etc.", on British spellings, and on em dashes.
+`objectives.json` is exempt because it quotes the official exam objectives word for word.
+Split a long sentence into several short ones, one per line, rather than raising the limit.
+
 ### Lesson and primer figures
 
 Lesson and primer Markdown embed a figure with a fenced block whose language is `figure` and whose only line is the figure ID.
-`src/dockyard/content/figures.json` holds each figure's title, caption, screen-reader description, and optional steps; the catalog and the reference library reject unknown or malformed references, and every figure must be used somewhere.
+`src/dockyard/content/figures.json` holds each figure's title, caption, screen-reader description, and optional steps.
+The catalog and the reference library reject unknown or malformed references.
+Every figure must be used somewhere.
 The drawings live in `frontend/src/figures`, built from the shared SVG kit so they follow both themes; primer drawings are in `reference.tsx`.
 After changing `figures.json`, regenerate the contracts; TypeScript then requires a drawing for every figure.
 Review drawings with `npm --prefix frontend run dev` and `/gallery.html`, which shows every step; add `?theme=light` or `?figure=ID` as needed.
@@ -123,9 +138,11 @@ A failure leaves the expected, actual, and difference images under `.artifacts/p
 After an intended drawing change, run `npm --prefix frontend run test:figures -- --update-snapshots`, inspect the changed images, and commit them with the change.
 Reference images are per platform because the interface uses system fonts; a platform without them is skipped with the command that creates them.
 Draw on a 640-unit-wide canvas, keep text at its rendered size, and check both themes before relying on a figure.
-The structural audit requires at least one figure in every lesson's concept and every foundation primer; missions, incidents, and exams stay figure-free so they do not hint at answers.
+The structural audit requires at least one figure in every lesson's concept and every foundation primer.
+Missions, incidents, and exams stay figure-free so they do not hint at answers.
 Use a stepped figure when the idea is a sequence or a change of state, and keep each figure's description complete enough to stand in for the drawing.
-Each figure names one to four glossary terms in `terms`, shown as links beneath it; add a glossary entry first when a figure introduces a term the glossary lacks.
+Each figure names one to four glossary terms in `terms`, shown as links beneath it.
+Add a glossary entry first when a figure introduces a term the glossary lacks.
 Following a term link remembers the figure and its step, and the reference desk's back button returns there; the reference library rejects unknown terms.
 
 Change an activity revision when its learning contract or grading behavior changes after release.

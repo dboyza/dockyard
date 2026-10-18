@@ -9,7 +9,8 @@ It covers switching context, generating YAML, looking things up quickly, checkin
 ## The rules for this attempt
 
 - Work on your own. Dockyard’s hints and reference solutions are not available during the exam.
-- You may use command help (`--help`, `kubectl explain`, man pages), the Kubernetes documentation and blog, the Helm documentation, and the Gateway API documentation, and any official documentation linked from a task.
+- You may use command help (`--help`, `kubectl explain`, and man pages).
+  You may also use the Kubernetes documentation and blog, the Helm documentation, the Gateway API documentation, and any official page that a task links to.
 - Use the lab terminal, which is already connected to the exam’s own cluster.
 - The two-hour timer starts once the environment is ready. Closing the browser does not pause it.
 - Keep the Dockyard launcher running, so it can record the final state when time is up.

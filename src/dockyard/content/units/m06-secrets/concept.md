@@ -1,7 +1,8 @@
 ## When the build itself needs a secret
 
 The previous lesson kept a private file out of the image by keeping it out of the build.
-Sometimes that is not enough, because a build step genuinely needs a secret: a token to download from a private package server, or a key to sign the release.
+Sometimes that is not enough, because a build step really needs a secret.
+For example, it might need a token to download from a private package server, or a key to sign the release.
 The step must be able to read the secret, yet nothing it leaves behind may contain it.
 
 In this lab, Dispatch's release is **signed** during the build.

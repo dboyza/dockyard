@@ -29,7 +29,9 @@ kubectl top nodes
 ```
 
 - `--sort-by` puts events in time order; `kubectl events --for` shows only one object’s events.
-- `-c` picks a container, `--all-containers` shows them all, `--prefix` labels each line with its Pod and container, `-l` selects Pods by label, and `--since` limits how far back to look.
+- `-c` picks a container, and `--all-containers` shows them all.
+  `--prefix` labels each line with its Pod and container.
+  `-l` selects Pods by label, and `--since` limits how far back to look.
 - `--previous` shows the logs from before the container last restarted, which is often where the crash message is.
 - `-f` keeps following new lines; Control-C stops following.
 - `kubectl top` needs the Metrics Server. The capacity module’s labs install it; this lab does not, so here it reports that the metrics API is not available.
