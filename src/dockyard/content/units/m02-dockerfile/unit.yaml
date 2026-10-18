@@ -58,6 +58,12 @@ checks:
   diagnostic: The assigned container is not running. Run docker ps -a to see its status, then docker logs
     "$DOCKYARD_CONTAINER" to read why it stopped. A container stops when its main command finishes or
     crashes, so the last lines of the log usually explain it.
+  cases:
+  - observed: ^false$
+    diagnostic: 'The container exists but its program has stopped. Run docker logs "$DOCKYARD_CONTAINER".
+      "can''t open file ''/app/app.py''" means the image has no app.py where CMD looks: check that WORKDIR
+      is /app and that COPY brings app.py into it, then rebuild and replace the container. An empty log
+      usually means CMD is missing, so the base image''s default command ran and finished.'
 - id: lab-identity
   title: The container belongs to this lab
   explanation: The io.dockyard.lab label marks the container as part of this lab, so Dockyard can inspect
@@ -102,6 +108,11 @@ checks:
     curl request yourself, then compare docker port "$DOCKYARD_CONTAINER" with the listening address in
     docker logs. The app listens on 8080 inside the container; your host port is $DOCKYARD_PORT. If the
     logs are empty, the app may still be starting.
+  cases:
+  - observed: Empty reply from server
+    diagnostic: 'Dispatch accepted the request but failed before answering. Run docker logs "$DOCKYARD_CONTAINER"
+      and read the traceback. FileNotFoundError for VERSION means the image contains app.py but not VERSION:
+      COPY both files, rebuild, and replace the container.'
 - id: published-port
   title: The assigned endpoint belongs to this container
   explanation: The answer must come from this container, so its port 8080 must be published on your assigned
@@ -114,8 +125,8 @@ checks:
   expectation: json
   json_path:
   - '0'
-  - NetworkSettings
-  - Ports
+  - HostConfig
+  - PortBindings
   - 8080/tcp
   - '0'
   - HostPort
@@ -185,6 +196,11 @@ checks:
   diagnostic: 'The API reported a different release than this task expects. Compare the release in curl
     "http://127.0.0.1:$DOCKYARD_PORT/healthz" with the task. If you changed files, remember that a container
     keeps running the image it started from: rebuild the image, then replace the container.'
+  cases:
+  - observed: Empty reply from server
+    diagnostic: 'Dispatch accepted the request but failed before answering. Run docker logs "$DOCKYARD_CONTAINER"
+      and read the traceback. FileNotFoundError for VERSION means the image contains app.py but not VERSION:
+      COPY both files, rebuild, and replace the container.'
 capabilities:
 - docker
 - python-image

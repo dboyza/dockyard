@@ -1,5 +1,5 @@
 id: m07-reconciliation
-revision: 1
+revision: 2
 module: 7
 order: 1
 title: Let Kubernetes keep Dispatch running
@@ -31,7 +31,8 @@ prediction:
 hints:
 - 'Compare how many copies the Deployment asks for with how many are ready: kubectl get deployment dispatch.'
 - The starter asks for zero copies. Change the Deployment rather than creating Pods yourself.
-- 'Set replicas: 2 in deployment.yaml, run sh run.sh, and wait with kubectl rollout status deployment/dispatch.'
+- 'Set replicas: 2 in deployment.yaml, run sh run.sh, and wait with kubectl rollout status deployment/dispatch.
+  Then delete one Pod with kubectl delete pod POD_NAME and wait for its replacement.'
 sources:
 - https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 - https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
@@ -151,6 +152,25 @@ checks:
     (kubectl get service dispatch -o yaml) with the Pod labels (kubectl get pods --show-labels), and check
     kubectl get endpointslices -l kubernetes.io/service-name=dispatch lists ready addresses. The Service’s
     targetPort must be 8080.
+- id: kube-replacement
+  title: Kubernetes replaced a Pod you removed
+  explanation: The Deployment's ReplicaSet records every Pod it creates and every Pod it deletes itself.
+    A Pod it created that is now gone, and that it did not delete, was removed by you and then replaced.
+  command:
+    args:
+    - python
+    - -m
+    - dockyard.probes.kubernetes
+    - foundation
+    timeout: 60
+  expectation: json
+  json_path:
+  - replacement
+  expected: 'true'
+  diagnostic: Dockyard found no Pod that was removed and then replaced. Once both copies are ready, delete
+    one with kubectl delete pod POD_NAME, then run kubectl get pods --watch until a new Pod is Running.
+    Changing replicas does not count, because scaling down is the ReplicaSet deleting Pods itself. Kubernetes
+    keeps the record of the replacement for about an hour, so repeat the deletion if you did it longer ago.
 capabilities:
 - docker
 - kind
@@ -167,3 +187,4 @@ failure_modes:
 - A standalone Pod does not demonstrate Deployment reconciliation.
 starter_failure_checks:
 - kube-replicas
+- kube-replacement

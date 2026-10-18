@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from dockyard.models import Exam, Figure, Unit
+from dockyard.models import DiagnosticCase, Exam, Figure, Unit
 from dockyard.workspace import safe_relative
 
 CONTENT = Path(__file__).parent / "content"
@@ -52,6 +52,13 @@ class Catalog:
         self.figures: dict[str, Figure] = {figure.id: figure for figure in figures}
         if len(self.figures) != len(figures):
             raise ValueError("Figure identifiers must be unique.")
+        # Failures every activity on a runtime can meet, such as a missing lab container.
+        shared_cases: dict[str, list[DiagnosticCase]] = {
+            runtime: [DiagnosticCase.model_validate(item) for item in items]
+            for runtime, items in yaml.load(  # noqa: S506
+                (root / "diagnostics.yaml").read_text(), Loader=YAML_LOADER
+            ).items()
+        }
         self.units: dict[str, Unit] = {}
         for path in sorted((root / "units").glob("*/unit.yaml")):
             raw = yaml.load(path.read_text(), Loader=YAML_LOADER)  # noqa: S506
@@ -79,6 +86,8 @@ class Catalog:
                     },
                 }
             unit = Unit.model_validate(raw)
+            for criterion in unit.checks:
+                criterion.cases.extend(shared_cases.get(unit.runtime, []))
             for text in (unit.concept, unit.brief, unit.debrief, *unit.hints):
                 for figure in figure_references(text):
                     if figure not in self.figures:

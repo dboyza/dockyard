@@ -55,6 +55,7 @@ The app now describes the recorded result as task behavior, explicitly says note
 Debriefs ask the learner to explain and transfer the result before moving on.
 The reconciliation debrief explicitly sends learners back to the experiment if they skipped it.
 No keyword check of prose was added: matching words would not establish understanding either.
+The [check coverage sweep](#check-coverage-sweep-2026-10-18) later closed both gaps with observed evidence.
 
 ### Medium: failure feedback is harder to use than it needs to be
 
@@ -96,6 +97,29 @@ Main changes:
 
 Valid alternatives were tried deliberately, such as different replica counts, imperative instead of declarative changes, and a different recovery order.
 Negative cases were also checked, to confirm that failing messages point at the real cause.
+
+## Check coverage sweep (2026-10-18)
+
+Every course unit, incident, and exam was compared against one question: can a learner pass without doing what the activity teaches?
+Each activity's outcomes were read against its checks, and suspected gaps were confirmed in the brief, the reference, and the probe.
+Most checks already observe the outcome itself, or leave only an explanation or an intermediate observation for self-review, which the brief says.
+Three activities could pass while skipping the step they exist to teach.
+
+| Activity | Gap | Change |
+| --- | --- | --- |
+| m01-mission | The first lesson's launch command repaired the service without any diagnosis. | The broken container's one-shot command now carries the lab's identity, so it differs in every lab. The learner records it in `finding.txt` before replacing the container, and a check matches that exact command, which only inspecting the container reveals. |
+| m07-reconciliation | Scaling to two replicas passed before any Pod was deleted. | A new check reads the ReplicaSet's creation and deletion events and requires a Pod that was removed by someone other than the ReplicaSet and then replaced. Scaling down and up does not count. |
+| m01-lifecycle | Recreating the container with `docker run` passed, although the lesson is about starting the existing one. | The prepared container carries a label that a recreated one lacks, and a check requires it. |
+
+Remaining self-review steps were left as they are because they leave no observable trace, such as the deliberately failing test copy in m16-pipeline, or because a later activity checks them directly, such as the PostgreSQL restore in m05-scaling.
+
+Failure advice was also reworked so that each recognisable failure gets its own diagnostic.
+A criterion can now list cases, each a pattern matched against what the check observed, ahead of its general advice; [the maintenance guide](maintenance.md#authoring-and-version-changes) describes the format.
+Shared Docker cases distinguish a missing lab container, a port that was never published, nothing listening, a connection that returned no HTTP answer, and an HTTP error.
+Real m02-dockerfile attempts reproduced the earlier confusion: a missing `VERSION` file, a missing `WORKDIR`, and a container without `-p` each produced advice that pointed elsewhere.
+Each now names the observation and the repair.
+A missing JSON field is reported by its path instead of the full inspection document.
+The published-port check now reads the configured binding, so a stopped container is no longer described as unpublished; whether it runs is the process check's job.
 
 ## What remains to establish
 

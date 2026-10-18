@@ -103,8 +103,8 @@ checks:
   expectation: json
   json_path:
   - '0'
-  - NetworkSettings
-  - Ports
+  - HostConfig
+  - PortBindings
   - 8000/tcp
   - '0'
   - HostPort

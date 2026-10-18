@@ -13,6 +13,7 @@ import sys
 import threading
 import time
 import uuid
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -519,7 +520,7 @@ class Service:
         lab.state = "ready"
         self._save(lab)
 
-    def expand(self, value: str, lab: Lab) -> str:
+    def expand(self, value: str, lab: Lab, quote: Callable[[str], str] = str) -> str:
         values = {
             "lab_id": lab.id,
             "container": f"dockyard-{lab.id[:12]}",
@@ -537,7 +538,7 @@ class Service:
         }
         values.update({f"{name}_image": image for name, image in COMPATIBILITY["images"].items()})
         for key, replacement in values.items():
-            value = value.replace("{{" + key + "}}", replacement)
+            value = value.replace("{{" + key + "}}", quote(replacement))
         return value
 
     def docker(self, lab: Lab) -> DockerRuntime:
@@ -729,8 +730,17 @@ class Service:
                         )
                         if measured is not None:
                             details = json.dumps(measured, indent=2, sort_keys=True)
-                    for part in criterion.json_path:
-                        value = value[int(part)] if isinstance(value, list) else value[str(part)]
+                    try:
+                        for part in criterion.json_path:
+                            value = (
+                                value[int(part)] if isinstance(value, list) else value[str(part)]
+                            )
+                    except (KeyError, IndexError, TypeError):
+                        # Name the missing field rather than repeating the whole document.
+                        details = details or observed
+                        path = ".".join(str(part) for part in criterion.json_path)
+                        observed = f"(absent) {path}"
+                        raise
                     observed = (
                         value if isinstance(value, str) else json.dumps(value, sort_keys=True)
                     )
@@ -747,6 +757,16 @@ class Service:
                 matches = False
         if result.stderr and criterion.output == "stdout":
             observed += "\n" + result.stderr.strip()
+        diagnostic = criterion.diagnostic
+        if not matches:
+            diagnostic = next(
+                (
+                    case.diagnostic
+                    for case in criterion.cases
+                    if re.search(self.expand(case.observed, lab, re.escape), observed)
+                ),
+                diagnostic,
+            )
         return Evidence(
             criterion=criterion.id,
             title=criterion.title,
@@ -759,7 +779,7 @@ class Service:
             ),
             expected=expected,
             observed=self.redact(observed, lab)[-8000:],
-            diagnostic=criterion.diagnostic,
+            diagnostic=diagnostic,
             details=self.redact(details, lab)[-8000:],
             points=criterion.points,
         )

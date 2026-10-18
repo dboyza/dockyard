@@ -84,6 +84,14 @@ class Command(Contract):
     allowed_exit_codes: list[int] = Field(default_factory=lambda: [0])
 
 
+class DiagnosticCase(Contract):
+    """Advice for one recognisable failure, chosen by searching what the check observed."""
+
+    # A regular expression; placeholders such as {{port}} are expanded literally first.
+    observed: str = Field(min_length=1)
+    diagnostic: str
+
+
 class Criterion(Contract):
     id: Identifier
     title: str
@@ -94,6 +102,8 @@ class Criterion(Contract):
     output: Literal["stdout", "stderr", "combined"] = "stdout"
     json_path: list[str | int] = Field(default_factory=list)
     diagnostic: str
+    # Checked in order before the general diagnostic; the first matching case is shown.
+    cases: list[DiagnosticCase] = Field(default_factory=list)
     points: int = Field(default=1, ge=1)
 
 

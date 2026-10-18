@@ -12,6 +12,7 @@ Your goal is to run two copies and see Kubernetes replace one after you remove i
 5. Check the lab after both replicas are available again.
 
 The check requires two available replicas owned by the Deployment, a genuine Dispatch response from each replica, and a working Service request.
+It also looks for a Pod that you removed and the ReplicaSet replaced, using the events the ReplicaSet records.
+Those events expire after about an hour, so check soon after the experiment or repeat the deletion.
 Before checking, explain why the replacement appeared even though you did not run `kubectl apply` again.
-Record the old and new Pod names in your notes.
-The checker tests the two running copies and their responses; it does not record the deletion or grade your explanation.
+Record the old and new Pod names in your notes; the checker does not grade your explanation.

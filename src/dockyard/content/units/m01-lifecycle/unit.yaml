@@ -1,5 +1,5 @@
 id: m01-lifecycle
-revision: 1
+revision: 2
 module: 1
 order: 2
 title: Create, start, stop, inspect
@@ -44,6 +44,8 @@ prepare:
   - '{{container}}'
   - --label
   - io.dockyard.lab={{lab_id}}
+  - --label
+  - io.dockyard.prepared=true
   - -p
   - 127.0.0.1:{{port}}:8080
   - -v
@@ -127,8 +129,8 @@ checks:
   expectation: json
   json_path:
   - '0'
-  - NetworkSettings
-  - Ports
+  - HostConfig
+  - PortBindings
   - 8080/tcp
   - '0'
   - HostPort
@@ -156,6 +158,25 @@ checks:
   - HostIp
   diagnostic: The port is published on an address other than 127.0.0.1. Run docker port "$DOCKYARD_CONTAINER";
     if it shows 0.0.0.0 or ::, the host address was left out of -p. Replace the container using -p "127.0.0.1:$DOCKYARD_PORT:8080".
+- id: original-container
+  title: The running container is the one Dockyard prepared
+  explanation: This lesson is about starting an existing container. A container made again with docker
+    run is a new object with a new ID, even when it uses the same name and settings.
+  command:
+    args:
+    - docker
+    - inspect
+    - '{{container}}'
+  expectation: json
+  json_path:
+  - '0'
+  - Config
+  - Labels
+  - io.dockyard.prepared
+  expected: 'true'
+  diagnostic: The container named "$DOCKYARD_CONTAINER" is not the one Dockyard prepared. It has been removed
+    and made again, probably with docker run, so it has a new ID. Choose Reset to get the prepared container
+    back, then bring it online with docker start.
 capabilities:
 - docker
 - python-image
@@ -167,4 +188,3 @@ failure_modes:
 starter_failure_checks:
 - process-running
 - application-response
-- published-port

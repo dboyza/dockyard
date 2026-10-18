@@ -126,7 +126,40 @@ def foundation() -> dict[str, Any]:
             }
         except (RuntimeError, ValueError):
             pass
+    output["replacement"], output["_details"] = replacement(owned_rs, active)
     return output
+
+
+def replacement(owned_rs: set[str], active: list[dict[str, Any]]) -> tuple[bool, dict[str, Any]]:
+    """Find a Pod the Deployment's ReplicaSets replaced after something else removed it.
+
+    A ReplicaSet records an event for every Pod it creates and every Pod it deletes itself,
+    for example when scaling down or rolling out. A Pod it created, that is gone, and that it
+    did not delete was removed by someone else, so the current Pods include its replacement.
+    Events expire, normally after an hour, so an old experiment has to be repeated.
+    """
+    created: list[str] = []
+    deleted: set[str] = set()
+    for event in get("events")["items"]:
+        involved = event.get("involvedObject", {})
+        if involved.get("kind") != "ReplicaSet" or involved.get("uid") not in owned_rs:
+            continue
+        message = event.get("message", "")
+        if event.get("reason") == "SuccessfulCreate" and message.startswith("Created pod: "):
+            created.append(message.removeprefix("Created pod: "))
+        elif event.get("reason") == "SuccessfulDelete" and message.startswith("Deleted pod: "):
+            deleted.add(message.removeprefix("Deleted pod: "))
+    current = {pod["metadata"]["name"] for pod in active}
+    replaced = sorted(set(created) - current - deleted)
+    details = {
+        "replacement": {
+            "pods_created_by_replicasets": created,
+            "pods_the_replicasets_deleted": sorted(deleted),
+            "current_pods": sorted(current),
+            "removed_and_replaced": replaced,
+        }
+    }
+    return bool(replaced) and len(current) == 2, details
 
 
 def owned_pods(

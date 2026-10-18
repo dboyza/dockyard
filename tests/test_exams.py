@@ -41,7 +41,7 @@ def prepared(tmp_path):
     lab = Lab(
         id="owned-exam",
         unit_id=exam.unit_id,
-        revision=1,
+        revision=service.catalog.get(exam.unit_id).revision,
         runtime=Runtime.DOCKER,
         state="ready",
         workspace=str(tmp_path / "workspace"),
@@ -56,7 +56,7 @@ def evidence(exam, lab):
     return Assessment(
         id="observed",
         unit_id=exam.unit_id,
-        revision=1,
+        revision=lab.revision,
         lab_id=lab.id,
         status=CheckStatus.FAIL,
         started_at=timestamp(),

@@ -35,7 +35,13 @@ export type Criterion = {
   "output": "stdout" | "stderr" | "combined";
   "json_path": Array<string | number>;
   "diagnostic": string;
+  "cases": Array<DiagnosticCase>;
   "points": number;
+};
+
+export type DiagnosticCase = {
+  "observed": string;
+  "diagnostic": string;
 };
 
 export type Evidence = {

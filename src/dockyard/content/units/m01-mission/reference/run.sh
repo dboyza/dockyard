@@ -1,5 +1,6 @@
 #!/bin/sh
 set -eu
+docker inspect --format '{{json .Config.Cmd}}' "$DOCKYARD_CONTAINER" > finding.txt
 docker rm "$DOCKYARD_CONTAINER"
 docker run -d --name "$DOCKYARD_CONTAINER" \
   --label "io.dockyard.lab=$DOCKYARD_LAB" \

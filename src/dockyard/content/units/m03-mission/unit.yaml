@@ -111,8 +111,8 @@ checks:
   expectation: json
   json_path:
   - '0'
-  - NetworkSettings
-  - Ports
+  - HostConfig
+  - PortBindings
   - 8080/tcp
   - '0'
   - HostPort

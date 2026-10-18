@@ -1,0 +1,33 @@
+# Failures that any activity on a runtime can meet, keyed by runtime.
+# Each case is a regular expression searched in what a failing check observed.
+# A criterion's own cases come first; these follow them, before its general diagnostic.
+docker:
+- observed: '(?im)no such (object|container): {{container}}$'
+  diagnostic: >-
+    Docker has no container named "$DOCKYARD_CONTAINER", so there is nothing for this check to inspect yet.
+    Run docker ps -a to list what exists.
+    If you removed the container, or have not created it yet, create it as the task describes, using exactly that name.
+- observed: '^\(absent\) 0\.HostConfig\.PortBindings\.'
+  diagnostic: >-
+    This container was created without publishing that port, so no request from your computer can reach it.
+    Run docker port "$DOCKYARD_CONTAINER"; empty output confirms it.
+    Port mappings are fixed when a container is created,
+    so remove it and create it again with the -p option the task gives.
+- observed: 'Failed to connect to 127\.0\.0\.1 port {{port}}\b'
+  diagnostic: >-
+    Nothing accepted a connection on 127.0.0.1:$DOCKYARD_PORT.
+    Run docker ps and look for 127.0.0.1:$DOCKYARD_PORT in the PORTS column.
+    If the container is missing or exited, read docker logs "$DOCKYARD_CONTAINER" first;
+    if it is running without that mapping, replace it with the -p option the task gives.
+- observed: 'Empty reply from server|Connection reset by peer'
+  diagnostic: >-
+    Docker accepted the connection on 127.0.0.1:$DOCKYARD_PORT, but no HTTP answer came back from inside the container.
+    The program may still be starting, may listen on a different port or only on the container's own 127.0.0.1,
+    or may have failed while handling the request.
+    Read docker logs "$DOCKYARD_CONTAINER" and look for a traceback,
+    then compare the address it listens on with the right-hand side of docker port "$DOCKYARD_CONTAINER".
+- observed: 'The requested URL returned error: \d+'
+  diagnostic: >-
+    A web server answered on 127.0.0.1:$DOCKYARD_PORT, but with an HTTP error instead of the expected page.
+    Run the same curl request with -i to see the status line,
+    and check docker logs "$DOCKYARD_CONTAINER" to confirm the program you expected is the one answering.

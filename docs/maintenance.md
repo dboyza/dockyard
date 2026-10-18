@@ -99,6 +99,17 @@ Use an independent mission to assess prior teaching and a distinct incident faul
 Keep explanations ahead of the prerequisites used by a task.
 An exam's task titles and text come from its unit's `brief.md`, one `## N. Title (W%)` section per task in `exams.json` order; `exams.json` holds only weights, criteria, and remediation.
 
+Ask of every check whether a learner could pass without doing what the lesson teaches.
+When the key step leaves runtime evidence, check that evidence, as m07-reconciliation does with the ReplicaSet's creation and deletion events.
+When the key step is a diagnosis, ask for a fact only the diagnosis reveals, as `finding.txt` does in m01-mission and the CKS investigations; never keyword-match explanatory prose.
+
+A criterion's `diagnostic` is its general advice.
+Its optional `cases` give advice for recognisable failures: each case is a regular expression searched in what the check observed, and the first match replaces the general advice.
+Placeholders such as `{{container}}` in a case expand to their literal, escaped values.
+`content/diagnostics.yaml` holds cases every activity on a runtime can meet, such as a missing lab container; they follow each criterion's own cases.
+When a JSON check finds no value at its path, it reports `(absent)` and the path, and keeps the full output as details.
+Reproduce each failure mode in a real lab and read the advice it produces before relying on a case.
+
 ### Lesson and primer figures
 
 Lesson and primer Markdown embed a figure with a fenced block whose language is `figure` and whose only line is the figure ID.
