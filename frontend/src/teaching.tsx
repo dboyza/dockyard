@@ -1,37 +1,15 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Check, Copy, ExternalLink } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { ExternalLink } from "lucide-react";
+import { type ReactNode } from "react";
 import type { Components, ExtraProps } from "react-markdown";
 import { LessonFigure } from "./figures/Figure";
 
+// Learners type every command themselves, so code blocks deliberately have no copy button.
 export function CodeBlock({ children }: { children: ReactNode }) {
-  const ref = useRef<HTMLPreElement>(null);
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    const text = (ref.current?.textContent ?? "").replace(/\n$/, "");
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        setCopied(true);
-        window.setTimeout(() => setCopied(false), 1600);
-      })
-      .catch(() => setCopied(false));
-  };
   return (
     <div className="code-block">
-      <pre ref={ref} tabIndex={0}>
-        {children}
-      </pre>
-      <button
-        type="button"
-        className={`copy-code ${copied ? "copied" : ""}`}
-        aria-label={copied ? "Copied" : "Copy code"}
-        title={copied ? "Copied" : "Copy code"}
-        onClick={copy}
-      >
-        {copied ? <Check size={15} /> : <Copy size={15} />}
-      </button>
+      <pre tabIndex={0}>{children}</pre>
     </div>
   );
 }

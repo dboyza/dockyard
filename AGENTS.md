@@ -5,7 +5,8 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 ## Product contract
 
 - Build a personal, local-first Docker and Kubernetes learning workbench for Apple Silicon macOS, ARM64/x86-64 Linux, and Windows through WSL 2.
-- Use browser lessons beside the real external terminal of the learner's choice.
+- Pair each browser lesson with an embedded terminal that runs the lab's real shell on this computer, and keep external terminals as an alternative.
+- The embedded terminal became the default at the user's request on 2026-10-19; [terminal compatibility](docs/terminals.md) describes both paths.
 - Teach beginners through advanced practice; offer an intermediate placement path.
 - Follow [the implementation plan](docs/implementation-plan.md) and [the curriculum](docs/curriculum.md).
 - Include Docker, practical platform engineering, and CKA, CKAD, and CKS preparation.
@@ -32,6 +33,7 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Teach container fundamentals before Dispatch; introduce Dispatch as the supplied background job application and distinguish its current stage from components added later.
 - Explain the central ideas of each lesson and reference primer with embedded figures as well as prose, introducing one new idea at a time.
 - Make prerequisites, workspace files, command placeholders, and completion criteria visible where they are needed.
+- Give lesson code blocks no copy button; learners type every command themselves (user decision, 2026-10-19).
 - Keep learner walkthroughs without hints or reference solutions separate from automated fixture audits.
 - Describe passes as observed task results, not proof of reasoning, retention, or unaided work outside the app.
 
@@ -40,13 +42,14 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Prefer simple typed interfaces, one canonical curriculum source, reversible lab operations, and observed runtime evidence.
 - Run `./scripts/check.sh` before committing; follow [the maintenance guide](docs/maintenance.md) for installed and runtime verification and [platform validation](docs/platform-validation.md) for the current evidence boundaries.
 - Start bug fixes by reproducing through the real learner workflow.
-- Check terminal behavior using real PTYs and terminal tools, never browser-rendered terminal previews.
+- Verify shell behavior through real PTYs, and verify the embedded terminal in a real browser at real device scale; emulated scaling hides its WebGL output.
 - Inspect screenshots with direct image-reading tools; browser automation is for the actual browser interface.
 - Use disposable test profiles and app-owned labs; never test against learner progress.
 - Release test profiles with `tests/release_profile.py`; never delete a profile that may still own lab resources.
 - Verify every reference solution passes, every broken starter fails for the intended reason, and validators accept legitimate alternatives.
 - Treat browser control as privileged local automation: authenticate sessions, validate origins, and expose only typed operations.
-- An external learner shell has ordinary user privileges; do not describe environment scoping as an OS security sandbox.
+- Console WebSockets bypass the HTTP middleware, so they verify the exact origin and session cookie themselves.
+- Every learner shell, embedded or external, has ordinary user privileges; do not describe environment scoping as an OS security sandbox.
 - Do not treat Node Ready as networking proof; verify CNI/DNS readiness and actual cross-node traffic and policy enforcement.
 - Keep node and Pod networks disjoint, and verify that native TCP/UDP forwarding exposes only the declared loopback ports.
 - Keep runtime observations read-only and project explicit safe fields; never expose raw workload environment or Secret bodies.

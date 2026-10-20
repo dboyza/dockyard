@@ -8,15 +8,16 @@ import secrets
 import threading
 import time
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
+from dockyard.consoles import ConsoleError
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.service import Service
 from dockyard.store import BusyError
@@ -70,6 +71,16 @@ class ExamEdit(Body):
     flagged: list[str]
 
 
+class ConsoleSize(Body):
+    cols: int = Field(80, ge=2, le=1000)
+    rows: int = Field(24, ge=1, le=500)
+
+
+# Unread output chunks allowed per browser connection before it must reconnect and replay.
+CONSOLE_BACKLOG = 2048
+CONSOLE_ENDED, CONSOLE_LAGGING, CONSOLE_UNKNOWN = 4001, 4002, 4004
+
+
 ACTIVE_OPERATIONS = {"running", "queued", "canceling"}
 
 
@@ -98,6 +109,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
     expires = time.monotonic() + 300
     consumed = False
     sign_in_lock = threading.Lock()
+    socket_origin = "ws" + origin.removeprefix("http")
     app.add_middleware(
         TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"]
     )
@@ -129,12 +141,14 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'"
+            f"img-src 'self' data:; connect-src 'self' {socket_origin}; "
+            "frame-ancestors 'none'; base-uri 'none'"
         )
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
         return response
 
+    @app.exception_handler(ConsoleError)
     @app.exception_handler(RuntimeErrorBase)
     @app.exception_handler(ValueError)
     async def lab_error(request: Request, error: Exception) -> JSONResponse:
@@ -182,6 +196,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
                 service.public_lab(lab) for lab in service.store.labs() if lab.state != "absent"
             ],
             "operations": recent_operations(service.store.operations()),
+            "consoles": service.consoles.public(),
             "theme": service.store.setting("theme", "dark"),
             "last_unit": service.store.setting("last_unit"),
             "checkpoints": service.store.checkpoints(),
@@ -399,6 +414,77 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
         if body.action == "terminal":
             return service.open_terminal(unit_id, body.terminal)
         return service.perform(unit_id, body.action)
+
+    @app.post("/api/units/{unit_id}/consoles")
+    def open_console(unit_id: str, body: ConsoleSize) -> dict[str, Any]:
+        return service.open_console(unit_id, body.cols, body.rows)
+
+    @app.post("/api/consoles/{console_id}/close")
+    def close_console(console_id: str) -> dict[str, bool]:
+        service.consoles.remove(console_id)
+        return {"closed": True}
+
+    @app.websocket("/api/consoles/{console_id}/stream")
+    async def console_stream(socket: WebSocket, console_id: str) -> None:
+        # Browsers always send Origin on WebSocket handshakes; the HTTP middleware does not run.
+        if socket.headers.get("origin") != origin or not secrets.compare_digest(
+            socket.cookies.get(cookie_name, ""), cookie
+        ):
+            await socket.close(code=1008)
+            return
+        loop = asyncio.get_running_loop()
+        output: asyncio.Queue[bytes | None] = asyncio.Queue(CONSOLE_BACKLOG)
+        lagging = asyncio.Event()
+
+        def deliver(data: bytes | None) -> None:
+            try:
+                output.put_nowait(data)
+            except asyncio.QueueFull:
+                lagging.set()
+
+        def listener(data: bytes | None) -> None:
+            loop.call_soon_threadsafe(deliver, data)
+
+        try:
+            history, live = service.consoles.attach(console_id, listener)
+        except ConsoleError:
+            await socket.close(code=CONSOLE_UNKNOWN)
+            return
+        await socket.accept()
+
+        async def send() -> None:
+            if history:
+                await socket.send_bytes(history)
+            while live and not lagging.is_set():
+                data = await output.get()
+                if data is None:
+                    break
+                await socket.send_bytes(data)
+            # A browser that fell behind reconnects and replays the scrollback instead.
+            await socket.close(code=CONSOLE_LAGGING if lagging.is_set() else CONSOLE_ENDED)
+
+        async def receive() -> None:
+            while True:
+                message = await socket.receive()
+                if message["type"] == "websocket.disconnect":
+                    return
+                if message.get("bytes"):
+                    await asyncio.to_thread(service.consoles.write, console_id, message["bytes"])
+                elif message.get("text"):
+                    size = ConsoleSize.model_validate_json(message["text"])
+                    service.consoles.resize(console_id, size.cols, size.rows)
+
+        async def guarded(work: Any) -> None:
+            with suppress(WebSocketDisconnect, ConsoleError, ValueError, RuntimeError):
+                await work
+
+        tasks = [asyncio.create_task(guarded(send())), asyncio.create_task(guarded(receive()))]
+        try:
+            await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        finally:
+            for task in tasks:
+                task.cancel()
+            service.consoles.detach(console_id, listener)
 
     @app.post("/api/operations/{operation_id}/cancel")
     def cancel(operation_id: str) -> dict[str, bool]:

@@ -2,7 +2,7 @@ import { releaseProfile } from './profiles';
 import { navigateTo } from './navigation';
 import { test, expect } from '@playwright/test';
 import { spawn, execFileSync, type ChildProcess } from 'node:child_process';
-import { mkdirSync, mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { once } from 'node:events';
 
@@ -115,9 +115,32 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await page.getByRole('button', { name: 'Use light theme' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   if (process.env.DOCKYARD_INTEGRATION === '1') {
+    const dock = page.getByRole('region', { name: 'Lab terminal' });
+    const options = page.getByRole('dialog', { name: 'Terminal and lab options' });
+    const labOption = async (name: string) => {
+      await dock.getByRole('button', { name: 'Terminal and lab options' }).click();
+      await options.getByRole('button', { name, exact: true }).click();
+    };
     await page.getByRole('button', { name: 'Prepare lab' }).click();
-    await expect(page.getByRole('button', { name: 'Open terminal' })).toBeEnabled();
-    const terminal = page.locator('.terminal-launcher');
+    // The first shell opens beside the lesson; typing in it runs a real lab shell.
+    await expect(dock.getByRole('tab', { name: /^Terminal 1/ })).toBeVisible();
+    await expect(dock.getByRole('status').filter({ hasText: 'Starting shell' })).toHaveCount(0);
+    await dock.getByRole('button', { name: 'Terminal and lab options' }).click();
+    await options.getByText('Workspace location', { exact: true }).click();
+    const workspace = await options.locator('.mono').innerText();
+    await page.keyboard.press('Escape');
+    await dock.locator('.console-view:not([hidden]) .xterm-helper-textarea').focus();
+    await page.keyboard.type('printf "%s|%s" "$DOCKYARD_UNIT" "$PWD" > embedded-proof.txt\n');
+    await expect.poll(() => {
+      try { return readFileSync(path.join(workspace, 'embedded-proof.txt'), 'utf8'); } catch { return ''; }
+    }).toBe(`m01-processes|${workspace}`);
+    rmSync(path.join(workspace, 'embedded-proof.txt'));
+    await dock.screenshot({ path: path.join(root, '.artifacts/terminals/embedded-wide.png') });
+
+    // The external launcher remains available from the dock menu.
+    await dock.getByRole('button', { name: 'Terminal and lab options' }).click();
+    await options.getByText('Use your own terminal', { exact: true }).click();
+    const terminal = options.locator('.terminal-launcher');
     await expect(terminal.getByRole('combobox', { name: 'Terminal application' })).toBeVisible();
     await terminal.getByText('Use an existing terminal', { exact: true }).click();
     await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -125,10 +148,11 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     const command = await page.evaluate(() => navigator.clipboard.readText());
     expect(command).toBe(await terminal.locator('code').innerText());
     execFileSync(path.join(root, '.runtime/installed/bin/python'), [path.join(root, 'frontend/e2e/check_terminal.py'), profile, command]);
-    await terminal.screenshot({ path: path.join(root, '.artifacts/terminals/picker-wide.png') });
     await page.setViewportSize({ width: 480, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await terminal.screenshot({ path: path.join(root, '.artifacts/terminals/picker-narrow.png') });
+    await page.getByRole('group', { name: 'Show' }).getByRole('button', { name: /Terminal/ }).click();
+    await expect(dock.getByRole('tab', { name: /^Terminal 1/ })).toBeVisible();
+    await dock.screenshot({ path: path.join(root, '.artifacts/terminals/embedded-narrow.png') });
     await page.setViewportSize({ width: 1440, height: 1000 });
     // Simulate discovery on a headless host, while retaining the real prepared lab and API command.
     await page.route('**/api/units/m01-processes/terminal', async route => {
@@ -138,8 +162,13 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     });
     await page.reload();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Meet Dispatch: run its first version');
+    // The reloaded page reattaches to the same shell rather than opening another.
+    await expect(dock.getByRole('tab')).toHaveCount(1);
+    await dock.getByRole('button', { name: 'Terminal and lab options' }).click();
+    await options.getByText('Use your own terminal', { exact: true }).click();
     await expect(terminal.getByRole('button', { name: 'Copy lab command' })).toBeVisible();
     await expect(terminal.getByRole('button', { name: 'Open terminal' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
     await page.unroute('**/api/units/m01-processes/terminal');
 
     await page.getByRole('button', { name: 'Check work', exact: true }).click();
@@ -152,25 +181,27 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await page.getByRole('button', { name: 'Check work', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
     await expect(page.locator('.next-lesson').getByRole('button')).toBeVisible();
-    await page.getByRole('button', { name: 'Stop', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
+    await labOption('Stop lab');
+    await expect(dock.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
     await page.getByRole('button', { name: 'Check work', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'The environment needs attention.' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Resume', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'Stop', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Reset', exact: true }).click();
+    await dock.getByRole('button', { name: 'Resume', exact: true }).click();
+    await expect(dock.getByRole('button', { name: 'Resume', exact: true })).toHaveCount(0);
+    await labOption('Reset lab');
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(page.getByText('Reset completed.', { exact: true })).toBeVisible();
+    // Reset moves the old workspace to a backup, so its shell is replaced by a fresh one.
+    await expect(dock.getByRole('tab')).toHaveCount(1);
+    await expect(dock.locator('.dock-dot.live')).toHaveCount(1);
     await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-mission');
     await page.getByRole('button', { name: /Mission: restore the first Dispatch service/ }).click();
     await page.getByRole('button', { name: 'Prepare lab' }).click();
-    await expect(page.getByRole('button', { name: 'Open terminal' })).toBeEnabled();
+    await expect(dock.getByRole('tab', { name: /^Terminal 1/ })).toBeVisible();
     await page.getByRole('tab', { name: 'Your task' }).click();
     await page.getByRole('button', { name: 'Reveal hint 1' }).click();
     await expect(page.getByText('HINT 1', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Independent retake', exact: true }).click();
+    await labOption('Independent retake');
     await expect(page.getByRole('dialog')).toContainText('Previous evidence and notes remain');
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
     await expect(page.getByText('Retake completed.', { exact: true })).toBeVisible();

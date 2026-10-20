@@ -78,7 +78,18 @@ export type Checkpoint = {
   excluded_count: number;
   archive: string;
 };
+export type ConsoleSession = {
+  id: string;
+  unit_id: string;
+  lab_id: string;
+  number: number;
+  created_at: string;
+  alive: boolean;
+  exit_code: number | null;
+  ended_by: string | null;
+};
 export type State = {
+  consoles: ConsoleSession[];
   exams: ExamAttempt[];
   exam_readiness: Record<string, string | null>;
   checkpoints: Checkpoint[];

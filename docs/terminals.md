@@ -1,12 +1,40 @@
 # Terminal compatibility
 
-Use Dockyard with your preferred terminal on a supported host.
-The terminal displays the real lab shell; Docker, Kubernetes, editors, and command-line tools run normally.
+Each lab's shell opens in the browser, beside the lesson.
+It is a real shell on this computer, so Docker, Kubernetes, editors, and command-line tools run normally.
+You can also open the same lab shell in your own terminal.
 Terminal choice does not change lessons, assessment, or lab ownership.
 
-## Open a new session
+## The built-in terminal
 
-Prepare a lab, choose **Terminal application**, and select **Open terminal**.
+Prepare a lab, and the lesson moves left while a shell opens on the right.
+The shell starts in the lab's workspace, with the lab's Docker endpoint, kubeconfig, and tool paths.
+Its prompt shows the activity, the current folder, the Git branch, and the last command's exit code.
+The terminal uses the bundled JetBrains Mono Nerd Font, so prompt icons work without installing anything.
+
+Shells keep running on the backend when you change pages or reload the browser.
+When you return, each shell reconnects and replays its recent output.
+Stopping Dockyard closes every built-in shell, as closing a terminal window would.
+Reset, Independent retake, and cleanup close that lab's shells, because its old workspace moves to a backup.
+A fresh shell then opens in the restored workspace.
+
+| Action | How |
+| --- | --- |
+| Open another shell | Select **+** beside the tabs, up to six per lab |
+| Close a shell | Select its **×**, or press Delete on a focused tab |
+| Find text | Cmd+F on macOS, Ctrl+Shift+F elsewhere |
+| Copy and paste | Cmd+C and Cmd+V on macOS, Ctrl+Shift+C and Ctrl+Shift+V elsewhere |
+| Clear the scrollback | Cmd+K on macOS, or the terminal menu |
+| Move between lesson and terminal | Ctrl+` |
+| Resize | Drag the divider, or focus it and use the arrow keys |
+
+Links such as `http://127.0.0.1:8080` open in a new browser tab.
+The terminal menu changes text size, stops, resumes, or resets the lab, and shows the workspace folder.
+The browser connects to the shell through the same one-time sign-in as the rest of the workbench.
+
+## Open your own terminal
+
+Open the terminal menu, expand **Use your own terminal**, choose **Terminal application**, and select **Open terminal**.
 Dockyard remembers your successful selection in the current profile.
 **Automatic** prefers a recognized terminal running the backend, then the first available platform option.
 Detection happens on the backend computer, so a browser on another computer cannot open its own local terminal for that lab.
@@ -30,7 +58,7 @@ Native Windows PowerShell and Command Prompt are not lab shells; open a WSL sess
 
 ## Use an existing session
 
-Expand **Use an existing terminal**, then select **Copy lab command**.
+In the same **Use your own terminal** section, expand **Use an existing terminal**, then select **Copy lab command**.
 Paste the command into a shell on the computer running Dockyard.
 It includes the installed Python executable, profile, and activity, so it works outside the repository directory.
 It opens the prepared workspace with the lab's tool paths and environment.
@@ -49,6 +77,8 @@ These sessions have your ordinary user privileges, just like a terminal opened y
 
 ## Verification boundaries
 
+The built-in terminal has automated real-PTY coverage for size, input, exit codes, hang-up, scrollback replay, and origin and session checks.
+An installed browser journey types into it and confirms the command ran in the lab workspace with the lab's settings.
 The terminal adapters have automated coverage for argument boundaries, unusual paths, discovery, selection, launch errors, and authenticated API behavior.
 Real terminal launches are checked separately from those contracts.
 The [terminal validation record](terminal-validation.md) lists the environments exercised for this change.

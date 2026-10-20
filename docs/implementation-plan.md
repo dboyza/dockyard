@@ -61,11 +61,12 @@ For a cluster-installation lesson, it prepares clean Linux machines and package 
 For an incident, it provisions a deliberately broken environment.
 For an application task, it supplies application source while leaving the Dockerfile, Compose configuration, or Kubernetes manifests to the learner as appropriate.
 
-Open terminal starts a new session in that lab's workspace with a clearly marked lab shell.
+When the lab is ready, an embedded terminal beside the lesson starts a clearly marked lab shell in that lab's workspace.
+On 2026-10-19 the user made this embedded terminal the default; external terminals remain an alternative.
 The shell receives an isolated KUBECONFIG, explicit Docker endpoint/context settings, app-owned tool PATH, workspace identifier, and lab identity without modifying global dotfiles.
 Ordinary docker, kubectl, helm, git, and editor commands remain ordinary commands.
-The browser does not need an embedded terminal or editor for release one.
-If automatic terminal launch fails, the browser supplies an exact CLI entry command and the workspace path.
+The embedded terminal is a real PTY on this computer, streamed over an authenticated loopback WebSocket; the browser provides no editor.
+The terminal menu can also launch the same shell in an external terminal or show its exact CLI entry command and workspace path.
 The learner may use any installed editor.
 
 The CLI supports launch, doctor, lab prepare, lab shell, lab status, lab check, lab reset, lab stop, lab resume, lab clean, cache prepare, progress export, and progress import.
@@ -75,6 +76,7 @@ Checking evaluates files and live behavior, not shell history or whether a parti
 The app never auto-types a solution into the terminal.
 
 Keep a session's terminal identity immutable; switching the browser to a different lab does not silently retarget an existing shell.
+Reset, retake, and cleanup end that lab's embedded shells, because the old workspace moves to a backup.
 Detect stale sessions and show which lab a check will inspect.
 Changes outside Dockyard are reflected on refresh and Check.
 Reset makes a complete workspace backup before replacement and requires a learner confirmation during normal app use.

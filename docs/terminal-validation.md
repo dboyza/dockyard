@@ -1,5 +1,25 @@
 # Terminal compatibility validation
 
+## Built-in terminal, 2026-10-19
+
+Candidate: Dockyard 0.4.0 with the embedded lab terminal.
+
+| Check | Observed result |
+| --- | --- |
+| Backend PTY tests | Real shells reported the requested size, received input, returned exit codes, and closed with a recorded reason on lab reset |
+| WebSocket boundary | Streams without the workbench origin or session cookie were refused before any shell output |
+| Real lab shell | `dockyard lab shell` over the WebSocket reported the activity, resized to 132 by 41, and started in the workspace |
+| Installed browser journey | Typed a command into the browser terminal and found its output file in the workspace, with the activity and folder |
+| Reload and reset | A reload reattached to the same shell; Reset replaced the closed shell with one fresh, live shell |
+| Prompts | Zsh and Bash prompts rendered icons, Git branch, and a red exit code in real PTYs |
+| Real 2x device scale | Headless Chrome with `--force-device-scale-factor=2` drew crisp text; emulated device scaling drew a blank WebGL canvas |
+| Layout and accessibility | The exam workspace passed automated WCAG checks in both themes at 1440 and 480 pixels |
+
+The emulated-scale blank canvas was a capture artifact: the same page drew correctly at a real 2x scale and after returning to 1x.
+An early shell started at 100 columns showed zsh's partial-line marker on its own line; shells now start at the measured pane size.
+
+## Earlier launcher validation
+
 Candidate: Dockyard 0.3.0, verified on 2026-09-27.
 This record covers terminal integration changes, not a rerun of every curriculum lab.
 The [platform validation record](platform-validation.md) retains the broader Docker, Kubernetes, and VM evidence.

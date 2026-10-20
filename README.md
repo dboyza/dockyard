@@ -3,13 +3,13 @@
 </p>
 <h1 align="center">Dockyard</h1>
 <p align="center"><strong>Learn Docker and Kubernetes by operating a real system.</strong></p>
-<p align="center">A personal learning workbench for macOS, Linux, and Windows through WSL 2, with browser lessons, your preferred terminal, and an evolving Dispatch application.</p>
+<p align="center">A personal learning workbench for macOS, Linux, and Windows through WSL 2, with browser lessons beside a real terminal and an evolving Dispatch application.</p>
 <p align="center"><a href="#start-learning">Start learning</a> · <a href="docs/user-guide.md">User guide</a> · <a href="docs/curriculum.md">Curriculum</a> · <a href="docs/runtime-evidence.md">Runtime evidence</a></p>
 
 ## Start learning
 
 This checkout includes a local launcher after installation.
-A local Docker Engine and your terminal provide the practical lab environment.
+A local Docker Engine provides the practical lab environment, and each lab's shell runs on this computer.
 See [platform setup](docs/platforms.md) for macOS, Linux, and Windows/WSL prerequisites.
 The source installer also needs Node/npm and uv; it downloads application dependencies, builds the browser assets, and installs into this repository's private environment.
 It does not alter shell configuration or Docker Desktop settings.
@@ -22,12 +22,12 @@ It does not alter shell configuration or Docker Desktop settings.
 
 The browser opens a local workbench with a one-time sign-in.
 Choose **Your course → Find your starting point** if you already work with containers, or **Start learning** for the complete sequence.
-Prepare a lab, choose **Open terminal**, and check the behavior you created.
-Prefer an editor terminal, tmux, or an existing window?
-Copy the lab command into it; see [terminal compatibility](docs/terminals.md) for supported launchers and platform details.
+Prepare a lab, and its terminal opens beside the lesson; then check the behavior you created.
+Prefer your own terminal, an editor terminal, or tmux?
+The terminal menu opens the same lab shell there; see [terminal compatibility](docs/terminals.md) for details.
 Tools, container images, and native VM packages download as required; Lab Manager can prefetch a module or track.
 
-[![The actual Dockyard lesson workbench in its dark theme](docs/assets/workbench.png)](docs/assets/workbench.png)
+[![A passing Dockyard lesson beside its real lab terminal, in the dark theme](docs/assets/workbench.png)](docs/assets/workbench.png)
 
 ## The learning loop
 

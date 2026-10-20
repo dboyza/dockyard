@@ -1,4 +1,4 @@
-import { TerminalLauncher } from "./TerminalLauncher";
+import { Workspace } from "./Workspace";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Flag, Play, Timer } from "lucide-react";
 import { api } from "./api";
@@ -184,7 +184,7 @@ export function ExamsPage({ model }: { model: Workbench }) {
         </div>
       </>
     );
-  return (
+  const page = (
     <>
       <button className="text-button" onClick={() => openExam(null)}>
         <ArrowLeft size={16} /> All practice exams
@@ -218,11 +218,6 @@ export function ExamsPage({ model }: { model: Workbench }) {
                   : "Remaining"}
               </span>
             </div>
-            <TerminalLauncher
-              key={exam.unit_id}
-              model={model}
-              unitId={exam.unit_id}
-            />
             <div className="button-row">
               <button
                 className="primary"
@@ -518,6 +513,22 @@ export function ExamsPage({ model }: { model: Workbench }) {
         )}
       </div>
     </>
+  );
+  // A timed attempt works like a lab: the tasks sit beside the exam's own shells.
+  return active && lab ? (
+    <Workspace
+      model={model}
+      unitId={exam.unit_id}
+      runtime={
+        catalog?.units.find((unit) => unit.id === exam.unit_id)?.runtime ??
+        "kubernetes"
+      }
+      retake={false}
+    >
+      {page}
+    </Workspace>
+  ) : (
+    page
   );
 }
 

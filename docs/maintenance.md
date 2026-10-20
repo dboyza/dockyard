@@ -25,6 +25,8 @@ The browser assets under `src/dockyard/static` and TypeScript contracts under `f
 Change their canonical source and regenerate them instead of editing generated output.
 Generate API contracts with `.venv/bin/python scripts/generate_types.py`.
 Build browser assets with `npm --prefix frontend run build`.
+The terminal font in `frontend/src/fonts` is JetBrains Mono Nerd Font Regular and Bold from Nerd Fonts v3.5.1, converted to WOFF2 and licensed under the bundled `OFL.txt`.
+To update it, download the release's `JetBrainsMono.tar.xz`, verify its published SHA-256, and convert the two files with `fonttools ttLib.woff2 compress`.
 
 ## Fast verification
 

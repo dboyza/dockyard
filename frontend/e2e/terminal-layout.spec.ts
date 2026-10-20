@@ -30,36 +30,47 @@ test.afterAll(async () => {
   if (server && server.exitCode === null) { server.kill('SIGINT'); await once(server, 'exit'); }
   if (temporary) releaseProfile(temporary);
 });
-test('active exam terminal controls remain usable in both themes and narrow layouts', async ({ page }) => {
-  // Presentation fixture only; actual lab shell execution is covered by journey.spec.ts.
+test('an active exam keeps its tasks beside the lab terminal in both themes and narrow layouts', async ({ page }) => {
+  // Presentation fixture only; real embedded shells are covered by journey.spec.ts.
+  const now = new Date().toISOString();
   await page.route('**/api/state', async route => {
     const response = await route.fetch();
     const state = await response.json();
-    state.exams = [{ id: 'terminal-layout', exam_id: 'ckad-release', unit_id: 'exam-ckad-a', lab_id: 'layout', revision: 1, state: 'active', started_at: new Date().toISOString(), deadline: new Date(Date.now() + 3600000).toISOString(), selected_task: '', flagged: [], assessment_id: null, score: null, task_scores: {} }];
+    state.exams = [{ id: 'terminal-layout', exam_id: 'ckad-release', unit_id: 'exam-ckad-a', lab_id: 'layout', revision: 1, state: 'active', started_at: now, deadline: new Date(Date.now() + 3600000).toISOString(), selected_task: '', flagged: [], assessment_id: null, score: null, task_scores: {} }];
+    state.labs = [{ id: 'f'.repeat(32), unit_id: 'exam-ckad-a', revision: 1, runtime: 'kubernetes', state: 'preparing', workspace: '/home/learner/long profile directory/dockyard/labs/exam-ckad-a/workspace', created_at: now, updated_at: now, error: null, resources: { stage: 'Starting the exam cluster' } }];
+    state.consoles = [];
     await route.fulfill({ json: state });
   });
-  await page.route('**/api/units/exam-ckad-a/terminal', route => route.fulfill({ json: {
-    options: [{ id: 'terminal', label: 'Terminal' }, { id: 'iterm', label: 'iTerm2' }], selected: 'auto', automatic: 'Terminal', wsl: false,
-    command: "'/home/learner/project with spaces/.runtime/installed/bin/python' -m dockyard --data-dir '/home/learner/long profile directory/dockyard' lab shell exam-ckad-a",
-  } }));
   await page.route('**/api/events', route => route.abort());
   await page.goto(url);
   await navigateTo(page, 'Exam practice');
   await page.getByRole('button', { name: 'Continue timed attempt' }).click();
   const controls = page.getByRole('region', { name: 'Exam controls' });
-  await expect(controls.getByRole('button', { name: 'Open terminal' })).toBeEnabled();
-  await controls.getByText('Use an existing terminal', { exact: true }).click();
+  const dock = page.getByRole('region', { name: 'Lab terminal' });
+  await expect(dock.getByText('Starting the exam cluster')).toBeVisible();
+  await dock.getByRole('button', { name: 'Terminal and lab options' }).click();
+  const options = page.getByRole('dialog', { name: 'Terminal and lab options' });
+  await expect(options.getByRole('button', { name: 'Reset lab' })).toBeVisible();
+  await options.getByText('Use your own terminal', { exact: true }).click();
+  // The external launcher waits for the lab; journey.spec.ts exercises it on a real one.
+  await expect(options.getByText('Preparing your lab…')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(options).toHaveCount(0);
+  const show = page.getByRole('group', { name: 'Show' });
   for (const theme of ['dark', 'light']) {
     if (theme === 'light') await page.getByRole('button', { name: 'Use light theme' }).click();
     for (const width of [1440, 480]) {
       await page.setViewportSize({ width, height: 1000 });
-      await expect(controls.getByRole('button', { name: 'Copy lab command' })).toBeVisible();
+      if (width < 1000) await show.getByRole('button', { name: /Lesson/ }).click();
       await expect(controls.getByRole('button', { name: 'Submit attempt' })).toBeVisible();
+      if (width < 1000) await show.getByRole('button', { name: /Terminal/ }).click();
+      await expect(dock.getByText('Starting the exam cluster')).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      await page.evaluate(async () => { await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => undefined))); });
-      const scan = await new AxeBuilder({ page }).include('.exam-toolbar').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
+      // The preparing spinner loops forever, so wait only for animations that end.
+      await page.evaluate(async () => { await Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => undefined))); });
+      const scan = await new AxeBuilder({ page }).include('.workspace').withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
       expect(scan.violations).toEqual([]);
-      await controls.screenshot({ path: path.join(root, `.artifacts/terminals/exam-${theme}-${width}.png`) });
+      await page.screenshot({ path: path.join(root, `.artifacts/terminals/exam-${theme}-${width}.png`) });
     }
   }
 });

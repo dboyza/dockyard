@@ -19,6 +19,7 @@ from typing import Any
 
 from dockyard import host, terminals
 from dockyard.catalog import CONTENT, Catalog
+from dockyard.consoles import Consoles
 from dockyard.locking import operation_lock
 from dockyard.models import (
     Assessment,
@@ -69,9 +70,11 @@ class Service:
         from dockyard.exams import Exams
 
         self.exams = Exams(self)
+        self.consoles = Consoles()
 
     def shutdown(self) -> None:
         self.closing.set()
+        self.consoles.shutdown()
         with self._lock:
             for cancel in self._cancels.values():
                 cancel.set()
@@ -299,6 +302,8 @@ class Service:
             elif action == "check":
                 result = self._check(lab, cancel).model_dump(mode="json")
             elif action in {"reset", "retake"}:
+                # Reset moves the old workspace into backups; a shell there would follow it.
+                self.consoles.end_lab(lab.id, "The lab was reset, so this shell closed.")
                 self._cleanup(lab, cancel)
                 backup = reset(
                     Path(lab.workspace),
@@ -312,6 +317,7 @@ class Service:
                     self.store.start_attempt(unit_id, self.catalog.get(unit_id).revision)
                 result = {"backup": str(backup), "lab": self.public_lab(lab)}
             elif action == "clean":
+                self.consoles.end_lab(lab.id, "The lab was cleaned up, so this shell closed.")
                 self._cleanup(lab, cancel)
                 lab.resources.pop("prepared_revision", None)
                 lab.state = "absent"
@@ -872,23 +878,81 @@ class Service:
             "terminal": selected.label,
         }
 
+    def open_console(self, unit_id: str, cols: int, rows: int) -> dict[str, Any]:
+        command = self.shell_command(unit_id)
+        lab = self.store.lab(unit_id)
+        assert lab is not None
+        if lab.state in {"preparing", "cleaning", "absent"}:
+            raise LabError("Wait until the lab is ready, then open a shell.")
+        return self.consoles.open(
+            unit_id, lab.id, command, lab.workspace, self.environment(lab), (cols, rows)
+        )
+
     def write_shell_rc(self, lab: Lab) -> Path:
         directory = Path(lab.workspace).parent / "shell"
         directory.mkdir(parents=True, exist_ok=True)
+        unit, short = lab.unit_id, lab.id[:8]
+        # Nerd Font glyphs only render in the embedded terminal, which bundles that font.
+        icon = {Runtime.DOCKER: "\uf308", Runtime.KUBERNETES: "\U000f10fe"}.get(
+            lab.runtime, "\uf31a"
+        )
+        place = {Runtime.DOCKER: "Docker", Runtime.KUBERNETES: "Kubernetes"}.get(
+            lab.runtime, "Linux VM"
+        )
+        dim, cyan, off = "\x1b[2m", "\x1b[36m", "\x1b[0m"
+        welcome = shlex.join(
+            [
+                "printf",
+                "\\n%s\\n%s\\n%s\\n\\n",
+                f"  \x1b[1;34m\uf13d  Dockyard{off}  {dim}\u00b7{off}  \x1b[1m"
+                f"{self.catalog.get(unit).title}{off}",
+                f"  {dim}{place} lab {short}. Commands here use this lab only.{off}",
+                f"  {dim}Run{off} {cyan}dockyard lab check{off} {dim}to check your work, or{off} "
+                f"{cyan}exit{off} {dim}to close this shell.{off}",
+            ]
+        )
         rc = (
             "# Dockyard lab shell; global dotfiles are not modified.\n"
-            'autoload -Uz compinit && compinit -d "$ZDOTDIR/.zcompdump"\n'
-            f"PROMPT='%F{{blue}}dockyard%f {lab.unit_id} "
-            f"%F{{cyan}}{lab.id[:8]}%f %1~ %# '\n"
-            "print 'Docker and Kubernetes commands here use this lab environment.'\n"
-            "print 'Run dockyard lab check to inspect your work; exit closes this shell.'\n"
+            'autoload -Uz compinit add-zsh-hook vcs_info && compinit -d "$ZDOTDIR/.zcompdump"\n'
+            'HISTFILE="$ZDOTDIR/.zsh_history" HISTSIZE=5000 SAVEHIST=5000\n'
+            "if [[ $DOCKYARD_TERMINAL == embedded ]]; then\n"
+            "  setopt PROMPT_SUBST\n"
+            "  zstyle ':vcs_info:git:*' formats ' %F{magenta}\ue725  %b%f'\n"
+            "  dockyard_precmd() { vcs_info; print -Pn '\\e]2;%1~\\a' }\n"
+            "  dockyard_preexec() { print -rn -- $'\\e]2;'\"${1%% *}\"$'\\a' }\n"
+            "  add-zsh-hook precmd dockyard_precmd\n"
+            "  add-zsh-hook preexec dockyard_preexec\n"
+            f"  PROMPT='%F{{blue}}{icon}  {unit}%f %F{{cyan}}\uf07c  %1~%f${{vcs_info_msg_0_}} "
+            "%(?.%F{green}.%F{red}%? )\u276f%f '\n"
+            f"  {welcome}\n"
+            "else\n"
+            f"  PROMPT='%F{{blue}}dockyard%f {unit} %F{{cyan}}{short}%f %1~ %# '\n"
+            "  print 'Docker and Kubernetes commands here use this lab environment.'\n"
+            "  print 'Run dockyard lab check to inspect your work; exit closes this shell.'\n"
+            "fi\n"
         )
         atomic_write(directory / ".zshrc", rc.encode())
         bash = (
             "# Private Dockyard shell; global configuration is not sourced.\n"
-            f"PS1='dockyard {lab.unit_id} {lab.id[:8]} \\W \\$ '\n"
-            "printf '%s\\n' 'Docker and Kubernetes commands here use this lab environment.' "
+            'HISTFILE="${BASH_SOURCE%/*}/.bash_history" HISTSIZE=5000\n'
+            'if [ "$DOCKYARD_TERMINAL" = embedded ]; then\n'
+            "  dockyard_prompt() {\n"
+            "    local code=$?\n"
+            "    dockyard_branch=$(git symbolic-ref --short HEAD 2>/dev/null)\n"
+            "    dockyard_status=$([ $code -eq 0 ] || printf '%s ' $code)\n"
+            "    dockyard_color=$([ $code -eq 0 ] && echo 32 || echo 31)\n"
+            "    printf '\\e]2;%s\\a' \"${PWD##*/}\"\n"
+            "  }\n"
+            "  PROMPT_COMMAND=dockyard_prompt\n"
+            f"  PS1='\\[\\e[34m\\]{icon}  {unit}\\[\\e[0m\\] \\[\\e[36m\\]\uf07c  \\W\\[\\e[0m\\]"
+            "${dockyard_branch:+ \\[\\e[35m\\]\ue725  ${dockyard_branch}\\[\\e[0m\\]}"
+            " \\[\\e[${dockyard_color}m\\]${dockyard_status}\u276f\\[\\e[0m\\] '\n"
+            f"  {welcome}\n"
+            "else\n"
+            f"  PS1='dockyard {unit} {short} \\W \\$ '\n"
+            "  printf '%s\\n' 'Docker and Kubernetes commands here use this lab environment.' "
             "'Run dockyard lab check to inspect your work; exit closes this shell.'\n"
+            "fi\n"
         )
         atomic_write(directory / ".bashrc", bash.encode())
         return directory

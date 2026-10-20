@@ -39,18 +39,31 @@ The sidebar shows how many labs exist on this computer, so a forgotten cluster i
 
 1. Read **Understand** and answer the prediction before inspecting the explanation.
 2. Read **Your task** and prepare the owned environment.
-3. Select **Open terminal** to open an ordinary terminal in that activity's workspace.
-4. Edit files and run commands using your preferred terminal tools.
+3. Select **Prepare lab**; the lesson moves left and a shell opens on the right, in that activity's workspace.
+4. Type commands and edit files in that shell, or open the same shell in your own terminal from its menu.
 5. Select **Check work** and start with any item marked Needs attention.
    Open Check details to see the expected and observed values.
 6. Write observations and use the debrief to explain why the repair worked.
    Observations save when you click out of the notes box, or with Save observations.
 7. Use Previous and Next at the bottom of the lesson to move through the course in order.
 
-Every command block has a copy button in its top corner.
+Command blocks have no copy button, so you type each command yourself.
+Typing builds the habits a real terminal needs.
 
-A terminal retains its original lab identity when the browser switches lessons.
-Reopen the terminal after Reset or Independent retake so the workspace and attempt agree.
+## Use the lab terminal
+
+The terminal is a real shell on this computer, not a simulation.
+Docker and Kubernetes commands in it use only this lab's settings.
+Select **+** to open another shell, up to six per lab.
+Shells keep running when you visit another page or reload, and they reopen with their recent output.
+Drag the divider to resize the lesson and terminal, or press Ctrl+` to move between them.
+Use the maximize button for more room, or hide the terminal and bring it back from the right edge.
+On a narrow screen, switch between **Lesson** and **Terminal** at the top.
+Find text with Cmd+F on macOS or Ctrl+Shift+F elsewhere.
+The menu changes text size, stops or resets the lab, and shows the workspace folder.
+
+A shell keeps its original lab identity when the browser switches lessons.
+Reset and Independent retake close a lab's shells and open a fresh one in the restored workspace.
 Checks use live behavior and source snapshots; changing files or resources during a check can make its result stale.
 A stopped or unavailable environment is reported as blocked rather than as a learner failure.
 
@@ -127,7 +140,7 @@ Running and failed labs are never reclaimed.
 
 Closing a browser does not stop lab resources.
 Stop the environment explicitly when you finish a session.
-An external terminal has your ordinary host permissions; do not run commands against unrelated projects or real infrastructure.
+Lab shells, built in or external, have your ordinary host permissions; do not run commands against unrelated projects or real infrastructure.
 
 ## Prepare a cache
 

@@ -96,7 +96,7 @@ test("an unknown figure explains itself instead of breaking the lesson", () => {
 
 test("ordinary code blocks are unaffected", () => {
   lesson("```sh\ndocker ps\n```");
-  expect(screen.getByRole("button", { name: "Copy code" })).toBeTruthy();
+  expect(screen.getByText("docker ps").closest("pre")).toBeTruthy();
 });
 
 test("a figure links each of its terms to the glossary at the current step", () => {

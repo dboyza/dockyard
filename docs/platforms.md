@@ -2,7 +2,7 @@
 
 Dockyard uses one browser workbench and one Linux-container curriculum across platforms.
 The backend runs on Apple Silicon macOS or ARM64/x86-64 Linux.
-On Windows, run the backend inside WSL 2 and use your Windows browser and preferred terminal.
+On Windows, run the backend inside WSL 2 and use your Windows browser; the built-in terminal runs a WSL shell.
 Native Windows Python and Windows containers are outside this implementation.
 
 | Platform | Lesson backend and shell | Application labs | Advanced native-node labs |
@@ -20,8 +20,8 @@ Use a supported, current Docker Engine with API 1.49 or newer, including a match
 Dockyard uses platform-specific image inspection and save operations.
 Verify `docker info`, `docker buildx version`, `docker compose version`, and `docker version` in the same host environment that runs Dockyard.
 The daemon must be reachable through a local Unix socket.
-Use your preferred terminal: the browser detects supported desktop applications and also provides a copyable lab command.
-See [terminal compatibility](terminals.md) for automatic launch support, editor terminals, and headless sessions.
+Each lab's shell opens in the browser beside the lesson, and it can also open in a supported desktop terminal.
+See [terminal compatibility](terminals.md) for the built-in terminal, external launchers, editor terminals, and headless sessions.
 Install Git, curl, Bash, Node.js 22.12 or newer, npm, and uv before using the source installer.
 The installer builds the web assets and installs Python dependencies into private project environments.
 It downloads Python 3.14 through uv if necessary.

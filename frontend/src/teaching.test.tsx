@@ -1,18 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { expect, test, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { expect, test } from "vitest";
 import { Markdown } from "./teaching";
 
-test("command blocks copy their exact text", async () => {
-  const writeText = vi.fn().mockResolvedValue(undefined);
-  Object.assign(navigator, { clipboard: { writeText } });
+test("command blocks have no copy shortcut, so learners type each command", () => {
   render(
     <Markdown>
       {"Run this:\n\n```sh\ndocker ps\ncurl localhost\n```\n"}
     </Markdown>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Copy code" }));
-  await waitFor(() =>
-    expect(writeText).toHaveBeenCalledWith("docker ps\ncurl localhost"),
-  );
-  expect(await screen.findByRole("button", { name: "Copied" })).toBeTruthy();
+  expect(screen.getByText(/docker ps/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /copy/i })).toBeNull();
 });

@@ -160,8 +160,10 @@ export function LabsPage({ model }: { model: Workbench }) {
               </div>
               <div>
                 <Terminal size={16} />
-                <strong>Terminal</strong>
-                <span>{doctor.terminal || "Use an existing terminal"}</span>
+                <strong>External terminal</strong>
+                <span>
+                  {doctor.terminal || "None found; use the built-in one"}
+                </span>
               </div>
             </div>
             <p className="small muted">

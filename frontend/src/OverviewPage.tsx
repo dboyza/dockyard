@@ -29,7 +29,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
           </span>
           <span>
             <Terminal size={14} />
-            Your terminal
+            Real terminal
           </span>
         </div>
         <button
@@ -77,7 +77,8 @@ export function OverviewPage({ model }: { model: Workbench }) {
             happen.
           </p>
           <p>
-            <strong>Try it.</strong> Prepare a lab and work in your terminal.
+            <strong>Try it.</strong> Prepare a lab and type commands in the
+            terminal beside the lesson.
           </p>
           <p>
             <strong>Check and explain.</strong> Check the result, then explain
@@ -98,8 +99,8 @@ export function OverviewPage({ model }: { model: Workbench }) {
         <h2 id="foundations-title">What a container really is.</h2>
         <p>
           No Docker experience needed. Each foundations lab explains one idea
-          with pictures you can step through, then you try it in your own
-          terminal.
+          with pictures you can step through, then you try it in a real terminal
+          beside the lesson.
         </p>
         <p className="muted">
           You’ll run small, throwaway programs so you can focus on how
@@ -139,7 +140,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
         <p className="intro">
           {returning
             ? "Pick up your last lesson, or review something you practised earlier."
-            : "Start with what a container is and how to reach one, then build up to running and recovering a Kubernetes cluster. You’ll read a short, illustrated lesson here and try it in your own terminal."}
+            : "Start with what a container is and how to reach one, then build up to running and recovering a Kubernetes cluster. You’ll read a short, illustrated lesson and try it in a real terminal beside it."}
         </p>
         {!returning && (
           <div className="button-row hero-actions">
