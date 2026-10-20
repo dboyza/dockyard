@@ -28,6 +28,9 @@ Build browser assets with `npm --prefix frontend run build`.
 The terminal font in `frontend/src/fonts` is JetBrains Mono Nerd Font Regular and Bold from Nerd Fonts v3.5.1, converted to WOFF2 and licensed under the bundled `OFL.txt`.
 To update it, download the release's `JetBrainsMono.tar.xz`, verify its published SHA-256, and convert the two files with `fonttools ttLib.woff2 compress`.
 
+The README image `docs/assets/workbench.png` shows a real passing `m01-processes` lab beside its terminal, in the dark theme at 1440 by 1000 pixels.
+Recapture it from a disposable profile after visible workspace changes: start Dispatch in the terminal, request `/healthz`, and choose **Check work**.
+
 ## Fast verification
 
 ```sh

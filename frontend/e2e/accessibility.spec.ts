@@ -55,7 +55,8 @@ test('all workbench destinations and lesson interactions meet automated accessib
     await scan(`${theme}/lesson`);
     if (theme === 'dark') {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
-      await page.screenshot({ path: path.join(root, 'docs/assets/workbench.png'), animations: 'disabled' });
+      // The README image needs a prepared lab beside its terminal; see docs/maintenance.md.
+      await page.screenshot({ path: path.join(root, '.artifacts/lesson-dark.png'), animations: 'disabled' });
     }
     await page.getByRole('tab', { name: 'Your task' }).click();
     await page.getByRole('button', { name: 'Reveal reference', exact: true }).click();
