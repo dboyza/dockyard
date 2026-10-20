@@ -84,6 +84,30 @@ def test_an_absent_field_is_named_and_the_document_kept_as_details(tmp_path):
     assert evidence.diagnostic == "not published"
 
 
+def test_diagnostics_name_real_values_but_keep_shell_variables_in_commands(tmp_path):
+    case = DiagnosticCase(
+        observed="no such object",
+        diagnostic='No container named {{container}}; run docker logs "$DOCKYARD_CONTAINER".',
+    )
+    evidence = evaluate(tmp_path, inspect_check(cases=[case]), 1, "[]", "no such object: x")
+    assert evidence.diagnostic == (
+        'No container named dockyard-0123456789ab; run docker logs "$DOCKYARD_CONTAINER".'
+    )
+
+
+def test_the_shared_missing_container_advice_names_the_real_container(tmp_path):
+    criterion = next(
+        item
+        for item in Catalog().get("m01-processes").checks
+        if any("no such" in case.observed for case in item.cases)
+    )
+    evidence = evaluate(
+        tmp_path, criterion, 1, "[]", "Error: No such object: dockyard-0123456789ab"
+    )
+    assert "named dockyard-0123456789ab, the name in $DOCKYARD_CONTAINER" in evidence.diagnostic
+    assert "{{" not in evidence.diagnostic
+
+
 def test_unmatched_failures_and_passes_keep_the_general_diagnostic(tmp_path):
     wrong = '[{"HostConfig": {"PortBindings": {"8080/tcp": [{"HostPort": "9"}]}}}]'
     assert evaluate(tmp_path, inspect_check(), 0, wrong).diagnostic == "general advice"

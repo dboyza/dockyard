@@ -4,7 +4,7 @@
 docker:
 - observed: '(?im)no such (object|container): {{container}}$'
   diagnostic: >-
-    Docker has no container named "$DOCKYARD_CONTAINER", so there is nothing for this check to inspect yet.
+    Docker has no container named {{container}}, the name in $DOCKYARD_CONTAINER, so this check has nothing to inspect yet.
     Run docker ps -a to list what exists.
     If you removed the container, or have not created it yet, create it as the task describes, using exactly that name.
 - observed: '^\(absent\) 0\.HostConfig\.PortBindings\.'

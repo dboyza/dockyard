@@ -224,12 +224,6 @@ class Service:
         unit = self.catalog.get(unit_id)
         lab_id = uuid.uuid4().hex
         endpoint = self._docker_endpoint()
-        # Ownership checks compare creation times with the engine's clock, not the host's.
-        engine_clock = run(
-            ["docker", "info", "--format", "{{.SystemTime}}"],
-            env={**os.environ, "DOCKER_HOST": endpoint},
-            timeout=30,
-        )
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
@@ -256,8 +250,6 @@ class Service:
                 "api_port": str(api_port),
             },
         )
-        if engine_clock.ok and engine_clock.stdout.strip():
-            lab.resources["docker_clock"] = engine_clock.stdout.strip()
         self.store.save_lab(lab)
         return lab
 
@@ -441,9 +433,17 @@ class Service:
         unit = self.catalog.get(lab.unit_id)
         env = self.environment(lab)
         if unit.runtime != Runtime.LINUX or unit.images:
-            self._require(
-                run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=15, cancel=cancel)
+            # Ownership compares creation times on the engine's clock. Reading it here, before
+            # anything is created, keeps a stuck engine cancelable.
+            engine = run(
+                ["docker", "info", "--format", "{{.SystemTime}}"],
+                env=env,
+                timeout=15,
+                cancel=cancel,
             )
+            self._require(engine)
+            if engine.stdout.strip():
+                lab.resources.setdefault("docker_clock", engine.stdout.strip())
         # A capability that names a pinned tool, such as cosign, puts that tool on the lab's PATH.
         named_tools = sorted(set(unit.capabilities) & TOOLCHAIN.keys())
         if named_tools:
@@ -785,7 +785,8 @@ class Service:
             ),
             expected=expected,
             observed=self.redact(observed, lab)[-8000:],
-            diagnostic=diagnostic,
+            # Diagnostics name real values with {{placeholders}}; commands keep shell variables.
+            diagnostic=self.expand(diagnostic, lab),
             details=self.redact(details, lab)[-8000:],
             points=criterion.points,
         )
