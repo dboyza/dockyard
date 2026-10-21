@@ -83,3 +83,9 @@ The [runtime evidence log](docs/runtime-evidence.md) records the underlying stag
 
 For help, include the activity ID, the action you took, the diagnostic shown, and the output of `./dockyard doctor`, which includes the app version.
 Exclude kubeconfigs, credentials, private keys, and raw lab databases.
+
+## License
+
+Dockyard is available under the [MIT License](LICENSE).
+The bundled JetBrains Mono Nerd Font uses the [SIL Open Font License](frontend/src/fonts/OFL.txt).
+The CSI teaching manifests keep their [Apache 2.0 license](src/dockyard/content/runtime/csi/LICENSE).

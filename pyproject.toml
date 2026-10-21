@@ -6,6 +6,8 @@ build-backend = "hatchling.build"
 name = "dockyard-learn"
 dynamic = ["version"]
 description = "A local Docker and Kubernetes learning workbench with real terminal labs."
+license = "MIT"
+license-files = ["LICENSE", "frontend/src/fonts/OFL.txt", "src/dockyard/content/runtime/csi/LICENSE"]
 requires-python = ">=3.12,<3.15"
 dependencies = [
   "fastapi>=0.115,<1",
