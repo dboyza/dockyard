@@ -79,10 +79,13 @@ Chrome must be available.
 
 ```sh
 ./scripts/install.sh
-DOCKYARD_INTEGRATION=1 npm --prefix frontend run test:e2e -- e2e/journey.spec.ts e2e/portability.spec.ts e2e/recovery.spec.ts e2e/reset.spec.ts
+DOCKYARD_INTEGRATION=1 npm --prefix frontend run test:e2e -- e2e/journey.spec.ts e2e/lab-lifecycle.spec.ts e2e/portability.spec.ts e2e/recovery.spec.ts e2e/reset.spec.ts
 DOCKYARD_PROJECT_INTEGRATION=1 npm --prefix frontend run test:e2e -- e2e/project.spec.ts
 npm --prefix frontend run test:e2e -- e2e/accessibility.spec.ts e2e/terminal-layout.spec.ts e2e/history.spec.ts
 ```
+
+The lab lifecycle suite drives a Docker lab and a Kubernetes cluster from Prepare to cleanup through the embedded terminal.
+Its shells prove each step by writing files and changing Docker, because the terminal draws its text on a canvas.
 
 Test suites release their disposable profiles with `tests/release_profile.py`, which cleans every lab through its ownership records and deletes the profile only once nothing remains.
 If it reports a kept profile, run the printed `lab clean --all` command.

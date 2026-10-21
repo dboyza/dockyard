@@ -378,7 +378,7 @@ export function useWorkbench() {
             ? "Your workspace will be backed up and restored to the starter. Hints and references start closed for the new attempt. Previous evidence and notes remain. Open shells restart in the fresh workspace."
             : action === "reset"
               ? "Your entire workspace will be backed up before the starter is restored. Only this lab’s owned resources are removed. Open shells restart in the fresh workspace."
-              : "This removes only the resources verified as belonging to this lab. Your source files and progress remain available.",
+              : "This removes only the resources verified as belonging to this lab, and closes its shells. Your source files and progress remain available.",
         action: () => {
           setDialog(null);
           void perform(action, true, unitId);

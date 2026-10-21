@@ -74,6 +74,7 @@ class ExamEdit(Body):
 class ConsoleSize(Body):
     cols: int = Field(80, ge=2, le=1000)
     rows: int = Field(24, ge=1, le=500)
+    reuse: bool = False
 
 
 # Unread output chunks allowed per browser connection before it must reconnect and replay.
@@ -417,7 +418,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
 
     @app.post("/api/units/{unit_id}/consoles")
     def open_console(unit_id: str, body: ConsoleSize) -> dict[str, Any]:
-        return service.open_console(unit_id, body.cols, body.rows)
+        return service.open_console(unit_id, body.cols, body.rows, body.reuse)
 
     @app.post("/api/consoles/{console_id}/close")
     def close_console(console_id: str) -> dict[str, bool]:

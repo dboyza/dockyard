@@ -7,7 +7,7 @@ Terminal choice does not change lessons, assessment, or lab ownership.
 
 ## The built-in terminal
 
-Prepare a lab, and the lesson moves left while a shell opens on the right.
+Prepare a lab, and **Your task** moves left while a shell opens on the right.
 The shell starts in the lab's workspace, with the lab's Docker endpoint, kubeconfig, and tool paths.
 Its prompt shows the activity, the current folder, the Git branch, and the last command's exit code.
 The terminal uses the bundled JetBrains Mono Nerd Font, so prompt icons work without installing anything.
@@ -29,7 +29,9 @@ A fresh shell then opens in the restored workspace.
 | Resize | Drag the divider, or focus it and use the arrow keys |
 
 Links such as `http://127.0.0.1:8080` open in a new browser tab.
-The terminal menu changes text size, stops, resumes, or resets the lab, and shows the workspace folder.
+The terminal menu changes text size, stops, resumes, resets, or cleans up the lab, and shows the workspace folder.
+If a new shell prints nothing for 10 seconds, the terminal says so and offers another shell.
+Several browser tabs share one automatically opened shell rather than each starting their own.
 The browser connects to the shell through the same one-time sign-in as the rest of the workbench.
 
 ## Open your own terminal

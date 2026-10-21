@@ -879,14 +879,16 @@ class Service:
             "terminal": selected.label,
         }
 
-    def open_console(self, unit_id: str, cols: int, rows: int) -> dict[str, Any]:
+    def open_console(
+        self, unit_id: str, cols: int, rows: int, reuse: bool = False
+    ) -> dict[str, Any]:
         command = self.shell_command(unit_id)
         lab = self.store.lab(unit_id)
         assert lab is not None
         if lab.state in {"preparing", "cleaning", "absent"}:
             raise LabError("Wait until the lab is ready, then open a shell.")
         return self.consoles.open(
-            unit_id, lab.id, command, lab.workspace, self.environment(lab), (cols, rows)
+            unit_id, lab.id, command, lab.workspace, self.environment(lab), (cols, rows), reuse
         )
 
     def write_shell_rc(self, lab: Lab) -> Path:

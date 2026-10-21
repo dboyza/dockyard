@@ -20,6 +20,7 @@ import {
   Search,
   Square,
   TerminalSquare,
+  Trash2,
   X,
 } from "lucide-react";
 import { api, type ConsoleSession } from "./api";
@@ -110,8 +111,9 @@ export function TerminalDock({
     focus: () => current && handles.current.get(current.id)?.focus(),
   }));
 
-  // Resolves to the new shell's ID, or null when another request is already opening one.
-  const createShell = async () => {
+  // Resolves to the shell's ID, or null when another request is already opening one.
+  // An automatic open reuses the lab's live shell, so several tabs never race.
+  const createShell = async (reuse = false) => {
     if (opening.current) return null;
     opening.current = true;
     try {
@@ -121,10 +123,10 @@ export function TerminalDock({
           .filter((item) => !item.alive && item.ended_by)
           .map((item) => api(`/consoles/${item.id}/close`, {})),
       );
-      const created = await api<ConsoleSession>(
-        `/units/${unitId}/consoles`,
-        paneSize(body.current, fontSize),
-      );
+      const created = await api<ConsoleSession>(`/units/${unitId}/consoles`, {
+        ...paneSize(body.current, fontSize),
+        reuse,
+      });
       await refresh();
       return created.id;
     } finally {
@@ -158,7 +160,7 @@ export function TerminalDock({
   useEffect(() => {
     if (!needsShell) return;
     let alive = true;
-    createShell()
+    createShell(true)
       .then((id) => alive && id && setSelected(id))
       .catch((error) => setError((error as Error).message));
     return () => {
@@ -168,6 +170,11 @@ export function TerminalDock({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [needsShell]);
 
+  useEffect(() => {
+    document
+      .getElementById(`console-tab-${current?.id}`)
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [current?.id]);
   useEffect(() => {
     try {
       localStorage.setItem("dockyard-terminal-size", String(fontSize));
@@ -385,6 +392,13 @@ export function TerminalDock({
                         <RefreshCw size={14} /> Independent retake
                       </button>
                     )}
+                    <button
+                      className="dock-menu-item danger"
+                      disabled={!!busy}
+                      onClick={() => act("clean")}
+                    >
+                      <Trash2 size={14} /> Clean up lab
+                    </button>
                     <details className="dock-menu-details">
                       <summary>Workspace location</summary>
                       <p className="mono">{lab.workspace}</p>

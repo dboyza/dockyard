@@ -88,6 +88,20 @@ def test_shell_numbers_fill_gaps_and_each_lab_is_bounded(tmp_path, monkeypatch):
     manager.shutdown()
 
 
+def test_automatic_opens_reuse_the_labs_live_shell(tmp_path):
+    manager = Consoles()
+    command = ["/bin/sh", "-c", "sleep 30"]
+    first = manager.open("m01-processes", "a" * 32, command, str(tmp_path), {}, (80, 24), True)
+    again = manager.open("m01-processes", "a" * 32, command, str(tmp_path), {}, (80, 24), True)
+    assert again["id"] == first["id"]
+    # A shell from an earlier lab identity is never reused for the new lab.
+    fresh = manager.open("m01-processes", "b" * 32, command, str(tmp_path), {}, (80, 24), True)
+    assert fresh["id"] != first["id"]
+    extra = manager.open("m01-processes", "a" * 32, command, str(tmp_path), {}, (80, 24))
+    assert extra["id"] != first["id"]
+    manager.shutdown()
+
+
 def test_the_shell_sees_a_modern_terminal_not_the_backend_terminal():
     env = consoles.terminal_environment(
         {"TERM": "dumb", "ITERM_SESSION_ID": "x", "TMUX": "/tmp/t", "LANG": "", "HOME": "/h"}

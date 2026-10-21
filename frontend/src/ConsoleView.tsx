@@ -28,6 +28,7 @@ const ENDED = 4001;
 const LAGGING = 4002;
 const UNKNOWN = 4004;
 const REFUSED = 1008;
+const STALL_MS = 10000;
 const mac = /Mac|iPhone|iPad/.test(navigator.platform);
 const encoder = new TextEncoder();
 
@@ -55,6 +56,8 @@ export function ConsoleView({
   const fit = useRef<FitAddon | null>(null);
   const search = useRef<SearchAddon | null>(null);
   const [link, setLink] = useState<Link>("connecting");
+  // A shell that prints nothing for a while looks broken, so say so and offer another.
+  const [stalled, setStalled] = useState(false);
   const [finding, setFinding] = useState(false);
   const [query, setQuery] = useState("");
   const findInput = useRef<HTMLInputElement>(null);
@@ -79,6 +82,8 @@ export function ConsoleView({
     let socket: WebSocket | null = null;
     let timer = 0;
     let retries = 0;
+    let started = false;
+    const stall = window.setTimeout(() => setStalled(!started), STALL_MS);
     const term = new Terminal({
       allowProposedApi: true,
       cursorBlink: true,
@@ -149,13 +154,18 @@ export function ConsoleView({
       let replaying = true;
       socket.onopen = () => {
         retries = 0;
-        setLink("live");
+        if (started) setLink("live");
         sendSize();
       };
       socket.onmessage = (event) => {
         // Each connection starts with the full scrollback, so redraw from a clean screen.
-        if (replaying) term.reset();
-        replaying = false;
+        if (replaying) {
+          term.reset();
+          replaying = false;
+          started = true;
+          setStalled(false);
+          setLink("live");
+        }
         term.write(new Uint8Array(event.data as ArrayBuffer));
       };
       socket.onclose = (event) => {
@@ -198,6 +208,7 @@ export function ConsoleView({
     return () => {
       disposed = true;
       window.clearTimeout(timer);
+      window.clearTimeout(stall);
       resize.disconnect();
       socket?.close();
       term.dispose();
@@ -287,7 +298,7 @@ export function ConsoleView({
           </button>
         </div>
       )}
-      {link === "connecting" && (
+      {link === "connecting" && !stalled && (
         <div className="console-pill" role="status">
           <LoaderCircle size={13} className="spin" /> Starting shell
         </div>
@@ -295,6 +306,22 @@ export function ConsoleView({
       {link === "reconnecting" && session.alive && (
         <div className="console-pill" role="status">
           <LoaderCircle size={13} className="spin" /> Reconnecting
+        </div>
+      )}
+      {stalled && link === "connecting" && session.alive && (
+        <div className="console-ended" role="status">
+          <p>
+            <strong>The shell has not started yet.</strong>
+            <span>
+              Docker may still be waking up. You can wait or open another.
+            </span>
+          </p>
+          <div className="button-row">
+            <button className="primary" onClick={onRestart}>
+              <Plus size={15} /> New shell
+            </button>
+            <button onClick={onClose}>Close tab</button>
+          </div>
         </div>
       )}
       {ended && (

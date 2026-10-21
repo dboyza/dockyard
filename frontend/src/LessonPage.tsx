@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Workspace } from "./Workspace";
 import { LiveLabMap } from "./LiveLabMap";
 import type { Workbench } from "./useWorkbench";
@@ -57,6 +57,11 @@ export function LessonPage({ model }: { model: Workbench }) {
   });
   if (lesson && saved.id !== lesson.id)
     setSaved({ id: lesson.id, text: note, status: "" });
+  const working = !!lab && lab.state !== "absent";
+  // Entering the workspace puts the task beside the terminal; later checks still show evidence.
+  useEffect(() => {
+    if (working) setTab("mission");
+  }, [lesson?.id, working, setTab]);
   if (!lesson) return null;
   const saveNote = (announce: boolean) =>
     api(`/units/${lesson.id}/note`, { body: note })
@@ -625,7 +630,7 @@ export function LessonPage({ model }: { model: Workbench }) {
       ))}
     </section>
   );
-  if (lab && lab.state !== "absent")
+  if (working)
     return (
       <Workspace
         model={model}

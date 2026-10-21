@@ -39,7 +39,7 @@ The sidebar shows how many labs exist on this computer, so a forgotten cluster i
 
 1. Read **Understand** and answer the prediction before inspecting the explanation.
 2. Read **Your task** and prepare the owned environment.
-3. Select **Prepare lab**; the lesson moves left and a shell opens on the right, in that activity's workspace.
+3. Select **Prepare lab**; **Your task** moves left and a shell opens on the right, in that activity's workspace.
 4. Type commands and edit files in that shell, or open the same shell in your own terminal from its menu.
 5. Select **Check work** and start with any item marked Needs attention.
    Open Check details to see the expected and observed values.
@@ -60,7 +60,8 @@ Drag the divider to resize the lesson and terminal, or press Ctrl+` to move betw
 Use the maximize button for more room, or hide the terminal and bring it back from the right edge.
 On a narrow screen, switch between **Lesson** and **Terminal** at the top.
 Find text with Cmd+F on macOS or Ctrl+Shift+F elsewhere.
-The menu changes text size, stops or resets the lab, and shows the workspace folder.
+The menu changes text size, stops, resets, or cleans up the lab, and shows the workspace folder.
+Clean up lab removes the lab's resources and closes its shells; your progress stays.
 
 A shell keeps its original lab identity when the browser switches lessons.
 Reset and Independent retake close a lab's shells and open a fresh one in the restored workspace.

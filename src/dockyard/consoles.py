@@ -112,9 +112,14 @@ class Consoles:
         workspace: str,
         environment: dict[str, str],
         size: tuple[int, int],
+        reuse: bool = False,
     ) -> dict[str, Any]:
         with self._lock:
             mine = [item for item in self._items.values() if item.unit_id == unit_id]
+            # Automatic opens from several tabs or renders share one shell instead of racing.
+            current = [item for item in mine if not item.ended and item.lab_id == lab_id]
+            if reuse and current:
+                return current[-1].public()
             if sum(not item.ended for item in mine) >= PER_UNIT:
                 raise ConsoleError(f"This lab already has {PER_UNIT} shells. Close one first.")
             if sum(not item.ended for item in self._items.values()) >= TOTAL:
