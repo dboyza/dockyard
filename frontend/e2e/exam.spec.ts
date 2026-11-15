@@ -37,7 +37,7 @@ test('installed timed practice persists flags and deadline and reports actual ru
   await page.goto(url);
   await navigateTo(page, 'Exam practice');
   await expect(page.getByRole('heading', { name: 'Work against a clear deadline.' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^(Open practice|Continue timed attempt)$/ })).toHaveCount(4);
+  await expect(page.getByRole('button', { name: /^(Open practice|Continue timed attempt)$/ })).toHaveCount(6);
   await page.getByRole('article').filter({ has: page.getByRole('heading', { name: 'Dispatch release assessment', exact: true }) }).getByRole('button', { name: /^(Open practice|Continue timed attempt)$/ }).click();
   if (await page.getByRole('button', { name: 'Start 120-minute attempt' }).isVisible()) {
     await expect(page.getByRole('button', { name: 'Start 120-minute attempt' })).toBeEnabled();
@@ -96,7 +96,15 @@ test('saved exam reports remain readable after environment cleanup', async ({ pa
   await history.selectOption({ index: 0 });
   await expect(report.getByRole('heading', { name: '100 / 100', exact: true })).toBeVisible();
   if (await page.getByRole('button', { name: 'Use light theme' }).isVisible()) await page.getByRole('button', { name: 'Use light theme' }).click();
-  await expect.poll(() => page.getByRole('button', { name: 'Review reference solution' }).evaluate(element => getComputedStyle(element).backgroundColor)).toBe('rgb(239, 242, 245)');
+  // The button takes the light theme's own surface, whatever that token's value is.
+  await expect.poll(() => page.getByRole('button', { name: 'Review reference solution' }).evaluate(element => {
+    const probe = document.createElement('div');
+    probe.style.background = 'var(--surface-alt)';
+    document.body.append(probe);
+    const expected = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return getComputedStyle(element).backgroundColor === expected;
+  })).toBe(true);
   for (const width of [1440, 480]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
