@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -398,7 +399,10 @@ def needed(service: Service) -> tuple[set[str], set[str]]:
 
 
 def record_pulls(service: Service, names: list[str]) -> None:
-    """Remember images this profile itself downloaded; only those can leave automatically."""
+    """Remember images this profile itself downloaded, and publish what it now needs.
+
+    Only images a profile downloaded can leave automatically.
+    """
     if names:
         service.store.set_setting(
             "host-images",
@@ -407,24 +411,32 @@ def record_pulls(service: Service, names: list[str]) -> None:
                 | {digest_reference(PINNED[name]) for name in names}
             ),
         )
+    # Publishing again at the next sweep is enough; a lab must not fail for it.
+    with contextlib.suppress(OSError):
+        publish_needs(service, {digest_reference(PINNED[name]) for name in needed(service)[0]})
 
 
-def other_profiles_need(service: Service, mine: set[str]) -> set[str]:
-    """Publish this profile's Docker needs and read every other profile's.
+def publish_needs(service: Service, references: set[str]) -> None:
+    """Tell other profiles which Docker images this one needs.
 
     Docker's images are shared by every profile on this computer, so an image
     another profile needs stays even when this one is finished with it.
     """
     from dockyard.capacity import registry
 
-    root = registry()
     identity = hashlib.sha256(str(service.directory).encode()).hexdigest()[:24]
     atomic_write(
-        root / f"images-{identity}.json",
-        json.dumps({"profile": str(service.directory), "images": sorted(mine)}).encode(),
+        registry() / f"images-{identity}.json",
+        json.dumps({"profile": str(service.directory), "images": sorted(references)}).encode(),
     )
+
+
+def other_profiles_need(service: Service) -> set[str]:
+    """Every Docker image another existing profile has published that it needs."""
+    from dockyard.capacity import registry
+
     others: set[str] = set()
-    for path in root.glob("images-*.json"):
+    for path in registry().glob("images-*.json"):
         try:
             if path.is_symlink() or path.stat().st_size > 65536:
                 continue
@@ -457,7 +469,8 @@ def remove(
         keep = {digest_reference(PINNED[name]) for name in keep_host}
         mine = set(service.store.setting("host-images", []))
         if not everything:
-            keep |= other_profiles_need(service, keep)
+            publish_needs(service, keep)
+            keep |= other_profiles_need(service)
         removed, kept, freed = [], [], 0
         for reference in pulled_references(service):
             legacy_alias = reference.startswith(ALIAS_PREFIX)

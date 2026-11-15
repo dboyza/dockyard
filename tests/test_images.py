@@ -159,8 +159,15 @@ def test_a_sweep_never_removes_what_another_profile_needs_or_did_not_pull(
     cache.record_pulls(test, ["python"])
     cache.sweep(test)
     assert removed == []
-    # Once the learner moves on, the learner's own sweep removes what it pulled.
+    # Preparing publishes needs at once, so the second profile's Compose lesson is safe.
+    test.store.set_setting("last_unit", "m05-services")
+    cache.record_pulls(test, [])
     learner.store.set_setting("last_unit", "m00-first-container")
+    cache.sweep(learner)
+    assert removed == []
+    # Once neither needs it, the learner's own sweep removes what it pulled.
+    test.store.set_setting("last_unit", "m00-first-container")
+    cache.record_pulls(test, [])
     cache.sweep(learner)
     assert removed == [postgres]
 

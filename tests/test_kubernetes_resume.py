@@ -1,4 +1,10 @@
-from dockyard.runtimes.kubernetes import parse_time, stale_pods
+import threading
+from types import SimpleNamespace
+
+import pytest
+
+from dockyard.process import ProcessResult
+from dockyard.runtimes.kubernetes import KubernetesRuntime, parse_time, stale_pods
 
 NODE = "dockyard-example-control-plane"
 STARTS = {NODE: parse_time("2026-09-28T02:58:10.123456789Z")}
@@ -60,3 +66,24 @@ def test_pod_subnet_reports_when_every_range_overlaps():
 
     with pytest.raises(RuntimeErrorBase, match="overlaps"):
         choose_pod_subnet(["10.0.0.0/8", "100.64.0.0/10"])
+
+
+@pytest.mark.parametrize(
+    ("resources", "daemonset"), [({"cni": "kindnet"}, "kindnet"), ({}, "calico-node")]
+)
+def test_resume_waits_for_the_network_plugin_the_cluster_was_made_with(
+    tmp_path, resources, daemonset
+):
+    # Clusters made before kind labs switched to kindnet still run Calico.
+    lab = SimpleNamespace(id="0" * 32, workspace=str(tmp_path / "workspace"), resources=resources)
+    runtime = KubernetesRuntime(lab, {}, lambda lab: None, tmp_path)
+    waited = []
+
+    def kubectl(args, **kwargs):
+        if args[:2] == ["rollout", "status"]:
+            waited.append(args[2])
+        return ProcessResult(tuple(args), 0, "", "", 0.0)
+
+    runtime.kubectl = kubectl
+    runtime.wait_ready(threading.Event())
+    assert waited == [f"daemonset/{daemonset}", "deployment/coredns"]

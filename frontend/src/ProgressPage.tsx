@@ -23,7 +23,8 @@ export function ProgressPage({ model }: { model: Workbench }) {
   const groups = (catalog?.modules || [])
     .map((module) => ({
       module,
-      all: units.filter((unit) => unit.module === module.id),
+      // Counts use lessons and missions, as the course page and sidebar do.
+      all: model.course.filter((unit) => unit.module === module.id),
       shown: touched.filter((unit) => unit.module === module.id),
     }))
     .filter((group) => group.shown.length);
@@ -89,7 +90,8 @@ export function ProgressPage({ model }: { model: Workbench }) {
                   <span>
                     <strong>{module.title}</strong>
                     <span className="muted small">
-                      {shown.length} of {all.length} activities opened
+                      {shown.filter((unit) => all.includes(unit)).length} of{" "}
+                      {all.length} activities opened
                     </span>
                   </span>
                   <span
