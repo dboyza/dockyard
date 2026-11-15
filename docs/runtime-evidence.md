@@ -726,3 +726,22 @@ Pods started while the API server is down pass NetworkPolicy only once Calico ca
 The reference now ends by testing that request path, as a careful candidate would, the job workflow waits up to 30 seconds, and the exam's workflow diagnostic explains the delay.
 With that change, exam B passed at the first check.
 No test profiles, lab VMs, or Dockyard-labeled containers remained afterwards.
+
+## 2026-11-15: private image archives, a built-in Git server, and the redesigned workbench
+
+Cluster-only images now load from private archives instead of Docker's image list.
+The curriculum suite passed `m05-services` on Docker, `m08-workloads` and `m10-services` on kind, and `m22-storage` on native Lima guests with its CSI images.
+On this Mac the archives were created from images Docker already held, and the aliases used for them left Docker again.
+Fresh disposable profiles then downloaded their own archives during the browser suites.
+Launching those profiles removed 28 leftover `dockyard-cache` aliases and the images only clusters use from Docker, leaving Python, the registry, Git, and the kind node image.
+An older kind node image from a superseded pin stayed, because nothing recorded that Dockyard had pulled it.
+
+Measuring download sizes found that Alpine had replaced `git-daemon-2.54.0-r0`, so the pinned x86-64 package returned 404 and the delivery labs could no longer prepare there.
+The pinned Git image already contains Perl and Git's own `upload-pack` and `receive-pack`, so it now serves the repository over smart HTTP itself.
+That removed both Alpine package pins and the image build step.
+Against the pinned image, the server passed clone, push, and pull with protocol versions 0, 1, and 2, a chunked compressed push, and a container restart.
+All four delivery labs, `m16-gitops`, `m16-pipeline`, `m16-promotion`, and `m16-mission`, then passed on kind, where Flux fetches from the server and the references push to it.
+
+The redesigned lesson page passed the installed browser suites: the learner journey with a real Docker lab, the Docker and kind lab lifecycles through the embedded terminal, history, and terminal layout.
+The accessibility suite reported no violations in either theme or at narrow widths.
+No test profiles or Dockyard-labeled containers remained afterwards.

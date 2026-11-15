@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
-import shutil
 import socket
 import threading
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import yaml
@@ -18,19 +18,8 @@ from dockyard.workspace import atomic_write
 if TYPE_CHECKING:
     from dockyard.runtimes.kubernetes import KubernetesRuntime
 
-GIT_SERVER = """mkdir -p /www/cgi-bin /repos
-cat > /www/cgi-bin/git <<'CGI'
-#!/bin/sh
-export GIT_PROJECT_ROOT=/repos GIT_HTTP_EXPORT_ALL=1
-exec /usr/libexec/git-core/git-http-backend
-CGI
-chmod +x /www/cgi-bin/git
-if [ ! -d /repos/dispatch.git ]; then
-  git init --bare --initial-branch=main /repos/dispatch.git
-  git -C /repos/dispatch.git config http.receivepack true
-fi
-exec busybox-extras httpd -f -p 8080 -h /www
-"""
+# The pinned Git image serves the repository itself, so nothing else is downloaded.
+GIT_SERVER = (Path(__file__).parent / "git_http.pl").read_text()
 
 
 def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
@@ -40,33 +29,10 @@ def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
         lab.resources["stage"] = message
         runtime.save(lab)
 
-    tools = Toolchain(runtime.tools)
-    flux = tools.ensure("flux", cancel, report)
-    build = runtime.root / "git-server-build"
-    build.mkdir(exist_ok=True)
-    for package in ("git-daemon", "busybox-extras"):
-        source = tools.ensure(package, cancel, report)
-        shutil.copyfile(source, build / f"{package}.apk")
-    atomic_write(
-        build / "Dockerfile",
-        (
-            f"FROM {env['DOCKYARD_GIT_IMAGE']}\n"
-            "COPY git-daemon.apk busybox-extras.apk /packages/\n"
-            "RUN apk add --no-network /packages/git-daemon.apk /packages/busybox-extras.apk "
-            "&& rm -rf /packages\n"
-            'ENTRYPOINT ["/bin/sh"]\n'
-        ).encode(),
-    )
-    report("Building the private Git transport from verified local packages")
-    image = f"dockyard-{lab.id[:12]}:git-server"
-    docker.require(
-        docker.command(
-            ["build", "--network=none", "-t", image, str(build)], timeout=180, cancel=cancel
-        )
-    )
+    flux = Toolchain(runtime.tools).ensure("flux", cancel, report)
     report("Starting the owned Git server and image registry")
     for purpose, port, selected_image, command in (
-        ("git", 8080, image, ["-c", GIT_SERVER]),
+        ("git", 8080, env["DOCKYARD_GIT_IMAGE"], ["-e", GIT_SERVER]),
         ("registry", 5000, env["DOCKYARD_REGISTRY_IMAGE"], []),
     ):
         name = f"dockyard-{lab.id[:12]}-{purpose}"
@@ -75,7 +41,7 @@ def install(runtime: KubernetesRuntime, cancel: threading.Event) -> None:
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             assigned_port = listener.getsockname()[1]
-        options = []
+        options = ["--entrypoint", "perl"] if purpose == "git" else []
         if purpose == "registry":
             volume = name + "-data"
             if docker.inspect("volume", volume) is not None:

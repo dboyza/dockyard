@@ -84,7 +84,7 @@ def dependencies(unit: Unit) -> dict[str, Any]:
     if "metrics" in capabilities:
         tools.add("metrics-server")
     if "delivery" in capabilities:
-        tools |= {"flux", "git-daemon", "busybox-extras"}
+        tools.add("flux")
     if "scanner" in capabilities:
         tools |= {"trivy", "pyjwt-fixture"}
     if any(

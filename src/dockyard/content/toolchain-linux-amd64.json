@@ -77,17 +77,5 @@
     "sha256": "ffe6203da54deeb6db5d2a98a83f9ec8e55f149d3f7ba622e1abe5fa966ee3d6",
     "path": "images/ubuntu-24.04-20260705-amd64.img",
     "max_download_bytes": 1073741824
-  },
-  "git-daemon": {
-    "version": "2.54.0-r0",
-    "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/git-daemon-2.54.0-r0.apk",
-    "sha256": "b376522eadb4df8dc5274687ceabe07456924d415cfcc5683c4b198e97a6c855",
-    "path": "packages/git-daemon.apk"
-  },
-  "busybox-extras": {
-    "version": "1.37.0-r31",
-    "url": "https://dl-cdn.alpinelinux.org/alpine/v3.24/main/x86_64/busybox-extras-1.37.0-r31.apk",
-    "sha256": "3183ea63aa3b663e3875fecb92438d1d08364b6bba2df8180399ddcf1c0455fb",
-    "path": "packages/busybox-extras.apk"
   }
 }
