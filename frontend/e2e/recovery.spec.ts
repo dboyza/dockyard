@@ -68,13 +68,13 @@ test('port collision, unavailable Docker, cancellation, and concurrent clients r
     await page.getByRole('button', { name: 'Prepare lab', exact: true }).click();
     await expect(page.getByRole('tab', { name: /^Terminal 1/ })).toBeVisible();
     execFileSync(python, [path.join(root, 'frontend/e2e/repair_lab.py'), profile, firstLesson], { env: environment });
-    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
     unlinkSync(socketPath);
-    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'The environment needs attention.' })).toBeVisible();
     symlinkSync(realEndpoint.slice('unix://'.length), socketPath);
-    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
     await peer.close();
   } finally {

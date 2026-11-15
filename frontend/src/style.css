@@ -4402,6 +4402,12 @@ body[data-workspace] .topbar {
 .lab-bar .operation button {
   margin-left: 4px;
 }
+.lab-bar > button {
+  flex-shrink: 0;
+}
+.lab-bar > button + button {
+  margin-left: -8px;
+}
 .lab-bar-hint {
   flex: 1;
   overflow: hidden;

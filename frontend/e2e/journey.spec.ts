@@ -178,7 +178,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await page.keyboard.press('Escape');
     await page.unroute('**/api/units/m01-processes/terminal');
 
-    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'Here is what the lab observed.' })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Results' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.evidence-card').first()).toContainText('Needs attention');
@@ -186,13 +186,14 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     execFileSync(path.join(root, '.runtime/installed/bin/python'), [path.join(root, 'frontend/e2e/repair_lab.py'), profile, 'm01-processes']);
     await page.getByRole('button', { name: 'Refresh resource observation' }).click();
     await expect(page.getByRole('region', { name: 'Observed lab resources' }).getByRole('button', { name: /^Container / })).toBeVisible();
-    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
     await expect(page.locator('.next-lesson').getByRole('button')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Next lesson: / })).toBeVisible();
     await labOption('Stop lab');
     await expect(dock.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
-    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'The environment needs attention.' })).toBeVisible();
     await dock.getByRole('button', { name: 'Resume', exact: true }).click();
     await expect(dock.getByRole('button', { name: 'Resume', exact: true })).toHaveCount(0);

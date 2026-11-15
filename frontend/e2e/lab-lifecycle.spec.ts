@@ -102,7 +102,7 @@ test('a Docker lab starts beside its task, survives everything in between, and c
     await lab.type(`docker run --name "$DOCKYARD_CONTAINER" --label "io.dockyard.lab=$DOCKYARD_LAB" "$DOCKYARD_PYTHON_IMAGE" python -c "print('Hello from inside a container')"`);
     await lab.type(`docker ps -a --filter "name=$DOCKYARD_CONTAINER" --format '{{.Status}}' > ${proof}/status`);
     await expect.poll(() => read('status'), { timeout: 60_000 }).toMatch(/^Exited \(0\)/);
-    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
   });
 
@@ -133,6 +133,8 @@ test('a Docker lab starts beside its task, survives everything in between, and c
     await expect(lab.dock.getByRole('tab')).toHaveCount(1);
     await lab.dock.getByRole('button', { name: 'Open another shell' }).click();
     await expect(lab.dock.getByRole('tab')).toHaveCount(2);
+    // A new shell focuses itself once it appears, so wait before focusing its tab.
+    await expect(lab.dock.getByText('Starting shell')).toHaveCount(0, { timeout: 20_000 });
     await lab.dock.getByRole('tab', { name: /^Terminal 2/ }).focus();
     await page.keyboard.press('Delete');
     await expect(lab.dock.getByRole('tab')).toHaveCount(1);
@@ -182,7 +184,7 @@ test('a Docker lab starts beside its task, survives everything in between, and c
     await expect(lab.dock.getByText('Starting shell')).toHaveCount(0, { timeout: 20_000 });
     expect(await lab.shell('pid-after-reset')).not.toBe(before);
     expect(owned(labId)).toBe('');
-    await page.getByRole('button', { name: 'Check work', exact: true }).click();
+    await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'Here is what the lab observed.' })).toBeVisible();
   });
 
@@ -200,7 +202,7 @@ test('a Docker lab starts beside its task, survives everything in between, and c
     await expect(lab.dock.locator('.xterm-helper-textarea').first()).toBeFocused();
     await page.setViewportSize({ width: 480, height: 900 });
     await page.getByRole('group', { name: 'Show' }).getByRole('button', { name: /Lesson/ }).click();
-    await expect(page.getByRole('button', { name: 'Check work', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Check (work|again)$/ })).toBeVisible();
     await page.getByRole('group', { name: 'Show' }).getByRole('button', { name: /Terminal/ }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const narrow = await lab.shell('pid-narrow');
@@ -243,6 +245,8 @@ test('a Docker lab starts beside its task, survives everything in between, and c
     await page.getByRole('button', { name: 'Prepare lab' }).click();
     await lab.ready();
     await expect(task).toHaveAttribute('aria-selected', 'true');
+    // The tab can appear before the replacement shell is live.
+    await expect.poll(async () => (await live(page, 'm00-first-container')).length).toBe(1);
     await lab.type(`printf '%s' "$DOCKYARD_UNIT" > ${proof}/again`);
     await expect.poll(() => read('again')).toBe('m00-first-container');
   });

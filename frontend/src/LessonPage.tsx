@@ -207,7 +207,16 @@ export function LessonPage({ model }: { model: Workbench }) {
             </div>
           </section>
         }
-        footer={<LabBar model={model} />}
+        footer={
+          <LabBar
+            model={model}
+            next={
+              !incident && currentPractice(lesson.revision, progress)
+                ? nextUnit
+                : undefined
+            }
+          />
+        }
       >
         {review}
         <Understand model={model} lesson={lesson} onTask={openTask} />
@@ -438,8 +447,11 @@ function OperationStatus({ model }: { model: Workbench }) {
   );
 }
 
-/** The lab's state and Check work, kept in view at the foot of the lesson pane. */
-function LabBar({ model }: { model: Workbench }) {
+/**
+ * The lab's state and Check work, kept in view at the foot of the lesson pane.
+ * Once the lesson has passed, moving on becomes the main action.
+ */
+function LabBar({ model, next }: { model: Workbench; next?: UnitSummary }) {
   const { lab, busy, perform } = model;
   return (
     <div className="lab-bar">
@@ -451,11 +463,13 @@ function LabBar({ model }: { model: Workbench }) {
         <OperationStatus model={model} />
       ) : (
         <span className="small muted lab-bar-hint">
-          Check work tests what your lab does right now.
+          {next
+            ? "Your work passed this check."
+            : "Check work tests what your lab does right now."}
         </span>
       )}
       <button
-        className="primary"
+        className={next ? undefined : "primary"}
         disabled={!!busy || TRANSITIONS.has(lab?.state ?? "")}
         onClick={() => void perform("check")}
       >
@@ -464,8 +478,19 @@ function LabBar({ model }: { model: Workbench }) {
         ) : (
           <ShieldCheck size={16} />
         )}
-        Check work
+        {next ? "Check again" : "Check work"}
       </button>
+      {next && (
+        <button
+          className="primary"
+          title={next.title}
+          aria-label={`Next lesson: ${next.title}`}
+          onClick={() => void model.openLesson(next.id)}
+        >
+          Next lesson
+          <ArrowRight size={16} />
+        </button>
+      )}
     </div>
   );
 }
