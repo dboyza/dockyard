@@ -94,6 +94,8 @@ export type State = {
   exam_readiness: Record<string, string | null>;
   checkpoints: Checkpoint[];
   progress: Record<string, Progress>;
+  /** The newest assessment of each activity, by its ID. */
+  checked: Record<string, string>;
   labs: Lab[];
   operations: Operation[];
   theme: string;

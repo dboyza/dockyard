@@ -1,4 +1,10 @@
-import { Check, ChevronRight, Circle, RotateCcw } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  Circle,
+  CircleDot,
+  RotateCcw,
+} from "lucide-react";
 import type { Progress, UnitSummary } from "./api";
 import { currentPractice, learningStatus, reviewDue } from "./learning";
 
@@ -7,21 +13,29 @@ export function UnitRow({
   progress,
   onOpen,
   showModule = false,
+  next = false,
 }: {
   unit: UnitSummary;
   progress?: Progress;
   onOpen: (id: string) => Promise<void>;
   showModule?: boolean;
+  /** Marks the lesson the learner should continue with. */
+  next?: boolean;
 }) {
   const current = currentPractice(unit.revision, progress);
   const review = reviewDue(unit.revision, progress);
   return (
-    <button className="unitrow" onClick={() => void onOpen(unit.id)}>
+    <button
+      className={`unitrow ${next ? "next" : ""}`}
+      onClick={() => void onOpen(unit.id)}
+    >
       <span className={`unitstatus ${current ? "done" : ""}`}>
         {review ? (
           <RotateCcw size={17} />
         ) : current ? (
           <Check size={17} />
+        ) : next ? (
+          <CircleDot size={16} />
         ) : (
           <Circle size={15} />
         )}
@@ -43,6 +57,7 @@ export function UnitRow({
         <span className="muted small">{unit.summary}</span>
       </span>
       <span className="unitmeta">
+        {next && <span className="unit-chip">Next up</span>}
         {!!progress?.practiced && (
           <span>{learningStatus(unit.revision, progress)}</span>
         )}

@@ -26,12 +26,15 @@ Prepare a lab, and its terminal opens beside the lesson; then check the behavior
 Prefer your own terminal, an editor terminal, or tmux?
 The terminal menu opens the same lab shell there; see [terminal compatibility](docs/terminals.md) for details.
 Tools, container images, and native VM packages download as required; Lab Manager can prefetch a module or track.
+Each lab says how much it still has to download, and Dockyard removes downloads once nothing needs them.
+Images that only clusters use stay out of your own `docker images` list.
 
 [![A passing Dockyard lesson beside its real lab terminal, in the dark theme](docs/assets/workbench.png)](docs/assets/workbench.png)
 
 ## The learning loop
 
 Read a short explanation, make a prediction, operate the real environment, and inspect the evidence.
+The explanation, the task, and the terminal stay in view together, and the workbench always shows where you are in the course.
 Checks examine files, resource identity, and running behavior rather than command history.
 Hints and reference solutions stay separate from independent demonstrations.
 

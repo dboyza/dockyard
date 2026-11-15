@@ -164,6 +164,10 @@ Update objective mappings when published objectives change, recording the source
 Do not silently treat a newer Kubernetes release as the certification environment.
 
 Pin new downloads to verified upstream identities and test their declared architecture.
+After changing an image or tool pin, run `.venv/bin/python scripts/measure_downloads.py`.
+It records each download's size in `content/download-sizes.json`, which lessons use to say how much preparing a lab will download.
+The fast tests fail while a pin has no recorded size.
+Requesting every pinned address also shows when an upstream has removed a pinned file.
 Update both Kubernetes-version package manifests for both ARM64 and x86-64 when necessary.
 The base toolchain manifest targets macOS; the Linux platform overlays pin native binaries and matching guest images.
 Run `pwsh -NoProfile -File tests/windows-bridge.ps1` to validate the Windows launcher argument contract.

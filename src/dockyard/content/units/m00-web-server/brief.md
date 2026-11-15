@@ -1,7 +1,7 @@
 Let’s serve the page in your workspace from a container and reach it from your computer.
 Use the commands in Understand as you work through these steps.
 
-1. Prepare the lab, open its terminal, and look at `site/index.html`.
+1. Prepare the lab, then look at `site/index.html` in its terminal.
 2. Start the web server with its port published on `127.0.0.1` and the `site` folder mounted read-only.
 3. Request the page with `curl`, then find that request in `docker logs`.
 4. Add a line to the page on your computer and request it again.

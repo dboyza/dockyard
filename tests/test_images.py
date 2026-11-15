@@ -7,6 +7,7 @@ from dockyard.catalog import Catalog
 from dockyard.images import PINNED, ImageStore, alias, cluster_images, host_images
 from dockyard.process import ProcessResult
 from dockyard.service import Service
+from dockyard.toolchain import platform_manifest
 
 
 def result(code=0, stdout="", stderr=""):
@@ -147,3 +148,50 @@ def test_a_sweep_keeps_what_is_needed_and_never_raises(tmp_path, monkeypatch):
     service.store.set_setting("keep-downloads", False)
     monkeypatch.setattr(cache, "run", lambda args, **kwargs: result(1, stderr="daemon down"))
     assert cache.sweep(service) is None
+
+
+def test_every_pinned_image_has_a_name_and_a_recorded_download_size():
+    sizes = cache.json.loads((cache.CONTENT / "download-sizes.json").read_text())
+    for name, reference in PINNED.items():
+        assert images.label(name)
+        assert set(sizes["images"][reference]) == {"arm64", "amd64"}, name
+    for platform in ("darwin-arm64", "linux-arm64", "linux-amd64"):
+        for name, entry in platform_manifest(platform).items():
+            assert sizes["files"][entry["sha256"]] > 0, f"{platform}/{name}"
+
+
+def test_an_estimate_counts_only_what_is_still_missing(tmp_path, monkeypatch):
+    service = Service(tmp_path)
+    service.tools = tmp_path / "tools"
+    monkeypatch.setenv("DOCKER_HOST", "unix:///nonexistent/docker.sock")
+    monkeypatch.setattr(images.host, "architecture", lambda: "arm64")
+    monkeypatch.setattr(cache.host, "architecture", lambda: "arm64")
+    held = {"python", "kind", "postgres"}
+    monkeypatch.setattr(ImageStore, "on_host", lambda self, name: name in held)
+    monkeypatch.setattr(cache, "run", lambda args, **kwargs: result())
+    unit = service.catalog.get("m08-workloads")
+    first = cache.estimate(service, unit)
+    # Docker already holds PostgreSQL, so its archive needs no download.
+    assert "the PostgreSQL image" not in first["items"]
+    assert first["items"][0] == "the Calico node image" and "kubectl" in first["items"]
+    store = ImageStore(service.tools, {})
+    store.directory.mkdir(parents=True)
+    for name in cluster_images(unit):
+        store.archive_path(name).write_bytes(b"archive")
+    for name in ("kind", "kubectl", "calico"):
+        path = service.tools / cache.MANIFEST[name]["path"]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"tool")
+    assert cache.estimate(service, unit) == {"bytes": 0, "items": [], "docker_ready": True}
+    # An image Docker itself must hold is still a download, even with an archive of it.
+    balanced = cache.estimate(service, service.catalog.get("m10-services"))
+    assert "the BusyBox image" in balanced["items"]
+    # Without Docker, every image this lesson uses there is still to download.
+    monkeypatch.setattr(
+        cache,
+        "docker_environment",
+        lambda service: (_ for _ in ()).throw(cache.LabError("Docker is unavailable.")),
+    )
+    offline = cache.estimate(service, unit)
+    assert offline["items"] == ["the Kubernetes node image", "the Python image"]
+    assert offline["docker_ready"] is False

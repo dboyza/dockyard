@@ -79,7 +79,7 @@ web-server-command
 
 ## Try it
 
-Prepare the lab and open its terminal.
+Prepare the lab; its terminal opens beside the lesson.
 Look at the page you are about to serve:
 
 ```sh

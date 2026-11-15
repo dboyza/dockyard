@@ -23,7 +23,7 @@ storage-choices
 
 ## Build and start the storage version
 
-Prepare the lab and open its terminal.
+Prepare the lab; its terminal opens beside the lesson.
 The supplied Dockerfile and Python application are complete.
 Build them, create the host directory, then start the API:
 

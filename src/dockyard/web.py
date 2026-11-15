@@ -195,6 +195,7 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
     def state() -> dict[str, Any]:
         return {
             "progress": service.store.progress(),
+            "checked": service.store.latest_attempts(),
             # Cleaned-up lab records and finished operations stay in the store for history,
             # but the browser only needs what exists or is still running.
             "labs": [
@@ -401,11 +402,20 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
     @app.post("/api/units/{unit_id}/events")
     def learning_event(unit_id: str, body: LearningEvent) -> dict[str, bool]:
         item = service.catalog.get(unit_id)
-        if body.event != "viewed":
+        if body.event == "settled":
+            # Staying on a lesson makes it the place to continue; a quick look does not.
+            service.store.set_setting("last_unit", unit_id)
+        elif body.event == "viewed":
+            service.store.mark(unit_id, "viewed", item.revision)
+        else:
             raise HTTPException(400, "Use the explicit hint or reference action.")
-        service.store.mark(unit_id, "viewed", item.revision)
-        service.store.set_setting("last_unit", unit_id)
         return {"saved": True}
+
+    @app.get("/api/units/{unit_id}/downloads")
+    def downloads(unit_id: str) -> dict[str, Any]:
+        from dockyard.cache import estimate
+
+        return estimate(service, service.catalog.get(unit_id))
 
     @app.post("/api/units/{unit_id}/hints/{index}")
     def hint(unit_id: str, index: int) -> dict[str, str]:
@@ -429,6 +439,8 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
     def note(unit_id: str, body: Note) -> dict[str, bool]:
         service.catalog.get(unit_id)
         service.store.save_note(unit_id, body.body)
+        # Writing about a lesson is working on it, so it becomes the place to continue.
+        service.store.set_setting("last_unit", unit_id)
         return {"saved": True}
 
     @app.get("/api/units/{unit_id}/terminal")

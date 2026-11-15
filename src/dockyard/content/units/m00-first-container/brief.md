@@ -1,7 +1,7 @@
 Let’s run your first container and see what Docker keeps after its program finishes.
 Use the commands in Understand as you work through these steps.
 
-1. Prepare the lab and open its terminal.
+1. Prepare the lab; its terminal opens beside the lesson.
 2. Print `$DOCKYARD_CONTAINER` and `$DOCKYARD_PYTHON_IMAGE` to see the values Dockyard set for you.
 3. Run the container from Understand and read the message it prints.
 4. Compare `docker ps` with `docker ps -a`, then read the output again with `docker logs`.

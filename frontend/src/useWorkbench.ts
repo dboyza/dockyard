@@ -41,12 +41,14 @@ type FigureReturn = {
   lessonId: string | null;
   primer: string | null;
 };
+const SETTLE_MS = 45_000;
 const emptyState: State = {
   consoles: [],
   exams: [],
   exam_readiness: {},
   checkpoints: [],
   progress: {},
+  checked: {},
   labs: [],
   operations: [],
   theme: "dark",
@@ -120,6 +122,7 @@ export function useWorkbench() {
   const [railOpen, setRailOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const opened = useRef(0);
+  const seenCheck = useRef<string | undefined>(undefined);
   // The fragment of a lesson the URL asked for while it is still loading.
   const urlTarget = useRef<string | null>(null);
   const currentHash = useRef("#/");
@@ -284,6 +287,7 @@ export function useWorkbench() {
       setPrediction(null);
       setPredictionSubmitted(false);
       setAssessment(next.attempts[0] || null);
+      seenCheck.current = next.attempts[0]?.id;
       setNote(next.note);
       setSearch("");
       navigate("lesson");
@@ -361,6 +365,37 @@ export function useWorkbench() {
     window.addEventListener("popstate", followHistory);
     return () => window.removeEventListener("popstate", followHistory);
   }, []);
+  // A quick look at a lesson does not move the learner's place; staying on it does.
+  const settledOn = page === "lesson" ? lesson?.id : undefined;
+  useEffect(() => {
+    if (!settledOn) return;
+    const timer = window.setTimeout(
+      () => void api(`/units/${settledOn}/events`, { event: "settled" }),
+      SETTLE_MS,
+    );
+    return () => window.clearTimeout(timer);
+  }, [settledOn]);
+  // A check run with `dockyard lab check` in a terminal shows up like one from the page.
+  const checked = settledOn ? state.checked[settledOn] : undefined;
+  const shown = assessment?.id;
+  useEffect(() => {
+    // Only a check newer than the one this lesson opened with is news; a retake
+    // deliberately hides earlier results.
+    if (!settledOn || !checked || checked === seenCheck.current) return;
+    seenCheck.current = checked;
+    if (checked === shown) return;
+    let alive = true;
+    api<Lesson>(`/units/${settledOn}`)
+      .then((next) => {
+        if (!alive || !next.attempts[0]) return;
+        setAssessment(next.attempts[0]);
+        setPanel("results");
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [settledOn, checked, shown]);
   const lab = state.labs.find((item) => item.unit_id === lesson?.id);
   const activeOperation = state.operations.find(
     (item) =>

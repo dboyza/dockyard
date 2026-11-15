@@ -10,6 +10,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from dockyard import host
+from dockyard.catalog import CONTENT
 from dockyard.images import (
     ALIAS_PREFIX,
     PINNED,
@@ -104,6 +106,44 @@ def dependencies(unit: Unit) -> dict[str, Any]:
         "scanner": "scanner" in capabilities,
         "limitations": limitations,
     }
+
+
+TOOL_LABELS = {"ubuntu-node": "the Ubuntu VM image", "limactl": "the VM manager"}
+
+
+def estimate(service: Service, unit: Unit) -> dict[str, Any]:
+    """What preparing this activity still has to download, from the recorded sizes."""
+    sizes = json.loads((CONTENT / "download-sizes.json").read_text())
+    dep = dependencies(unit)
+    try:
+        env = docker_environment(service)
+        docker = run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=10).ok
+    except LabError:
+        env, docker = {}, False
+    store = ImageStore(service.tools, env)
+    architecture = host.architecture()
+    found: dict[str, int] = {}
+    for name in dict.fromkeys(dep["host_images"] + dep["cluster_images"]):
+        held = docker and store.on_host(name)
+        # An archive is made from the image Docker holds, without another download.
+        wanted_in_docker = name in dep["host_images"] and not held
+        wanted_as_archive = name in dep["cluster_images"] and not (held or store.archived(name))
+        if wanted_in_docker or wanted_as_archive:
+            found[f"the {label(name)} image"] = sizes["images"][PINNED[name]][architecture]
+    for name in dep["tools"]:
+        entry = MANIFEST[name]
+        if not (service.tools / entry["path"]).is_file():
+            found[TOOL_LABELS.get(name, name)] = sizes["files"].get(entry["sha256"], 0)
+    packages = sum(
+        entry.get("size") or sizes["files"].get(entry["sha256"], 0)
+        for entry in dep["packages"].values()
+        if not (service.tools / entry["path"]).is_file()
+    )
+    if packages:
+        found["Kubernetes node packages"] = packages
+    # Largest first, so the summary names what the learner will wait for.
+    items = sorted(found, key=lambda item: -found[item])
+    return {"bytes": sum(found.values()), "items": items, "docker_ready": docker}
 
 
 def docker_environment(service: Service) -> dict[str, str]:

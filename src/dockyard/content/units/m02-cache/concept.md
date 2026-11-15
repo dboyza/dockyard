@@ -16,7 +16,7 @@ file-image-container
 
 ## Watch the release through three changes
 
-Prepare the lab and open its terminal.
+Prepare the lab; its terminal opens beside the lesson.
 The supplied Dockerfile already works, and a container is serving `dispatch-1`.
 Read `VERSION`, then request the running release:
 

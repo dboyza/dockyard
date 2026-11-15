@@ -44,8 +44,16 @@ def test_reading_a_unit_does_not_reveal_references_or_change_resume(connected):
     assert "reference" not in response.json()
     assert "checks" not in response.json()
     assert service.store.setting("last_unit") is None
+    # A look at a lesson is recorded, but only staying on it moves the place to continue.
     client.post("/api/units/m01-processes/events", json={"event": "viewed"}, headers=HEADERS)
+    assert service.store.progress()["m01-processes"]["viewed"] == 1
+    assert service.store.setting("last_unit") is None
+    client.post("/api/units/m01-processes/events", json={"event": "settled"}, headers=HEADERS)
     assert service.store.setting("last_unit") == "m01-processes"
+    refused = client.post(
+        "/api/units/m01-processes/events", json={"event": "hints"}, headers=HEADERS
+    )
+    assert refused.status_code == 400
 
 
 def test_mutations_and_reference_reveals_require_explicit_intent(connected):

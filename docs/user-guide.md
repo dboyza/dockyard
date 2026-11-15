@@ -54,6 +54,9 @@ The top bar shows where the lesson sits in the course.
 It also lists the labs that exist on this computer, so you can return to one or stop it from any page.
 The sidebar always offers the lesson to continue with, and how far you are through its module.
 After you pass a lesson, it offers the next one.
+A quick look at another lesson does not move your place.
+Staying on a lesson, writing a note, or preparing its lab does.
+Before you prepare a lab, its card says how much it still has to download.
 
 Command blocks have no copy button, so you type each command yourself.
 Typing builds the habits a real terminal needs.

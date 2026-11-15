@@ -35,6 +35,10 @@ test("status follows viewing, practice, independent passes, and review dates", (
   expect(reviewDue(1, { ...due, review_at: "2026-10-01T00:00:00Z" }, now)).toBe(
     false,
   );
+  // A first failed check queues a review, but the lesson still reads as in progress.
+  const failedFirst = { ...base, review_at: "2020-01-01T00:00:00Z" };
+  expect(reviewDue(1, failedFirst, now)).toBe(true);
+  expect(learningStatus(1, failedFirst)).toBe("In progress");
 });
 
 test("course phases follow their numbers, not module order", () => {

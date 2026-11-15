@@ -280,6 +280,9 @@ class Service:
                 from dockyard.capacity import cluster_lease, preflight
 
                 lab = self._allocate_lab(unit_id)
+                if self.catalog.get(unit_id).kind != "exam":
+                    # Starting a lab makes its lesson the place to continue.
+                    self.store.set_setting("last_unit", unit_id)
                 with cluster_lease(self, lab):
                     preflight(self, lab)
                     return self._perform(unit_id, action)

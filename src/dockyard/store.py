@@ -225,6 +225,14 @@ class Store:
             ).fetchall()
         return [json.loads(row[0]) for row in rows]
 
+    def latest_attempts(self) -> dict[str, str]:
+        """The newest assessment of each activity, so a check from any terminal is noticed."""
+        with self.connection() as connection:
+            rows = connection.execute(
+                "SELECT unit_id, id, MAX(created_at) FROM attempts GROUP BY unit_id"
+            ).fetchall()
+        return {row[0]: row[1] for row in rows}
+
     def attempts(self, unit_id: str) -> list[Assessment]:
         with self.connection() as connection:
             rows = connection.execute(

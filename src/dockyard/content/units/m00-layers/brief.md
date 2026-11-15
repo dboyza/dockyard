@@ -1,7 +1,7 @@
 Let’s find out where a container keeps the changes it makes.
 Use the commands in Understand as you work through these steps.
 
-1. Prepare the lab and open its terminal.
+1. Prepare the lab; its terminal opens beside the lesson.
 2. Look at the image’s layers with `docker history`.
 3. Start a container that stays running, using `-d` and `sleep infinity`.
 4. Use `docker exec` to list its processes, then to write and read `/tmp/note.txt`.

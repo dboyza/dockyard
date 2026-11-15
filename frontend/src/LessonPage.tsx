@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -66,7 +66,7 @@ export function LessonPage({ model }: { model: Workbench }) {
   const progress = state.progress[lesson.id];
   const status = (
     <span className="lesson-status">
-      {reviewDue(lesson.revision, progress) ? (
+      {progress?.practiced && reviewDue(lesson.revision, progress) ? (
         <RotateCcw size={13} />
       ) : currentPractice(lesson.revision, progress) ? (
         <Check size={13} className="status-done" />
@@ -308,6 +308,7 @@ export function LessonPage({ model }: { model: Workbench }) {
               {lesson.runtime !== "docker" &&
                 " Another running cluster is paused first to save memory."}
             </p>
+            <DownloadEstimate key={lesson.id} unitId={lesson.id} />
             <button
               className="primary full"
               disabled={!!busy}
@@ -326,6 +327,50 @@ export function LessonPage({ model }: { model: Workbench }) {
         </aside>
       </div>
     </div>
+  );
+}
+
+/** How much preparing this lab still has to download, so the wait is no surprise. */
+function DownloadEstimate({ unitId }: { unitId: string }) {
+  type Estimate = { bytes: number; items: string[]; docker_ready: boolean };
+  const [estimate, setEstimate] = useState<Estimate | null>(null);
+  useEffect(() => {
+    let alive = true;
+    api<Estimate>(`/units/${unitId}/downloads`)
+      .then((result) => alive && setEstimate(result))
+      // The estimate is a courtesy; preparing reports any real problem.
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [unitId]);
+  if (!estimate) return null;
+  if (!estimate.docker_ready)
+    return (
+      <p className="diagnostic" role="note">
+        Docker is not running. Start Docker, then choose Prepare lab.
+      </p>
+    );
+  const megabytes = Math.round(estimate.bytes / 1024 ** 2);
+  return (
+    <p className="download-estimate small" role="note">
+      {megabytes < 1 ? (
+        "Everything this lab needs is already downloaded."
+      ) : (
+        <>
+          First time: downloads about{" "}
+          <strong>
+            {megabytes >= 1024
+              ? `${(megabytes / 1024).toFixed(1)} GB`
+              : `${megabytes} MB`}
+          </strong>{" "}
+          ({estimate.items.slice(0, 3).join(", ")}
+          {estimate.items.length > 3 &&
+            `, and ${estimate.items.length - 3} more`}
+          ).
+        </>
+      )}
+    </p>
   );
 }
 

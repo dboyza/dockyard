@@ -91,9 +91,14 @@ print(s.store.note('m01-processes'))
   await navigateTo(page, 'Lab manager');
   await page.getByRole('button', { name: 'Inspect cache', exact: true }).click();
   const cache = page.getByRole('region', { name: 'Dependency cache' });
-  await expect(cache).toContainText('4 / 4');
+  // Unused downloads are removed, so the report says what is missing before a prefetch.
+  await expect(cache).toContainText('Activities with declared dependencies cached');
   await page.getByRole('button', { name: 'Prefetch dependencies', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Inspect cache', exact: true })).toBeEnabled({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: 'Inspect cache', exact: true })).toBeEnabled({ timeout: 120000 });
+  await expect(cache).toContainText('4 / 4');
+  // A prefetched topic stays downloaded, and Lab manager shows where it is kept.
+  const downloads = page.getByRole('region', { name: 'Downloads' });
+  await expect(downloads.getByRole('listitem').filter({ hasText: 'Python' })).not.toContainText('Not needed now');
   await cache.getByText('Readiness for each selected activity').click();
   await expect(cache.locator('.cache-activities article')).toHaveCount(4);
   for (const width of [1440, 480]) {

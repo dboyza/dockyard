@@ -26,8 +26,11 @@ export function CoursePage({ model }: { model: Workbench }) {
       unit={unit}
       progress={state.progress[unit.id]}
       onOpen={openLesson}
+      next={unit.id === continueUnit?.id}
     />
   );
+  const practised = (unit: UnitSummary) =>
+    currentPractice(unit.revision, state.progress[unit.id]);
   return (
     <>
       <div className="page-heading">
@@ -117,75 +120,96 @@ export function CoursePage({ model }: { model: Workbench }) {
           )}
         </section>
       ) : (
-        phases.map(({ phase, title }) => (
-          <section className="course-phase" id={`phase-${phase}`} key={phase}>
-            <div className="section-heading">
-              <h2>
-                <span className="phase-number">0{phase}</span>
-                {title}
-              </h2>
-            </div>
-            {catalog?.modules
-              .filter((module) => module.phase === phase)
-              .map((module) => {
-                const moduleUnits = units.filter(
-                  (unit) =>
-                    unit.module === module.id &&
-                    (unit.kind === "lesson" || unit.kind === "mission"),
-                );
-                const done = moduleUnits.filter((unit) =>
-                  currentPractice(unit.revision, state.progress[unit.id]),
-                ).length;
-                return (
-                  <details
-                    className="module"
-                    key={module.id}
-                    open={module.id === openModule}
-                  >
-                    <summary>
-                      <span className="module-id">
-                        {String(module.id).padStart(2, "0")}
-                      </span>
-                      <span>
-                        <strong>{module.title}</strong>
-                        <span className="muted small">
-                          {module.topics.join(" · ")}
+        phases.map(({ phase, title }) => {
+          const phaseUnits = units.filter(
+            (unit) =>
+              (unit.kind === "lesson" || unit.kind === "mission") &&
+              catalog?.modules.some(
+                (module) => module.id === unit.module && module.phase === phase,
+              ),
+          );
+          const phaseDone = phaseUnits.filter(practised).length;
+          return (
+            <section className="course-phase" id={`phase-${phase}`} key={phase}>
+              <div className="section-heading">
+                <h2>
+                  <span className="phase-number">0{phase}</span>
+                  {title}
+                </h2>
+                <span
+                  className="phase-progress"
+                  aria-label={`${phaseDone} of ${phaseUnits.length} activities practised`}
+                >
+                  <span className="module-progress-bar" aria-hidden="true">
+                    <span
+                      style={{
+                        width: `${(phaseDone / Math.max(phaseUnits.length, 1)) * 100}%`,
+                      }}
+                    />
+                  </span>
+                  {phaseDone} of {phaseUnits.length}
+                </span>
+              </div>
+              {catalog?.modules
+                .filter((module) => module.phase === phase)
+                .map((module) => {
+                  const moduleUnits = units.filter(
+                    (unit) =>
+                      unit.module === module.id &&
+                      (unit.kind === "lesson" || unit.kind === "mission"),
+                  );
+                  const done = moduleUnits.filter(practised).length;
+                  return (
+                    <details
+                      className={`module ${module.id === continueUnit?.module ? "here" : ""} ${moduleUnits.length > 0 && done === moduleUnits.length ? "done" : ""}`}
+                      key={module.id}
+                      open={module.id === openModule}
+                    >
+                      <summary>
+                        <span className="module-id">
+                          {String(module.id).padStart(2, "0")}
                         </span>
-                      </span>
-                      {moduleUnits.length > 0 && (
-                        <span
-                          className="module-progress"
-                          aria-label={`${done} of ${moduleUnits.length} activities practised`}
-                        >
+                        <span>
+                          <strong>{module.title}</strong>
+                          <span className="muted small">
+                            {module.topics.join(" · ")}
+                          </span>
+                        </span>
+                        {moduleUnits.length > 0 && (
                           <span
-                            className="module-progress-bar"
-                            aria-hidden="true"
+                            className="module-progress"
+                            aria-label={`${done} of ${moduleUnits.length} activities practised`}
                           >
                             <span
-                              style={{
-                                width: `${(done / moduleUnits.length) * 100}%`,
-                              }}
-                            />
+                              className="module-progress-bar"
+                              aria-hidden="true"
+                            >
+                              <span
+                                style={{
+                                  width: `${(done / moduleUnits.length) * 100}%`,
+                                }}
+                              />
+                            </span>
+                            {done}/{moduleUnits.length}
                           </span>
-                          {done}/{moduleUnits.length}
-                        </span>
-                      )}
-                      <ChevronDown size={17} />
-                    </summary>
-                    <div className="module-lessons">
-                      {moduleUnits.map(unitRow)}
-                      {!units.some((unit) => unit.module === module.id) && (
-                        <p className="development-note">
-                          This module is being authored in the current
-                          development build.
-                        </p>
-                      )}
-                    </div>
-                  </details>
-                );
-              })}
-          </section>
-        ))
+                        )}
+                        <ChevronDown size={17} />
+                      </summary>
+                      <div className="module-lessons">
+                        {moduleUnits.map(unitRow)}
+                        {!units.some((unit) => unit.module === module.id) && (
+                          <p className="development-note">
+                            This module is being authored in the current
+                            development build.
+                          </p>
+                        )}
+                      </div>
+                    </details>
+                  );
+                })}
+            </section>
+          );
+        })
       )}
     </>
   );

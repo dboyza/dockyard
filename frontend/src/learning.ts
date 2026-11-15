@@ -21,7 +21,8 @@ export function reviewDue(
 
 export function learningStatus(revision: number, progress?: Progress) {
   if (reviewNeeded(revision, progress)) return "Review needed";
-  if (reviewDue(revision, progress)) return "Review due";
+  // A failed check on a lesson never yet passed is still learning, not review.
+  if (progress?.practiced && reviewDue(revision, progress)) return "Review due";
   if (progress?.demonstrated) return "Passed without help";
   if (progress?.practiced) return "Practiced";
   return progress?.viewed ? "In progress" : "Not started";

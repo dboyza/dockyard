@@ -19,7 +19,7 @@ port-mapping-mismatch
 
 ## Inspect before replacing
 
-Prepare the lab, open its terminal, and run:
+Prepare the lab, then run this in its terminal:
 
 ```sh
 docker ps --filter "name=$DOCKYARD_CONTAINER"

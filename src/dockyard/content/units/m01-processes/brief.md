@@ -1,7 +1,7 @@
 Let’s get Dispatch’s first version answering a request from your computer.
 Use the commands in Understand as you work through these steps.
 
-1. Prepare the lab and open its terminal.
+1. Prepare the lab; its terminal opens beside the lesson.
 2. Start the supplied `app.py` using the command in Understand.
    Keep the assigned name, lab label, and local port mapping.
 3. Request `/healthz` and read the application’s logs.

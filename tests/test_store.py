@@ -32,6 +32,16 @@ def test_only_observed_success_earns_progress(tmp_path):
     assert Store(tmp_path).progress()["m01-processes"]["demonstrated"]
 
 
+def test_the_newest_assessment_of_each_activity_is_reported(tmp_path):
+    store = Store(tmp_path)
+    assert store.latest_attempts() == {}
+    first, second = assessment(), assessment()
+    first.finished_at, second.finished_at = "2026-11-15T10:00:00Z", "2026-11-15T10:05:00Z"
+    store.save_assessment(second)
+    store.save_assessment(first)
+    assert store.latest_attempts() == {"m01-processes": second.id}
+
+
 def test_a_new_revision_does_not_inherit_old_mastery(tmp_path):
     store = Store(tmp_path)
     store.save_assessment(assessment())

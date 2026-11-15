@@ -31,16 +31,16 @@ export function Breadcrumb({ model }: { model: Workbench }) {
       ) : (
         <strong aria-current="page">{root}</strong>
       )}
-      {crumbs.map((crumb, index) => (
-        <span className="crumb" key={crumb}>
-          <ChevronRight size={14} aria-hidden="true" />
-          {index === crumbs.length - 1 ? (
-            <strong aria-current="page">{crumb}</strong>
-          ) : (
-            <span className="wide-only">{crumb}</span>
-          )}
-        </span>
-      ))}
+      {crumbs.map((crumb, index) => {
+        const last = index === crumbs.length - 1;
+        return (
+          // Narrow screens keep the ends of the path and drop the middle.
+          <span className={`crumb ${last ? "" : "wide-only"}`} key={crumb}>
+            <ChevronRight size={14} aria-hidden="true" />
+            {last ? <strong aria-current="page">{crumb}</strong> : crumb}
+          </span>
+        );
+      })}
     </nav>
   );
 }

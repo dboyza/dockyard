@@ -57,7 +57,7 @@ dispatch-first-run
 
 ## Prepare your terminal
 
-Choose **Prepare lab** and open the lab terminal, as before.
+Choose **Prepare lab**, as before.
 This time the workspace contains `app.py`, Dispatch’s code.
 You can read it with `cat app.py` if you’re curious, but you don’t need to understand it.
 

@@ -55,8 +55,8 @@ test('the browser Back and Forward buttons, reloads, and bookmarks keep the lear
   await expect(heading).toHaveText('Your first container');
   await at('#/lesson/m00-first-container');
   await page.goBack();
-  // The overview now knows the learner has started, and offers to continue.
-  await expect(heading).toHaveText('Pick up where you left off.');
+  // A quick look at a lesson does not move the learner's place.
+  await expect(heading).toHaveText('Learn to run a real application.');
   await page.goForward();
   await expect(heading).toHaveText('Your first container');
   await page.goForward();

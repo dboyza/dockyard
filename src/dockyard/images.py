@@ -34,15 +34,28 @@ LABELS = {
     "busybox": "BusyBox",
     "kind": "Kubernetes node",
     "git": "Git",
+    "calico_calico": "Calico",
+    "calico_node": "Calico node",
+    "calico_third_party_cni_plugins": "Calico network plugins",
     "traefik": "Traefik",
-    "prometheus": "Prometheus",
+    "metallb_controller": "MetalLB controller",
+    "metallb_speaker": "MetalLB speaker",
     "metrics_server": "metrics server",
+    "prometheus": "Prometheus",
+    "flux_source": "Flux source controller",
+    "flux_kustomize": "Flux kustomize controller",
+    "csi_hostpath": "CSI host path driver",
+    "csi_registrar": "CSI registrar",
+    "csi_liveness": "CSI liveness probe",
+    "csi_attacher": "CSI attacher",
+    "csi_provisioner": "CSI provisioner",
+    "csi_resizer": "CSI resizer",
 }
 
 
 def label(name: str) -> str:
     """A learner-facing name for a pinned image, such as "Calico node"."""
-    return LABELS.get(name) or name.replace("_", " ").replace("csi", "CSI").capitalize()
+    return LABELS[name]
 
 
 def alias(name: str) -> str:

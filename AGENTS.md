@@ -15,6 +15,8 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Use a bold, polished visual design with accessible dark and light themes, and no gamification such as points, streaks, or confetti (user decision, 2026-11-14).
 - Keep a lesson's explanation and its task in view together beside the terminal; do not split them into tabs (user decision, 2026-11-14).
 - Show the learner's place on every page: the course path in the top bar, the next lesson in the sidebar, and the labs that exist on this computer.
+- A lesson becomes the place to continue when the learner stays on it, writes a note, or prepares its lab, not when they glance at it.
+- Show a check in the lesson's results however it was run, including `dockyard lab check` in a terminal.
 
 ## Autonomy and boundaries
 
@@ -58,6 +60,8 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Keep runtime observations read-only and project explicit safe fields; never expose raw workload environment or Secret bodies.
 - Keep in Docker only the pinned images a learner or a host step runs with `docker`; load cluster-only images from private archives (`dockyard.images`), and add no alias tags to Docker (user decision, 2026-11-14).
 - Remove downloads that no lab, current module, or prefetched scope needs; the learner can keep everything from Lab Manager.
+- Pin only downloads whose addresses stay valid, such as image digests and release assets; distribution mirrors delete superseded packages.
+- After changing an image or tool pin, run `scripts/measure_downloads.py`; lessons show those sizes before Prepare.
 - Use one complete sentence per physical line in long Markdown.
 - Never use em dashes, add agent co-authors, or manually modify generated files or changelogs.
 - Do not add hosted CI such as GitHub Actions; keep verification local.

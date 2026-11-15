@@ -60,9 +60,9 @@ You type the same commands either way.
 
 ## Prepare your terminal
 
-Choose **Prepare lab**, then open its terminal or copy the displayed lab command into a terminal you already use.
-On Windows, run the lab command in WSL.
-Keep that terminal beside this lesson.
+Choose **Prepare lab**.
+A terminal opens beside this lesson, already set up for the lab.
+To work in a terminal you already use, open the terminal’s menu and choose **Use your own terminal**.
 
 Dockyard sets a few named values in that terminal, called **environment variables**, so your commands use names reserved for this lab.
 When you type a name that starts with a dollar sign, such as `$DOCKYARD_CONTAINER`, the shell replaces it with its value before running the command.

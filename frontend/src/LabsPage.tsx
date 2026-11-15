@@ -1,4 +1,5 @@
 import { CachePanel } from "./CachePanel";
+import { StoragePanel } from "./StoragePanel";
 import type { Workbench } from "./useWorkbench";
 import {
   ArrowRight,
@@ -196,6 +197,7 @@ export function LabsPage({ model }: { model: Workbench }) {
           <p className="muted">Checking your local environment…</p>
         )}
       </section>
+      <StoragePanel model={model} />
       <CachePanel model={model} />
     </>
   );
