@@ -1487,7 +1487,7 @@
     "id": "static-analysis",
     "term": "Static analysis",
     "definition": "Checking files such as manifests or Dockerfiles for risky settings without running them, with tools like KubeLinter and kubesec.",
-    "watch_for": "Analyse what is actually deployed, and treat findings as input: tools lag behind and encode opinions.",
+    "watch_for": "Analyze what is actually deployed, and treat findings as input: tools lag behind and encode opinions.",
     "units": [
       "m29-analysis"
     ],

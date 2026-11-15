@@ -37,7 +37,7 @@ prediction:
   - Whether you will pass the real exam.
   - How many commands you typed.
   correct: 0
-  explanation: The score comes from checking the final state of each task. It shows where to practise
+  explanation: The score comes from checking the final state of each task. It shows where to practice
     next; it cannot predict a real exam result.
 hints:
 - Hints are not available during the exam. Afterwards, open each task's results to see what was checked.

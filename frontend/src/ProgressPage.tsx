@@ -39,7 +39,7 @@ export function ProgressPage({ model }: { model: Workbench }) {
     <>
       <div className="page-heading">
         <div className="eyebrow">YOUR LEARNING RECORD</div>
-        <h1>See what you’ve practised.</h1>
+        <h1>See what you’ve practiced.</h1>
         <p className="intro">
           A passing check means your lab met the task’s requirements. Missions
           passed without in-app hints are recorded separately. These results do
@@ -49,10 +49,10 @@ export function ProgressPage({ model }: { model: Workbench }) {
       </div>
       <div className="stats-grid">
         <div className="stat">
-          <span>Practised</span>
+          <span>Practiced</span>
           <strong>
             {completed}
-            <small> of {units.length}</small>
+            <small> of {model.course.length}</small>
           </strong>
         </div>
         <div className="stat">
@@ -94,7 +94,7 @@ export function ProgressPage({ model }: { model: Workbench }) {
                   </span>
                   <span
                     className="module-progress"
-                    aria-label={`${done} of ${all.length} activities practised`}
+                    aria-label={`${done} of ${all.length} activities practiced`}
                   >
                     <span className="module-progress-bar" aria-hidden="true">
                       <span

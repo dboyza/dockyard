@@ -33,7 +33,7 @@ export function PlacementPage({ model }: { model: Workbench }) {
         <h1>Find a good place to start.</h1>
         <p className="intro">
           Already know some Docker or Kubernetes? Try a mission from a familiar
-          part of the course. Use the result to decide what to practise next;
+          part of the course. Use the result to decide what to practice next;
           every lesson stays available.
         </p>
       </div>
@@ -42,7 +42,7 @@ export function PlacementPage({ model }: { model: Workbench }) {
           <div className="eyebrow">
             {next ? "SUGGESTED STARTING PHASE" : "ALL FOUR MISSIONS UP TO DATE"}
           </div>
-          <h2>{next?.title || "Keep practising."}</h2>
+          <h2>{next?.title || "Keep practicing."}</h2>
           <p>
             {next
               ? "You haven’t passed this part’s mission on your own yet, or it is due for review. Try the mission if the topic feels familiar, or start with its first lesson."

@@ -21,4 +21,4 @@ What matters is that each fix was based on evidence and checked afterwards.
 ## Beyond this lab
 
 With one control-plane node, any of these faults stops the whole API.
-Production clusters run three or more control-plane nodes, store etcd snapshots away from the cluster, and practise restores regularly.
+Production clusters run three or more control-plane nodes, store etcd snapshots away from the cluster, and practice restores regularly.

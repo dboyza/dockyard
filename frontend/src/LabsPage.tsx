@@ -62,8 +62,6 @@ export function LabsPage({ model }: { model: Workbench }) {
                 <h3>
                   {units.find((unit) => unit.id === item.unit_id)?.title ||
                     item.unit_id}
-                </h3>
-                <div className="resource-meta">
                   <span
                     className={`status-label ${
                       item.state === "ready"
@@ -75,8 +73,10 @@ export function LabsPage({ model }: { model: Workbench }) {
                   >
                     {LAB_STATE_LABELS[item.state] || item.state}
                   </span>
-                  <span className="mono muted small">{item.workspace}</span>
-                </div>
+                </h3>
+                <p className="resource-path mono muted small">
+                  {item.workspace}
+                </p>
                 {item.state === "preparing" && item.resources?.stage && (
                   <p className="small" role="status">
                     {item.resources?.stage}

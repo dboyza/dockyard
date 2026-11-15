@@ -107,4 +107,4 @@ kubectl logs deployment/dispatch --tail=20
 ## Changing a password is more than editing a Secret
 
 If this password changed, PostgreSQL itself would need the new password too, and the API would need to pick it up.
-Coordinating that is called **credential rotation**, and a later security lesson practises it.
+Coordinating that is called **credential rotation**, and a later security lesson practices it.

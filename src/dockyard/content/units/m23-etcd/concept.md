@@ -9,7 +9,7 @@ An etcd backup is called a **snapshot**: a single file holding the whole databas
 It is important to be clear about what a snapshot does *not* hold.
 Dispatch's jobs live in PostgreSQL, on a volume on the worker.
 An etcd snapshot remembers that the database's StatefulSet and claim exist, but not the rows inside the database.
-Application data needs its own backups, like the ones you practised in module 11.
+Application data needs its own backups, like the ones you practiced in module 11.
 
 ```figure
 etcd-scope

@@ -3,7 +3,7 @@ revision: 1
 module: 5
 order: 3
 title: Run more workers
-summary: Run two workers on the same queue, try an optional tool, and practise a database backup.
+summary: Run two workers on the same queue, try an optional tool, and practice a database backup.
 kind: lesson
 runtime: docker
 minutes: 35

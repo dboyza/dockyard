@@ -543,7 +543,7 @@ checks:
   - restored
   expected: 'true'
   diagnostic: The capstone job was not found in a PostgreSQL database named restored. Make a backup with
-    pg_dump, create restored with createdb, load the backup with psql, and query it, as practised in the
+    pg_dump, create restored with createdb, load the backup with psql, and query it, as practiced in the
     scaling lesson.
 - id: handoff-workers-hardened
   title: Every running worker has the same deliberate runtime restrictions

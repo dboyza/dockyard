@@ -19,7 +19,7 @@ Take it in stages and check each one before moving on.
 2. **Publish a release.** Build the image, push it to this lab’s registry, and find its digest, as in the registry lesson.
 3. **Run by digest.** Point both the `api` and `worker` services at the digest reference with `image:`, and remove their `build:` sections so Compose runs the published release.
 4. **Lock down the application.** Add the Compose restrictions from the previous lesson to `api` and `worker` only. PostgreSQL has to write its data, so leave the database’s settings alone.
-5. **Prove recovery.** Back up the `dispatch` database with `pg_dump`, create a separate database called `restored`, and load the backup into it, as you practised when scaling workers. Then find the original job there. Leave the live `dispatch` database untouched.
+5. **Prove recovery.** Back up the `dispatch` database with `pg_dump`, create a separate database called `restored`, and load the backup into it, as you practiced when scaling workers. Then find the original job there. Leave the live `dispatch` database untouched.
 6. **Hand over.** Write `RUNBOOK.md`.
 
 ## Writing the runbook

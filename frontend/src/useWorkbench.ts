@@ -507,27 +507,24 @@ export function useWorkbench() {
     });
   };
   const units = catalog?.units || [];
-  const completed = units.filter((unit) =>
-    currentPractice(unit.revision, state.progress[unit.id]),
-  ).length;
-  const demonstrated = units.filter(
-    (unit) =>
-      currentPractice(unit.revision, state.progress[unit.id]) &&
-      state.progress[unit.id]?.demonstrated,
-  ).length;
-  const practised = (unit: (typeof units)[number]) =>
+  const practiced = (unit: (typeof units)[number]) =>
     currentPractice(unit.revision, state.progress[unit.id]);
   const course = units
     .filter((unit) => unit.kind === "lesson" || unit.kind === "mission")
     .sort((a, b) => a.module - b.module || a.order - b.order);
+  // Every page counts the same thing: lessons and missions, as the course map does.
+  const completed = course.filter(practiced).length;
+  const demonstrated = course.filter(
+    (unit) => practiced(unit) && state.progress[unit.id]?.demonstrated,
+  ).length;
   const last = units.find((unit) => unit.id === state.last_unit);
-  // After a pass, the place to continue is the next lesson not yet practised.
+  // After a pass, the place to continue is the next lesson not yet practiced.
   const continueUnit =
-    (last && course.includes(last) && practised(last)
-      ? course.slice(course.indexOf(last) + 1).find((unit) => !practised(unit))
+    (last && course.includes(last) && practiced(last)
+      ? course.slice(course.indexOf(last) + 1).find((unit) => !practiced(unit))
       : undefined) ||
     last ||
-    course.find((unit) => !practised(unit)) ||
+    course.find((unit) => !practiced(unit)) ||
     units[0];
   const filtered = units.filter((unit) =>
     `${unit.search_text || ""} ${unit.id} ${unit.title} ${unit.summary} ${unit.outcomes.join(" ")}`
@@ -600,6 +597,7 @@ export function useWorkbench() {
     revealHint,
     revealReference,
     units,
+    course,
     completed,
     demonstrated,
     continueUnit,

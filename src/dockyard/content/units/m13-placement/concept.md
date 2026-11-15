@@ -126,4 +126,4 @@ A Pending Pod’s `FailedScheduling` event says why each node was ruled out, for
 Each node is listed under the first rule it failed, so fixing one problem can reveal the next.
 The control-plane node counts too: it carries its own `node-role.kubernetes.io/control-plane:NoSchedule` taint, which keeps ordinary workloads off it.
 Read the event before changing anything.
-All three nodes are containers on one computer, so spreading across them practises the scheduling rules without giving real protection against hardware failure.
+All three nodes are containers on one computer, so spreading across them practices the scheduling rules without giving real protection against hardware failure.

@@ -13,6 +13,6 @@ The database row survived because it was never in etcd: it lives on the applicat
 
 ## Beyond this lab
 
-Real clusters take etcd snapshots on a schedule, store them off the node, and practise restoring them.
+Real clusters take etcd snapshots on a schedule, store them off the node, and practice restoring them.
 Protect snapshots like credentials, because they contain every Secret.
 Back up application data separately; an etcd restore never brings back a deleted database row.

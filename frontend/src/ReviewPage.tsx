@@ -80,7 +80,7 @@ export function ReviewPage({ model }: { model: Workbench }) {
         <p>
           Opening a review does not change your record: use Check work, or
           Independent retake on a mission or incident for a fresh attempt
-          without earlier hints. The schedule helps you practise; it cannot
+          without earlier hints. The schedule helps you practice; it cannot
           prove you will remember something.
         </p>
       </details>

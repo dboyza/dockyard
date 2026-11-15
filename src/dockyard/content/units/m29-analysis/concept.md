@@ -15,10 +15,10 @@ This lesson uses two widely used analysers, both installed in your lab terminal:
 static-analysis
 ```
 
-## Analyse what you deploy
+## Analyze what you deploy
 
 Your workspace manifests contain placeholders such as `${DOCKYARD_IMAGE}`, which `render.py` fills in when you deploy.
-Analyse the rendered result, because that is what the cluster receives; both tools read a manifest from standard input when given `-`:
+Analyze the rendered result, because that is what the cluster receives; both tools read a manifest from standard input when given `-`:
 
 ```sh
 python render.py resizer.yaml | kube-linter lint -

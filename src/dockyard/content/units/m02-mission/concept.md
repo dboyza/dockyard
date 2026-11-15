@@ -1,6 +1,6 @@
 ## Give another person a release they can run
 
-You have practised building an image, updating a running release, and separating build work from runtime files.
+You have practiced building an image, updating a running release, and separating build work from runtime files.
 Now combine those skills without a complete command sequence.
 The application code is supplied; your work is the Dockerfile, the running container, and a clear explanation of how to reproduce the result.
 

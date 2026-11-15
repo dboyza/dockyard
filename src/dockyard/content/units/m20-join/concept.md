@@ -64,7 +64,7 @@ Ready nodes are not proof that networking works.
 ```figure
 cni-vxlan
 ```
-A new job travelling from the frontend, through Service DNS, to the API, queue, worker, and database is.
+The proof is a new job traveling from the frontend, through Service DNS, to the API, queue, worker, and database.
 
 ## In the exam
 

@@ -29,7 +29,7 @@ export function CoursePage({ model }: { model: Workbench }) {
       next={unit.id === continueUnit?.id}
     />
   );
-  const practised = (unit: UnitSummary) =>
+  const practiced = (unit: UnitSummary) =>
     currentPractice(unit.revision, state.progress[unit.id]);
   return (
     <>
@@ -37,7 +37,7 @@ export function CoursePage({ model }: { model: Workbench }) {
         <div className="eyebrow">THE COMPLETE LEARNING PATH</div>
         <h1>Your course</h1>
         <p className="intro">
-          Start with the first lesson, or choose a topic you want to practise.
+          Start with the first lesson, or choose a topic you want to practice.
           Each module ends with a mission where you try the skills without
           step-by-step instructions.
         </p>
@@ -128,7 +128,7 @@ export function CoursePage({ model }: { model: Workbench }) {
                 (module) => module.id === unit.module && module.phase === phase,
               ),
           );
-          const phaseDone = phaseUnits.filter(practised).length;
+          const phaseDone = phaseUnits.filter(practiced).length;
           return (
             <section className="course-phase" id={`phase-${phase}`} key={phase}>
               <div className="section-heading">
@@ -138,7 +138,7 @@ export function CoursePage({ model }: { model: Workbench }) {
                 </h2>
                 <span
                   className="phase-progress"
-                  aria-label={`${phaseDone} of ${phaseUnits.length} activities practised`}
+                  aria-label={`${phaseDone} of ${phaseUnits.length} activities practiced`}
                 >
                   <span className="module-progress-bar" aria-hidden="true">
                     <span
@@ -158,7 +158,7 @@ export function CoursePage({ model }: { model: Workbench }) {
                       unit.module === module.id &&
                       (unit.kind === "lesson" || unit.kind === "mission"),
                   );
-                  const done = moduleUnits.filter(practised).length;
+                  const done = moduleUnits.filter(practiced).length;
                   return (
                     <details
                       className={`module ${module.id === continueUnit?.module ? "here" : ""} ${moduleUnits.length > 0 && done === moduleUnits.length ? "done" : ""}`}
@@ -178,7 +178,7 @@ export function CoursePage({ model }: { model: Workbench }) {
                         {moduleUnits.length > 0 && (
                           <span
                             className="module-progress"
-                            aria-label={`${done} of ${moduleUnits.length} activities practised`}
+                            aria-label={`${done} of ${moduleUnits.length} activities practiced`}
                           >
                             <span
                               className="module-progress-bar"

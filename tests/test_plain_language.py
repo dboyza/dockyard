@@ -16,15 +16,21 @@ SENTENCE_END = re.compile(r"(?<=[.!?])\s+")
 CODE_SPAN = re.compile(r"`[^`]*`")
 FENCE = re.compile(r"```.*?```", re.DOTALL)
 LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+BRITISH = re.compile(
+    r"behaviour|authoris|recognis|initialis|neighbour|\blabelled(?!by)|practis|colour|"
+    r"\banalys(e|ed|ing)\b|travell(ed|ing)|cancell(ed|ing)|organis(e|ed|ing|ation)|"
+    r"favourite|centre\b|licence|catalogue",
+    re.IGNORECASE,
+)
 # Learner-facing text avoids these words and spellings; the exam objectives quote official wording.
 AVOIDED = re.compile(
     r"\b(utili[sz]e[sd]?|leverag(e|es|ed|ing)|facilitat(e|es|ed|ing)|subsequently|prior to|"
     r"in order to|e\.g\.|i\.e\.|(?<![/\w])etc\.)"
-    r"|—"
-    r"|behaviour|authoris|recognis|initialis|neighbour|\blabelled(?!by)",
+    r"|—|" + BRITISH.pattern,
     re.IGNORECASE,
 )
 FILES_WITH_OFFICIAL_WORDING = {"objectives.json"}
+INTERFACE = ROOT / "frontend" / "src"
 DOCUMENTS = ["README.md", "docs/user-guide.md", "docs/platforms.md", "docs/terminals.md"]
 
 
@@ -117,4 +123,15 @@ def test_filler_words_and_british_spellings_are_avoided():
         for sentence in markdown_sentences(ROOT / document):
             if match := AVOIDED.search(sentence):
                 found.append(f"{document}: {match.group(0)!r} in {sentence[:80]!r}")
+    assert not found, "\n".join(found[:20])
+
+
+def test_the_interface_uses_american_spelling():
+    found = [
+        f"{path.relative_to(ROOT)}:{number}: {match.group(0)!r}"
+        for path in sorted(INTERFACE.rglob("*.ts*"))
+        if not path.name.endswith((".test.ts", ".test.tsx", ".gen.ts"))
+        for number, line in enumerate(path.read_text().splitlines(), 1)
+        if (match := BRITISH.search(line))
+    ]
     assert not found, "\n".join(found[:20])

@@ -1,6 +1,6 @@
 ## Bring the application up as a complete project
 
-You have practised each part separately: describing services, waiting for dependencies, and running multiple workers.
+You have practiced each part separately: describing services, waiting for dependencies, and running multiple workers.
 Now build a Compose file that combines them without a prepared working stack.
 The supplied Python application and Dockerfile are complete.
 

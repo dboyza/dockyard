@@ -4,7 +4,7 @@ The CKA, CKAD, and CKS are hands-on exams.
 You get a real terminal, a set of clusters, and about two hours to complete a series of tasks.
 Knowing Kubernetes is necessary but not enough: you also need to work quickly, carefully, and in the right place.
 This guide collects the habits that make the difference.
-Practise them in the lessons and the timed practice exams until they are automatic.
+Practice them in the lessons and the timed practice exams until they are automatic.
 
 ```figure
 exam-task-loop
@@ -87,7 +87,7 @@ Short names save typing: `po` for pods, `deploy`, `svc`, `cm` for ConfigMaps, `s
 
 ## Edit files quickly in vim
 
-The exam terminal has `vim` and usually `nano`; practise in whichever you will use.
+The exam terminal has `vim` and usually `nano`; practice in whichever you will use.
 If you use vim, these commands cover most needs:
 
 | Keys | Effect |
@@ -162,9 +162,9 @@ kubectl get pods --sort-by=.metadata.creationTimestamp
 - Leave a few minutes at the end to revisit flagged tasks.
 - Delete a stuck Pod with `kubectl delete pod NAME --grace-period=0 --force` only when you are sure it is yours and safe to remove; waiting for graceful shutdown can cost time.
 
-## Practising in Dockyard
+## Practicing in Dockyard
 
-Every lesson in this course practises these commands on a real cluster.
+Every lesson in this course practices these commands on a real cluster.
 The six timed practice exams, two for each certification, give you the same pressure: two hours, many tasks, and a score at the end.
 They are original practice, not copies of the real exams, and a score here is not a prediction of your result.
 When a practice exam shows a weak area, the results link back to the lessons that teach it.

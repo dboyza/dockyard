@@ -1,6 +1,6 @@
 ## What just happened?
 
-Your request travelled from `curl` to your assigned port on `127.0.0.1`, and Docker forwarded it to port 8000 inside the container, where the web server answered.
+Your request traveled from `curl` to your assigned port on `127.0.0.1`, and Docker forwarded it to port 8000 inside the container, where the web server answered.
 The server found your page through a read-only bind mount, so it saw your edit at once but could not change your files.
 
 Check your understanding:

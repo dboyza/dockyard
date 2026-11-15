@@ -56,12 +56,12 @@ export function StoragePanel({ model }: { model: Workbench }) {
     ? [
         {
           title: "In Docker",
-          hint: "Images you run with docker yourself.",
+          hint: "Images Docker runs on this computer for your labs.",
           items: storage.host_images,
         },
         {
           title: "Private cluster images",
-          hint: "Loaded straight into cluster nodes; never in docker images.",
+          hint: "Loaded straight into cluster nodes, so docker images never lists them.",
           items: storage.archives,
         },
       ]

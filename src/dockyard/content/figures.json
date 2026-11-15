@@ -598,7 +598,7 @@
   {
     "id": "recovery-point-time",
     "title": "Recovery point and recovery time",
-    "caption": "A recent backup shrinks the lost data; a practised restore shrinks the outage.",
+    "caption": "A recent backup shrinks the lost data; a practiced restore shrinks the outage.",
     "description": "A timeline. A backup is taken, which is the recovery point; later a failure happens; later still service is restored. Changes made between the backup and the failure are lost. The time between the failure and the restored service is the recovery time.",
     "terms": [
       "restore-test"
@@ -2912,7 +2912,7 @@
   {
     "id": "static-analysis",
     "title": "Static analysis of manifests",
-    "caption": "Render the manifest, analyse what the cluster will receive, fix, then deploy.",
+    "caption": "Render the manifest, analyze what the cluster will receive, fix, then deploy.",
     "description": "resizer.yaml is rendered by render.py into the manifest the cluster gets. That manifest goes to KubeLinter, which checks rules and fails with an exit code, and to kubesec, which gives a risk score and advice. After fixing, the manifest is deployed. A note says nothing runs: problems are found in the text before it reaches a cluster.",
     "terms": [
       "static-analysis",

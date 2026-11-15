@@ -30,15 +30,10 @@ const RHYTHM = [
 export function OverviewPage({ model }: { model: Workbench }) {
   const { state, busy, catalog, navigate, openLesson, continueUnit } = model;
   const returning = !!state.last_unit;
-  const practised = (id: string, revision: number) =>
+  const practiced = (id: string, revision: number) =>
     currentPractice(revision, state.progress[id]);
-  const course = model.units.filter(
-    (unit) => unit.kind === "lesson" || unit.kind === "mission",
-  );
-  const done = course.filter((unit) => practised(unit.id, unit.revision));
-  const independent = done.filter(
-    (unit) => state.progress[unit.id]?.demonstrated,
-  ).length;
+  const { course, demonstrated: independent } = model;
+  const done = course.filter((unit) => practiced(unit.id, unit.revision));
   const due = model.units.filter((unit) =>
     reviewDue(unit.revision, state.progress[unit.id]),
   ).length;
@@ -53,7 +48,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
       ...phase,
       modules: ids.size,
       total: units.length,
-      done: units.filter((unit) => practised(unit.id, unit.revision)).length,
+      done: units.filter((unit) => practiced(unit.id, unit.revision)).length,
     };
   });
   const facts = [
@@ -134,7 +129,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
             className="stat stat-link"
             onClick={() => navigate("progress")}
           >
-            <span>Practised</span>
+            <span>Practiced</span>
             <strong>
               {done.length}
               <small> of {course.length}</small>
@@ -210,7 +205,7 @@ export function OverviewPage({ model }: { model: Workbench }) {
                 <strong>{phase.title}</strong>
                 <span className="small muted">
                   {phase.modules} {phase.modules === 1 ? "module" : "modules"} ·{" "}
-                  {phase.done} of {phase.total} practised
+                  {phase.done} of {phase.total} practiced
                 </span>
                 {here?.phase === phase.phase && (
                   <span className="journey-here">You are here</span>

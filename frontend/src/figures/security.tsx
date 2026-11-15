@@ -1142,7 +1142,7 @@ export const security = {
         y={20}
         w={160}
         h={240}
-        label="Labelled worker"
+        label="Labeled worker"
         tone="good"
       />
       <Box
