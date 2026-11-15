@@ -20,6 +20,14 @@ from typing import Any
 from dockyard import host, terminals
 from dockyard.catalog import CONTENT, Catalog
 from dockyard.consoles import Consoles
+from dockyard.images import (
+    PINNED,
+    ImageStore,
+    alias,
+    cluster_images,
+    digest_reference,
+    host_images,
+)
 from dockyard.locking import operation_lock
 from dockyard.models import (
     Assessment,
@@ -45,7 +53,7 @@ COMPATIBILITY = json.loads((CONTENT / "compatibility.json").read_text())
 # Docker reports this when every private address range for new networks is in use.
 ADDRESS_POOLS_EXHAUSTED = "all predefined address pools have been fully subnetted"
 RECLAIM_LIMIT = 8
-PYTHON_IMAGE: str = COMPATIBILITY["images"]["python"]
+PYTHON_IMAGE: str = PINNED["python"]
 # How long a check keeps observing a runtime that is still changing, such as old
 # Pods terminating after a rollout, before reporting the observation as stale.
 SETTLE_SECONDS = 30
@@ -61,7 +69,9 @@ class Service:
         self.store = Store(self.directory)
         self.catalog = catalog or Catalog()
         development_tools = Path(__file__).resolve().parents[2] / ".tools"
-        self.tools = development_tools if development_tools.exists() else self.directory / "tools"
+        # A source checkout shares one tools folder between every profile that runs from it.
+        self.shared_tools = development_tools.exists()
+        self.tools = development_tools if self.shared_tools else self.directory / "tools"
         self._cancels: dict[str, threading.Event] = {}
         self._lock = threading.Lock()
         self.closing = threading.Event()
@@ -124,11 +134,9 @@ class Service:
         env["PATH"] = (
             f"{self.tools / 'bin'}:{Path(sys.executable).parent}:{env.get('PATH', '/usr/bin:/bin')}"
         )
-        for name, image in COMPATIBILITY["images"].items():
+        for name, image in PINNED.items():
             env[f"DOCKYARD_{name.upper()}_IMAGE"] = image
-            env[f"DOCKYARD_{name.upper()}_LOCAL_IMAGE"] = (
-                f"dockyard-cache/{name.replace('_', '-')}:{image.split('sha256:')[-1][:16]}"
-            )
+            env[f"DOCKYARD_{name.upper()}_LOCAL_IMAGE"] = alias(name)
         if lab:
             env.update(
                 DOCKYARD_LAB=lab.id,
@@ -315,6 +323,11 @@ class Service:
                 lab.state = "absent"
                 self._save(lab)
                 result = self.public_lab(lab)
+                if not self.resetting.is_set():
+                    from dockyard.cache import sweep
+
+                    # Downloads that no lab needs any more leave with the lab.
+                    sweep(self)
             else:
                 if action == "stop":
                     lab.state = "stopping"
@@ -444,33 +457,26 @@ class Service:
             self._require(engine)
             if engine.stdout.strip():
                 lab.resources.setdefault("docker_clock", engine.stdout.strip())
+
         # A capability that names a pinned tool, such as cosign, puts that tool on the lab's PATH.
-        named_tools = sorted(set(unit.capabilities) & TOOLCHAIN.keys())
-        if named_tools:
+        def stage(message: str) -> None:
+            lab.resources["stage"] = message
+            self._save(lab)
 
-            def report(message: str) -> None:
-                lab.resources["stage"] = message
-                self._save(lab)
-
-            toolchain = Toolchain(self.tools)
-            for tool in named_tools:
-                toolchain.ensure(tool, cancel, report)
-        images = list(
-            dict.fromkeys(unit.images + (["kind"] if unit.runtime == Runtime.KUBERNETES else []))
+        toolchain = Toolchain(self.tools)
+        for tool in sorted(set(unit.capabilities) & TOOLCHAIN.keys()):
+            toolchain.ensure(tool, cancel, stage)
+        store = ImageStore(self.tools, env)
+        for image_name in host_images(unit):
+            store.ensure_host(image_name, cancel, stage)
+        # Remembered so a later update can remove a pin this profile no longer uses.
+        self.store.set_setting(
+            "host-images",
+            sorted(
+                set(self.store.setting("host-images", []))
+                | {digest_reference(PINNED[name]) for name in host_images(unit)}
+            ),
         )
-        if "native-csi" in unit.capabilities:
-            from dockyard.runtimes.native_csi import CONTAINERS
-
-            images = list(dict.fromkeys(images + list(CONTAINERS.values())))
-        for image_name in images:
-            image_ref = COMPATIBILITY["images"][image_name]
-            image = run(
-                ["docker", "image", "inspect", image_ref], env=env, timeout=15, cancel=cancel
-            )
-            if not image.ok:
-                self._require(
-                    run(["docker", "pull", image_ref], env=env, timeout=600, cancel=cancel)
-                )
         workspace = Path(lab.workspace)
         if not workspace.exists():
             write_files(workspace, unit.starter)
@@ -496,14 +502,15 @@ class Service:
                             initialize(runtime, cancel, native(unit.native_version))
                         from dockyard.runtimes.native_images import load
 
-                        for image_name in unit.images:
-                            load(runtime, COMPATIBILITY["images"][image_name], cancel)
+                        for image_name in cluster_images(unit):
+                            if not image_name.startswith("csi_"):
+                                load(runtime, PINNED[image_name], cancel)
                         if "native-csi" in unit.capabilities:
                             from dockyard.runtimes.native_csi import prepare as prepare_csi
 
                             prepare_csi(runtime, cancel)
                 else:
-                    runtime.prepare(unit.nodes, unit.images, cancel, unit.capabilities)
+                    runtime.prepare(unit.nodes, cluster_images(unit), cancel, unit.capabilities)
         env = self.environment(lab)
         commands = (
             [] if lab.resources.get("prepared_revision") == str(unit.revision) else unit.prepare
@@ -542,7 +549,7 @@ class Service:
             "cluster": f"dockyard-{lab.id[:12]}",
             "namespace": "dispatch",
         }
-        values.update({f"{name}_image": image for name, image in COMPATIBILITY["images"].items()})
+        values.update({f"{name}_image": image for name, image in PINNED.items()})
         for key, replacement in values.items():
             value = value.replace("{{" + key + "}}", quote(replacement))
         return value

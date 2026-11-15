@@ -34,8 +34,10 @@ def test_advanced_prefetch_includes_adjacent_packages_and_reports_network_gaps()
     }
     assert any("control-plane" in message for message in admin["limitations"])
     application = dependencies(catalog.get("exam-ckad-a"))
-    assert {"kind", "calico_calico", "calico_node", "python", "postgres", "redis"} <= set(
-        application["images"]
+    # Docker holds what the learner builds from; cluster-only images stay private archives.
+    assert set(application["host_images"]) == {"kind", "python"}
+    assert {"calico_calico", "calico_node", "postgres", "redis", "busybox"} <= set(
+        application["cluster_images"]
     )
     assert any("Python package index" in message for message in application["limitations"])
     assert dependencies(catalog.get("m01-processes"))["limitations"] == []

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 # Learner data. Downloaded tools, VM provider settings, and lock files are kept.
 DIRECTORIES = ("labs", "backups", "checkpoints", "imports", "staging")
 TABLES = ("progress", "attempts", "notes", "checkpoints", "exams", "labs", "operations")
-KEPT_SETTINGS = ("theme",)
+KEPT_SETTINGS = ("theme", "keep-downloads", "kept-scopes", "host-images")
 ACTIVE = {"running", "queued", "canceling"}
 
 

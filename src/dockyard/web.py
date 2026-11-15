@@ -58,6 +58,10 @@ class CacheAction(Body):
     scope: str
 
 
+class StorageChoice(Body):
+    keep_downloads: bool
+
+
 class ContinuationAction(Body):
     target_id: str
     checkpoint_digest: str
@@ -262,6 +266,29 @@ def create_app(service: Service, origin: str) -> tuple[FastAPI, str]:
         from dockyard.cache import prepare
 
         return prepare(service, body.scope)
+
+    @app.get("/api/storage")
+    def storage_report() -> dict[str, Any]:
+        from dockyard.cache import storage
+
+        return storage(service)
+
+    @app.post("/api/storage")
+    def storage_choice(body: StorageChoice) -> dict[str, Any]:
+        from dockyard.cache import storage, sweep
+
+        service.store.set_setting("keep-downloads", body.keep_downloads)
+        sweep(service)
+        return storage(service)
+
+    @app.post("/api/storage/clean")
+    def storage_clean(body: Confirmation) -> dict[str, Any]:
+        from dockyard.cache import clean, storage
+
+        if not body.confirmed:
+            raise HTTPException(400, "Confirm that you want to remove Dockyard's downloads.")
+        clean(service)
+        return storage(service)
 
     @app.get("/api/portfolio/export")
     def download_portfolio() -> Response:

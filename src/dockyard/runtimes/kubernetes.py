@@ -15,7 +15,7 @@ from typing import Any
 
 import yaml
 
-from dockyard import host
+from dockyard.images import ImageStore, alias, label
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
 from dockyard.runtimes import calico, kubeclient
@@ -121,45 +121,29 @@ class KubernetesRuntime:
         return resource
 
     def load_image(self, name: str, cancel: threading.Event) -> str:
-        image = self.env[f"DOCKYARD_{name.upper()}_IMAGE"]
-        local = self.env[f"DOCKYARD_{name.upper()}_LOCAL_IMAGE"]
-        if not self.docker.command(["image", "inspect", image]).ok:
-            self.docker.require(self.docker.command(["pull", image], timeout=600, cancel=cancel))
-        self.docker.require(self.docker.command(["tag", image, local], cancel=cancel))
-        archive = self.root / "dependency-image.tar"
-        try:
-            self.docker.require(
-                self.docker.command(
-                    [
-                        "image",
-                        "save",
-                        "--platform=linux/" + host.architecture(),
-                        "--output",
-                        str(archive),
-                        local,
-                    ],
-                    timeout=180,
-                    cancel=cancel,
-                )
+        """Load a pinned image into every node from its private archive; returns its alias."""
+
+        def report(message: str) -> None:
+            self.lab.resources["stage"] = message
+            self.save(self.lab)
+
+        archive = ImageStore(self.tools, self.env).ensure_archive(name, cancel, report)
+        self.docker.require(
+            run(
+                [
+                    str(self.tools / "bin/kind"),
+                    "load",
+                    "image-archive",
+                    str(archive),
+                    "--name",
+                    self.name,
+                ],
+                env=self.env,
+                timeout=180,
+                cancel=cancel,
             )
-            self.docker.require(
-                run(
-                    [
-                        str(self.tools / "bin/kind"),
-                        "load",
-                        "image-archive",
-                        str(archive),
-                        "--name",
-                        self.name,
-                    ],
-                    env=self.env,
-                    timeout=180,
-                    cancel=cancel,
-                )
-            )
-        finally:
-            archive.unlink(missing_ok=True)
-        return local
+        )
+        return alias(name)
 
     def prepare(
         self,
@@ -333,8 +317,8 @@ class KubernetesRuntime:
         )
         self.wait_ready(cancel)
         for name in images:
-            if name not in {"python", "kind"}:
-                report(f"Loading the cached {name} dependency")
+            if not name.startswith("calico_"):
+                report(f"Loading the {label(name)} image into the cluster")
                 self.load_image(name, cancel)
         for namespace in ("dispatch", "dockyard-observer"):
             self.docker.require(

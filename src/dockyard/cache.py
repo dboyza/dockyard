@@ -1,4 +1,4 @@
-"""Versioned dependency prefetch and explicit offline readiness, without global pruning."""
+"""Pinned downloads: prefetch, offline readiness, and cleanup of what no lab still needs."""
 
 from __future__ import annotations
 
@@ -10,14 +10,22 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from dockyard import host
+from dockyard.images import (
+    ALIAS_PREFIX,
+    PINNED,
+    ImageStore,
+    cluster_images,
+    digest_reference,
+    host_images,
+    label,
+)
 from dockyard.locking import operation_lock
 from dockyard.models import Runtime, Unit
 from dockyard.process import run
-from dockyard.runtimes import calico
 from dockyard.runtimes.node_packages import manifest as package_manifest
 from dockyard.runtimes.scanner import ready as scanner_ready
-from dockyard.service import COMPATIBILITY, LabError
+from dockyard.service import LabError
+from dockyard.store import BusyError
 from dockyard.toolchain import MANIFEST, Toolchain
 from dockyard.versions import KUBERNETES, native
 
@@ -48,17 +56,10 @@ def select(service: Service, scope: str) -> list[Unit]:
 def dependencies(unit: Unit) -> dict[str, Any]:
     capabilities = set(unit.capabilities)
     tools = capabilities & MANIFEST.keys()
-    images = set(unit.images)
     packages: dict[str, Any] = {}
     limitations = []
-    if "python-image" in capabilities:
-        images.add("python")
-    for name in ("postgres", "redis"):
-        if name + "-image" in capabilities:
-            images.add(name)
     if unit.runtime == Runtime.KUBERNETES:
         tools |= {"kind", "kubectl", "calico"}
-        images |= {"kind", *calico.upstream_images()}
     if unit.runtime == Runtime.LINUX:
         tools |= {"limactl", "lima-guestagent", "ubuntu-node", "kubectl"}
         versions = {native(unit.native_version)}
@@ -76,10 +77,6 @@ def dependencies(unit: Unit) -> dict[str, Any]:
                 "Fresh kubeadm bootstrap and upgrades still require registry access "
                 "for control-plane images. Prepared native labs remain locally usable."
             )
-    if "native-csi" in capabilities:
-        from dockyard.runtimes.native_csi import CONTAINERS
-
-        images.update(CONTAINERS.values())
     if "routing" in capabilities:
         tools |= {"gateway", "traefik-rbac"}
     if "loadbalancer" in capabilities:
@@ -100,18 +97,37 @@ def dependencies(unit: Unit) -> dict[str, Any]:
         )
     return {
         "tools": sorted(tools),
-        "images": sorted(images),
+        # Images Docker holds on this computer, then images kept as private archives.
+        "host_images": host_images(unit),
+        "cluster_images": cluster_images(unit),
         "packages": packages,
         "scanner": "scanner" in capabilities,
         "limitations": limitations,
     }
 
 
+def docker_environment(service: Service) -> dict[str, str]:
+    env = service.environment()
+    env["DOCKER_HOST"] = service._docker_endpoint()
+    return env
+
+
+def directory_size(root: Path) -> int:
+    size = 0
+    if root.is_dir():
+        for directory, folders, files in os.walk(root, followlinks=False):
+            folders[:] = [name for name in folders if not (Path(directory) / name).is_symlink()]
+            for name in files:
+                path = Path(directory) / name
+                if not path.is_symlink():
+                    size += path.stat().st_size
+    return size
+
+
 def inventory(service: Service, scope: str) -> dict[str, Any]:
     units = select(service, scope)
     requirements = {unit.id: dependencies(unit) for unit in units}
     tool_names = sorted({name for dep in requirements.values() for name in dep["tools"]})
-    image_names = sorted({name for dep in requirements.values() for name in dep["images"]})
     packages = {
         name: entry for dep in requirements.values() for name, entry in dep["packages"].items()
     }
@@ -127,49 +143,39 @@ def inventory(service: Service, scope: str) -> dict[str, Any]:
     env = service.environment()
     env["DOCKER_HOST"] = service._docker_endpoint()
     engine = run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=10)
-    images = []
-    for name in image_names:
-        reference = COMPATIBILITY["images"][name]
-        result = (
-            run(
-                [
-                    "docker",
-                    "image",
-                    "inspect",
-                    "--platform=linux/" + host.architecture(),
-                    "--format",
-                    "{{.Architecture}}",
-                    reference,
-                ],
-                env=env,
-                timeout=10,
-            )
-            if engine.ok
-            else None
-        )
-        images.append(
-            {
-                "name": name,
-                "reference": reference,
-                "ready": bool(
-                    result and result.ok and result.stdout.strip() == host.architecture()
-                ),
-            }
-        )
+    store = ImageStore(service.tools, env)
+    host_names = sorted({name for dep in requirements.values() for name in dep["host_images"]})
+    cluster_names = sorted(
+        {name for dep in requirements.values() for name in dep["cluster_images"]}
+    )
+    images = [
+        {
+            "name": name,
+            "reference": PINNED[name],
+            "kept": "docker",
+            "ready": engine.ok and store.on_host(name),
+        }
+        for name in host_names
+    ] + [
+        {"name": name, "reference": PINNED[name], "kept": "private", "ready": store.archived(name)}
+        for name in cluster_names
+    ]
     scanner = (
         scanner_ready(service.tools / "trivy")
         if any(dep["scanner"] for dep in requirements.values())
         else None
     )
     missing_tools = {entry["name"] for entry in installed if not entry["ready"]}
-    missing_images = {entry["name"] for entry in images if not entry["ready"]}
+    missing_host = {e["name"] for e in images if e["kept"] == "docker" and not e["ready"]}
+    missing_cluster = {e["name"] for e in images if e["kept"] == "private" and not e["ready"]}
     missing_packages = {entry["name"] for entry in installed_packages if not entry["ready"]}
     readiness = []
     for unit in units:
         dep = requirements[unit.id]
         missing = sorted(
             (set(dep["tools"]) & missing_tools)
-            | (set(dep["images"]) & missing_images)
+            | (set(dep["host_images"]) & missing_host)
+            | (set(dep["cluster_images"]) & missing_cluster)
             | (dep["packages"].keys() & missing_packages)
         )
         if dep["scanner"] and not scanner:
@@ -187,14 +193,7 @@ def inventory(service: Service, scope: str) -> dict[str, Any]:
                 else "cached",
             }
         )
-    size = 0
-    if service.tools.is_dir():
-        for directory, folders, files in os.walk(service.tools, followlinks=False):
-            folders[:] = [name for name in folders if not (Path(directory) / name).is_symlink()]
-            for name in files:
-                path = Path(directory) / name
-                if not path.is_symlink():
-                    size += path.stat().st_size
+    size = directory_size(service.tools)
     return {
         "scope": scope,
         "units": readiness,
@@ -209,8 +208,8 @@ def inventory(service: Service, scope: str) -> dict[str, Any]:
         "free_disk_gib": round(shutil.disk_usage(service.directory).free / 1024**3, 1),
         "policy": "Cached means the declared runtime tools, packages, and image digests "
         "are present. Network-required identifies remaining external build or bootstrap steps. "
-        "Docker images and build cache are shared with Docker Desktop; "
-        "Dockyard never prunes them globally.",
+        "Images only clusters use are private archives, so they stay out of your Docker image "
+        "list. Dockyard never prunes Docker globally.",
     }
 
 
@@ -235,8 +234,11 @@ def prepare(
         try:
             if shutil.disk_usage(service.directory).free < 5 * 1024**3:
                 raise LabError("Free at least 5 GiB before prefetching dependencies.")
-            env = service.environment()
-            env["DOCKER_HOST"] = service._docker_endpoint()
+            # A prefetched scope stays downloaded until the learner frees the space.
+            kept = service.store.setting("kept-scopes", [])
+            if scope not in kept:
+                service.store.set_setting("kept-scopes", [*kept, scope])
+            env = docker_environment(service)
             requirements = [dependencies(unit) for unit in units]
             tools = Toolchain(service.tools)
             for name in sorted({name for dep in requirements for name in dep["tools"]}):
@@ -247,31 +249,21 @@ def prepare(
             installer = Toolchain(service.tools, packages)
             for name in sorted(packages):
                 installer.ensure(name, cancel, report)
-            for name in sorted({name for dep in requirements for name in dep["images"]}):
-                reference = COMPATIBILITY["images"][name]
-                report("Checking pinned native-architecture image: " + name)
-                found = run(
-                    [
-                        "docker",
-                        "image",
-                        "inspect",
-                        "--platform=linux/" + host.architecture(),
-                        "--format",
-                        "{{.Architecture}}",
-                        reference,
-                    ],
-                    env=env,
-                    timeout=10,
-                )
-                if not found.ok or found.stdout.strip() != host.architecture():
-                    report("Downloading pinned native-architecture image: " + name)
-                    result = run(
-                        ["docker", "pull", "--platform=linux/" + host.architecture(), reference],
-                        env=env,
-                        timeout=900,
-                        cancel=cancel,
-                    )
-                    service._require(result)
+            store = ImageStore(service.tools, env)
+            host_names = sorted({name for dep in requirements for name in dep["host_images"]})
+            for name in host_names:
+                report(f"Checking the {label(name)} image")
+                store.ensure_host(name, cancel, report)
+            service.store.set_setting(
+                "host-images",
+                sorted(
+                    set(service.store.setting("host-images", []))
+                    | {digest_reference(PINNED[name]) for name in host_names}
+                ),
+            )
+            for name in sorted({name for dep in requirements for name in dep["cluster_images"]}):
+                report(f"Checking the {label(name)} image")
+                store.ensure_archive(name, cancel, report)
             if any(dep["scanner"] for dep in requirements):
                 from dockyard.runtimes.scanner import ensure_database
 
@@ -293,9 +285,10 @@ def prepare(
 
 
 def pulled_references(service: Service) -> list[str]:
-    """Image references Dockyard itself created: cache aliases and pinned digest pulls.
+    """Image references in Docker that Dockyard itself created.
 
-    Superseded pins are recognized through their alias, which records the digest prefix.
+    These are pinned digest pulls, digests this profile recorded before a pin changed,
+    and cache aliases from earlier versions, whose tags record a digest prefix.
     Tags that people add themselves are never included, even on the same image.
     """
     env = docker_environment(service)
@@ -307,15 +300,12 @@ def pulled_references(service: Service) -> list[str]:
     aliases = sorted(
         f"{row['Repository']}:{row['Tag']}"
         for row in rows
-        if row["Repository"].startswith("dockyard-cache/") and row["Tag"] != "<none>"
+        if row["Repository"].startswith(ALIAS_PREFIX) and row["Tag"] != "<none>"
     )
     prefixes = {alias.rpartition(":")[2] for alias in aliases}
-    pinned = set()
-    for reference in COMPATIBILITY["images"].values():
-        name, _, digest = reference.partition("@")
-        if ":" in name.rpartition("/")[2]:
-            name = name.rpartition(":")[0]
-        pinned.add(f"{name}@{digest}")
+    known = {digest_reference(reference) for reference in PINNED.values()} | set(
+        service.store.setting("host-images", [])
+    )
     candidates = {
         f"{row['Repository']}@{row['Digest']}"
         for row in rows
@@ -334,23 +324,52 @@ def pulled_references(service: Service) -> list[str]:
     digests = {
         reference
         for reference in candidates
-        if reference in pinned or reference.partition("@sha256:")[2][:16] in prefixes
+        if reference in known or reference.partition("@sha256:")[2][:16] in prefixes
     }
     return aliases + sorted(digests)
 
 
-def docker_environment(service: Service) -> dict[str, str]:
-    env = service.environment()
-    env["DOCKER_HOST"] = service._docker_endpoint()
-    return env
+def needed(service: Service) -> tuple[set[str], set[str]]:
+    """Pinned images to keep, as names: those Docker holds, then private archives.
+
+    Existing labs need theirs, the module being studied keeps its next lesson ready,
+    and a scope the learner prefetched stays until they free the space.
+    """
+    catalog = service.catalog
+    units = {
+        lab.unit_id
+        for lab in service.store.labs()
+        if lab.state != "absent" and lab.unit_id in catalog.units
+    }
+    current = catalog.units.get(service.store.setting("last_unit") or "")
+    if current and current.kind in {"lesson", "mission"}:
+        units |= {
+            unit.id
+            for unit in catalog.units.values()
+            if unit.module == current.module and unit.kind in {"lesson", "mission"}
+        }
+    for scope in service.store.setting("kept-scopes", []):
+        try:
+            units |= {unit.id for unit in select(service, scope)}
+        except (ValueError, KeyError):
+            continue
+    selected = [catalog.units[unit_id] for unit_id in units]
+    return (
+        {name for unit in selected for name in host_images(unit)},
+        {name for unit in selected for name in cluster_images(unit)},
+    )
 
 
-def clean(service: Service) -> dict[str, Any]:
-    """Remove Dockyard's downloaded images without forcing; images in use stay."""
+def remove(service: Service, keep_host: set[str], keep_cluster: set[str]) -> dict[str, Any]:
+    """Remove Dockyard's downloaded images except the named ones; images in use stay."""
     with operation_lock(service.directory / "locks", "cache-prefetch"):
         env = docker_environment(service)
-        removed, kept = [], []
+        store = ImageStore(service.tools, env)
+        keep = {digest_reference(PINNED[name]) for name in keep_host}
+        removed, kept, freed = [], [], 0
         for reference in pulled_references(service):
+            if reference in keep:
+                continue
             result = run(["docker", "image", "rm", reference], env=env, timeout=60)
             message = result.stderr.lower()
             if result.ok or "no such image" in message:
@@ -359,4 +378,84 @@ def clean(service: Service) -> dict[str, Any]:
                 kept.append(reference)
             else:
                 service._require(result)
-        return {"removed": removed, "kept_in_use": kept}
+        archives = {store.archive_path(name) for name in keep_cluster}
+        if store.directory.is_dir() and not store.directory.is_symlink():
+            for path in sorted(store.directory.iterdir()):
+                if path not in archives and path.is_file() and not path.is_symlink():
+                    freed += path.stat().st_size
+                    path.unlink()
+                    removed.append(path.name)
+        service.store.set_setting(
+            "host-images",
+            sorted(set(service.store.setting("host-images", [])) & (keep | set(kept))),
+        )
+        return {"removed": removed, "kept_in_use": kept, "freed_archive_bytes": freed}
+
+
+def clean(service: Service) -> dict[str, Any]:
+    """Remove every image Dockyard downloaded, and forget prefetched scopes."""
+    service.store.set_setting("kept-scopes", [])
+    return remove(service, set(), set())
+
+
+def sweep(service: Service) -> dict[str, Any] | None:
+    """Remove downloads nothing needs any more, unless the learner chose to keep them.
+
+    Never raises: tidying up must not fail the lab operation that triggered it.
+    """
+    # Profiles that share tools must not decide for each other what stays downloaded.
+    if service.shared_tools or service.store.setting("keep-downloads", False):
+        return None
+    try:
+        return remove(service, *needed(service))
+    except (BusyError, LabError, OSError, ValueError):
+        return None
+
+
+def storage(service: Service) -> dict[str, Any]:
+    """What Dockyard has downloaded and where it is kept, for the learner to review."""
+    env = docker_environment(service)
+    store = ImageStore(service.tools, env)
+    engine = run(["docker", "info", "--format", "{{.ID}}"], env=env, timeout=10)
+    keep_host, keep_cluster = needed(service)
+    references = pulled_references(service) if engine.ok else []
+    names = {digest_reference(reference): name for name, reference in PINNED.items()}
+    present = [reference for reference in references if not reference.startswith(ALIAS_PREFIX)]
+    sizes = (
+        run(
+            ["docker", "image", "inspect", "--format", "{{.Size}}", *present],
+            env=env,
+            timeout=30,
+        )
+        if present
+        else None
+    )
+    measured = sizes.stdout.split() if sizes and sizes.ok else []
+    host_images = [
+        {
+            "name": names.get(reference, reference),
+            # A digest this profile pulled before an update changed the pin.
+            "label": label(names[reference]) if reference in names else "Earlier pinned image",
+            "bytes": int(size) if size.isdigit() else 0,
+            "needed": names.get(reference) in keep_host,
+        }
+        for reference, size in zip(present, measured, strict=False)
+    ]
+    archive_sizes = {
+        name: store.archive_path(name).stat().st_size for name in PINNED if store.archived(name)
+    }
+    archives = [
+        {"name": name, "label": label(name), "bytes": size, "needed": name in keep_cluster}
+        for name, size in archive_sizes.items()
+    ]
+    legacy = [reference for reference in references if reference.startswith(ALIAS_PREFIX)]
+    return {
+        "docker_ready": engine.ok,
+        "host_images": host_images,
+        "archives": archives,
+        "legacy_aliases": len(legacy),
+        "tools_bytes": directory_size(service.tools) - sum(archive_sizes.values()),
+        "keep_downloads": bool(service.store.setting("keep-downloads", False)),
+        "kept_scopes": service.store.setting("kept-scopes", []),
+        "free_disk_gib": round(shutil.disk_usage(service.directory).free / 1024**3, 1),
+    }

@@ -137,7 +137,7 @@ Running and failed labs are never reclaimed.
 | Resume | Restarts the preserved environment and verifies its prior readiness contract. |
 | Reset | Backs up the complete workspace and restores the starter environment. |
 | Independent retake | Performs a reset and starts a fresh learning-support record. |
-| Clean up | Removes verified owned runtime resources, their anonymous volumes, and images named for the lab or pushed to its registry, while preserving source and history. |
+| Clean up | Removes verified owned runtime resources, their anonymous volumes, and images named for the lab or pushed to its registry, while preserving source and history. Downloads that no lab still needs are removed too. |
 
 Closing a browser does not stop lab resources.
 Stop the environment explicitly when you finish a session.
@@ -149,8 +149,23 @@ Select a module, learning track, individual activity, or the full course in Lab 
 Inspect cache checks pinned tool hashes, native package hashes, and native-architecture image availability.
 Prefetch downloads missing declared dependencies and keeps verified downloads when canceled.
 A repeated preparation can resume supported partial downloads.
-The private cache has a 40 GiB soft budget; Docker images and build cache remain in Docker Desktop's shared storage.
+The private cache has a 40 GiB soft budget.
 Dockyard never performs a global prune.
+
+## Where downloads are kept
+
+Docker's own image list holds only the images you run with `docker` yourself.
+Those are Python, PostgreSQL, Redis, the image registry, and the node image a practice cluster starts from.
+Each appears once, by its pinned digest.
+Images that only clusters use, such as the cluster network and its add-ons, never appear in `docker images`.
+Dockyard keeps those as private files and loads them straight into each cluster's nodes.
+
+Dockyard removes a download when nothing needs it any more.
+A download stays while a lab that uses it exists, and while you are studying its module.
+Anything you prefetched in Lab Manager also stays until you free the space.
+Cleaning up your last lab on a topic removes that topic's downloads, so returning later downloads them again.
+After an update, downloads for versions Dockyard no longer uses are removed the next time it starts.
+Lab Manager shows what is downloaded, lets you keep everything instead, and can free the space at once.
 
 A cached base image is insufficient to guarantee every later build works offline.
 The report identifies Python dependency builds that may need package-index access after build-cache eviction, and fresh native bootstrap or upgrades that still need control-plane registry access.
@@ -173,7 +188,7 @@ Older curriculum evidence stays historical and remains due for reassessment wher
 **Settings and data → Start fresh** erases everything Dockyard has saved about your learning, so you can begin again as on your first launch.
 Dockyard first cleans up every lab through its recorded ownership, including containers, clusters, and VMs.
 It then erases progress, check results, exam attempts, notes, saved mission files, backups, and lab workspaces.
-Your theme and the tools and images Dockyard downloaded are kept, so labs start quickly again.
+Your theme and the tools Dockyard downloaded are kept, and so are its images, so labs start quickly again.
 
 You confirm by typing `erase`, and the change cannot be undone, so download a backup first if you might want this history later.
 Finish any running lab operation and any timed exam before you reset.
@@ -202,7 +217,7 @@ From a terminal, `./dockyard reset` shows what would be erased and `./dockyard r
 Export destinations must not already exist.
 The import command previews by default; `--yes` merges the validated archive.
 `lab status` without an activity lists every lab in the profile.
-`cache clean` lists the container images Dockyard downloaded; add `--yes` to remove them.
+`cache clean` lists the container images Dockyard downloaded, in Docker and in its private files; add `--yes` to remove them.
 Most commands print a readable summary; add `--json` for scripts.
 Use `--data-dir PATH` before the subcommand for a separate profile.
 Native VM profiles require short paths because Lima Unix socket paths have a fixed length limit.
@@ -228,6 +243,7 @@ Do not attach private runtime data or credentials to a report.
    It only touches resources Dockyard recorded as its own.
 3. Remove the container images Dockyard downloaded, such as Python and PostgreSQL, with `./dockyard cache clean --yes`.
    It keeps any image a container still uses and any tag you added yourself.
+   Cleaning up every lab usually leaves nothing for this step to remove.
 4. Delete the data folder that `./dockyard doctor` lists as **Data**.
    It holds your progress, notes, lab workspaces, and the tools and VM images Dockyard downloaded for that profile.
 5. Delete the Dockyard folder you installed from, which also removes its private `.runtime` and `.tools` folders.

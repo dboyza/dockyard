@@ -348,6 +348,14 @@ def launch(service: Service, port: int, open_browser: bool) -> None:
         flush=True,
     )
 
+    def tidy_downloads() -> None:
+        from dockyard.cache import sweep
+
+        # After an update, downloads for pins no lab uses any more are removed.
+        sweep(service)
+
+    threading.Thread(target=tidy_downloads, daemon=True).start()
+
     class WorkbenchServer(uvicorn.Server):
         def handle_exit(self, sig: int, frame: FrameType | None) -> None:
             service.shutdown()
@@ -405,18 +413,22 @@ def main() -> None:
             if report["issues"]:
                 raise SystemExit(1)
         elif arguments.command == "cache" and arguments.cache_action == "clean":
-            from dockyard.cache import clean, pulled_references
+            from dockyard.cache import clean, docker_environment, pulled_references
+            from dockyard.images import ImageStore
 
             if arguments.yes:
                 outcome = clean(service)
                 if arguments.json:
                     print(json.dumps(outcome, indent=2))
                 else:
-                    print(f"Removed {len(outcome['removed'])} image references.")
+                    print(f"Removed {len(outcome['removed'])} downloaded images.")
                     for reference in outcome["kept_in_use"]:
                         print(f"  kept, still used by a container: {reference}")
             else:
-                references = pulled_references(service)
+                archives = ImageStore(service.tools, docker_environment(service)).directory
+                references = pulled_references(service) + (
+                    sorted(path.name for path in archives.iterdir()) if archives.is_dir() else []
+                )
                 if arguments.json:
                     print(json.dumps(references, indent=2))
                 elif not references:
@@ -424,7 +436,7 @@ def main() -> None:
                 else:
                     for reference in references:
                         print("  " + reference)
-                    print(f"These {len(references)} image references would be removed.")
+                    print(f"These {len(references)} downloaded images would be removed.")
                     print("To remove them, repeat this command with --yes.")
         elif arguments.command == "cache":
             from dockyard.cache import inventory, prepare

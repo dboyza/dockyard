@@ -25,7 +25,11 @@ The browser assets under `src/dockyard/static` and TypeScript contracts under `f
 Change their canonical source and regenerate them instead of editing generated output.
 Generate API contracts with `.venv/bin/python scripts/generate_types.py`.
 Build browser assets with `npm --prefix frontend run build`.
-The terminal font in `frontend/src/fonts` is JetBrains Mono Nerd Font Regular and Bold from Nerd Fonts v3.5.1, converted to WOFF2 and licensed under the bundled `OFL.txt`.
+The terminal font in `frontend/src/fonts` is JetBrains Mono Nerd Font Regular and Bold from Nerd Fonts v3.5.1, converted to WOFF2 and licensed under the bundled `OFL-JetBrainsMono.txt`.
+The heading font is Bricolage Grotesque from the Google Fonts repository, licensed under the bundled `OFL-BricolageGrotesque.txt`.
+It is the variable font with its width fixed at 100, cut down to Latin characters, and converted to WOFF2.
+To rebuild it, run `fonttools varLib.instancer` with `wdth=100`, then `pyftsubset` with `--flavor=woff2`.
+Figures keep the system font, so their reviewed images do not depend on it.
 To update it, download the release's `JetBrainsMono.tar.xz`, verify its published SHA-256, and convert the two files with `fonttools ttLib.woff2 compress`.
 
 The README image `docs/assets/workbench.png` shows a real passing `m01-processes` lab beside its terminal, in the dark theme at 1440 by 1000 pixels.
@@ -69,7 +73,8 @@ The curriculum audit starts every activity's real fixture, verifies its declared
 Additional suites test valid alternatives, ownership preservation, Stop/Resume, reset backups, and supported versus independent attempts.
 A file-only curriculum audit does not replace runtime evidence.
 Every suite cleans the labs it creates, including their images and anonymous volumes.
-Afterwards, `./dockyard cache clean --yes` removes the pinned images the suites downloaded.
+A source checkout shares `.tools` between every profile that runs from it, so those profiles never remove downloads automatically.
+Afterwards, `.venv/bin/python -m dockyard cache clean --yes` removes the pinned images and private image archives the suites downloaded.
 
 ## Installed browser checks
 

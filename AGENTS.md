@@ -53,6 +53,8 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Do not treat Node Ready as networking proof; verify CNI/DNS readiness and actual cross-node traffic and policy enforcement.
 - Keep node and Pod networks disjoint, and verify that native TCP/UDP forwarding exposes only the declared loopback ports.
 - Keep runtime observations read-only and project explicit safe fields; never expose raw workload environment or Secret bodies.
+- Keep in Docker only the pinned images a learner or a host step runs with `docker`; load cluster-only images from private archives (`dockyard.images`), and add no alias tags to Docker (user decision, 2026-11-14).
+- Remove downloads that no lab, current module, or prefetched scope needs; the learner can keep everything from Lab Manager.
 - Use one complete sentence per physical line in long Markdown.
 - Never use em dashes, add agent co-authors, or manually modify generated files or changelogs.
 - Do not add hosted CI such as GitHub Actions; keep verification local.
