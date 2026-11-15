@@ -1,5 +1,6 @@
 """Pinned images live where they are used: Docker for host steps, private archives for clusters."""
 
+import shutil
 import threading
 
 import pytest
@@ -165,6 +166,13 @@ def test_a_sweep_never_removes_what_another_profile_needs_or_did_not_pull(
     learner.store.set_setting("last_unit", "m00-first-container")
     cache.sweep(learner)
     assert removed == []
+    # Publishing also forgets a profile that no longer exists.
+    gone = Service(tmp_path / "gone")
+    cache.record_pulls(gone, [])
+    shutil.rmtree(gone.directory)
+    before = len(list(private_registry.glob("images-*.json")))
+    cache.record_pulls(test, [])
+    assert len(list(private_registry.glob("images-*.json"))) == before - 1
     # Once neither needs it, the learner's own sweep removes what it pulled.
     test.store.set_setting("last_unit", "m00-first-container")
     cache.record_pulls(test, [])

@@ -429,6 +429,8 @@ def publish_needs(service: Service, references: set[str]) -> None:
         registry() / f"images-{identity}.json",
         json.dumps({"profile": str(service.directory), "images": sorted(references)}).encode(),
     )
+    # Reading the records drops those of deleted profiles, which nothing else would.
+    other_profiles_need(service)
 
 
 def other_profiles_need(service: Service) -> set[str]:

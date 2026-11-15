@@ -17,6 +17,8 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Show the learner's place on every page: the course path in the top bar, the next lesson in the sidebar, and the labs that exist on this computer.
 - A lesson becomes the place to continue when the learner stays on it, writes a note, or prepares its lab, not when they glance at it.
 - Show a check in the lesson's results however it was run, including `dockyard lab check` in a terminal.
+- A lesson is in progress once its lab exists or it has been checked; opening it starts nothing (2026-11-15).
+- While a lesson's latest check passes, its footer makes Next lesson the main action; otherwise Check work stays primary (2026-11-15).
 
 ## Autonomy and boundaries
 

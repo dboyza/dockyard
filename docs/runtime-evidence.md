@@ -762,5 +762,5 @@ A two-profile test covers that case.
 The installed browser suites passed afterwards, including the kind lab lifecycle through the embedded terminal.
 From the final code, every installed browser suite passed, including the project suite and the timed CKAD exam on kindnet.
 The exam suite had expected four exams and an old button color; it now expects six and compares the color with the theme.
-A fresh profile prepared its first kind lesson in about 30 seconds, and the lesson named each step while it waited.
+With every download already present, a fresh profile prepared its first kind lesson in about 30 seconds, and the lesson named each step while it waited.
 No test profiles, kind clusters, or Dockyard-labeled containers remained afterwards.

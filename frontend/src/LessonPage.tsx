@@ -212,6 +212,12 @@ export function LessonPage({ model }: { model: Workbench }) {
                 ? nextUnit
                 : undefined
             }
+            passed={
+              model.assessment?.unit_id === lesson.id &&
+              model.assessment.revision === lesson.revision &&
+              model.assessment.status === "pass" &&
+              !reviewDue(lesson.revision, progress)
+            }
           />
         }
       >
@@ -452,10 +458,19 @@ function OperationStatus({ model }: { model: Workbench }) {
 
 /**
  * The lab's state and Check work, kept in view at the foot of the lesson pane.
- * Once the lesson has passed, moving on becomes the main action.
+ * While the latest check passes, moving on becomes the main action.
  */
-function LabBar({ model, next }: { model: Workbench; next?: UnitSummary }) {
+function LabBar({
+  model,
+  next,
+  passed,
+}: {
+  model: Workbench;
+  next?: UnitSummary;
+  passed: boolean;
+}) {
   const { lab, busy, perform } = model;
+  const moveOn = passed && !!next;
   return (
     <div className="lab-bar">
       <div className={`lab-state ${labTone(lab?.state)}`}>
@@ -466,13 +481,13 @@ function LabBar({ model, next }: { model: Workbench; next?: UnitSummary }) {
         <OperationStatus model={model} />
       ) : (
         <span className="small muted lab-bar-hint">
-          {next
+          {passed
             ? "Your work passed this check."
             : "Check work tests what your lab does right now."}
         </span>
       )}
       <button
-        className={next ? undefined : "primary"}
+        className={moveOn ? undefined : "primary"}
         disabled={!!busy || TRANSITIONS.has(lab?.state ?? "")}
         onClick={() => void perform("check")}
       >
@@ -481,11 +496,11 @@ function LabBar({ model, next }: { model: Workbench; next?: UnitSummary }) {
         ) : (
           <ShieldCheck size={16} />
         )}
-        {next ? "Check again" : "Check work"}
+        {passed ? "Check again" : "Check work"}
       </button>
       {next && (
         <button
-          className="primary"
+          className={moveOn ? "primary" : undefined}
           title={next.title}
           aria-label={`Next lesson: ${next.title}`}
           onClick={() => void model.openLesson(next.id)}
