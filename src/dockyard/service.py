@@ -25,7 +25,6 @@ from dockyard.images import (
     ImageStore,
     alias,
     cluster_images,
-    digest_reference,
     host_images,
 )
 from dockyard.locking import operation_lock
@@ -470,16 +469,10 @@ class Service:
         for tool in sorted(set(unit.capabilities) & TOOLCHAIN.keys()):
             toolchain.ensure(tool, cancel, stage)
         store = ImageStore(self.tools, env)
-        for image_name in host_images(unit):
-            store.ensure_host(image_name, cancel, stage)
-        # Remembered so a later update can remove a pin this profile no longer uses.
-        self.store.set_setting(
-            "host-images",
-            sorted(
-                set(self.store.setting("host-images", []))
-                | {digest_reference(PINNED[name]) for name in host_images(unit)}
-            ),
-        )
+        pulled = [name for name in host_images(unit) if store.ensure_host(name, cancel, stage)]
+        from dockyard.cache import record_pulls
+
+        record_pulls(self, pulled)
         workspace = Path(lab.workspace)
         if not workspace.exists():
             write_files(workspace, unit.starter)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -30,6 +31,7 @@ from dockyard.service import LabError
 from dockyard.store import BusyError
 from dockyard.toolchain import MANIFEST, Toolchain
 from dockyard.versions import KUBERNETES, native
+from dockyard.workspace import atomic_write
 
 if TYPE_CHECKING:
     from dockyard.service import Service
@@ -61,7 +63,7 @@ def dependencies(unit: Unit) -> dict[str, Any]:
     packages: dict[str, Any] = {}
     limitations = []
     if unit.runtime == Runtime.KUBERNETES:
-        tools |= {"kind", "kubectl", "calico"}
+        tools |= {"kind", "kubectl"}
     if unit.runtime == Runtime.LINUX:
         tools |= {"limactl", "lima-guestagent", "ubuntu-node", "kubectl"}
         versions = {native(unit.native_version)}
@@ -290,17 +292,12 @@ def prepare(
             for name in sorted(packages):
                 installer.ensure(name, cancel, report)
             store = ImageStore(service.tools, env)
-            host_names = sorted({name for dep in requirements for name in dep["host_images"]})
-            for name in host_names:
+            pulled = []
+            for name in sorted({name for dep in requirements for name in dep["host_images"]}):
                 report(f"Checking the {label(name)} image")
-                store.ensure_host(name, cancel, report)
-            service.store.set_setting(
-                "host-images",
-                sorted(
-                    set(service.store.setting("host-images", []))
-                    | {digest_reference(PINNED[name]) for name in host_names}
-                ),
-            )
+                if store.ensure_host(name, cancel, report):
+                    pulled.append(name)
+            record_pulls(service, pulled)
             for name in sorted({name for dep in requirements for name in dep["cluster_images"]}):
                 report(f"Checking the {label(name)} image")
                 store.ensure_archive(name, cancel, report)
@@ -400,15 +397,71 @@ def needed(service: Service) -> tuple[set[str], set[str]]:
     )
 
 
-def remove(service: Service, keep_host: set[str], keep_cluster: set[str]) -> dict[str, Any]:
-    """Remove Dockyard's downloaded images except the named ones; images in use stay."""
+def record_pulls(service: Service, names: list[str]) -> None:
+    """Remember images this profile itself downloaded; only those can leave automatically."""
+    if names:
+        service.store.set_setting(
+            "host-images",
+            sorted(
+                set(service.store.setting("host-images", []))
+                | {digest_reference(PINNED[name]) for name in names}
+            ),
+        )
+
+
+def other_profiles_need(service: Service, mine: set[str]) -> set[str]:
+    """Publish this profile's Docker needs and read every other profile's.
+
+    Docker's images are shared by every profile on this computer, so an image
+    another profile needs stays even when this one is finished with it.
+    """
+    from dockyard.capacity import registry
+
+    root = registry()
+    identity = hashlib.sha256(str(service.directory).encode()).hexdigest()[:24]
+    atomic_write(
+        root / f"images-{identity}.json",
+        json.dumps({"profile": str(service.directory), "images": sorted(mine)}).encode(),
+    )
+    others: set[str] = set()
+    for path in root.glob("images-*.json"):
+        try:
+            if path.is_symlink() or path.stat().st_size > 65536:
+                continue
+            record = json.loads(path.read_text())
+            profile, images = str(record["profile"]), set(record["images"])
+        except (OSError, ValueError, KeyError, TypeError):
+            # Another profile may be rewriting or removing its record.
+            continue
+        if profile == str(service.directory):
+            continue
+        if not Path(profile).is_dir():
+            # A deleted profile needs nothing.
+            path.unlink(missing_ok=True)
+            continue
+        others |= images
+    return others
+
+
+def remove(
+    service: Service, keep_host: set[str], keep_cluster: set[str], *, everything: bool = False
+) -> dict[str, Any]:
+    """Remove Dockyard's downloaded images except the named ones; images in use stay.
+
+    Unless asked for everything, only images this profile downloaded are candidates,
+    and never one another profile on this computer still needs.
+    """
     with operation_lock(service.directory / "locks", "cache-prefetch"):
         env = docker_environment(service)
         store = ImageStore(service.tools, env)
         keep = {digest_reference(PINNED[name]) for name in keep_host}
+        mine = set(service.store.setting("host-images", []))
+        if not everything:
+            keep |= other_profiles_need(service, keep)
         removed, kept, freed = [], [], 0
         for reference in pulled_references(service):
-            if reference in keep:
+            legacy_alias = reference.startswith(ALIAS_PREFIX)
+            if reference in keep or not (everything or legacy_alias or reference in mine):
                 continue
             result = run(["docker", "image", "rm", reference], env=env, timeout=60)
             message = result.stderr.lower()
@@ -435,7 +488,7 @@ def remove(service: Service, keep_host: set[str], keep_cluster: set[str]) -> dic
 def clean(service: Service) -> dict[str, Any]:
     """Remove every image Dockyard downloaded, and forget prefetched scopes."""
     service.store.set_setting("kept-scopes", [])
-    return remove(service, set(), set())
+    return remove(service, set(), set(), everything=True)
 
 
 def sweep(service: Service) -> dict[str, Any] | None:

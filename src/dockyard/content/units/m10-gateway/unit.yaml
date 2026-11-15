@@ -146,7 +146,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - routing
 checkpoint: dispatch-routing-v1
 images:

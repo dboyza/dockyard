@@ -168,10 +168,13 @@ Dockyard never performs a global prune.
 Docker's own image list holds only the images you run with `docker` yourself.
 Those are Python, PostgreSQL, Redis, the image registry, and the node image a practice cluster starts from.
 Each appears once, by its pinned digest.
-Images that only clusters use, such as the cluster network and its add-ons, never appear in `docker images`.
+Images that only clusters use, such as databases and add-ons inside a cluster, never appear in `docker images`.
 Dockyard keeps those as private files and loads them straight into each cluster's nodes.
+Practice clusters use kind's own network plugin, which enforces NetworkPolicy without a separate download.
 
 Dockyard removes a download when nothing needs it any more.
+It only removes images it downloaded itself, never ones Docker already had.
+Another Dockyard profile on this computer keeps any image it still needs.
 A download stays while a lab that uses it exists, and while you are studying its module.
 Anything you prefetched in Lab Manager also stays until you free the space.
 Cleaning up your last lab on a topic removes that topic's downloads, so returning later downloads them again.

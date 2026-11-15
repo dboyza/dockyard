@@ -56,10 +56,12 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Console WebSockets bypass the HTTP middleware, so they verify the exact origin and session cookie themselves.
 - Every learner shell, embedded or external, has ordinary user privileges; do not describe environment scoping as an OS security sandbox.
 - Do not treat Node Ready as networking proof; verify CNI/DNS readiness and actual cross-node traffic and policy enforcement.
+- kind clusters use kind's own network plugin, kindnet, and native clusters use Calico; rerun the NetworkPolicy enforcement suite whenever the kind pin changes.
 - Keep node and Pod networks disjoint, and verify that native TCP/UDP forwarding exposes only the declared loopback ports.
 - Keep runtime observations read-only and project explicit safe fields; never expose raw workload environment or Secret bodies.
 - Keep in Docker only the pinned images a learner or a host step runs with `docker`; load cluster-only images from private archives (`dockyard.images`), and add no alias tags to Docker (user decision, 2026-11-14).
 - Remove downloads that no lab, current module, or prefetched scope needs; the learner can keep everything from Lab Manager.
+- Docker's images are shared by every profile: remove one automatically only if this profile pulled it and no other profile's published needs include it.
 - Pin only downloads whose addresses stay valid, such as image digests and release assets; distribution mirrors delete superseded packages.
 - After changing an image or tool pin, run `scripts/measure_downloads.py`; lessons show those sizes before Prepare.
 - Use one complete sentence per physical line in long Markdown.

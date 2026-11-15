@@ -60,18 +60,3 @@ def test_pod_subnet_reports_when_every_range_overlaps():
 
     with pytest.raises(RuntimeErrorBase, match="overlaps"):
         choose_pod_subnet(["10.0.0.0/8", "100.64.0.0/10"])
-
-
-def test_calico_pool_is_set_in_the_cached_manifest():
-    from pathlib import Path
-
-    import pytest
-
-    from dockyard.runtimes.kubernetes import calico_pool
-
-    cached = Path(".tools/downloads/calico-v3.32.2.yaml")
-    if not cached.exists():
-        pytest.skip("The Calico manifest is downloaded by the toolchain.")
-    manifest = calico_pool(cached.read_text(), "10.244.0.0/16")
-    assert '- name: CALICO_IPV4POOL_CIDR\n              value: "10.244.0.0/16"' in manifest
-    assert '#   value: "192.168.0.0/16"' not in manifest

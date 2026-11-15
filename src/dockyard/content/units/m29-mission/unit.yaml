@@ -3,7 +3,7 @@ revision: 1
 module: 29
 order: 4
 title: 'Mission: ship a signed, minimal, policy-compliant release'
-summary: Build a minimal image, publish and sign it, deploy it by digest from an analysed manifest, and
+summary: Build a minimal image, publish and sign it, deploy it by digest from an analyzed manifest, and
   admit only release images in production.
 kind: mission
 runtime: kubernetes
@@ -180,7 +180,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - cosign
 - kubesec
 - kube-linter

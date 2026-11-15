@@ -24,12 +24,12 @@ prediction:
   question: You run KubeLinter on a workspace manifest whose image is written as ${DOCKYARD_IMAGE}. What
     does its latest-tag check report?
   options:
-  - A problem with the image name, because the placeholder has no tag; analyse the rendered manifest instead.
+  - A problem with the image name, because the placeholder has no tag; analyze the rendered manifest instead.
   - Nothing, because KubeLinter fills in placeholders itself.
   - That the image is pinned, because placeholders count as digests.
   correct: 0
   explanation: Analysers see the text they are given. A template placeholder is not a valid image reference,
-    so analyse the rendered manifest that the cluster actually receives.
+    so analyze the rendered manifest that the cluster actually receives.
 hints:
 - Run python render.py resizer.yaml | kube-linter lint - and python render.py resizer.yaml | kubesec scan
   -, and list every finding.
@@ -136,7 +136,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - kubesec
 - kube-linter
 checkpoint: dispatch-config-v1
@@ -149,7 +148,7 @@ alternatives:
 - Any manifest is accepted when both analysers pass and the deployed resizer is hardened and working.
 - Ignoring kubesec's SeccompAny advice is accepted when the Pod sets a seccomp profile.
 failure_modes:
-- Analysing a template instead of the rendered manifest reports problems that are not real.
+- Analyzing a template instead of the rendered manifest reports problems that are not real.
 - A clean report on a file does not prove the cluster runs that file.
 - Analysers encode opinions and can lag behind Kubernetes.
 starter_failure_checks:

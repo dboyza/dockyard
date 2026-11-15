@@ -18,9 +18,9 @@ import yaml
 from dockyard.images import ImageStore, alias, label
 from dockyard.models import Lab
 from dockyard.process import ProcessResult, run
-from dockyard.runtimes import calico, kubeclient
+from dockyard.runtimes import kubeclient
 from dockyard.runtimes.docker import DockerRuntime, RuntimeErrorBase, ownership_start
-from dockyard.toolchain import MANIFEST, Toolchain
+from dockyard.toolchain import Toolchain
 from dockyard.workspace import atomic_write
 
 CLUSTER_LABEL = "io.x-k8s.kind.cluster"
@@ -157,7 +157,7 @@ class KubernetesRuntime:
             self.save(self.lab)
 
         toolchain = Toolchain(self.tools)
-        for tool in ("kind", "kubectl", "calico"):
+        for tool in ("kind", "kubectl"):
             toolchain.ensure(tool, cancel, report)
         if capabilities and "helm" in capabilities:
             toolchain.ensure("helm", cancel, report)
@@ -215,7 +215,6 @@ class KubernetesRuntime:
             "apiVersion": "kind.x-k8s.io/v1alpha4",
             "networking": {
                 "apiServerAddress": "127.0.0.1",
-                "disableDefaultCNI": True,
                 "podSubnet": pod_subnet,
             },
             "nodes": [
@@ -297,29 +296,14 @@ class KubernetesRuntime:
                         cancel=cancel,
                     )
                 )
-        report("Installing the network policy capable CNI")
-        manifest = (self.tools / MANIFEST["calico"]["path"]).read_text()
-        for name, upstream in calico.upstream_images().items():
-            manifest = manifest.replace(upstream, self.load_image(name, cancel))
-        calico.require_pinned(manifest)
-        manifest = calico_pool(manifest, pod_subnet)
-        self.docker.require(
-            self.kubectl(
-                [
-                    "apply",
-                    "-f",
-                    "-",
-                ],
-                payload=manifest,
-                timeout=90,
-                cancel=cancel,
-            )
-        )
+        # kind's own network plugin enforces NetworkPolicy, so no other one is installed.
+        self.lab.resources["cni"] = "kindnet"
+        self.save(self.lab)
+        report("Waiting for the cluster network")
         self.wait_ready(cancel)
         for name in images:
-            if not name.startswith("calico_"):
-                report(f"Loading the {label(name)} image into the cluster")
-                self.load_image(name, cancel)
+            report(f"Loading the {label(name)} image into the cluster")
+            self.load_image(name, cancel)
         for namespace in ("dispatch", "dockyard-observer"):
             self.docker.require(
                 self.kubectl(
@@ -397,7 +381,9 @@ class KubernetesRuntime:
                 [
                     "rollout",
                     "status",
-                    "daemonset/calico-node",
+                    # Clusters made before 2026-11-15 run Calico instead.
+                    "daemonset/"
+                    + ("kindnet" if self.lab.resources.get("cni") == "kindnet" else "calico-node"),
                     "-n",
                     "kube-system",
                     "--timeout=180s",
@@ -570,9 +556,6 @@ SERVICE_SUBNET = ipaddress.ip_network("10.96.0.0/12")
 # Docker's default address pools use 172.17.0.0/12 and 192.168.0.0/16, so prefer ranges
 # outside them; the native VM labs use 10.244.0.0/16 too.
 POD_SUBNETS = ("10.244.0.0/16", "10.200.0.0/16", "100.64.0.0/16")
-CALICO_POOL_COMMENT = """            # - name: CALICO_IPV4POOL_CIDR
-            #   value: "192.168.0.0/16"
-"""
 
 
 def choose_pod_subnet(node_subnets: list[str]) -> str:
@@ -589,18 +572,6 @@ def choose_pod_subnet(node_subnets: list[str]) -> str:
     raise RuntimeErrorBase(
         "Every Pod address range Dockyard can use overlaps this lab's Docker network. "
         "Remove Docker networks you no longer need, then prepare again."
-    )
-
-
-def calico_pool(manifest: str, pod_subnet: str) -> str:
-    """Set Calico's default pool to the cluster's Pod range instead of its 192.168 default."""
-    if CALICO_POOL_COMMENT not in manifest:
-        raise RuntimeErrorBase("The cached Calico manifest has an unexpected pool setting.")
-    return manifest.replace(
-        CALICO_POOL_COMMENT,
-        f"""            - name: CALICO_IPV4POOL_CIDR
-              value: "{pod_subnet}"
-""",
     )
 
 

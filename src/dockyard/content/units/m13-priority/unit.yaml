@@ -137,7 +137,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - local-path-storage
 checkpoint: dispatch-capacity-v1
 images:

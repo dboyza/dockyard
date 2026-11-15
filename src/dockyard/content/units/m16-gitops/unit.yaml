@@ -138,7 +138,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - local-path-storage
 - delivery
 checkpoint: dispatch-delivery-v1

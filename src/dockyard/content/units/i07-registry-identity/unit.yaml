@@ -146,7 +146,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - local-path-storage
 - registry-auth
 checkpoint: dispatch-release-v1

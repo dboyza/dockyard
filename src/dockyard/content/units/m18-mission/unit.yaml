@@ -145,7 +145,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - local-path-storage
 - scanner
 checkpoint: dispatch-hardening-v1

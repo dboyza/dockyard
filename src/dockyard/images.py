@@ -89,8 +89,6 @@ def cluster_images(unit: Unit) -> list[str]:
     if unit.runtime == Runtime.DOCKER:
         return []
     names = [name for name in unit.images if name not in HOST_ONLY]
-    if unit.runtime == Runtime.KUBERNETES:
-        names = [name for name in PINNED if name.startswith("calico_")] + names
     if "native-csi" in unit.capabilities:
         names += [name for name in PINNED if name.startswith("csi_")]
     return list(dict.fromkeys(names))
@@ -153,10 +151,13 @@ class ImageStore:
 
     def ensure_host(
         self, name: str, cancel: threading.Event, report: Callable[[str], None]
-    ) -> None:
+    ) -> bool:
+        """Make sure Docker holds the image; reports whether this call downloaded it."""
         with self.exclusive(name, cancel):
-            if not self.on_host(name):
-                self.pull(name, cancel, report)
+            if self.on_host(name):
+                return False
+            self.pull(name, cancel, report)
+            return True
 
     def ensure_archive(
         self, name: str, cancel: threading.Event, report: Callable[[str], None]

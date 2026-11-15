@@ -158,7 +158,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 checkpoint: dispatch-workloads-v1
 images:
 - python

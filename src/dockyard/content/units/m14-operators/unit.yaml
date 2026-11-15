@@ -119,7 +119,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - local-path-storage
 - workerpool
 checkpoint: dispatch-packaging-v1

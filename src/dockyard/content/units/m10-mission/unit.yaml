@@ -181,7 +181,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - loadbalancer
 - routing
 checkpoint: dispatch-routing-v1

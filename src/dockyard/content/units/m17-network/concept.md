@@ -2,7 +2,9 @@
 
 By default, every Pod in a cluster can connect to every other Pod.
 A **NetworkPolicy** narrows that down: it picks some Pods and says which traffic they may receive (**ingress**) or send (**egress**).
-Policies are enforced by the cluster’s network plugin; this lab uses Calico, which supports them.
+Policies are enforced by the cluster’s network plugin.
+This lab uses kindnet, the plugin kind clusters ship with, which enforces them.
+The clusters you build yourself later use Calico, which enforces them too.
 On a plugin without NetworkPolicy support, the objects are accepted and silently do nothing.
 
 ## How policies combine

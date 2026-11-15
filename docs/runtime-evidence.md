@@ -745,3 +745,19 @@ All four delivery labs, `m16-gitops`, `m16-pipeline`, `m16-promotion`, and `m16-
 The redesigned lesson page passed the installed browser suites: the learner journey with a real Docker lab, the Docker and kind lab lifecycles through the embedded terminal, history, and terminal layout.
 The accessibility suite reported no violations in either theme or at narrow widths.
 No test profiles or Dockyard-labeled containers remained afterwards.
+
+## 2026-11-15: kind's own network plugin and shared image cleanup
+
+kind clusters now use kindnet, the network plugin kind 0.33.0 ships with, instead of Calico.
+Before the switch, matching two-node clusters ran the same NetworkPolicy experiment with each plugin.
+Both refused cross-node and same-node requests under a default deny, admitted a labeled client on a named port, and kept enforcing after the cluster restarted.
+`tests/test_network_policy_integration.py` now repeats that experiment against a prepared `m17-network` lab.
+The six units that teach or depend on NetworkPolicy passed at the first check: `m17-network`, `m17-rbac`, `m17-contexts`, `m17-mission`, `i09-egress-regression`, and `exam-ckad-a`.
+The other 57 kind units then passed at the first check too, so all 63 passed without Calico.
+Kubernetes labs no longer download the three Calico images, and native Lima clusters still install Calico.
+
+Docker's image list is shared by every profile on a computer, so a profile now removes only images it pulled itself.
+It also keeps any image another profile's published needs include.
+A two-profile test covers that case.
+The installed browser suites passed afterwards, including the kind lab lifecycle through the embedded terminal.
+No test profiles, kind clusters, or Dockyard-labeled containers remained afterwards.

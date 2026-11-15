@@ -102,7 +102,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - local-path-storage
 checkpoint: dispatch-stateful-v1
 images:

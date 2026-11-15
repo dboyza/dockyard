@@ -101,7 +101,6 @@ capabilities:
 - docker
 - kind
 - kubectl
-- calico
 - local-path-storage
 - helm
 checkpoint: dispatch-packaging-v1

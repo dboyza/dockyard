@@ -2,6 +2,8 @@
 
 import threading
 
+import pytest
+
 from dockyard import cache, images
 from dockyard.catalog import Catalog
 from dockyard.images import PINNED, ImageStore, alias, cluster_images, host_images
@@ -22,14 +24,8 @@ def test_each_runtime_keeps_only_what_docker_itself_runs_on_the_host():
     assert set(host_images(compose)) == {"python", "postgres", "redis"}
     workloads = catalog.get("m08-workloads")
     assert set(host_images(workloads)) == {"python", "kind"}
-    assert set(cluster_images(workloads)) == {
-        "calico_calico",
-        "calico_node",
-        "calico_third_party_cni_plugins",
-        "postgres",
-        "redis",
-        "busybox",
-    }
+    # kind's own network plugin needs no extra images.
+    assert set(cluster_images(workloads)) == {"postgres", "redis", "busybox"}
     # The load balancer lesson reaches its address from a container on this computer.
     assert "busybox" in host_images(catalog.get("m10-services"))
     delivery = catalog.get("m16-gitops")
@@ -110,6 +106,65 @@ def test_downloads_are_kept_for_labs_the_current_module_and_prefetched_scopes(tm
     assert cache.needed(service) == (set(), set())
 
 
+@pytest.fixture(autouse=True)
+def private_registry(tmp_path, monkeypatch):
+    """Profiles publish their Docker needs here instead of the real per-user registry."""
+    from dockyard import capacity
+
+    root = tmp_path / "registry"
+    root.mkdir(mode=0o700)
+    monkeypatch.setattr(capacity, "registry_directory", lambda: root)
+    return root
+
+
+def docker_listing(references):
+    rows = [
+        {
+            "Repository": reference.partition("@")[0],
+            "Tag": "<none>",
+            "Digest": reference.partition("@")[2],
+        }
+        for reference in references
+    ]
+    return result(stdout="\n".join(cache.json.dumps(row) for row in rows))
+
+
+def test_a_sweep_never_removes_what_another_profile_needs_or_did_not_pull(
+    tmp_path, monkeypatch, private_registry
+):
+    monkeypatch.setenv("DOCKER_HOST", "unix:///nonexistent/docker.sock")
+    learner, test = Service(tmp_path / "learner"), Service(tmp_path / "test")
+    for service in (learner, test):
+        service.tools, service.shared_tools = service.directory / "tools", False
+    python = images.digest_reference(PINNED["python"])
+    postgres = images.digest_reference(PINNED["postgres"])
+    removed = []
+
+    def run(args, **kwargs):
+        if args[1:3] == ["image", "ls"]:
+            return docker_listing([python, postgres])
+        removed.append(args[3])
+        return result()
+
+    monkeypatch.setattr(cache, "run", run)
+    # The learner is studying Compose and pulled both images for it.
+    learner.store.set_setting("last_unit", "m05-services")
+    cache.record_pulls(learner, ["python", "postgres"])
+    # A record another profile is midway through writing is skipped, not fatal.
+    (private_registry / "images-partial.json").write_text("{")
+    assert cache.sweep(learner)["removed"] == []
+    # A second profile that found them already present removes nothing.
+    assert cache.sweep(test)["removed"] == [] and removed == []
+    # Even an image the second profile pulled stays while the learner needs it.
+    cache.record_pulls(test, ["python"])
+    cache.sweep(test)
+    assert removed == []
+    # Once the learner moves on, the learner's own sweep removes what it pulled.
+    learner.store.set_setting("last_unit", "m00-first-container")
+    cache.sweep(learner)
+    assert removed == [postgres]
+
+
 def test_a_sweep_keeps_what_is_needed_and_never_raises(tmp_path, monkeypatch):
     service = Service(tmp_path)
     # A source checkout shares its tools between profiles and never sweeps them.
@@ -173,12 +228,12 @@ def test_an_estimate_counts_only_what_is_still_missing(tmp_path, monkeypatch):
     first = cache.estimate(service, unit)
     # Docker already holds PostgreSQL, so its archive needs no download.
     assert "the PostgreSQL image" not in first["items"]
-    assert first["items"][0] == "the Calico node image" and "kubectl" in first["items"]
+    assert first["items"][0] == "kubectl" and "the Redis image" in first["items"]
     store = ImageStore(service.tools, {})
     store.directory.mkdir(parents=True)
     for name in cluster_images(unit):
         store.archive_path(name).write_bytes(b"archive")
-    for name in ("kind", "kubectl", "calico"):
+    for name in ("kind", "kubectl"):
         path = service.tools / cache.MANIFEST[name]["path"]
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(b"tool")
