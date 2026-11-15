@@ -45,11 +45,10 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await expect(page.getByRole('navigation', { name: 'Main navigation', exact: true }).getByRole('button')).toHaveCount(5);
   // A new learner meets the foundations first; Dispatch waits for its own lesson.
   await expect(page.getByRole('region', { name: 'What a container really is.' })).toContainText('Your first container');
-  expect(await page.getByRole('heading', { name: 'What a container really is.' }).evaluate(element => !!(element.compareDocumentPosition(document.querySelector('.continue-card')!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
   await expect(page.getByRole('main')).not.toContainText('Dispatch');
   await page.getByRole('button', { name: 'Start learning' }).click();
   await expect(page.getByRole('heading', { name: 'Your first container', exact: true })).toBeVisible();
-  await expect(page.getByRole('complementary', { name: 'Before you begin' })).toContainText('No Docker experience needed');
+  await expect(page.getByRole('region', { name: 'Before you begin' })).toContainText('No Docker experience needed');
   const lifecycle = page.getByRole('figure', { name: 'From image to finished program' });
   await expect(lifecycle).toContainText('Step 1 of 4');
   await expect(lifecycle.getByRole('img', { name: 'From image to finished program' })).toBeVisible();
@@ -81,15 +80,15 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-processes');
   await page.getByRole('button', { name: /Meet Dispatch: run its first version/ }).click();
   await expect(page.getByRole('heading', { name: 'Meet Dispatch: run its first version', exact: true })).toBeVisible();
-  await expect(page.getByRole('complementary', { name: 'Before you begin' })).toContainText('Mission: fix the welcome page');
+  await expect(page.getByRole('region', { name: 'Before you begin' })).toContainText('Mission: fix the welcome page');
   await expect(page.getByRole('figure', { name: 'How one job travels through Dispatch' })).toBeVisible();
   await page.getByRole('radio', { name: 'Dispatch answers with a status saying it has stopped.' }).check();
   await page.getByRole('button', { name: 'Check prediction', exact: true }).click();
   await expect(page.getByText('Not quite. Let’s work through it.', { exact: true })).toBeVisible();
-  const understand = page.getByRole('tab', { name: 'Understand' });
-  await understand.focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(page.getByRole('tab', { name: 'Your task' })).toBeFocused();
+  // The lesson is one page: the task and its hints follow the explanation, with no tabs.
+  await expect(page.getByRole('tab')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Move to the task' }).click();
+  await expect(page.getByRole('region', { name: 'Your task' })).toBeFocused();
   await page.getByRole('button', { name: 'Reveal hint 1' }).click();
   await expect(page.getByText('HINT 1', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Reveal reference', exact: true }).click();
@@ -125,6 +124,14 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     // The first shell opens beside the lesson; typing in it runs a real lab shell.
     await expect(dock.getByRole('tab', { name: /^Terminal 1/ })).toBeVisible();
     await expect(dock.getByRole('status').filter({ hasText: 'Starting shell' })).toHaveCount(0);
+    // Beside the terminal, the task stays in view under the explanation it refers to.
+    await expect(page.getByRole('tab', { name: 'Your task' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('region', { name: 'Before you begin' })).toBeVisible();
+    await expect(notes).toBeVisible();
+    await page.getByRole('tab', { name: 'Your task' }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: 'Results' })).toBeFocused();
+    await page.getByRole('tab', { name: 'Your task' }).click();
     await dock.getByRole('button', { name: 'Terminal and lab options' }).click();
     await options.getByText('Workspace location', { exact: true }).click();
     const workspace = await options.locator('.mono').innerText();
@@ -173,6 +180,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
 
     await page.getByRole('button', { name: 'Check work', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Here is what the lab observed.' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Results' })).toHaveAttribute('aria-selected', 'true');
     await expect(page.locator('.evidence-card').first()).toContainText('Needs attention');
     await expect(page.locator('.evidence-card').first().locator('details')).not.toHaveAttribute('open');
     execFileSync(path.join(root, '.runtime/installed/bin/python'), [path.join(root, 'frontend/e2e/repair_lab.py'), profile, 'm01-processes']);
@@ -210,7 +218,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   }
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('reconciliation');
   await page.getByRole('button', { name: /Let Kubernetes keep Dispatch running/ }).click();
-  await expect(page.getByRole('complementary', { name: 'Before you begin' })).toContainText('This lesson builds on');
+  await expect(page.getByRole('region', { name: 'Before you begin' })).toContainText('Builds on');
   await expect(page.getByRole('button', { name: 'How to read YAML', exact: false })).toBeVisible();
   const model = page.getByRole('region', { name: 'Explore reconciliation' });
   await model.getByRole('button', { name: 'Delete model Pod 1', exact: true }).click();
@@ -244,7 +252,8 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await expect(page.locator('.metadata')).toContainText('Review needed');
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('m13-mission');
   await page.getByRole('button', { name: /Mission: drain a worker without an outage/ }).click();
-  await page.getByRole('tab', { name: 'Evidence' }).click();
+  // Results from an earlier check stay readable after the lab is gone.
+  await expect(page.getByRole('heading', { name: 'Results from your last check' })).toBeVisible();
   await page.getByText('Measured state', { exact: true }).click();
   await expect(page.locator('details[open]')).toContainText('dispatch-fixture-a');
   await page.setViewportSize({ width: 480, height: 1000 });
@@ -307,7 +316,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await page.getByRole('textbox', { name: 'Search incidents' }).fill('worker-only');
   await expect(page.locator('.unitrow')).toHaveCount(1);
   await page.locator('.unitrow').click();
-  await expect(page.locator('.lesson-heading')).toContainText('INCIDENT SCENARIO');
+  await expect(page.locator('.lesson-heading')).toContainText('Incident scenario');
   await page.locator('.lesson-heading').getByRole('button', { name: 'Incident scenarios', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Follow the evidence.' })).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 1000 });

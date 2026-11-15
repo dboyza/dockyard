@@ -17,6 +17,8 @@ const all: Figure[] = figures.map((item) => ({
 const only = new URLSearchParams(location.search).get("figure");
 document.documentElement.dataset.theme =
   new URLSearchParams(location.search).get("theme") ?? "dark";
+// A flat page keeps the reviewed images small and independent of the app's backdrop.
+document.body.style.background = "var(--bg)";
 
 function Gallery() {
   return (

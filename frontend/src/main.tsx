@@ -3,12 +3,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useWorkbench } from "./useWorkbench";
 import {
   Moon,
-  ChevronRight,
   Sun,
   LoaderCircle,
   FlaskConical,
   Search,
-  Container,
   LayoutDashboard,
   BookOpen,
   ShieldCheck,
@@ -36,6 +34,9 @@ import { navigationSection, pageLabels, sectionPages } from "./navigation";
 import "./style.css";
 import { InPageLink } from "./InPageLink";
 import { parseRoute } from "./routing";
+import { BrandMark } from "./Brand";
+import { LabsMenu } from "./LabsMenu";
+import { Breadcrumb, NowLearning } from "./Wayfinding";
 function App() {
   const model = useWorkbench();
   const figures = useMemo(
@@ -111,8 +112,8 @@ function App() {
     return (
       <main className="connection">
         <div className="brand">
-          <Container size={25} />
-          DOCKYARD
+          <BrandMark size={30} />
+          Dockyard
         </div>
         <h1>
           {error ? "This browser is not connected." : "Opening your workbench…"}
@@ -155,8 +156,8 @@ function App() {
           <aside id="sidebar" className={`sidebar ${railOpen ? "open" : ""}`}>
             <div className="sidebar-header">
               <button className="brand" onClick={() => navigate("home")}>
-                <Container size={24} />
-                <span>DOCKYARD</span>
+                <BrandMark />
+                <span>Dockyard</span>
               </button>
               <button
                 className="icon drawer-close"
@@ -202,6 +203,7 @@ function App() {
                 {liveLabs} {liveLabs === 1 ? "lab" : "labs"} on this computer
               </span>
             )}
+            <NowLearning model={model} />
             <div className="sidebar-footer">
               <nav aria-label="Workspace tools">
                 {(
@@ -235,7 +237,7 @@ function App() {
           )}
           <div className="main-shell">
             <header className="topbar">
-              <div className="breadcrumb">
+              <div className="topbar-start">
                 <button
                   className="icon mobile-menu"
                   aria-label="Toggle navigation"
@@ -245,13 +247,7 @@ function App() {
                 >
                   <Menu size={20} />
                 </button>
-                <span className="wide-only">Workspace</span>
-                <ChevronRight className="wide-only" size={14} />
-                <strong>
-                  {page === "lesson"
-                    ? `Module ${String(lesson?.module).padStart(2, "0")}`
-                    : pageLabels[page]}
-                </strong>
+                <Breadcrumb model={model} />
               </div>
               <label className="searchbox">
                 <Search size={16} />
@@ -293,6 +289,7 @@ function App() {
               </label>
               <div className="topbar-actions">
                 <ExamClock model={model} />
+                <LabsMenu model={model} />
                 {offline && (
                   <span className="connection-indicator offline" role="status">
                     <span />

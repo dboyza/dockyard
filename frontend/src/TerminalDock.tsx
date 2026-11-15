@@ -26,6 +26,7 @@ import {
 import { api, type ConsoleSession } from "./api";
 import { ConsoleView, type ConsoleHandle } from "./ConsoleView";
 import { TerminalLauncher } from "./TerminalLauncher";
+import { usePopover } from "./usePopover";
 import type { Workbench } from "./useWorkbench";
 
 export type DockHandle = { focus: () => void };
@@ -93,12 +94,15 @@ export function TerminalDock({
   const [selected, setSelected] = useState<string | null>(null);
   const [titles, setTitles] = useState<Record<string, string>>({});
   const [fontSize, setFontSize] = useState(storedSize);
-  const [menu, setMenu] = useState(false);
+  const {
+    open: menu,
+    setOpen: setMenu,
+    anchor: menuRef,
+  } = usePopover<HTMLDivElement>();
   const handles = useRef(new Map<string, ConsoleHandle>());
   const opening = useRef(false);
   // Closing the last tab is deliberate, so it is not reopened automatically.
   const [dismissed, setDismissed] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const current =
     sessions.find((item) => item.id === selected) ??
@@ -182,25 +186,6 @@ export function TerminalDock({
       // The size simply resets next time.
     }
   }, [fontSize]);
-  useEffect(() => {
-    if (!menu) return;
-    const dismiss = (event: Event) => {
-      if (event instanceof KeyboardEvent && event.key !== "Escape") return;
-      if (
-        event instanceof PointerEvent &&
-        menuRef.current?.contains(event.target as Node)
-      )
-        return;
-      setMenu(false);
-    };
-    window.addEventListener("pointerdown", dismiss);
-    window.addEventListener("keydown", dismiss);
-    return () => {
-      window.removeEventListener("pointerdown", dismiss);
-      window.removeEventListener("keydown", dismiss);
-    };
-  }, [menu]);
-
   const resize = (step: number) =>
     setFontSize(
       (size) =>

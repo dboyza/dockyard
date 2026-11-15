@@ -37,15 +37,23 @@ The sidebar shows how many labs exist on this computer, so a forgotten cluster i
 
 ## Complete a lab
 
+A lesson is one page: **Understand** first, then **Your task**.
+
 1. Read **Understand** and answer the prediction before inspecting the explanation.
-2. Read **Your task** and prepare the owned environment.
-3. Select **Prepare lab**; **Your task** moves left and a shell opens on the right, in that activity's workspace.
+2. Select **Prepare lab**; a shell opens on the right, in that activity's workspace.
+3. The explanation stays on the left, with **Your task** in a panel beneath it, so the steps and the commands they refer to are in view together.
+   Drag the edge of the panel to resize it, or hide it with the arrow in its corner.
 4. Type commands and edit files in that shell, or open the same shell in your own terminal from its menu.
-5. Select **Check work** and start with any item marked Needs attention.
-   Open Check details to see the expected and observed values.
-6. Write observations and use the debrief to explain why the repair worked.
+5. Select **Check work**; the panel switches to **Results**.
+   Start with any item marked Needs attention, and open Check details to see the expected and observed values.
+6. Write observations under the task and use the debrief to explain why the repair worked.
    Observations save when you click out of the notes box, or with Save observations.
-7. Use Previous and Next at the bottom of the lesson to move through the course in order.
+7. Use the arrows beside the lesson title to move through the course in order.
+
+The top bar shows where the lesson sits in the course.
+It also lists the labs that exist on this computer, so you can return to one or stop it from any page.
+The sidebar always offers the lesson to continue with, and how far you are through its module.
+After you pass a lesson, it offers the next one.
 
 Command blocks have no copy button, so you type each command yourself.
 Typing builds the habits a real terminal needs.

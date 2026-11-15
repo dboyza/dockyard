@@ -88,7 +88,7 @@ test('a Docker lab starts beside its task, survives everything in between, and c
   await test.step('start the first lab from the course', async () => {
     await page.getByRole('button', { name: 'Start learning', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Your first container');
-    await expect(page.getByRole('tab', { name: 'Understand' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('heading', { name: 'Understand' })).toBeVisible();
     await page.getByRole('button', { name: 'Prepare lab' }).click();
     await lab.ready();
     await expect(task).toHaveAttribute('aria-selected', 'true');
@@ -110,7 +110,9 @@ test('a Docker lab starts beside its task, survives everything in between, and c
   await test.step('the shell survives leaving the page and reloading', async () => {
     await navigateTo(page, 'Overview');
     await expect(lab.dock).toHaveCount(0);
-    await page.getByRole('button', { name: 'Continue lesson' }).click();
+    // After a pass, Continue offers the next lesson; the top bar leads back to a running lab.
+    await page.getByRole('button', { name: '1 lab running' }).click();
+    await page.getByRole('dialog', { name: 'Labs on this computer' }).getByRole('button', { name: 'Your first container', exact: true }).click();
     await lab.ready();
     await expect(task).toHaveAttribute('aria-selected', 'true');
     await expect(lab.dock.getByRole('tab')).toHaveCount(1);

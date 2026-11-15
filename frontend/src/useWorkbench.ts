@@ -96,7 +96,8 @@ export function useWorkbench() {
   const [page, setPage] = useState<Page>("home");
   const [examId, setExamId] = useState<string | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [tab, setTab] = useState<"learn" | "mission" | "evidence">("learn");
+  // The panel under the reading shows the task, or what the last check observed.
+  const [panel, setPanel] = useState<"task" | "results">("task");
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -227,7 +228,6 @@ export function useWorkbench() {
     if (point.primer) {
       setReferenceFocus(`primer/${point.primer}`);
     } else if (point.lessonId && lesson?.id === point.lessonId) {
-      setTab("learn");
       navigate("lesson");
     } else if (point.lessonId) {
       await openLesson(point.lessonId);
@@ -249,6 +249,16 @@ export function useWorkbench() {
     window.setTimeout(() => element.classList.remove("figure-returned"), 2000);
     setFigureRestore(null);
   };
+  // Opens the course map, scrolled to one phase when asked.
+  const openCourse = (phase?: number) => {
+    navigate("course");
+    if (phase !== undefined)
+      requestAnimationFrame(() =>
+        document
+          .getElementById(`phase-${phase}`)
+          ?.scrollIntoView({ block: "start", behavior: "instant" }),
+      );
+  };
   const openExam = (id: string | null) => {
     setExamId(id);
     navigate("exams");
@@ -268,7 +278,7 @@ export function useWorkbench() {
       await api(`/units/${id}/events`, { event: "viewed" });
       if (sequence !== opened.current) return;
       setLesson(next);
-      setTab("learn");
+      setPanel("task");
       setHints([]);
       setReference(null);
       setPrediction(null);
@@ -310,7 +320,6 @@ export function useWorkbench() {
     if (target === currentHash.current) return;
     if (route.page === "lesson") {
       if (lesson?.id === route.unit) {
-        setTab("learn");
         navigate("lesson");
       } else {
         urlTarget.current = target;
@@ -400,13 +409,13 @@ export function useWorkbench() {
       }
       if (action === "check") {
         setAssessment(result);
-        setTab("evidence");
+        setPanel("results");
       } else {
         if (action === "retake") {
           setHints([]);
           setReference(null);
           setAssessment(null);
-          setTab("mission");
+          setPanel("task");
         }
         setNotice(
           action === "terminal"
@@ -471,13 +480,19 @@ export function useWorkbench() {
       currentPractice(unit.revision, state.progress[unit.id]) &&
       state.progress[unit.id]?.demonstrated,
   ).length;
+  const practised = (unit: (typeof units)[number]) =>
+    currentPractice(unit.revision, state.progress[unit.id]);
+  const course = units
+    .filter((unit) => unit.kind === "lesson" || unit.kind === "mission")
+    .sort((a, b) => a.module - b.module || a.order - b.order);
+  const last = units.find((unit) => unit.id === state.last_unit);
+  // After a pass, the place to continue is the next lesson not yet practised.
   const continueUnit =
-    units.find((unit) => unit.id === state.last_unit) ||
-    units.find(
-      (unit) =>
-        (unit.kind === "lesson" || unit.kind === "mission") &&
-        !currentPractice(unit.revision, state.progress[unit.id]),
-    ) ||
+    (last && course.includes(last) && practised(last)
+      ? course.slice(course.indexOf(last) + 1).find((unit) => !practised(unit))
+      : undefined) ||
+    last ||
+    course.find((unit) => !practised(unit)) ||
     units[0];
   const filtered = units.filter((unit) =>
     `${unit.search_text || ""} ${unit.id} ${unit.title} ${unit.summary} ${unit.outcomes.join(" ")}`
@@ -488,6 +503,7 @@ export function useWorkbench() {
   return {
     examId,
     openExam,
+    openCourse,
     library,
     referenceFocus,
     setReferenceFocus,
@@ -504,8 +520,8 @@ export function useWorkbench() {
     setPage,
     lesson,
     setLesson,
-    tab,
-    setTab,
+    panel,
+    setPanel,
     search,
     setSearch,
     error,

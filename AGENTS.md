@@ -12,12 +12,15 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Include Docker, practical platform engineering, and CKA, CKAD, and CKS preparation.
 - CKS preparation was added at the user's request on 2026-10-03; [the CKS track](docs/cks-track.md) is its design contract.
 - Keep all teaching, hints, assessment, and progress deterministic and local; include no AI, accounts, telemetry, or cloud service dependency.
-- Use a calm professional visual design with accessible dark and light themes.
+- Use a bold, polished visual design with accessible dark and light themes, and no gamification such as points, streaks, or confetti (user decision, 2026-11-14).
+- Keep a lesson's explanation and its task in view together beside the terminal; do not split them into tabs (user decision, 2026-11-14).
+- Show the learner's place on every page: the course path in the top bar, the next lesson in the sidebar, and the labs that exist on this computer.
 
 ## Autonomy and boundaries
 
 - The user approved the full plan through the planning review on 2026-09-26; implementation is authorized.
 - Once implementation is authorized, make routine technical, editorial, naming, and visual decisions independently within the agreed scope.
+- On 2026-11-14 the user authorized revisiting earlier product decisions that hurt the experience; record each change here with its date.
 - The user has authorized downloading tools and images into the project, starting Docker if needed, and creating/deleting app-owned practice containers, networks, volumes, clusters, and local VMs.
 - Preserve unrelated resources, existing Docker settings, shell configuration, and the user's default kubeconfig.
 - Scope lab operations by recorded ownership and explicit environment identity, never by a name prefix alone.

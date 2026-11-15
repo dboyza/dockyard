@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { BookOpen, TerminalSquare } from "lucide-react";
+import { Splitter } from "./Splitter";
 import { TerminalDock, type DockHandle } from "./TerminalDock";
 import type { Workbench } from "./useWorkbench";
 
 type Layout = "split" | "maximized" | "collapsed";
 const DEFAULT_SPLIT = 0.46;
+const DEFAULT_PANEL = 0.42;
 
 function stored<T>(
   key: string,
@@ -25,13 +27,21 @@ function store(key: string, value: unknown) {
     // Layout preferences are a convenience; the defaults still work.
   }
 }
+const fraction = (low: number, high: number) => (value: unknown) =>
+  typeof value === "number" && value >= low && value <= high;
 
-/** Lesson or exam content beside the lab's embedded terminal, like a focused IDE. */
+/**
+ * Lesson or exam content beside the lab's embedded terminal, like a focused IDE.
+ * An optional panel stays in view under the reading, so a task never hides its lesson.
+ */
 export function Workspace({
   model,
   unitId,
   runtime,
   retake,
+  header,
+  panel,
+  panelOpen = true,
   footer,
   children,
 }: {
@@ -39,15 +49,17 @@ export function Workspace({
   unitId: string;
   runtime: string;
   retake: boolean;
+  header?: ReactNode;
+  panel?: ReactNode;
+  panelOpen?: boolean;
   footer?: ReactNode;
   children: ReactNode;
 }) {
   const [split, setSplit] = useState(() =>
-    stored(
-      "dockyard-split",
-      DEFAULT_SPLIT,
-      (value) => typeof value === "number" && value >= 0.25 && value <= 0.75,
-    ),
+    stored("dockyard-split", DEFAULT_SPLIT, fraction(0.25, 0.75)),
+  );
+  const [panelSize, setPanelSize] = useState(() =>
+    stored("dockyard-task-panel", DEFAULT_PANEL, fraction(0.2, 0.75)),
   );
   const [layout, setLayout] = useState<Layout>(() =>
     stored<Layout>("dockyard-terminal-layout", "split", (value) =>
@@ -92,21 +104,16 @@ export function Workspace({
     return () => window.removeEventListener("keydown", toggle);
   }, [layout]);
 
-  const move = (clientX: number) => {
-    const box = grid.current?.getBoundingClientRect();
-    if (!box) return;
-    setSplit(Math.min(0.75, Math.max(0.25, (clientX - box.left) / box.width)));
-  };
-  const commit = (value: number) => {
-    setSplit(value);
-    store("dockyard-split", value);
-  };
-
   return (
     <div
       ref={grid}
       className={`workspace ${layout} ${dragging ? "dragging" : ""} show-${pane}`}
-      style={{ "--split": `${split * 100}%` } as React.CSSProperties}
+      style={
+        {
+          "--split": `${split * 100}%`,
+          "--panel": `${panelSize * 100}%`,
+        } as React.CSSProperties
+      }
     >
       <div className="workspace-switch" role="group" aria-label="Show">
         <button
@@ -129,37 +136,61 @@ export function Workspace({
         tabIndex={-1}
         aria-label="Lesson"
       >
-        <div className="workspace-lesson-content">{children}</div>
+        {header && <div className="workspace-header">{header}</div>}
+        <div className="workspace-read">
+          <div className="workspace-lesson-content">{children}</div>
+        </div>
+        {panel && panelOpen && (
+          <Splitter
+            orientation="horizontal"
+            className="workspace-panel-splitter"
+            label="Resize the reading and the task"
+            value={panelSize}
+            min={0.2}
+            max={0.75}
+            fallback={DEFAULT_PANEL}
+            measure={(event) => {
+              const box = lesson.current?.getBoundingClientRect();
+              return box ? (box.bottom - event.clientY) / box.height : null;
+            }}
+            onChange={(value, active) => {
+              setPanelSize(value);
+              setDragging(active);
+            }}
+            onCommit={(value) => {
+              setPanelSize(value);
+              setDragging(false);
+              store("dockyard-task-panel", value);
+            }}
+          />
+        )}
+        {panel && (
+          <div className={`workspace-panel ${panelOpen ? "open" : ""}`}>
+            {panel}
+          </div>
+        )}
         {footer && <div className="workspace-footer">{footer}</div>}
       </section>
-      <div
+      <Splitter
+        orientation="vertical"
         className="workspace-splitter"
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize the lesson and terminal"
-        aria-valuemin={25}
-        aria-valuemax={75}
-        aria-valuenow={Math.round(split * 100)}
-        tabIndex={0}
-        onDoubleClick={() => commit(DEFAULT_SPLIT)}
-        onKeyDown={(event) => {
-          const step = { ArrowLeft: -0.02, ArrowRight: 0.02 }[event.key];
-          if (step) {
-            event.preventDefault();
-            commit(Math.min(0.75, Math.max(0.25, split + step)));
-          } else if (event.key === "Home") commit(0.25);
-          else if (event.key === "End") commit(0.75);
-          else if (event.key === "Enter") commit(DEFAULT_SPLIT);
+        label="Resize the lesson and terminal"
+        value={split}
+        min={0.25}
+        max={0.75}
+        fallback={DEFAULT_SPLIT}
+        measure={(event) => {
+          const box = grid.current?.getBoundingClientRect();
+          return box ? (event.clientX - box.left) / box.width : null;
         }}
-        onPointerDown={(event) => {
-          event.currentTarget.setPointerCapture(event.pointerId);
-          setDragging(true);
+        onChange={(value, active) => {
+          setSplit(value);
+          setDragging(active);
         }}
-        onPointerMove={(event) => dragging && move(event.clientX)}
-        onPointerUp={(event) => {
+        onCommit={(value) => {
+          setSplit(value);
           setDragging(false);
-          event.currentTarget.releasePointerCapture(event.pointerId);
-          store("dockyard-split", split);
+          store("dockyard-split", value);
         }}
       />
       {layout === "collapsed" ? (

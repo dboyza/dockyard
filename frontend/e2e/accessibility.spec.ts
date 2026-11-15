@@ -34,11 +34,15 @@ test('all workbench destinations and lesson interactions meet automated accessib
   test.setTimeout(300000);
   await page.goto(url);
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  const failures: { screen: string; id: string; impact: string | null | undefined; nodes: string[][] }[] = [];
+  const failures: { screen: string; id: string; impact: string | null | undefined; nodes: string[][]; why: string[] }[] = [];
   const scan = async (screen: string) => {
-    await page.evaluate(async () => { await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => undefined))); });
+    // Entrance animations settle before the scan; looping ones, such as the overview's lights, never do.
+    await page.evaluate(async () => {
+      const settling = document.getAnimations().filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity);
+      await Promise.all(settling.map(animation => animation.finished.catch(() => undefined)));
+    });
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
-    failures.push(...results.violations.map(issue => ({ screen, id: issue.id, impact: issue.impact, nodes: issue.nodes.map(node => node.target as string[]) })));
+    failures.push(...results.violations.map(issue => ({ screen, id: issue.id, impact: issue.impact, nodes: issue.nodes.map(node => node.target as string[]), why: issue.nodes.map(node => node.failureSummary ?? '') })));
     await writeFile(path.join(root, ".artifacts/accessibility.json"), JSON.stringify(failures, null, 2));
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   };
@@ -51,14 +55,14 @@ test('all workbench destinations and lesson interactions meet automated accessib
     }
     await navigateTo(page, 'Your course');
     await page.getByRole('textbox', { name: 'Search lessons' }).fill('m01-processes');
-    await page.getByRole('button', { name: /Meet Dispatch: run its first version/ }).click();
+    await page.getByRole('main').getByRole('button', { name: /Meet Dispatch: run its first version/ }).click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Meet Dispatch: run its first version');
     await scan(`${theme}/lesson`);
     if (theme === 'dark') {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
       // The README image needs a prepared lab beside its terminal; see docs/maintenance.md.
       await page.screenshot({ path: path.join(root, '.artifacts/lesson-dark.png'), animations: 'disabled' });
     }
-    await page.getByRole('tab', { name: 'Your task' }).click();
     await page.getByRole('button', { name: 'Reveal reference', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await scan(`${theme}/confirmation`);

@@ -191,11 +191,13 @@ Redact known lab credentials from logs and exclude them from export.
 ## 9. UI and accessibility
 
 Use a calm professional workbench: slate surfaces, restrained blue accents, readable prose, clear spacing, and meaningful status labels.
+On 2026-11-14 the user asked for a bolder look: deep navy surfaces, a display typeface, an illustrated overview, and motion that respects reduced-motion settings, still without gamification.
 Provide dark and light themes, visible keyboard focus, reduced-motion support, semantic landmarks, accessible controls, and contrast verified against WCAG AA targets.
 The browser layout must work beside a terminal at narrow desktop widths without horizontal page scrolling.
 Support useful reading on small screens while clearly keeping execution on the Mac.
 
 The lesson view has a compact syllabus rail, a central reading/task area, and an optional evidence/context panel.
+Since 2026-11-14 a lesson is one page rather than three tabs: beside the terminal, the task and its results sit in a panel under the explanation.
 Keep one primary action for the current state: Prepare lab, Open terminal, or Check work.
 Display the active lab identity, environment readiness, last-check time, and stale-evidence state near that action.
 Expandable hints are incremental and references require a deliberate reveal.

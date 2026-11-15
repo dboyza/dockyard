@@ -69,6 +69,8 @@ function DrawnFigure({ id, text }: { id: FigureId; text: Figure }) {
       <div
         className="figure-canvas"
         role="img"
+        // On a narrow screen the drawing scrolls sideways, so it takes keyboard focus.
+        tabIndex={0}
         aria-labelledby={label}
         aria-describedby={description}
       >
