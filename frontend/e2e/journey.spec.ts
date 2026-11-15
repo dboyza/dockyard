@@ -188,7 +188,6 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await expect(page.getByRole('region', { name: 'Observed lab resources' }).getByRole('button', { name: /^Container / })).toBeVisible();
     await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
     await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
-    await expect(page.locator('.next-lesson').getByRole('button')).toBeVisible();
     await expect(page.getByRole('button', { name: /^Next lesson: / })).toBeVisible();
     await labOption('Stop lab');
     await expect(dock.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();

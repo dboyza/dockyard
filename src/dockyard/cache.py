@@ -412,7 +412,7 @@ def record_pulls(service: Service, names: list[str]) -> None:
             ),
         )
     # Publishing again at the next sweep is enough; a lab must not fail for it.
-    with contextlib.suppress(OSError):
+    with contextlib.suppress(OSError, ValueError):
         publish_needs(service, {digest_reference(PINNED[name]) for name in needed(service)[0]})
 
 

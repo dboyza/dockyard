@@ -73,7 +73,11 @@ export function LessonPage({ model }: { model: Workbench }) {
       ) : (
         <Circle size={12} />
       )}
-      {learningStatus(lesson.revision, progress)}
+      {learningStatus(
+        lesson.revision,
+        progress,
+        !!state.checked[lesson.id] || (!!lab && lab.state !== "absent"),
+      )}
     </span>
   );
   const eyebrow = `Module ${String(lesson.module).padStart(2, "0")} · ${KINDS[lesson.kind] ?? "Activity"}`;
@@ -101,14 +105,7 @@ export function LessonPage({ model }: { model: Workbench }) {
       task.current?.focus({ preventScroll: true });
     });
   };
-  const results = (
-    <Results
-      model={model}
-      lesson={lesson}
-      nextLesson={incident ? undefined : nextUnit}
-      onTask={openTask}
-    />
-  );
+  const results = <Results model={model} lesson={lesson} onTask={openTask} />;
 
   if (working)
     return (

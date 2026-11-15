@@ -21,7 +21,9 @@ const base: Progress = {
 test("status follows viewing, practice, independent passes, and review dates", () => {
   const now = Date.parse("2026-09-30T12:00:00Z");
   expect(learningStatus(1)).toBe("Not started");
-  expect(learningStatus(1, base)).toBe("In progress");
+  // Opening a lesson starts nothing; a lab or a check does.
+  expect(learningStatus(1, base)).toBe("Not started");
+  expect(learningStatus(1, base, true)).toBe("In progress");
   const practiced = { ...base, practiced: 1 };
   expect(learningStatus(1, practiced)).toBe("Practiced");
   expect(currentPractice(1, practiced)).toBe(true);
@@ -38,7 +40,7 @@ test("status follows viewing, practice, independent passes, and review dates", (
   // A first failed check queues a review, but the lesson still reads as in progress.
   const failedFirst = { ...base, review_at: "2020-01-01T00:00:00Z" };
   expect(reviewDue(1, failedFirst, now)).toBe(true);
-  expect(learningStatus(1, failedFirst)).toBe("In progress");
+  expect(learningStatus(1, failedFirst, true)).toBe("In progress");
 });
 
 test("course phases follow their numbers, not module order", () => {

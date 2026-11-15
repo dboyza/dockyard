@@ -584,19 +584,6 @@ button.search-term:hover {
 .evidence-card > details {
   margin-top: 14px;
 }
-.next-lesson {
-  margin: 24px 0;
-  padding-top: 24px;
-  border-top: 1px solid var(--line);
-}
-.next-lesson > .eyebrow {
-  display: block;
-  margin-bottom: 10px;
-}
-.next-lesson button {
-  max-width: 100%;
-  text-align: left;
-}
 .topbar {
   position: sticky;
   top: 0;

@@ -48,7 +48,7 @@ A lesson is one page: **Understand** first, then **Your task**.
    Start with any item marked Needs attention, and open Check details to see the expected and observed values.
 6. Write observations under the task and use the debrief to explain why the repair worked.
    Observations save when you click out of the notes box, or with Save observations.
-7. Use the arrows beside the lesson title to move through the course in order.
+7. Once the check passes, select **Next lesson** at the foot of the lesson, or use the arrows beside its title to move through the course in order.
 
 The top bar shows where the lesson sits in the course.
 It also lists the labs that exist on this computer, so you can return to one or stop it from any page.
@@ -165,7 +165,7 @@ Dockyard never performs a global prune.
 
 ## Where downloads are kept
 
-Docker's own image list holds only the images you run with `docker` yourself.
+Docker's own image list holds only the images Docker itself runs for your labs.
 Those are Python, PostgreSQL, Redis, the image registry, and the node image a practice cluster starts from.
 Each appears once, by its pinned digest.
 Images that only clusters use, such as databases and add-ons inside a cluster, never appear in `docker images`.

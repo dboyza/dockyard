@@ -7,7 +7,7 @@ import {
   Lightbulb,
   ShieldCheck,
 } from "lucide-react";
-import { api, type Lesson, type UnitSummary } from "./api";
+import { api, type Lesson } from "./api";
 import { LiveLabMap } from "./LiveLabMap";
 import { CodeBlock, Markdown, referenceTitle } from "./teaching";
 import type { Workbench } from "./useWorkbench";
@@ -275,16 +275,14 @@ const CRITERION_LABELS: Record<string, string> = {
   fail: "Needs attention",
 };
 
-/** What the last check observed, and after a pass, the debrief and the next lesson. */
+/** What the last check observed, and after a pass, the debrief. */
 export function Results({
   model,
   lesson,
-  nextLesson,
   onTask,
 }: {
   model: Workbench;
   lesson: Lesson;
-  nextLesson?: UnitSummary;
   onTask: () => void;
 }) {
   const { assessment, lab } = model;
@@ -379,18 +377,6 @@ export function Results({
             Try answering without looking back at the lesson. If you can’t
             explain a result yet, revisit that part before moving on.
           </p>
-          {nextLesson && (
-            <div className="next-lesson">
-              <span className="eyebrow">Up next</span>
-              <button
-                className="primary"
-                onClick={() => void model.openLesson(nextLesson.id)}
-              >
-                {nextLesson.title}
-                <ArrowRight size={16} />
-              </button>
-            </div>
-          )}
         </section>
       )}
       {lab && lab.state !== "absent" && (
