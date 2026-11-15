@@ -1325,6 +1325,11 @@ button.large {
 .panel > :first-child h2 {
   margin-top: 0;
 }
+/* A card's padding alone sets the space below its last line. */
+.panel > :last-child,
+.panel > :last-child > p:last-child {
+  margin-bottom: 0;
+}
 .lesson-read {
   max-width: 1180px;
   margin: 0 auto;
@@ -2098,9 +2103,14 @@ button.return-to-figure {
   align-items: center;
   gap: 7px;
   margin-top: 15px;
+  min-width: 0;
   font-size: 13px;
   color: var(--muted);
-  text-transform: capitalize;
+}
+.operation-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .operation button {
   margin-left: auto;
@@ -3527,8 +3537,12 @@ button.return-to-figure {
 }
 
 .settings-icon {
+  display: block;
   color: var(--blue);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+.settings-icon + h2 {
+  margin-top: 0;
 }
 .start-fresh {
   margin-top: 20px;

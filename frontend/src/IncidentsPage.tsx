@@ -8,7 +8,8 @@ export function IncidentsPage({ model }: { model: Workbench }) {
   const [runtime, setRuntime] = useState("all");
   const incidents = model.units
     .filter((unit) => unit.kind === "incident")
-    .sort((a, b) => a.id.localeCompare(b.id));
+    // Course order, matching the lesson pager and where learners meet each skill.
+    .sort((a, b) => a.module - b.module || a.order - b.order);
   const visible = incidents.filter(
     (unit) =>
       (runtime === "all" || unit.runtime === runtime) &&

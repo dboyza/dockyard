@@ -425,11 +425,17 @@ function Stepper({
 }
 
 function OperationStatus({ model }: { model: Workbench }) {
-  const { busy, activeOperation } = model;
+  const { busy, activeOperation, lab } = model;
+  // Preparing can take minutes, so show the step it has reached.
+  const stage = busy === "prepare" ? lab?.resources.stage : undefined;
   return (
     <div className="operation" role="status">
       <LoaderCircle size={14} className="spin" />
-      {OPERATIONS[busy] || `${busy}…`}
+      <span className="operation-text">
+        {stage ||
+          OPERATIONS[busy] ||
+          `${busy.charAt(0).toUpperCase()}${busy.slice(1)}…`}
+      </span>
       {activeOperation && (
         <button
           className="text-button"

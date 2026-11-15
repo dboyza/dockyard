@@ -1,7 +1,7 @@
 [
   {
     "id": "containers",
-    "title": "Containers and Docker",
+    "title": "Container engineering",
     "unit_id": "m06-mission",
     "start_unit": "m01-processes",
     "summary": "Run, network, store, and ship the Docker version of Dispatch, including a hardened image.",
@@ -9,7 +9,7 @@
   },
   {
     "id": "applications",
-    "title": "Kubernetes applications",
+    "title": "Kubernetes application development",
     "unit_id": "m12-mission",
     "start_unit": "m07-reconciliation",
     "summary": "Run Dispatch on Kubernetes with configuration, storage, routing, safe rollouts, and health probes.",

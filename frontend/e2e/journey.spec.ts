@@ -339,7 +339,7 @@ test('installed workbench teaches, remembers observations, and handles real lab 
   await navigateTo(page, 'Find your starting point');
   await expect(page.getByRole('heading', { name: 'Find a good place to start.' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Placement benchmarks' }).locator('article')).toHaveCount(4);
-  await expect(page.locator('.placement-recommendation')).toContainText('Containers and Docker');
+  await expect(page.locator('.placement-recommendation')).toContainText('Container engineering');
   await expect(page.locator('.topbar')).toContainText('Find your starting point');
   await page.screenshot({ path: path.join(root, '.artifacts/placement-wide.png'), fullPage: true });
   await page.setViewportSize({ width: 480, height: 1000 });
