@@ -3981,8 +3981,12 @@ button.danger:not(.text-button):hover:not(:disabled) {
   line-height: 18px;
   text-align: center;
 }
+/* A column keeps each label at the top, level with its neighbors. */
 button.stat {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
   width: 100%;
   text-align: left;
   font-weight: 400;
@@ -4003,6 +4007,7 @@ button.stat:hover:not(:disabled) {
 }
 .stat .stat-action {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
   gap: 4px;
   margin: 6px 0 0;
