@@ -37,17 +37,24 @@ def test_stop_check_resume_and_reset_preserve_learner_work(lab_profile):
                 break
             time.sleep(0.2)
         assert result["status"] == "pass", result
+        fresh = service.store.lab(unit).resources["started_fresh_at"]
+        # A finished prepare leaves no step behind for the next one to show.
+        assert "stage" not in service.store.lab(unit).resources
         service.perform(unit, "stop")
         stopped = service.perform(unit, "check")
         assert stopped["status"] == "blocked"
         assert service.store.lab(unit).state == "stopped"
         service.perform(unit, "resume")
         assert service.store.lab(unit).state == "ready"
+        # Resuming keeps the learner's work, so a pass before it still describes the lab.
+        assert service.store.lab(unit).resources["started_fresh_at"] == fresh
         # Reset preserves a complete draft and removes only the owned container.
         (workspace / "observations.txt").write_text("My own diagnosis\n")
         reset = service.perform(unit, "reset")
         assert (Path(reset["backup"]) / "observations.txt").read_text() == "My own diagnosis\n"
         assert not (workspace / "observations.txt").exists()
+        # A reset restarts from the starter files, so earlier checks no longer describe the lab.
+        assert service.store.lab(unit).resources["started_fresh_at"] > fresh
         assert service.perform(unit, "check")["status"] == "fail"
         assert len(service.store.attempts(unit)) >= 4
     finally:

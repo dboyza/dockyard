@@ -444,6 +444,8 @@ class Service:
     def _prepare(self, lab: Lab, cancel: threading.Event) -> None:
         lab.state = "preparing"
         lab.error = None
+        # The last run's final step would otherwise show until this run reports one.
+        lab.resources.pop("stage", None)
         self._save(lab)
         unit = self.catalog.get(lab.unit_id)
         env = self.environment(lab)
@@ -508,9 +510,8 @@ class Service:
                 else:
                     runtime.prepare(unit.nodes, cluster_images(unit), cancel, unit.capabilities)
         env = self.environment(lab)
-        commands = (
-            [] if lab.resources.get("prepared_revision") == str(unit.revision) else unit.prepare
-        )
+        fresh = lab.resources.get("prepared_revision") != str(unit.revision)
+        commands = unit.prepare if fresh else []
         if commands and unit.runtime == Runtime.DOCKER:
             self.docker(lab).change("clean", cancel)
         for command in commands:
@@ -524,7 +525,11 @@ class Service:
             )
             self._require(outcome)
         runtime.discover()
+        if fresh:
+            # Checks from before this point describe work the starter files replaced.
+            lab.resources["started_fresh_at"] = timestamp()
         lab.resources["prepared_revision"] = str(unit.revision)
+        lab.resources.pop("stage", None)
         lab.revision = unit.revision
         lab.state = "ready"
         self._save(lab)

@@ -216,7 +216,12 @@ export function LessonPage({ model }: { model: Workbench }) {
               model.assessment?.unit_id === lesson.id &&
               model.assessment.revision === lesson.revision &&
               model.assessment.status === "pass" &&
-              !reviewDue(lesson.revision, progress)
+              !reviewDue(lesson.revision, progress) &&
+              // A reset replaces the work that check observed.
+              Date.parse(model.assessment.started_at) >=
+                Date.parse(
+                  lab?.resources.started_fresh_at ?? "1970-01-01T00:00:00Z",
+                )
             }
           />
         }
