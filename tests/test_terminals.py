@@ -5,6 +5,7 @@ import os
 import shlex
 import subprocess
 import sys
+import time
 
 import pytest
 
@@ -101,6 +102,10 @@ def test_private_launcher_executes_exact_command_and_rejects_symlinks(tmp_path, 
     ]
     terminal = terminals.Terminal("xterm", "xterm", str(executable))
     terminals.launch(terminal, command, str(tmp_path), dict(os.environ), tmp_path / "shell")
+    # A terminal that starts slowly keeps running after launch returns, so wait for its output.
+    deadline = time.monotonic() + 10
+    while not output.exists() and time.monotonic() < deadline:
+        time.sleep(0.05)
     assert json.loads(output.read_text()) == [literal]
     entry = tmp_path / "shell/launch.command"
     assert entry.stat().st_mode & 0o777 == 0o700
