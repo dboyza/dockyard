@@ -424,6 +424,8 @@ class LinuxRuntime:
             self.lab.resources["vm_intent"] = "[]"
             self.lab.resources.pop("vm_ready", None)
             self.lab.resources.pop("vm_packages", None)
+            # New guests reuse the old names, so their security tools must be installed again.
+            self.lab.resources.pop("vm_guest_tools", None)
             self.lab.resources.pop("prepared_revision", None)
             if self.lab.resources.pop("kubeconfig_identity", None):
                 (self.root / "kubeconfig").unlink(missing_ok=True)

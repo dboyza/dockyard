@@ -226,3 +226,20 @@ def test_native_prerequisites_install_with_unusable_package_proxies(
         assert len(json.loads(lab.resources["vm_packages"])) == 2
     finally:
         runtime.change("clean", cancel)
+
+
+def test_reset_reinstalls_security_tools_in_the_new_guests(lab_profile):
+    # Reset replaces the guests under their old names, so their tools must follow.
+    service = Service(lab_profile)
+    try:
+        service.perform("m25-benchmark", "prepare")
+        service.perform("m25-benchmark", "reset")
+        lab = service.store.lab("m25-benchmark")
+        assert lab is not None
+        runtime = service.runtime(lab)
+        assert isinstance(runtime, LinuxRuntime)
+        for entry in runtime.discover():
+            found = runtime.guest(entry["name"], ["sh", "-c", "command -v kube-bench"])
+            assert found.ok and found.stdout.strip() == "/usr/local/bin/kube-bench", entry
+    finally:
+        service.shutdown()
