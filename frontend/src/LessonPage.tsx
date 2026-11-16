@@ -208,9 +208,7 @@ export function LessonPage({ model }: { model: Workbench }) {
           <LabBar
             model={model}
             next={
-              !incident && currentPractice(lesson.revision, progress)
-                ? nextUnit
-                : undefined
+              currentPractice(lesson.revision, progress) ? nextUnit : undefined
             }
             passed={
               model.assessment?.unit_id === lesson.id &&
@@ -476,6 +474,8 @@ function LabBar({
 }) {
   const { lab, busy, perform } = model;
   const moveOn = passed && !!next;
+  // Name what comes next: a lesson, a mission, or another incident.
+  const nextLabel = `Next ${next?.kind ?? "lesson"}`;
   return (
     <div className="lab-bar">
       <div className={`lab-state ${labTone(lab?.state)}`}>
@@ -507,10 +507,10 @@ function LabBar({
         <button
           className={moveOn ? "primary" : undefined}
           title={next.title}
-          aria-label={`Next lesson: ${next.title}`}
+          aria-label={`${nextLabel}: ${next.title}`}
           onClick={() => void model.openLesson(next.id)}
         >
-          Next lesson
+          {nextLabel}
           <ArrowRight size={16} />
         </button>
       )}

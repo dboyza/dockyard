@@ -48,7 +48,7 @@ A lesson is one page: **Understand** first, then **Your task**.
    Start with any item marked Needs attention, and open Check details to see the expected and observed values.
 6. Write observations under the task and use the debrief to explain why the repair worked.
    Observations save when you click out of the notes box, or with Save observations.
-7. Once the check passes, select **Next lesson** at the foot of the lesson, or use the arrows beside its title to move through the course in order.
+7. Once the check passes, select **Next lesson** or **Next mission** at the foot of the lesson, or use the arrows beside its title to move through the course in order.
 
 The top bar shows where the lesson sits in the course.
 It also lists the labs that exist on this computer, so you can return to one or stop it from any page.
@@ -109,8 +109,9 @@ Recovery labs teach database backup and restore separately.
 Open **Practice → Troubleshooting** to investigate a broken application in a separate lab.
 They preserve the main project's source checkpoints.
 Each scenario asks for diagnostic evidence and a repair with a verifiable result.
+Once its check passes, select **Next incident** at the foot of the page to open the next scenario.
 
-Open **Practice → Exam practice** for two CKAD-oriented and two CKA-oriented original task sets.
+Open **Practice → Exam practice** for two original task sets each for CKAD, CKA, and CKS.
 Prepare the environment before starting its 120-minute timer.
 The interface shows task points, allowed-reference policy, flags, remaining time, and a saved report with links to the lessons to revisit.
 While an attempt is running, the remaining time also appears in the top bar on every other page.

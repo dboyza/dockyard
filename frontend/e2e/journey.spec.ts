@@ -215,6 +215,23 @@ test('installed workbench teaches, remembers observations, and handles real lab 
     await expect(page.getByText('Retake completed.', { exact: true })).toBeVisible();
     await expect(page.getByText('HINT 1', { exact: true })).not.toBeVisible();
     await expect(page.getByRole('button', { name: 'Reveal hint 1' })).toBeVisible();
+    // Missions and incidents also make moving on the main action once their check passes.
+    const passAndMoveOn = async (unit: string, next: RegExp) => {
+      execFileSync(path.join(root, '.runtime/installed/bin/python'), [path.join(root, 'frontend/e2e/repair_lab.py'), profile, unit]);
+      await page.getByRole('button', { name: /^Check (work|again)$/ }).click();
+      await expect(page.getByRole('heading', { name: 'The required behavior passed this check.' })).toBeVisible();
+      await expect(page.getByRole('button', { name: next })).toHaveClass(/primary/);
+      await expect(page.getByRole('button', { name: 'Check again' })).not.toHaveClass(/primary/);
+    };
+    await passAndMoveOn('m01-mission', /^Next lesson: /);
+    await page.getByRole('textbox', { name: 'Search lessons' }).fill('i01-lifecycle');
+    await page.getByRole('button', { name: /The deployment exited successfully/ }).click();
+    await page.getByRole('button', { name: 'Prepare lab' }).click();
+    await expect(page.locator('.lab-bar')).toContainText('Ready', { timeout: 300_000 });
+    await passAndMoveOn('i01-lifecycle', /^Next incident: /);
+    await labOption('Clean up lab');
+    await page.getByRole('button', { name: 'Continue', exact: true }).click();
+    await expect(page.getByText('Lab cleaned up.', { exact: true })).toBeVisible({ timeout: 60_000 });
   }
   await page.getByRole('textbox', { name: 'Search lessons' }).fill('reconciliation');
   await page.getByRole('button', { name: /Let Kubernetes keep Dispatch running/ }).click();
