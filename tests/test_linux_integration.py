@@ -6,19 +6,16 @@ import socket
 import threading
 import time
 import urllib.request
-import uuid
 from pathlib import Path
 
 import pytest
 
 from dockyard import host
 from dockyard.catalog import CONTENT
-from dockyard.models import Lab, Runtime
 from dockyard.process import run
 from dockyard.runtimes.docker import RuntimeErrorBase
 from dockyard.runtimes.linux import LinuxRuntime
 from dockyard.service import Service
-from dockyard.store import timestamp
 from dockyard.versions import KUBERNETES, KUBERNETES_PREVIOUS
 
 pytestmark = [
@@ -33,24 +30,13 @@ def test_linux_guests_network_resume_and_preserve_identity(lab_profile):
     # Short profile paths are required by the platform's Unix socket length limit.
     profile = lab_profile
     service = Service(profile)
-    with socket.socket() as listener:
-        listener.bind(("127.0.0.1", 0))
-        api_port = listener.getsockname()[1]
     with socket.socket() as listener, socket.socket(type=socket.SOCK_DGRAM) as datagram:
         listener.bind(("127.0.0.1", 0))
         isolated_port = listener.getsockname()[1]
         datagram.bind(("127.0.0.1", isolated_port))
-    lab = Lab(
-        id=uuid.uuid4().hex,
-        unit_id="m19-runtime",
-        revision=1,
-        runtime=Runtime.LINUX,
-        state="preparing",
-        workspace=str(profile / "labs/guest-proof/workspace"),
-        created_at=timestamp(),
-        updated_at=timestamp(),
-        resources={"api_port": str(api_port)},
-    )
+    # A complete lab record lets the profile release clean these guests like any other.
+    lab = service._allocate_lab("m19-runtime")
+    api_port = lab.resources["api_port"]
     Path(lab.workspace).mkdir(parents=True)
     runtime = LinuxRuntime(lab, service.environment(), service.store.save_lab, service.tools)
     cancel = threading.Event()
@@ -184,17 +170,7 @@ def test_native_prerequisites_install_with_unusable_package_proxies(
 ):
     profile = lab_profile
     service = Service(profile)
-    lab = Lab(
-        id=uuid.uuid4().hex,
-        unit_id="m19-runtime",
-        revision=1,
-        runtime=Runtime.LINUX,
-        state="preparing",
-        workspace=str(profile / "labs/guest-proof/workspace"),
-        created_at=timestamp(),
-        updated_at=timestamp(),
-        resources={},
-    )
+    lab = service._allocate_lab("m19-runtime")
     Path(lab.workspace).mkdir(parents=True)
     runtime = LinuxRuntime(lab, service.environment(), service.store.save_lab, service.tools)
     cancel = threading.Event()
