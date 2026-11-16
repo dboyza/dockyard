@@ -623,6 +623,8 @@ class Service:
                 )
             )
         else:
+            if isinstance(runtime, LinuxRuntime):
+                runtime.await_node_agents(cancel)
             # Just after a rollout, old Pods are still terminating and the runtime keeps
             # changing for a few seconds. Observe again until it holds still, rather than
             # reporting a stale check to a learner who did everything right.

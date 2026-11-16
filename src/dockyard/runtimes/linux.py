@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import threading
+import time
 from collections.abc import Callable
 from dataclasses import replace
 from datetime import datetime
@@ -454,6 +455,57 @@ class LinuxRuntime:
                 stderr="One or more recorded Linux guests are stopped or missing.",
             )
         return outcome
+
+    def await_node_agents(self, cancel: threading.Event, limit: float = 60) -> None:
+        """Wait while a restarted kubelet answers but has not yet relisted its Pods.
+
+        Until then the node reads Ready, yet exec into its Pods fails with "pod does not exist".
+        """
+        if not self.lab.resources.get("kubeconfig_identity"):
+            return
+        deadline = time.monotonic() + limit
+        while time.monotonic() < deadline and not cancel.is_set():
+            try:
+                if not self._node_agents_behind(cancel):
+                    return
+            except (RuntimeError, ValueError, KeyError, TypeError, AttributeError, OSError):
+                return  # Any surprise is the check's to report, not to wait on.
+            cancel.wait(2)
+
+    def _node_agents_behind(self, cancel: threading.Event) -> bool:
+        def items(args: list[str]) -> list[dict[str, Any]]:
+            outcome = self.kubectl([*args, "--request-timeout=3s"], timeout=6, cancel=cancel)
+            self.require(outcome)
+            return list(json.loads(outcome.stdout)["items"])
+
+        def names(pods: list[dict[str, Any]]) -> set[str]:
+            # Static Pods carry different UIDs in the kubelet and the API, so compare names.
+            return {p["metadata"]["namespace"] + "/" + p["metadata"]["name"] for p in pods}
+
+        assigned: dict[str, list[dict[str, Any]]] = {}
+        for pod in items(["get", "pods", "-A", "-o", "json"]):
+            node = pod["spec"].get("nodeName")
+            live = pod["status"].get("phase") in {"Pending", "Running"}
+            if node and live and not pod["metadata"].get("deletionTimestamp"):
+                assigned.setdefault(node, []).append(pod)
+        for node in items(["get", "nodes", "-o", "json"]):
+            name = node["metadata"]["name"]
+            ready = any(
+                c["type"] == "Ready" and c["status"] == "True"
+                for c in node["status"].get("conditions", [])
+            )
+            if not ready or not assigned.get(name):
+                continue
+            listed = self.kubectl(
+                ["get", "--raw", f"/api/v1/nodes/{name}/proxy/pods", "--request-timeout=3s"],
+                timeout=6,
+                cancel=cancel,
+            )
+            # A kubelet that knows no Pods yet lists them as null.
+            known = (json.loads(listed.stdout).get("items") or []) if listed.ok else None
+            if known is not None and not names(assigned[name]) <= names(known):
+                return True
+        return False
 
     def fingerprint(self) -> str:
         records: list[Any] = []
