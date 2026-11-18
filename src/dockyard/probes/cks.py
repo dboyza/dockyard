@@ -923,8 +923,14 @@ def apiserver_flags(r: LinuxRuntime) -> dict[str, str]:
 
 
 def audit_events(r: LinuxRuntime, path: str) -> list[dict[str, Any]]:
-    """Recent audit events. Callers project safe fields only; bodies are never reported."""
-    tail = r.guest(r.primary, ["sudo", "tail", "-n", "4000", path], timeout=60)
+    """Recent Secret audit events. Callers project safe fields only; bodies are never reported.
+
+    Filtering before the tail keeps a busy log, as just after a restart, from crowding them out.
+    """
+    script = 'grep -F -- "$1" "$2" | tail -n 4000'
+    tail = r.guest(
+        r.primary, ["sudo", "sh", "-c", script, "sh", '"resource":"secrets"', path], timeout=60
+    )
     r.require(tail)
     events = []
     for line in tail.stdout.splitlines():
