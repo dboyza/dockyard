@@ -58,6 +58,7 @@ This is a living document: keep it accurate, concise, durable, and deduplicated 
 - Console WebSockets bypass the HTTP middleware, so they verify the exact origin and session cookie themselves.
 - Every learner shell, embedded or external, has ordinary user privileges; do not describe environment scoping as an OS security sandbox.
 - Do not treat Node Ready as networking proof; verify CNI/DNS readiness and actual cross-node traffic and policy enforcement.
+- A restarted kubelet can read Ready for half a minute before it relists its Pods; native checks wait for that relist.
 - kind clusters use kind's own network plugin, kindnet, and native clusters use Calico; rerun the NetworkPolicy enforcement suite whenever the kind pin changes.
 - Keep node and Pod networks disjoint, and verify that native TCP/UDP forwarding exposes only the declared loopback ports.
 - Keep runtime observations read-only and project explicit safe fields; never expose raw workload environment or Secret bodies.

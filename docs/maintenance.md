@@ -68,6 +68,7 @@ Set `DOCKYARD_FIRST_CHECK_LOG` to a file path to collect one JSON line per unit,
 A first check that fails or reports stale, while a later one passes, means a learner who checks promptly would be failed for timing alone.
 Fix the check rather than the reference.
 Request checks retry briefly, checks re-observe while the runtime settles, and probes give a short grace period after a repair.
+A native check first waits up to a minute for any restarted kubelet to relist the Pods bound to its node, because exec into them fails until it does.
 
 The curriculum audit starts every activity's real fixture, verifies its declared failure criteria, applies the reference, and checks actual passing behavior.
 Additional suites test valid alternatives, ownership preservation, Stop/Resume, reset backups, and supported versus independent attempts.

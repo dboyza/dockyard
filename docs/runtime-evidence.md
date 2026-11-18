@@ -764,3 +764,26 @@ From the final code, every installed browser suite passed, including the project
 The exam suite had expected four exams and an old button color; it now expects six and compares the color with the theme.
 With every download already present, a fresh profile prepared its first kind lesson in about 30 seconds, and the lesson named each step while it waited.
 No test profiles, kind clusters, or Dockyard-labeled containers remained afterwards.
+
+## 2026-11-18: native Lima clusters after the kindnet switch
+
+All 50 native Linux units were run through the curriculum suite on Lima guests, where Calico still provides networking.
+`m25-endpoints`, which depends on NetworkPolicy, passed first as a canary.
+The first full run passed 49 of 50 units; `m25-benchmark` failed even after the suite's 30 seconds of retries.
+Its reference restarts the worker kubelet and then the API server.
+The worker reads Ready again within a second, but its kubelet takes another 33 to 37 seconds to relist its Pods.
+Until then, `kubectl exec` into them fails with "pod does not exist".
+Native checks now wait up to a minute while a kubelet lists fewer Pods than the API server has bound to its node; on that lab the wait took 37 seconds, and the check then passed.
+Reproducing it also showed that a reset left CKS guests without kube-bench, Falco, and gVisor, because the record of installed tools survived the guests it described.
+Cleaning a native lab now forgets that record, and a real-VM test resets `m25-benchmark` and finds kube-bench in every new guest.
+The native VM suite had kept its test profiles because its tests built lab records by hand; they now allocate labs through the service, and all four tests passed with their profiles released.
+
+A second full run from commit `a9bc41a` is not counted as a clean run.
+The Mac entered sleep 30 seconds after it started, and for about 42 hours it alternated between sleep and brief maintenance wakes; `caffeinate -i` does not prevent that.
+The other 44 units still passed at the first check despite the pauses.
+The six units it reported as failing or as failing their first check were rerun with sleep fully blocked.
+Five passed at the first check: `exam-cka-b`, `i11-kubelet-config`, `m28-mission`, `m19-kubelet`, and `m25-benchmark`.
+`m30-audit` failed because its probe read only the audit log's last 4,000 lines.
+Just after the API server restarts, the log grows by about 90 lines a second, so that window could miss the exporter's read every 20 seconds.
+The probe now selects Secret events on the guest before taking the tail, and `m30-audit` then passed at the first check.
+The installed journey and lab lifecycle browser suites passed afterwards, and no test profiles, Lima guests, kind clusters, or Dockyard-labeled containers remained.
